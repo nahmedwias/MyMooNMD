@@ -32,7 +32,7 @@ void initial_condition_temperature(double x, double y, double *values)
   values[0] = surrounding_temperature;
 }
 void pde_coefficients_flow(int n_points, double *, double *, double **,
-                           double **coeffs, double nu)
+                           double **coeffs, double nu, double sigma)
 {
   for(int i = 0; i < n_points; i++)
   {
@@ -41,6 +41,7 @@ void pde_coefficients_flow(int n_points, double *, double *, double **,
     coeffs[i][1] = 0.; // f1
     coeffs[i][2] = 0.; // f2
     coeffs[i][3] = 0.; // divergence
+    coeffs[i][4] = sigma;
   }
 }
 void pde_coefficients_temperature(int n_points, double *, double *, 
@@ -74,9 +75,10 @@ Example_NSE2D get_gppo_flow_example(const ParameterDatabase & db)
     all_Dirichlet_boundary_condition, all_Neumann_boundary_condition}};
   std::vector<BoundValueFunct2D *> bd(3, zero_boundary_value); 
   double reynolds_number = db["reynolds_number"];
+  double sigma = db["inverse_permeability"];
   using namespace std::placeholders;
   CoeffFct2D coeffs = std::bind(pde_coefficients_flow, _1, _2, _3, _4, _5,
-                                1./reynolds_number);
+                                1./reynolds_number, sigma);
   return Example_NSE2D(exact, bc, bd, coeffs, 1./reynolds_number);
 }
 

@@ -551,11 +551,6 @@ int TDomain::ReadParam(const char *ParamFile)
       N_Param++;
     }
 
-    if (!strcmp(line, "NSE_NONLINEAR_FORM:"))
-    {
-      dat >> TDatabase::ParamDB->NSE_NONLINEAR_FORM;
-      N_Param++;
-    }
     if (!strcmp(line, "OSEEN_ZERO_ORDER_COEFF:"))
     {
       dat >> TDatabase::ParamDB->OSEEN_ZERO_ORDER_COEFF;

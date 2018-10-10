@@ -238,6 +238,17 @@ namespace BoundaryAssembling2D
       double mult
       );
 
+
+
+  /**
+    @brief Assemble the terms needed for Nitsche BC on a given boundary
+  */
+  void nitsche_bc(BlockFEMatrix &s_matrix,BlockVector &s_rhs,
+		  const TFESpace2D * v_space, const TFESpace2D *p_space,
+		  BoundValueFunct2D * U1, BoundValueFunct2D *U2,
+		  int bd_comp, double gamma, double mu,
+		  int sym_u, int sym_p);
+  
   /** @brief Get the quadrature points and weights according to LineQuadFormula = Quadrature formula for specified degree. LineQuadFormula has to be set before the call of this function
    */
   void get_quadrature_formula_data(std::vector<double> &P,

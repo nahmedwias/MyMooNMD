@@ -268,6 +268,10 @@ class TStructure
      */
     int *GetKCol()
     { return &columns[0]; }
+    
+    /** @brief return a copy of the columns vector */
+    std::vector<int> get_columns() const
+    { return columns; }
 
     /** @brief return array hangingColums */
     const int *GetHangingKCol() const

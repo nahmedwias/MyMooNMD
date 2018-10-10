@@ -15,7 +15,7 @@
  * We're only testing examples whose analytic solution is in the ansatz space,
  * thus we expect very small errors every time.
  * Fixed are discretization_type 1 (galerkin), LAPLACETYPE 0,
- * NSE_NONLINEAR_FORM 0 and SC_NONLIN_ITE_TYPE_SADDLE = 0.
+ * 'nse_nonlinear_form' 0 and SC_NONLIN_ITE_TYPE_SADDLE = 0.
  * Note that for these discretizations it is futile to choose any other NSTYPE
  * than 1 (see e.g. MooNMD documentation p. 35), but we vary them anyway, just
  * for the sake of testing the different types.
@@ -168,7 +168,9 @@ void check(ParameterDatabase& db, std::list<TCollection* > grid_collections,
   TDatabase::ParamDB->VELOCITY_SPACE = velocity_order;
   TDatabase::ParamDB->PRESSURE_SPACE = pressure_order;
   TDatabase::ParamDB->NSTYPE = nstype;
-  TDatabase::ParamDB->NSE_NONLINEAR_FORM = nonlineartype;
+  db["nse_nonlinear_form"] = "convective";
+  if(nonlineartype != 0)
+    ErrThrow("other nonlinear forms are not yet tested");
   TDatabase::ParamDB->LAPLACETYPE = laplacetype;
   TDatabase::TimeDB->TIME_DISC = time_discretizationtype;
   
@@ -640,6 +642,7 @@ int main(int argc, char* argv[])
     db.merge(ParameterDatabase::default_nonlinit_database());
     db.merge(Example3D::default_example_database());
     db.merge(TimeDiscretization::default_TimeDiscretization_database());
+    db.merge(LocalAssembling3D::default_local_assembling_database());
     db["problem_type"].set<size_t>(6);
     db["nonlinloop_slowfactor"]=1.;
     db.add("boundary_file", "Default_UnitCube", "");

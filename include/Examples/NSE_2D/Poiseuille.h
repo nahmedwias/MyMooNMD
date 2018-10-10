@@ -94,6 +94,9 @@ void LinCoeffs(int n_points, double *x, double *y,
     coeff[0] = eps;
     coeff[1] = 1+8*eps; // f1
     coeff[2] = 0; // f2
+    coeff[3] = 0.;//g
+    // additional coefficient (used only in the Brinkman problem)
+    coeff[4] = 0.;
   }
 }
 
@@ -115,6 +118,7 @@ void NonLinCoeffs(int n_points, double *x, double *y,
     coeff[0] = eps;
     coeff[1] = param[0];
     coeff[2] = param[1];
+
   }
 }
 

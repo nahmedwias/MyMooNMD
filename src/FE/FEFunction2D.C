@@ -192,26 +192,20 @@ void TFEFunction2D::GetErrors(DoubleFunct2D *Exact, int N_Derivatives,
     double *errors, bool is_SDFEM, 
     std::function<bool(const TBaseCell*, int)>funct) const
 {
-  bool *SecondDer = new bool[n_fespaces];
+  bool SecondDer[n_fespaces];
   // initialize the array SecondDer as either all true or all false.
   {
     // find out if one of the indices in NeededDerivatives refers to a second
     // order derivative
     bool need_second_derivatives = false;
     for(int i = 0; i < N_Derivatives; ++i)
+    {
       if(NeededDerivatives[i] == D20 || NeededDerivatives[i] == D11 ||
           NeededDerivatives[i] == D02)
         need_second_derivatives = true;
-    if(need_second_derivatives)
-    {
-      for(int i = 0; i < n_fespaces; i++)
-        SecondDer[i] = true;
     }
-    else
-    {
-      for(int i = 0; i < n_fespaces; i++)
-        SecondDer[i] = false;
-    }
+    for(int i = 0; i < n_fespaces; i++)
+      SecondDer[i] = need_second_derivatives;
   }
 
   double *aux;
@@ -237,8 +231,6 @@ void TFEFunction2D::GetErrors(DoubleFunct2D *Exact, int N_Derivatives,
   for(int j = 0; j < MaxN_QuadPoints_2D; j++)
     AuxArray[j] = aux + j*20;
 
-  int *GlobalNumbers = FESpace2D->GetGlobalNumbers();
-  int *BeginIndex = FESpace2D->GetBeginIndex();
   BaseFunct2D *BaseFuncts = TFEDatabase2D::GetBaseFunct2D_IDFromFE2D();
   int *N_BaseFunct = TFEDatabase2D::GetN_BaseFunctFromFE2D();
 
@@ -338,28 +330,13 @@ void TFEFunction2D::GetErrors(DoubleFunct2D *Exact, int N_Derivatives,
     if(N_Parameters>0)
       Aux->GetParameters(N_QuadPoints, Coll, cell, i, xi, eta, X, Y, Param);
 
-    if(is_SDFEM ||
-        (TDatabase::ParamDB->BULK_REACTION_DISC == SDFEM))
-    {
-      TDatabase::ParamDB->INTERNAL_LOCAL_DOF = i;
-      int N_Edges = cell->GetN_Edges();
-      for (int ij = 0; ij < N_Edges; ij++)
-      {
-        TDatabase::ParamDB->INTERNAL_VERTEX_X[ij] = cell->GetVertex(ij)->GetX();
-        TDatabase::ParamDB->INTERNAL_VERTEX_Y[ij] = cell->GetVertex(ij)->GetY();
-      }
-      if(N_Edges==3)
-        TDatabase::ParamDB->INTERNAL_VERTEX_X[3] = -4711;
-      TDatabase::ParamDB->INTERNAL_HK_CONVECTION = -1;
-    }
-
     // calculate all needed derivatives of this FE function
     CurrentElement_FEID = FESpace2D->GetFE2D(i, cell);
     BaseFunct = BaseFuncts[CurrentElement_FEID];
     int N_ = N_BaseFunct[CurrentElement_FEID];
 
     double FEFunctValues[MaxN_BaseFunctions2D];
-    int *DOF = GlobalNumbers + BeginIndex[i];
+    int *DOF = FESpace2D->GetGlobalDOF(i);
     for(int l = 0; l < N_; l++)
     {
       FEFunctValues[l] = Values[DOF[l]];
@@ -465,7 +442,6 @@ void TFEFunction2D::GetErrors(DoubleFunct2D *Exact, int N_Derivatives,
     OutPut("Maximal pointwise error appeared in: " <<  x_coord_max_error << " " <<  y_coord_max_error << " value: " << errors[N_Errors]  << endl);
 
   delete [] AuxArray[0];
-  delete [] SecondDer;
   delete [] ExactVal[0];
   delete [] Derivatives[0];
   delete [] Param[0];

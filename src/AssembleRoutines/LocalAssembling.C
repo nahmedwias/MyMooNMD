@@ -289,7 +289,7 @@ LocalAssembling<d>::LocalAssembling(ParameterDatabase param_db,
       //this->Derivatives = { D10, D01, D00, D00, D10, D01};                // u_x, u_y, u, p, p_x, p_y
       auto first_order_indices = indices_up_to_order<d>(1);
       this->Derivatives = {first_order_indices[1], first_order_indices[2]};
-      this->Derivatives.insert(this->Derivatives.end(), 2,
+      this->Derivatives.insert(this->Derivatives.end(), 1,
                               indices_up_to_order<d>(0)[0]);
       this->Derivatives.insert(this->Derivatives.end(),
                                first_order_indices.begin(),
@@ -318,7 +318,7 @@ LocalAssembling<d>::LocalAssembling(ParameterDatabase param_db,
       auto first_order_indices = indices_up_to_order<d>(1);
       auto second_order_indices = indices_up_to_order<d>(2);
       this->Derivatives = {first_order_indices[1], first_order_indices[2]};
-      this->Derivatives.insert(this->Derivatives.end(), 2,
+      this->Derivatives.insert(this->Derivatives.end(), 1,
                               indices_up_to_order<d>(0)[0]);
       this->Derivatives.insert(this->Derivatives.end(),
                                first_order_indices.begin(),
@@ -739,15 +739,19 @@ ParameterDatabase LocalAssembling<d>::default_local_assembling_database()
          "determine the way the laplacian is discretized.");
   
   db.add("nse_nonlinear_form", "convective",
-         "Determine how the nonlinear term for Navier--Stokes is assembled.",
-         {"convective", "skew-symmetric", "rotational"});
+         "Determine how the nonlinear term for Navier--Stokes is assembled. "
+          "convective means ( (u.nabla) u, v), "
+          "skew_symmetric means (1/2) [((u.nabla) u, v) - ((u.nabla) v, u)], "
+          "rotational means ((nabla x u) x u, v), "
+          "emac means (D(u)u + div(u)u, v)",
+         {"convective", "skew_symmetric", "rotational", "divergence", "emac"});
   
   db.add("space_discretization_type", "galerkin",
          "The type of discretization. Note that not all types are possible for "
          "all problem classes.",
          {"galerkin", "supg", "upwind", "smagorinsky", "cip", "dg", "symm_gls",
-          "nonsymm_gls", "pspg", "vms_projection", "vms_projection_expl",
-          "local_projection", "local_projection_2_level",
+          "nonsymm_gls", "pspg", "brezzi_pitkaeranta", "vms_projection",
+          "vms_projection_expl", "local_projection", "local_projection_2_level",
           "residual_based_vms"}); 
   
   db.add("pspg_delta0", 0.1, 
@@ -755,6 +759,47 @@ ParameterDatabase LocalAssembling<d>::default_local_assembling_database()
          "Galerkin) is delta0 * h^2 /nu, where h is a cell measure (e.g. "
          "diameter), nu is the inverse of the reynolds number, and delta0 is "
          " this parameter.", 0., 10.);
+
+  ///@todo add a parameter for the characteristic length L_0 (Brinkman case)  
+  db.add("graddiv_stab", 0., 
+         "the stabilization parameter for Grad-Div is delta0 (nu + sigma L_0^2), "
+	 " where L is a characteristic length (taken equal to 1), nu is the "
+	 "inverse of the reynolds number,"
+	 " sigma is the inverse of permeability, and delta0 is this parameter.", 0., 10000.);
+
+  db.add("gls_stab", 0.,
+         "the stabilization parameter for GLS stabilization is "
+	 " delta0 h^2/(nu + sigma L_0^2), "
+	 " where L_0 is a characteristic length (taken equal to 1), nu is the "
+	 "inverse of the reynolds number,"
+	 " sigma is the inverse of permeability, and delta0 is this parameter.", 0., 10000.);
+
+  db.add("L_0", 1.,
+         "the parameter for relating Stokes with Darcy terms in Brinkman problem "
+   " which is a characteristic length (by default equal to 1).", 0., 10000.);
+
+  db.add("corner_stab", 0.,
+         "the stabilization parameter needed for the Darcy limit of Brinkman in order"
+         "to restrict normal jumps of the velocity across corners of the domain"
+         "(by default equal to 0)", 0., 10000.);
+  // the following 'local projection stabilization' (lps) parameters are not 
+  // used in this class, but are somewhat similar to other parameters here.
+  db.add("lps_delta0", 0.1,
+         "The stabilization parameter for local projection stabilization (lps) "
+         "is delta0 * h^2 / nu, where h is a cell measure (e.g. diameter), nu "
+         "is the inverse of the reynolds number, and delta0 is this parameter. "
+         "Sometimes (in time-dependent problems) it is set to be "
+         "delta0 * hK / nu.");
+  db.add("lps_delta1", 0.1,
+         "The stabilization parameter for local projection stabilization (lps) "
+         "is delta0 * h^2 / nu, where h is a cell measure (e.g. diameter), nu "
+         "is the inverse of the reynolds number, and delta0 is 'lps_delta0'. "
+         "Sometimes (in time-dependent problems) it is set to be "
+         "delta1 * hK / nu, where delta1 is this parameter.");
+  db.add("lps_coeff_type", 0u, "Determine the way the local projection "
+         "stabilization (lps) parameter is computed.", 0u, 5u);
+  
+  db.merge(ParameterDatabase::parmoon_default_database());
   
   return db;
 }
@@ -942,11 +987,16 @@ void LocalAssembling<d>::set_parameters_for_nse( LocalAssembling_type type)
   //bool laplace_type_deformation = (TDatabase::ParamDB->LAPLACETYPE == 1);
   bool laplace_type_deformation = this->db["laplace_type_deformation"];
   std::string disc_type = this->db["space_discretization_type"];
+  Parameter nonlin_form(db["nse_nonlinear_form"]);
   bool galerkin = (disc_type == std::string("galerkin"));
   bool pspg = (disc_type == std::string("pspg"));
   bool symm_gls = (disc_type == std::string("symm_gls"));
   bool nonsymm_gls = (disc_type == std::string("nonsymm_gls"));
+  bool brezzi_pitkaeranta = (disc_type == std::string("brezzi_pitkaeranta"));
+  bool local_projection = (disc_type == std::string("local_projection"));
   int nstype = TDatabase::ParamDB->NSTYPE;
+  int problem_type = db["problem_type"];
+  
   if(TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE==1)
   {
     ErrThrow("Newton method is not supported yet");
@@ -955,14 +1005,23 @@ void LocalAssembling<d>::set_parameters_for_nse( LocalAssembling_type type)
   {
     if((nstype==1) || nstype==2)
     {
-      ErrThrow("LAPLACETYPE is only supported for NSTYPE 3, and 4");
+      ErrThrow("LAPLACETYPE is only supported for NSTYPE 3, 4, and 14");
     }
   }
-  if(TDatabase::ParamDB->NSE_NONLINEAR_FORM>0)
+  if(nonlin_form.is("divergence"))
   {
-    ErrThrow("Skew symmetric case is not implemented for all NSTYPE");
+    ErrThrow("nse_nonlinear_form '", nonlin_form, "' is not yet implemented");
   }
-  if(!galerkin && !pspg && !symm_gls && !nonsymm_gls)
+  if(nonlin_form.is("rotational") || nonlin_form.is("emac"))
+  {
+    if((nstype==1) || nstype==2)
+    {
+      ErrThrow("nse_nonlinear_form", nonlin_form,
+               " is only supported for NSTYPE 3, 4, and 14");
+    }
+  }
+  if(!galerkin && !pspg && !symm_gls && !nonsymm_gls && !brezzi_pitkaeranta
+     && !local_projection)
   {
     ErrThrow("unsupported space_discretization_type for NSE", d, "D: ",
              disc_type);
@@ -1022,9 +1081,26 @@ void LocalAssembling<d>::set_parameters_for_nse( LocalAssembling_type type)
       this->local_assemblings_routines.push_back(NSLaplaceGradGrad<d>);
     }
   }
-  
+
+  // add Darcy (resistance) term for Brinkman problem
+  if (problem_type == 7)
+  {
+    if(nstype == 1 || nstype == 2)
+    {
+      this->local_assemblings_routines.push_back(NSResistanceMassMatrixSingle<d>);
+    }
+    else
+    {
+      this->local_assemblings_routines.push_back(NSResistanceMassMatrix<d>);
+    }
+  }
+
+  // stabilization
   using namespace std::placeholders;
   double pspg_delta0 = db["pspg_delta0"];
+  double gls_stab = db["gls_stab"];
+ 
+  
   if(pspg || symm_gls || nonsymm_gls) // need second derivatives
   {
     this->N_Terms = 2*d+2+d*(d+1)/2;
@@ -1045,43 +1121,117 @@ void LocalAssembling<d>::set_parameters_for_nse( LocalAssembling_type type)
         std::bind(NSPSPG<d>, _1, _2, _3, _4, _5, _6, _7, _8, pspg_delta0));
     else if(symm_gls)
       this->local_assemblings_routines.push_back(
-        std::bind(NSsymmGLS<d>, _1, _2, _3, _4, _5, _6, _7, _8, pspg_delta0));
+        std::bind(NSsymmGLS<d>, _1, _2, _3, _4, _5, _6, _7, _8, gls_stab));
     else if(nonsymm_gls)
       this->local_assemblings_routines.push_back(
-        std::bind(NSnonsymmGLS<d>, _1, _2, _3, _4, _5, _6, _7, _8, pspg_delta0));
+        std::bind(NSnonsymmGLS<d>, _1, _2, _3, _4, _5, _6, _7, _8, gls_stab));
   }
+  else if(brezzi_pitkaeranta)
+  {
+    this->N_Terms += d; // the pressure derivatives
+    this->Derivatives.insert(this->Derivatives.end(), foi.begin()+1, foi.end());
+    for(int i = 0; i < d; ++i)
+      this->FESpaceNumber.push_back(1);
+    this->local_assemblings_routines.push_back(
+      std::bind(NS_BrezziPitkaeranta<d>, _1, _2, _3, _4, _5, _6, _7, _8,
+                pspg_delta0));
+  }
+
+  // grad-div stabilization
+  double graddiv_stab = db["graddiv_stab"];
+  if(std::abs(graddiv_stab) > 1e-10) 
+  {
+    this->local_assemblings_routines.push_back(
+      std::bind(NSGradDiv<d>, _1, _2, _3, _4, _5, _6, _7, _8, graddiv_stab));
+
+    this->local_assemblings_routines.push_back(
+        std::bind(NSGradDiv_RightHandSide<d>,
+            _1, _2, _3, _4, _5, _6, _7, _8,
+            graddiv_stab));
+  }
+
   switch(type)
   {
-    case LocalAssembling_type::NSE3D_Linear:
-      this->local_assemblings_routines.push_back(NSDivergenceBlocks<d>);
-      this->local_assemblings_routines.push_back(NSRightHandSide<d>);
-      if(nstype == 2 || nstype == 4 || nstype == 14)
-      {
-        this->local_assemblings_routines.push_back(NSGradientBlocks<d>);
-      }
-      if(pspg)
-        this->local_assemblings_routines.push_back(
+  case LocalAssembling_type::NSE3D_Linear:
+    //this->local_assemblings_routines.push_back(NSDivergenceBlocks<d>);
+    if(nonsymm_gls)
+    {
+      this->local_assemblings_routines.push_back(
+          std::bind(NSDivergenceBlocks<d>,
+              _1, _2, _3, _4, _5, _6,
+              _7, _8, -1));
+      this->local_assemblings_routines.push_back(std::bind(NSRightHandSide<d>, _1, _2, _3, _4, _5, _6,
+							   _7, _8, -1));
+    }
+    else
+    {
+      this->local_assemblings_routines.push_back(
+          std::bind(NSDivergenceBlocks<d>, _1, _2, _3, _4, _5, _6, _7, _8, 1));
+      this->local_assemblings_routines.push_back(std::bind(NSRightHandSide<d>, _1, _2, _3, _4, _5, _6,
+							   _7, _8, 1));
+    }
+    
+    if(nstype == 2 || nstype == 4 || nstype == 14)
+    {
+      this->local_assemblings_routines.push_back(NSGradientBlocks<d>);
+    }
+    if(pspg)
+      this->local_assemblings_routines.push_back(
           std::bind(NSPSPG_RightHandSide<d>, _1, _2, _3, _4, _5, _6, _7, _8,
-                    pspg_delta0));
-      else if(symm_gls)
-        this->local_assemblings_routines.push_back(
+              pspg_delta0));
+    else if(symm_gls)
+      this->local_assemblings_routines.push_back(
           std::bind(NSsymmGLS_RightHandSide<d>, _1, _2, _3, _4, _5, _6, _7, _8,
-                    pspg_delta0));
-      else if(nonsymm_gls)
-        this->local_assemblings_routines.push_back(
+              gls_stab));
+    else if(nonsymm_gls)
+      this->local_assemblings_routines.push_back(
           std::bind(NSnonsymmGLS_RightHandSide<d>, _1, _2, _3, _4, _5, _6, _7,
-                    _8, pspg_delta0));
-      break;
-    case LocalAssembling_type::NSE3D_NonLinear:
-      if(nstype == 1 || nstype == 2)
+              _8, gls_stab));
+    break;
+  case LocalAssembling_type::NSE3D_NonLinear:
+    {
+      if(nonlin_form.is("convective"))
       {
-        this->local_assemblings_routines.push_back(NSNonlinearTermSingle<d>);
+        if(nstype == 1 || nstype == 2)
+        {
+          this->local_assemblings_routines.push_back(
+            NSNonlinearTerm_convective_Single<d>);
+        }
+        else
+        {
+          this->local_assemblings_routines.push_back(
+            NSNonlinearTerm_convective<d>);
+        }
+      }
+      else if(nonlin_form.is("skew_symmetric"))
+      {
+        if(nstype == 1 || nstype == 2)
+        {
+          this->local_assemblings_routines.push_back(
+            NSNonlinearTerm_skew_symmetric_Single<d>);
+        }
+        else
+        {
+          this->local_assemblings_routines.push_back(
+            NSNonlinearTerm_skew_symmetric<d>);
+        }
+      }
+      else if(nonlin_form.is("rotational"))
+      {
+        this->local_assemblings_routines.push_back(
+          NSNonlinearTerm_rotational<d>);
+      }
+      else if(nonlin_form.is("emac"))
+      {
+        this->local_assemblings_routines.push_back(
+          NSNonlinearTerm_emac<d>);
       }
       else
       {
-        this->local_assemblings_routines.push_back(NSNonlinearTerm<d>);
+        ErrThrow("unknown type for nse_nonlinear_form ", nonlin_form);
       }
       break;
+    }
     default:
       ErrThrow("unknown LocalAssembling3D_type ", this->type);
       break;

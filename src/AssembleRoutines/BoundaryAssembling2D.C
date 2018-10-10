@@ -1633,3 +1633,39 @@ void BoundaryAssembling2D::get_original_values(FE2D FEId, int joint_id,
   }
 }
 
+
+
+void BoundaryAssembling2D::nitsche_bc(BlockFEMatrix &s_matrix,BlockVector &s_rhs,
+				      const TFESpace2D * v_space, const TFESpace2D *p_space,
+				      BoundValueFunct2D * U1, BoundValueFunct2D *U2,
+				      int bd_comp, double gamma, double mu,
+				      int sym_u, int sym_p)
+{
+  // gamma/h (u,v)
+  matrix_u_v(s_matrix, v_space, bd_comp,gamma*mu,true);  // rescale local integral by edge values
+
+  // gamma/h (uD,v) [rhs]
+  rhs_uD_v(s_rhs, v_space, U1,U2,bd_comp,gamma*mu,true);   // rescale local integral by edge values 
+
+  // - (mu grad(u)n,v)
+  matrix_gradu_n_v(s_matrix, v_space, bd_comp, -1. * mu); 
+
+  // - sign_u * (u,mu grad(v)n) [sign_u=1: symmetrix, -1: skew-symmetric]
+  matrix_gradv_n_u(s_matrix, v_space, bd_comp, (-1) * sym_u * mu);
+  
+  // - sign_u * (uD,mu grad(v)n) [rhs]
+  rhs_gradv_n_uD(s_rhs, v_space,
+		 U1,U2, bd_comp, 
+		 (-1) * sym_u * mu );
+
+  // (pn,v)
+  matrix_p_v_n(s_matrix, v_space, p_space, bd_comp, 1.);
+
+  // sign_p * (u,qn)
+  matrix_q_u_n(s_matrix, v_space, p_space, bd_comp, sym_p);
+
+  // sign_p * (uD,qn) [rhs]
+  rhs_q_uD_n(s_rhs, v_space, p_space,
+	     U1,U2,bd_comp,sym_p);
+
+}

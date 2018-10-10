@@ -136,9 +136,10 @@ class NSE2D
     /** @brief Errors to be accesed from outside the class
      * The array is filled during the function call NSE2D::output()
      * Currently, the errors store the L2 and H1 errors of the velocity
-     * and pressure and the L2 error of the divergence.
+     * and pressure and the L2 error of the divergence. For some discretizations
+     * additional errors are computed (with problem dependent norms)
      */
-    std::array<double, int(5)> errors;
+    std::array<double, int(6)> errors;
     
     /** @brief set parameters in database
      * 
@@ -210,6 +211,12 @@ class NSE2D
      * up correctly. 
      */
     void assemble_nonlinear_term();
+
+     /** @brief assemble boundary term
+      * Assemble terms defined over specific set of edges. These can
+      * be related to Neumann bc, or to Nitsche penalty method.
+     */
+    void assemble_boundary_terms();
     
     /** @brief solve the system */
     void solve();
@@ -303,7 +310,7 @@ class NSE2D
     void reset_residuals();
     /// @brief return the computed errors
     /// @details updated in NSE2D::stopIt
-    std::array<double, int(5)> get_errors() const;
+    std::array<double, int(6)> get_errors() const;
 };
 
 

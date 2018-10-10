@@ -6,7 +6,7 @@ void ExampleFile()
   bool ns = (TDatabase::ParamDB->FLOW_PROBLEM_TYPE == 5);
   Output::print<1>("Example: 2d ", ns ? "Navier-" : "", "Stokes, ",
                    "polynomial_solution.h.");
-  Output::print<1>("         This is Example D.3 in Volker Johns book "
+  Output::print<1>("         This is Example D.3 in Volker John's book "
                    "\"Finite Element Methods for Incompressible Flow Problems\""
                    ", 2016");
 }
@@ -23,8 +23,8 @@ void ExactU1(double x, double y, double *values)
   values[0] = 1000 * x*x * y*y * a*a*a*a * b * (5*y - 3);
   values[1] = 2000 * x * y*y * a*a*a * (3*x-1) * b * (5*y-3);
   values[2] = 1000 * x*x * y * a*a*a*a * (5*y*b + y*(5*y-3) + 2*b*(5*y-3));
-  values[3] = 2000*a*a*(x*x*a*a*(5*y*y + 10*y*b + 2*y*(5*y-3) + b*(5*y-3))
-                        + y*y*b*(5*y-3)*(6*x*x + 8*x*a + a*a));
+  values[3] = 2000*a*a*(30*x*x*y*y*a*a - 24*x*x*y*a*a + 3*x*x*a*a
+                          + y*y*b*(5*y - 3)*(6*x*x + 8*x*a + a*a));
 }
 
 void ExactU2(double x, double y, double *values)
@@ -35,8 +35,8 @@ void ExactU2(double x, double y, double *values)
   values[1] = 2000 * y*y*y * a*a * b*b * (-3*x*a - 3*x*(3*x-1) + (-3*x+1)*a);
   values[2] = 2000 * x * y*y * a*a*a * (3*x-1) * (-5*y + 3) * b;
   values[3] = -4000 * y * a * (x*a*a*(3*x - 1)*(y*y + 6*y*b + 3*b*b)
-                               + 3*y*y*b*b*(3*x*a + x*(3*x-1) + a*a + a)
-                                 *(3*x-1));
+                               + 3*y*y*b*b*(3*x*a + x*(3*x-1) + a*a + a
+                                 *(3*x-1)));
 }
 
 void ExactP(double x, double y, double *values)
@@ -194,6 +194,9 @@ void LinCoeffs(int n_points, double *X, double *Y,
       coeffs[i][2] += val1[0]*val2[1] + val2[0]*val2[2]; // f2
     }
     coeffs[i][3] = val1[1] + val2[2]; // g (divergence)
+
+    // additional coefficient (used only in the Brinkman problem)
+    coeffs[i][4] = 0.;
   }
   
 }

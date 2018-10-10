@@ -173,8 +173,8 @@ class Time_CD2D
      * In addition the system matrix and the rhs which passes to the solver 
      * are also prepared within the function
      */
-    void assemble();
-    
+     void assemble();
+
     /**
      * Descales the stiffness matrices from the modifications due to time
      * discretization (one step/fractional step theta).

@@ -211,7 +211,7 @@ void DataWriter<d>::writeMesh(std::string name)
   {
     ErrThrow("cannot open file for output. ", name);
   }
-  dat << std::fixed << setprecision(12);
+  dat << setprecision(12);
 
   dat << "# vtk DataFile Version 4.0\n";
   dat << "file created by ParMooN"
@@ -1656,22 +1656,15 @@ void DataWriter<d>::writeCaseVars(int iter)
 template <int d>
 void DataWriter<d>::writeCoord(std::ofstream& f)
 {
+  f.precision(8);   
   unsigned int N_Vertices = Coll->GetN_Vertices();
   for(unsigned int i = 0; i < N_Vertices; i++)
   {
-    // f.setf(ios_base::scientific);
-    f.precision(12);
-    f.width(12);
+    ///@attention case output works only with this format
     f << Coll->GetCoord(i * d);
     f << " ";
-    // f.setf(ios_base::scientific);
-    f.precision(12);
-    f.width(12);
-    f << Coll->GetCoord(i * d + 1);
+     f << Coll->GetCoord(i * d + 1);
     f << " ";
-    // f.setf(ios_base::scientific);
-    f.precision(12);
-    f.width(12);
     if(d == 2)
     {
       f << 0.;

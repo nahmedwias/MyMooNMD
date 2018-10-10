@@ -1,6 +1,54 @@
 #include "NSE_local_assembling_routines.h"
 
 template<int d>
+void NSResistanceMassMatrixSingle(double Mult, double *coeff,
+				  double *param,
+				  double hK, double **OrigValues,
+				  int *N_BaseFuncts,
+				  double ***LocMatrices, double **LocRhs)
+{
+  double ** MatrixA = LocMatrices[0];
+  int N_U = N_BaseFuncts[0];
+  double * u = OrigValues[0];
+  
+  for(int i = 0; i < N_U; i++)
+  {
+    double test = u[i];
+    for(int j = 0; j < N_U; j++)
+    {
+      double ansatz = u[j];
+      MatrixA[i][j] += Mult * coeff[4] * (test*ansatz) ;
+    }
+  }
+}
+
+template <int d>
+void NSResistanceMassMatrix(double Mult, double *coeff, double *param,
+		  double hK, double**OrigValues, int *N_BaseFuncts,
+		  double ***LocMatrices, double **LocRhs)
+{
+  double ** MatrixA11 = LocMatrices[0];
+  double ** MatrixA22 = LocMatrices[d+1];
+  double ** MatrixA33 = d == 2 ? nullptr : LocMatrices[8];
+  int N_U = N_BaseFuncts[0];
+  double * u = OrigValues[0];
+  
+  for(int i = 0; i < N_U; i++)
+  {
+    double test = u[i];
+    for(int j = 0; j < N_U; j++)
+    {
+      double ansatz = u[j];
+      double val = Mult * coeff[4] * ( test * ansatz );
+      MatrixA11[i][j] += val;
+      MatrixA22[i][j] += val;
+      if(d == 3)
+        MatrixA33[i][j] += val;
+    }
+  }
+}
+
+template<int d>
 void NSLaplaceGradGradSingle(double Mult, double *coeff, double *param,
                              double hK, double **OrigValues, int *N_BaseFuncts,
                              double ***LocMatrices, double **LocRhs)
@@ -27,6 +75,7 @@ void NSLaplaceGradGradSingle(double Mult, double *coeff, double *param,
     }
   }
 }
+
 
 template <int d>
 void NSLaplaceGradGrad(double Mult, double *coeff, double *param,
@@ -114,7 +163,7 @@ void NSLaplaceDeformation(double Mult, double *coeff, double *param, double hK,
 template <int d>
 void NSDivergenceBlocks(double Mult, double *coeff, double *param, double hK,
                         double **OrigValues, int *N_BaseFuncts,
-                        double ***LocMatrices, double **LocRhs)
+                        double ***LocMatrices, double **LocRhs, int sign)
 {
   double ** MatrixB1 = LocMatrices[d == 2 ? 5 : 10];
   double ** MatrixB2 = LocMatrices[d == 2 ? 6 : 11];
@@ -133,10 +182,10 @@ void NSDivergenceBlocks(double Mult, double *coeff, double *param, double hK,
       double ansatz_x = u_x[j];
       double ansatz_y = u_y[j];
       double ansatz_z = d == 2 ? 0. : u_z[j];
-      MatrixB1[i][j] -= Mult*test*ansatz_x;
-      MatrixB2[i][j] -= Mult*test*ansatz_y;
+      MatrixB1[i][j] -= sign * Mult*test*ansatz_x;
+      MatrixB2[i][j] -= sign * Mult*test*ansatz_y;
       if(d == 3)
-        MatrixB3[i][j] -= Mult*test*ansatz_z;
+        MatrixB3[i][j] -= sign * Mult*test*ansatz_z;
     }
   }
 }
@@ -174,7 +223,7 @@ void NSGradientBlocks(double Mult, double *coeff, double *param, double hK,
 template <int d>
 void NSRightHandSide(double Mult, double *coeff, double *param, double hK,
                      double **OrigValues, int *N_BaseFuncts,
-                     double ***LocMatrices, double **LocRhs)
+                     double ***LocMatrices, double **LocRhs, int sign)
 {
   double * Rhs1 = LocRhs[0];
   double * Rhs2 = LocRhs[1];
@@ -199,14 +248,16 @@ void NSRightHandSide(double Mult, double *coeff, double *param, double hK,
   for(int i = 0; i < N_P; i++)
   {
     double test = p[i];
-    Rhs_div[i] -= Mult*test*g;
+    Rhs_div[i] -= Mult* sign * test * g;
   }
 }
 
+///////////////////////////////////////////////////////////////////////////////
+// nonlinear term
 template <int d>
-void NSNonlinearTermSingle(double Mult, double *coeff, double *param, double hK,
-                           double **OrigValues, int *N_BaseFuncts,
-                           double ***LocMatrices, double **LocRhs)
+void NSNonlinearTerm_convective_Single(
+  double Mult, double *coeff, double *param, double hK, double **OrigValues,
+  int *N_BaseFuncts, double ***LocMatrices, double **LocRhs)
 {
   double ** MatrixA = LocMatrices[0];
   int N_U = N_BaseFuncts[0];
@@ -231,9 +282,9 @@ void NSNonlinearTermSingle(double Mult, double *coeff, double *param, double hK,
 }
 
 template <int d>
-void NSNonlinearTerm(double Mult, double *coeff, double *param, double hK,
-                     double **OrigValues, int *N_BaseFuncts,
-                     double ***LocMatrices, double **LocRhs)
+void NSNonlinearTerm_convective(
+  double Mult, double *coeff, double *param, double hK, double **OrigValues,
+  int *N_BaseFuncts, double ***LocMatrices, double **LocRhs)
 {
   double ** MatrixA11 = LocMatrices[0];
   double ** MatrixA22 = LocMatrices[d+1];
@@ -259,6 +310,173 @@ void NSNonlinearTerm(double Mult, double *coeff, double *param, double hK,
       MatrixA22[i][j] += val;
       if(d == 3)
         MatrixA33[i][j] += val;
+    }
+  }
+}
+
+template <int d>
+void NSNonlinearTerm_skew_symmetric_Single(
+  double Mult, double *coeff,double *param, double hK,double **OrigValues,
+  int *N_BaseFuncts, double ***LocMatrices, double **LocRhs)
+{
+  double ** MatrixA11 = LocMatrices[0];
+  int N_U = N_BaseFuncts[0];
+  double * u = OrigValues[0];
+  double * u_x = OrigValues[2];
+  double * u_y = OrigValues[3];
+  double * u_z = d == 2 ? nullptr : OrigValues[4];
+  double u1 = param[0];
+  double u2 = param[1];
+  double u3 = d == 2 ? 0. : param[2];
+  for(int i = 0; i < N_U; i++)
+  {
+    double test = u[i];
+    double test_x = u_x[i];
+    double test_y = u_y[i];
+    double test_z = d == 2 ? 0. : u_z[i];
+    for(int j = 0; j < N_U; j++)
+    {
+      double ansatz = u[j];
+      double ansatz_x = u_x[j];
+      double ansatz_y = u_y[j];
+      double ansatz_z = d == 2 ? 0. : u_z[j];
+      double val = (u1*ansatz_x + u2*ansatz_y + u3*ansatz_z) * test;
+      val -= (u1*test_x + u2*test_y + u3*test_z) * ansatz;
+      val *= 0.5 * Mult;
+      MatrixA11[i][j] += val;
+    }
+  }
+}
+
+template <int d>
+void NSNonlinearTerm_skew_symmetric(
+  double Mult, double *coeff, double *param, double hK, double **OrigValues,
+  int *N_BaseFuncts, double ***LocMatrices, double **LocRhs)
+{
+  double ** MatrixA11 = LocMatrices[0];
+  double ** MatrixA22 = LocMatrices[d+1];
+  double ** MatrixA33 = d == 2 ? nullptr : LocMatrices[8];
+  int N_U = N_BaseFuncts[0];
+  double * u = OrigValues[0];
+  double * u_x = OrigValues[2];
+  double * u_y = OrigValues[3];
+  double * u_z = d == 2 ? nullptr : OrigValues[4];
+  double u1 = param[0];
+  double u2 = param[1];
+  double u3 = d == 2 ? 0. : param[2];
+  for(int i = 0; i < N_U; i++)
+  {
+    double test = u[i];
+    double test_x = u_x[i];
+    double test_y = u_y[i];
+    double test_z = d == 2 ? 0. : u_z[i];
+    for(int j = 0; j < N_U; j++)
+    {
+      double ansatz = u[j];
+      double ansatz_x = u_x[j];
+      double ansatz_y = u_y[j];
+      double ansatz_z = d == 2 ? 0. : u_z[j];
+      double val = (u1*ansatz_x + u2*ansatz_y + u3*ansatz_z) * test;
+      val -= (u1*test_x + u2*test_y + u3*test_z) * ansatz;
+      val *= 0.5 * Mult;
+      MatrixA11[i][j] += val;
+      MatrixA22[i][j] += val;
+      if(d == 3)
+        MatrixA33[i][j] += val;
+    }
+  }
+}
+
+template <int d>
+void NSNonlinearTerm_rotational(
+  double Mult, double *coeff, double *param, double hK, double **OrigValues,
+  int *N_BaseFuncts, double ***LocMatrices, double **LocRhs)
+{
+  double **MatrixA11 = LocMatrices[0];
+  double **MatrixA12 = LocMatrices[1];
+  double ** MatrixA13 = d == 2 ? nullptr : LocMatrices[2];
+  double **MatrixA21 = LocMatrices[d];
+  double **MatrixA22 = LocMatrices[d+1];
+  double **MatrixA23 = d == 2 ? nullptr : LocMatrices[d+2];
+  double ** MatrixA31 = d == 2 ? nullptr : LocMatrices[6];
+  double ** MatrixA32 = d == 2 ? nullptr : LocMatrices[7];
+  double ** MatrixA33 = d == 2 ? nullptr : LocMatrices[8];
+  int N_U = N_BaseFuncts[0];
+  double * u = OrigValues[0];
+  double * u_x = OrigValues[2];
+  double * u_y = OrigValues[3];
+  double * u_z = d == 2 ? nullptr : OrigValues[4];
+  double u1 = param[0];
+  double u2 = param[1];
+  double u3 = d == 2 ? 0. : param[2];
+  for(int i = 0; i < N_U; i++)
+  {
+    double test = u[i];
+    for(int j = 0; j < N_U; j++)
+    {
+      double ansatz_x = u_x[j];
+      double ansatz_y = u_y[j];
+      double ansatz_z = d == 2 ? 0. : u_z[j];
+      MatrixA11[i][j] += Mult * (u2*ansatz_y + u3*ansatz_z) * test;
+      MatrixA12[i][j] -= Mult * (u2*ansatz_x) * test;
+      if(d == 3)
+        MatrixA13[i][j] -= Mult * (u3*ansatz_x) * test;
+      MatrixA21[i][j] -= Mult * (u1*ansatz_y) * test;
+      MatrixA22[i][j] += Mult * (u1*ansatz_x + u3*ansatz_z) * test;
+      if(d == 3)
+      {
+        MatrixA23[i][j] -= Mult * (u3*ansatz_y) * test;
+        MatrixA31[i][j] -= Mult * (u1*ansatz_z) * test;
+        MatrixA32[i][j] -= Mult * (u2*ansatz_z) * test;
+        MatrixA33[i][j] += Mult * (u1*ansatz_x + u2*ansatz_y) * test;
+      }
+    }
+  }
+}
+
+template <int d>
+void NSNonlinearTerm_emac(
+  double Mult, double *coeff, double *param, double hK, double **OrigValues,
+  int *N_BaseFuncts, double ***LocMatrices, double **LocRhs)
+{
+  double **MatrixA11 = LocMatrices[0];
+  double **MatrixA12 = LocMatrices[1];
+  double ** MatrixA13 = d == 2 ? nullptr : LocMatrices[2];
+  double **MatrixA21 = LocMatrices[d];
+  double **MatrixA22 = LocMatrices[d+1];
+  double **MatrixA23 = d == 2 ? nullptr : LocMatrices[d+2];
+  double ** MatrixA31 = d == 2 ? nullptr : LocMatrices[6];
+  double ** MatrixA32 = d == 2 ? nullptr : LocMatrices[7];
+  double ** MatrixA33 = d == 2 ? nullptr : LocMatrices[8];
+  int N_U = N_BaseFuncts[0];
+  double * u = OrigValues[0];
+  double * u_x = OrigValues[2];
+  double * u_y = OrigValues[3];
+  double * u_z = d == 2 ? nullptr : OrigValues[4];
+  double u1 = param[0];
+  double u2 = param[1];
+  double u3 = d == 2 ? 0. : param[2];
+  for(int i = 0; i < N_U; i++)
+  {
+    double test = Mult * u[i];
+    for(int j = 0; j < N_U; j++)
+    {
+      double ansatz_x = u_x[j];
+      double ansatz_y = u_y[j];
+      double ansatz_z = d == 2 ? 0. : u_z[j];
+      MatrixA11[i][j] += (2*u1*ansatz_x + 0.5*(ansatz_y*u2 + ansatz_z*u1))*test;
+      MatrixA12[i][j] += (0.5*ansatz_x*u2 + ansatz_y*u1) * test;
+      if(d == 3)
+        MatrixA13[i][j] += (0.5*ansatz_x*u3 + ansatz_z*u1) * test;
+      MatrixA21[i][j] += (0.5*ansatz_y*u1 + ansatz_x*u2) * test;
+      MatrixA22[i][j] += (2*ansatz_y*u2 + 0.5*(ansatz_x*u1 + ansatz_z*u3))*test;
+      if(d == 3)
+      {
+        MatrixA23[i][j] += (0.5*ansatz_y*u3 + ansatz_z*u2) * test;
+        MatrixA31[i][j] += (0.5*ansatz_z*u1 + ansatz_x*u3) * test;
+        MatrixA32[i][j] += (0.5*ansatz_z*u2 + ansatz_y*u3) * test;
+        MatrixA33[i][j] += (2*ansatz_z*u3 + 0.5*(ansatz_x*u1+ansatz_y*u2))*test;
+      }
     }
   }
 }
@@ -302,6 +520,100 @@ void NSCoriolis(double Mult, double *coeff, double *param, double hK,
 
 ///////////////////////////////////////////////////////////////////////////////
 // stabilizations
+template <int d>
+void NSGradDiv(double Mult, double *coeff, double *param, double hK,
+            double **OrigValues, int *N_BaseFuncts,
+            double ***LocMatrices, double **LocRhs, double stab)
+{
+  double ** MatrixA11 = LocMatrices[0];
+  double ** MatrixA12 = LocMatrices[1];
+  double ** MatrixA13 = d == 2 ? nullptr : LocMatrices[2];
+  
+  double ** MatrixA21 = LocMatrices[d == 2 ? 2 : 3];
+  double ** MatrixA22 = LocMatrices[d == 2 ? 3 : 4];
+  double ** MatrixA23 = d == 2 ? nullptr : LocMatrices[5];
+
+  double ** MatrixA31 = d == 2 ? nullptr : LocMatrices[6];
+  double ** MatrixA32 = d == 2 ? nullptr : LocMatrices[7];
+  double ** MatrixA33 = d == 2 ? nullptr : LocMatrices[8];
+
+  int N_U = N_BaseFuncts[0];
+
+  // original values: u,p,u_x,u_y[,u_z]
+  double * u_x = OrigValues[2];
+  double * u_y = OrigValues[3];
+  double * u_z = d == 2 ? nullptr : OrigValues[4];
+  
+  double nu = coeff[0]; // = 1/reynolds_number
+  double sigma = coeff[4]; // = 1/reynolds_number
+  ///@todo generalize characteristic lenght. One could also give the option of
+  // using L_0 = h
+  double L_0 = 0.1; // characteristic length
+
+  double delta = (nu + sigma*L_0*L_0) * stab;
+  
+  for(int i = 0; i < N_U; i++)
+  {
+    double v_x =  u_x[i];
+    double v_y =  u_y[i];
+    double v_z = d == 2 ? 0. :  u_z[i];
+    
+    for(int j = 0; j < N_U; j++)
+    {
+      
+      MatrixA11[i][j] += delta * v_x * u_x[j];
+      MatrixA12[i][j] += delta * v_x * u_y[j]; // v_y * u_x[j];
+      if (d == 3)
+	MatrixA13[i][j] += delta * v_x * u_z[j]; //v_z * u_x[j];
+
+      MatrixA21[i][j] += delta * v_y * u_x[j]; //* v_x * u_y[j];
+      MatrixA22[i][j] += delta * v_y * u_y[j];
+      if (d == 3)
+	MatrixA23[i][j] += delta * v_y * u_z[j]; //* v_z * u_y[j];
+
+      if (d == 3) {
+	MatrixA31[i][j] += delta * v_z * u_x[j]; //* v_x * u_z[j];
+	MatrixA32[i][j] += delta * v_z * u_y[j];//* v_y * u_z[j];
+	MatrixA33[i][j] += delta * v_z * u_z[j];
+      }
+      
+    }
+  }
+}
+
+template <int d>
+void NSGradDiv_RightHandSide(double Mult, double *coeff, double *param, double hK,
+                          double **OrigValues, int *N_BaseFuncts,
+                          double ***LocMatrices, double **LocRhs, double stab)
+{
+  double * Rhs_u1 = LocRhs[0];
+  double * Rhs_u2 = LocRhs[1];
+  double * Rhs_u3 = d == 2 ? nullptr : LocRhs[2];
+  
+  int N_U = N_BaseFuncts[0];
+  double * u_x = OrigValues[2];
+  double * u_y = OrigValues[3];
+  double * u_z = d == 2 ? nullptr : OrigValues[4];
+  
+  double nu = coeff[0]; // = 1/reynolds_number
+  double sigma = coeff[4]; // = 1/permeability
+  double L_0 = 1.;
+  double g = coeff[3];
+  double delta = (nu + sigma*L_0*L_0) * stab;
+
+  for (int i = 0; i < N_U; i++)
+  {
+    double v_x = u_x[i];
+    double v_y = u_y[i];
+    double v_z = d == 2 ? 0. : u_z[i];
+    Rhs_u1[i] = delta * g * v_x;
+    Rhs_u2[i] = delta * g * v_y;
+    if (d == 3)
+      Rhs_u3[i] = delta * g * v_z;
+  }
+}
+
+
 double compute_PSPG_delta(double delta0, double hK, double nu)
 {
   return delta0 * hK * hK / nu;
@@ -374,10 +686,18 @@ void NSPSPG_RightHandSide(double Mult, double *coeff, double *param, double hK,
   }
 }
 
-double compute_GLS_delta(double hK, double nu)
+/*double compute_GLS_delta(double hK, double nu)
 {
   return 0.1 * hK * hK / nu;
+  }*/
+
+// general version (for Navier-Stokes and Brinkman problems)
+double compute_GLS_delta(double delta0, double hK, double nu, double sigma)
+{
+  double L_0 = 1.;
+  return delta0 * hK * hK / (nu + sigma * L_0 * L_0);
 }
+
 // common implementation for symmetric and non-symmetric GLS:
 template<int d>
 void NS_GLS(double Mult, double *coeff, double *param, double hK,
@@ -399,54 +719,82 @@ void NS_GLS(double Mult, double *coeff, double *param, double hK,
   double * p_x = OrigValues[2+d];
   double * p_y = OrigValues[3+d];
   double * p_z = d == 2 ? nullptr : OrigValues[4+d];
+
+  double * u = OrigValues[0];
+  
   double * u_xx = OrigValues[2+2*d];
   double * u_yy = OrigValues[2+2*d+d];
   double * u_zz = d == 2 ? nullptr : OrigValues[13];
   double nu = coeff[0]; // = 1/reynolds_number
-  double delta = compute_PSPG_delta(0.1, hK, nu);
+
+  double sigma = coeff[4]; // =1/permeability
+  
+  double delta = compute_GLS_delta(delta0, hK, nu, sigma);
+  
   for(int i = 0; i < N_U; i++)
   {
     double laplace_v = nu * (u_xx[i] + u_yy[i] + (d == 2 ? 0. : u_zz[i]));
-    laplace_v *= delta * sign;
+    // resistance term for Brinkman-type problems
+    double resistance_v = coeff[4] * u[i];
+
+    // multiply by -1 for non-sym GLS
+    //laplace_v *= delta * sign *
+    double residue_v = laplace_v - resistance_v;
+    
     for(int j = 0; j < N_U; j++)
     {
       double laplace_u = nu * (u_xx[j] + u_yy[j] + (d == 2 ? 0. : u_zz[j]));
-      MatrixA11[i][j] -= Mult*laplace_v*laplace_u;
-      MatrixA22[i][j] -= Mult*laplace_v*laplace_u;
-      if(d == 3)
-        MatrixA33[i][j] -= Mult*laplace_v*laplace_u;
+
+      double resistance_u = coeff[4] * u[j];
+      double residue_u = -laplace_u + resistance_u;
+      //MatrixA11[i][j] -= Mult*laplace_v*laplace_u;
+      //MatrixA22[i][j] -= Mult*laplace_v*laplace_u;
+      /*if(d == 3)
+	MatrixA33[i][j] -= Mult*laplace_v*laplace_u;
+      */
+      MatrixA11[i][j] += Mult * delta * sign * residue_v * residue_u;
+      MatrixA22[i][j] += Mult * delta * sign * residue_v * residue_u;
+      if (d == 3)
+        MatrixA33[i][j] += Mult * delta * sign * residue_v * residue_u;
     }
-    for(int j = 0; j < N_P; j++)
+
+    for (int j = 0; j < N_P; j++)
     {
       double ansatz_x = p_x[j];
       double ansatz_y = p_y[j];
       double ansatz_z = d == 2 ? 0. : p_z[j];
-      MatrixB1T[i][j] += Mult * laplace_v * ansatz_x;
-      MatrixB2T[i][j] += Mult * laplace_v * ansatz_y;
+      MatrixB1T[i][j] += Mult * delta * sign * residue_v * ansatz_x;
+      MatrixB2T[i][j] += Mult * delta * sign * residue_v * ansatz_y;
       if(d == 3)
-        MatrixB3T[i][j] += Mult * laplace_v * ansatz_z;
+        MatrixB3T[i][j] += Mult * delta * sign * residue_v * ansatz_z;
     }
   }
-  for(int i = 0; i < N_P; i++)
+  
+  for (int i = 0; i < N_P; i++)
   {
-    double test_x = delta * p_x[i];
-    double test_y = delta * p_y[i];
-    double test_z = d == 2 ? 0. : delta * p_z[i];
+    double q_x = p_x[i];
+    double q_y = p_y[i];
+    double q_z = d == 2 ? 0. : p_z[i];
+    
     for(int j = 0; j < N_U; j++)
     {
       double laplace_u = nu * (u_xx[j] + u_yy[j] + (d == 2 ? 0. : u_zz[j]));
-      MatrixB1[i][j] += Mult*test_x*laplace_u;
-      MatrixB2[i][j] += Mult*test_y*laplace_u;
+      double resistance_u = coeff[4] * u[j];
+      double residue_u = -laplace_u + resistance_u;
+      
+      MatrixB1[i][j] += sign * Mult * delta * (-q_x) * residue_u;
+      MatrixB2[i][j] += sign * Mult * delta * (-q_y) * residue_u;
       if(d == 3)
-        MatrixB3[i][j] += Mult*test_z*laplace_u;
+        MatrixB3[i][j] += sign * Mult * delta * (-q_z) * residue_u;
     }
     for(int j = 0; j < N_P; j++)
     {
       double ansatz_x = p_x[j];
       double ansatz_y = p_y[j];
       double ansatz_z = d == 2 ? 0. : p_z[j];
-      MatrixC[i][j] -= Mult * (test_x*ansatz_x + test_y*ansatz_y 
-                              +test_z*ansatz_z);
+      // positive if sign=-1 (non-sym GLS)
+      MatrixC[i][j] -= sign * Mult * delta * (q_x*ansatz_x + q_y*ansatz_y
+                              +q_z*ansatz_z);
     }
   }
 }
@@ -466,6 +814,9 @@ void NS_GLS_RightHandSide(double Mult, double *coeff, double *param, double hK,
   double * p_x = OrigValues[2+d];
   double * p_y = OrigValues[3+d];
   double * p_z = d == 2 ? nullptr : OrigValues[4+d];
+
+  double * u = OrigValues[0];
+  
   double * u_xx = OrigValues[2+2*d];
   double * u_yy = OrigValues[2+2*d+d];
   double * u_zz = d == 2 ? nullptr : OrigValues[13];
@@ -473,22 +824,26 @@ void NS_GLS_RightHandSide(double Mult, double *coeff, double *param, double hK,
   double f1 = coeff[1];
   double f2 = coeff[2];
   double f3 = d == 2 ? 0. : coeff[3];
-  double delta = compute_PSPG_delta(0.1, hK, nu);
+  double sigma = coeff[4]; // = 1/permeability
+  
+  double delta = compute_GLS_delta(delta0, hK, nu, sigma);
   for(int i = 0; i < N_U; i++)
   {
     double laplace_v = nu * (u_xx[i] + u_yy[i] + (d == 2 ? 0. : u_zz[i]));
-    laplace_v *= sign * delta;
-    Rhs1[i] += Mult * laplace_v * f1;
-    Rhs2[i] += Mult * laplace_v * f2;
+    double resistance_v = sigma * u[i];
+    
+    double residue_v = (laplace_v - resistance_v);
+    Rhs1[i] += Mult * sign * delta * residue_v * f1;
+    Rhs2[i] += Mult * sign * delta * residue_v * f2;
     if(d == 3)
-      Rhs3[i] += Mult * laplace_v * f3;
+      Rhs3[i] += Mult * sign * delta * residue_v * f3;
   }
   for(int i = 0; i < N_P; i++)
   {
-    double test_x = p_x[i];
-    double test_y = p_y[i];
-    double test_z = d == 2 ? 0. : p_z[i];
-    Rhs_div[i] -= Mult * delta * (test_x*f1 + test_y*f2 + test_z*f3);
+    double q_x = p_x[i];
+    double q_y = p_y[i];
+    double q_z = d == 2 ? 0. : p_z[i];
+    Rhs_div[i] -= Mult * delta * sign * (q_x*f1 + q_y*f2 + q_z*f3);
   }
 }
 
@@ -532,6 +887,34 @@ void NSnonsymmGLS_RightHandSide(double Mult, double *coeff, double *param,
 }
 
 template <int d>
+void NS_BrezziPitkaeranta(double Mult, double *coeff, double *param, double hK,
+                          double **OrigValues, int *N_BaseFuncts,
+                          double ***LocMatrices, double **LocRhs, double delta0)
+{
+  double ** MatrixC = LocMatrices[d == 2 ? 4 : 9];
+  int N_P = N_BaseFuncts[1];
+  double * p_x = OrigValues[2+d];
+  double * p_y = OrigValues[3+d];
+  double * p_z = d == 2 ? nullptr : OrigValues[4+d];
+  double nu = coeff[0]; // = 1/reynolds_number
+  double delta = compute_PSPG_delta(0.1, hK, nu);
+  for(int i = 0; i < N_P; i++)
+  {
+    double test_x = delta * p_x[i];
+    double test_y = delta * p_y[i];
+    double test_z = d == 2 ? 0. : delta * p_z[i];
+    for(int j = 0; j < N_P; j++)
+    {
+      double ansatz_x = p_x[j];
+      double ansatz_y = p_y[j];
+      double ansatz_z = d == 2 ? 0. : p_z[j];
+      MatrixC[i][j] -= Mult * (test_x*ansatz_x + test_y*ansatz_y 
+                              +test_z*ansatz_z);
+    }
+  }
+}
+
+template <int d>
 void NSParamsVelocity(double *in, double *out)
 {
   out[0] = in[d]; // u1old
@@ -542,6 +925,14 @@ void NSParamsVelocity(double *in, double *out)
 
 // explicit instatiations below:
 #ifdef __2D__
+template void NSResistanceMassMatrixSingle<2>(
+  double Mult, double *coeff,double *param,double hK,
+  double **OrigValues,int *N_BaseFuncts,double ***LocMatrices,
+  double **LocRhs);
+template void NSResistanceMassMatrix<2>(
+  double Mult, double *coeff,double *param,double hK,
+  double **OrigValues,int *N_BaseFuncts,double ***LocMatrices,
+  double **LocRhs);
 template void NSLaplaceGradGradSingle<2>(
   double Mult, double *coeff, double *param, double hK, double **OrigValues,
   int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
@@ -553,19 +944,37 @@ template void NSLaplaceDeformation<2>(
   int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
 template void NSDivergenceBlocks<2>(
   double Mult, double *coeff, double *param, double hK, double **OrigValues,
-  int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
+  int *N_BaseFuncts, double ***LocMatrices, double **LocRhs, int sign=1);
 template void NSGradientBlocks<2>(
   double Mult, double *coeff, double *param, double hK, double **OrigValues,
   int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
 template void NSRightHandSide<2>(
   double Mult, double *coeff, double *param, double hK, double **OrigValues,
-  int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
-template void NSNonlinearTermSingle<2>(
+  int *N_BaseFuncts, double ***LocMatrices, double **LocRhs, int sign=1);
+template void NSNonlinearTerm_convective_Single<2>(
   double Mult, double *coeff, double *param, double hK, double **OrigValues,
   int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
-template void NSNonlinearTerm<2>(
+template void NSNonlinearTerm_convective<2>(
   double Mult, double *coeff, double *param, double hK, double **OrigValues,
   int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
+template void NSNonlinearTerm_skew_symmetric_Single<2>(
+  double Mult, double *coeff, double *param, double hK, double **OrigValues,
+  int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
+template void NSNonlinearTerm_skew_symmetric<2>(
+  double Mult, double *coeff, double *param, double hK, double **OrigValues,
+  int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
+template void NSNonlinearTerm_rotational<2>(
+  double Mult, double *coeff, double *param, double hK, double **OrigValues,
+  int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
+template void NSNonlinearTerm_emac<2>(
+  double Mult, double *coeff, double *param, double hK, double **OrigValues,
+  int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
+template void NSGradDiv<2>(
+  double Mult, double *coeff, double *param, double hK, double **OrigValues,
+  int *N_BaseFuncts, double ***LocMatrices, double **LocRhs, double delta0);
+template void NSGradDiv_RightHandSide<2>(
+  double Mult, double *coeff, double *param, double hK, double **OrigValues,
+  int *N_BaseFuncts, double ***LocMatrices, double **LocRhs, double delta0);
 template void NSPSPG<2>(
   double Mult, double *coeff, double *param, double hK, double **OrigValues,
   int *N_BaseFuncts, double ***LocMatrices, double **LocRhs, double delta0);
@@ -584,6 +993,9 @@ template void NSnonsymmGLS<2>(
 template void NSnonsymmGLS_RightHandSide<2>(
   double Mult, double *coeff, double *param, double hK, double **OrigValues,
   int *N_BaseFuncts, double ***LocMatrices, double **LocRhs, double delta0);
+template void NS_BrezziPitkaeranta<2>(
+  double Mult, double *coeff, double *param, double hK, double **OrigValues,
+  int *N_BaseFuncts, double ***LocMatrices, double **LocRhs, double delta0);
 // not yet available
 // template void NSCoriolis<2>(
 //   double Mult, double *coeff, double *param, double hK, double **OrigValues,
@@ -591,6 +1003,14 @@ template void NSnonsymmGLS_RightHandSide<2>(
 template void NSParamsVelocity<2>(double *in, double *out);
 #endif // 2D
 #ifdef __3D__
+template void NSResistanceMassMatrixSingle<3>(
+  double Mult, double *coeff,double *param,double hK,
+  double **OrigValues,int *N_BaseFuncts,double ***LocMatrices,
+  double **LocRhs);
+template void NSResistanceMassMatrix<3>(
+  double Mult, double *coeff,double *param,double hK,
+  double **OrigValues,int *N_BaseFuncts,double ***LocMatrices,
+  double **LocRhs);
 template void NSLaplaceGradGradSingle<3>(
   double Mult, double *coeff, double *param, double hK, double **OrigValues,
   int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
@@ -602,23 +1022,41 @@ template void NSLaplaceDeformation<3>(
   int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
 template void NSDivergenceBlocks<3>(
   double Mult, double *coeff, double *param, double hK, double **OrigValues,
-  int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
+  int *N_BaseFuncts, double ***LocMatrices, double **LocRhs, int sign=1);
 template void NSGradientBlocks<3>(
   double Mult, double *coeff, double *param, double hK, double **OrigValues,
   int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
 template void NSRightHandSide<3>(
   double Mult, double *coeff, double *param, double hK, double **OrigValues,
-  int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
-template void NSNonlinearTermSingle<3>(
+  int *N_BaseFuncts, double ***LocMatrices, double **LocRhs, int sign=1);
+template void NSNonlinearTerm_convective_Single<3>(
   double Mult, double *coeff, double *param, double hK, double **OrigValues,
   int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
-template void NSNonlinearTerm<3>(
+template void NSNonlinearTerm_convective<3>(
   double Mult, double *coeff, double *param, double hK, double **OrigValues,
   int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
-template void NSCoriolis<2>(
+template void NSNonlinearTerm_skew_symmetric_Single<3>(
+  double Mult, double *coeff, double *param, double hK, double **OrigValues,
+  int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
+template void NSNonlinearTerm_skew_symmetric<3>(
+  double Mult, double *coeff, double *param, double hK, double **OrigValues,
+  int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
+template void NSNonlinearTerm_rotational<3>(
+  double Mult, double *coeff, double *param, double hK, double **OrigValues,
+  int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
+template void NSNonlinearTerm_emac<3>(
+  double Mult, double *coeff, double *param, double hK, double **OrigValues,
+  int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
+template void NSCoriolis<3>(
   double Mult, double *coeff, double *param, double hK, double **OrigValues,
   int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
 template void NSParamsVelocity<3>(double *in, double *out);
+template void NSGradDiv<3>(
+  double Mult, double *coeff, double *param, double hK, double **OrigValues,
+  int *N_BaseFuncts, double ***LocMatrices, double **LocRhs, double delta0);
+template void NSGradDiv_RightHandSide<3>(
+  double Mult, double *coeff, double *param, double hK, double **OrigValues,
+  int *N_BaseFuncts, double ***LocMatrices, double **LocRhs, double delta0);
 template void NSPSPG<3>(
   double Mult, double *coeff, double *param, double hK, double **OrigValues,
   int *N_BaseFuncts, double ***LocMatrices, double **LocRhs, double delta0);
@@ -635,6 +1073,9 @@ template void NSnonsymmGLS<3>(
   double Mult, double *coeff, double *param, double hK, double **OrigValues,
   int *N_BaseFuncts, double ***LocMatrices, double **LocRhs, double delta0);
 template void NSnonsymmGLS_RightHandSide<3>(
+  double Mult, double *coeff, double *param, double hK, double **OrigValues,
+  int *N_BaseFuncts, double ***LocMatrices, double **LocRhs, double delta0);
+template void NS_BrezziPitkaeranta<3>(
   double Mult, double *coeff, double *param, double hK, double **OrigValues,
   int *N_BaseFuncts, double ***LocMatrices, double **LocRhs, double delta0);
 #endif // 3D

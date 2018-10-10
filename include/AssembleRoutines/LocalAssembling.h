@@ -159,7 +159,7 @@ class LocalAssembling
     static constexpr int n_local_coefficients = 40;
     std::vector<std::array<double, n_local_coefficients>> local_coefficients;
 
-    /** Depending on the NSTYPE and the NSE_NONLINEAR_FORM all parameters are 
+    /** Depending on the NSTYPE and the 'nse_nonlinear_form' all parameters are 
      * set within this function. This function is called from the constructor 
      * in case of Navier-Stokes problems. It only exists in order to not make 
      * the constructor huge. 

@@ -12,6 +12,10 @@
 #include <BoundaryAssembling2D.h>
 #include <AuxParam2D.h>
 
+#include <ParMooN_repository_info.h>
+
+const std::string path = parmoon::source_directory;
+const std::string path_to_repo = path + "/data/input_files/";
 
 void Coefficient_Function_CD2D(double *in, double *out)
 {
@@ -20,7 +24,8 @@ void Coefficient_Function_CD2D(double *in, double *out)
 	out[1] = in[3];
 }
 
-ParameterDatabase get_default_CD2D_parameters()
+/** ************************************************************************ */
+ParameterDatabase CD2D::get_default_CD2D_parameters()
 {
   Output::print<5>("creating a default CD2D parameter database");
   // we use a parmoon default database because this way these parameters are
@@ -28,14 +33,27 @@ ParameterDatabase get_default_CD2D_parameters()
   ParameterDatabase db = ParameterDatabase::parmoon_default_database();
   db.set_name("CD2D parameter database");
   
-  db.add("coefficient_function_type", (size_t) 0., "Set the parameter equal to 0 if the"
+  db.add("coefficient_function_type", (int) 0, "Set the parameter equal to 0 if the"
 		  " coefficients are constant, if you want to use a coefficient function that is spatially "
 		  "varying and analytically defined in ParMooN_Brinkman2D.C, set this parameter equal to 1 "
 		  "and then adjust coeffs via parameters in the example file; if you want to use a coefficient "
 		  "function that is spatially varying and defined by a .mesh-file combined with a file describing "
 		  "a corresponding FEFunction2D, set this parameter equal to 2; if you want to use two coefficient "
 		  "function that are spatially varying and analytically defined, set this parameter equal to 3; if you want to use two coefficient "
-		  "functions from files ... .Sol, set this parameter equal to 4 ", (size_t) 0.,(size_t) 4.);
+		  "functions from files ... .Sol, set this parameter equal to 4 ", (int) 0.,(int) 4.);
+
+  db.add("read_velocity1_function_directory", path_to_repo + "u1.Sol" , "This allows to use coefficient_function_type 4 and .... "
+  		"The File has to fit with the mesh (refinement level). A default file  is contained in input_files/ .");
+
+  db.add("read_velocity2_function_directory", path_to_repo + "u2.Sol", "This allows to use coefficient_function_type 4 and .... "
+  		"The File has to fit with the mesh (refinement level). A default file  is contained in input_files/ .");
+
+  db.add("write_coefficient_function_directory", "." , "");
+
+  db.add("write_velocity1_directory", "." , "This allows to save the computed Brinkmna2d velocity in "
+  		"x-direction in a file for later use ( used in coefficient_function_type 3. ");
+  db.add("write_velocity2_directory", "." , "This allows to save the computed Brinkmna2d velocity in "
+  		"y-direction in a file for later use ( used in coefficient_function_type 3. ");
 
   // a default output database - needed here as long as there's no class handling the output
   ParameterDatabase out_db = ParameterDatabase::default_output_database();
@@ -49,6 +67,7 @@ ParameterDatabase get_default_CD2D_parameters()
 
   return db;
 }
+
 /** ************************************************************************ */
 CD2D::System_per_grid::System_per_grid(const Example_CD2D& example,
                                        TCollection& coll, int ansatz_order)
@@ -62,7 +81,6 @@ CD2D::System_per_grid::System_per_grid(const Example_CD2D& example,
 
   fe_function = TFEFunction2D(this->fe_space.get(), "c", "c",
                 this->solution.get_entries(), this->solution.length());
-
 }
 
 /** ************************************************************************ */
@@ -87,7 +105,6 @@ CD2D::CD2D(const TDomain& domain, const ParameterDatabase& param_db,
   this->systems.emplace_back(this->example, *coll, ansatz_order);
 
   outputWriter.add_fe_function(&this->get_function());
-  
 
   // print out some information
   auto& space = *this->systems.front().fe_space;
@@ -98,7 +115,6 @@ CD2D::CD2D(const TDomain& domain, const ParameterDatabase& param_db,
   Output::print<1>("dof all    : ", setw(12), space.GetN_DegreesOfFreedom());
   Output::print<1>("dof active : ", setw(12), space.GetN_ActiveDegrees());
 
-  
   // done with the constructor in case we're not using multigrid
   if(!this->solver.is_using_multigrid())
     return;
@@ -217,8 +233,8 @@ void CD2D::set_parameters()
 /** ************************************************************************ */
 void CD2D::assemble(TFEFunction2D* coefficient_function1, TFEFunction2D* coefficient_function2)
 {
-	const TFESpace2D *coefficient_function1_space = nullptr;
-	const TFESpace2D *coefficient_function2_space = nullptr;
+	const TFESpace2D *coefficient_function1_space;
+	const TFESpace2D *coefficient_function2_space;
 
  LocalAssembling_type type;
  // use a list of LocalAssembling2D objects
@@ -299,10 +315,9 @@ void CD2D::assemble(TFEFunction2D* coefficient_function1, TFEFunction2D* coeffic
     // reset right hand side and matrix to zero (just in case)
     s.rhs.reset();
     matrix->reset();
-    //New LB 15.06.18 start
+
     std::vector<const TFESpace2D*> spaces_for_matrix;
     spaces_for_matrix.resize(1);
-
 
     if (coefficient_function1 && coefficient_function2)
     {
@@ -337,7 +352,6 @@ void CD2D::assemble(TFEFunction2D* coefficient_function1, TFEFunction2D* coeffic
     			&fe_spaces[0], &boundary_conditions, non_const_bound_value, *la);
     }
 
-
     for (int k = 0; k < TDatabase::ParamDB->n_neumann_boundary; k++)
     {
     	BoundaryAssembling2D::rhs_g_v_n(s.rhs, s.fe_space.get(),
@@ -363,7 +377,7 @@ void CD2D::assemble(TFEFunction2D* coefficient_function1, TFEFunction2D* coeffic
       bool finest_grid = &systems.front() == &s;
       if(mdml && !finest_grid)
       {
-        UpwindForConvDiff(la->GetCoeffFct(), matrix, rhs_entries, fe_space, 
+        UpwindForConvDiff(la->GetCoeffFct(), matrix, rhs_entries, fe_space,
                           nullptr, nullptr, false);
       }
 
@@ -374,14 +388,12 @@ void CD2D::assemble(TFEFunction2D* coefficient_function1, TFEFunction2D* coeffic
       // necessary in case of a direct solver)
       s.solution.copy_nonactive(s.rhs);
   }
-
   // when using afc, do it now
   if(!db["algebraic_flux_correction"].is("none"))
   {
   	do_algebraic_flux_correction();
     do_algebraic_flux_correction();
   }
-
 }
 
 /** ************************************************************************ */
@@ -428,8 +440,6 @@ void CD2D::output(int i)
   }
   */
 
-  
-
   // measure errors to known solution
   // If an exact solution is not known, it is usually set to be zero, so that
   // in such a case here only integrals of the solution are computed.
@@ -450,10 +460,10 @@ void CD2D::output(int i)
                           SDFEMErrors, this->example.get_coeffs(), &aux, 1, 
                           &space, errors.data());
     
-    Output::print<1>("L2     : ", std::setprecision(12), errors[0]);
-    Output::print<1>("H1-semi: ", std::setprecision(12), errors[1]);
-    Output::print<1>("SD     : ", std::setprecision(12), errors[2]);
-    Output::print<1>("L_inf  : ", std::setprecision(12), errors[3]);
+    Output::print<1>("L2     : ", setprecision(14), errors[0]);
+    Output::print<1>("H1-semi: ", setprecision(14), errors[1]);
+    Output::print<1>("SD     : ", setprecision(14), errors[2]);
+    Output::print<1>("L_inf  : ", setprecision(14), errors[3]);
     // copy local variable to member variable
     std::copy(errors.begin(), errors.end()-1, this->errors.begin());
   } 
