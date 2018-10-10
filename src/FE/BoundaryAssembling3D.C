@@ -14,18 +14,14 @@
 #include <BaseCell.h>
 
 // ===========================================================================
-
-// int_{Gamma} mult*given_boundary_data(x,y,z)*<v,normal>
+// int_{Gamma} mult* g(x,y,z) * v.n 
 void BoundaryAssembling3D::rhs_g_v_n(BlockVector &rhs,
                                      const TFESpace3D *U_Space,
                                      BoundValueFunct3D *given_boundary_data,
                                      std::vector<TBaseCell*> &boundaryCells,
                                      int componentID,
                                      double mult)
-{
-
-  /// @todo: create a boundary cell list for each boundary component
-  
+{  
   // now we loop always over the whole collection: inefficient!
   TCollection* coll = U_Space->GetCollection();
   
@@ -47,6 +43,7 @@ void BoundaryAssembling3D::rhs_g_v_n(BlockVector &rhs,
 
 	if (boundface->GetBoundComp()->get_physical_id()==componentID) {
       
+	  // --------------------------------------------------------------
 	  // get all data necessary for computing the integral:
 	  // quadrature weights, points, functions values, normal, determinant
 	  std:: vector<double> qWeights,qPointsT,qPointsS;
@@ -56,7 +53,11 @@ void BoundaryAssembling3D::rhs_g_v_n(BlockVector &rhs,
 	  U_Space->getFaceQuadratureData(cell,joint_id,
 					 qWeights,qPointsT,qPointsS,
 					 basisFunctionsValues);
+	  // --------------------------------------------------------------
 	  
+	  
+	  // --------------------------------------------------------------
+	  // get normal and face area
 	  std::vector<double> normal;
 	  double transformationDeterminant;
 	  cell->computeNormalAndTransformationData(joint_id,normal,
@@ -66,19 +67,18 @@ void BoundaryAssembling3D::rhs_g_v_n(BlockVector &rhs,
 	  normal.resize(3);
 	  boundface->GetXYZofTS(qPointsT[0], qPointsS[0], x, y, z);
 	  boundface->get_normal_vector(x,y,z,normal[0],normal[1],normal[2]);
+	  // --------------------------------------------------------------
+
 	  
+	  // --------------------------------------------------------------
+	  // ***** COMPUTE INTEGRAL *****
 	  // loop over Gauss points
 	  for(size_t l=0;l<qWeights.size();l++) {
 	    double value;
 	    if(given_boundary_data != nullptr)
 	    {
-	      ///@todo GetXYZofTS(...)
-	      //double t = qPointsT[l];
-	      //double s = qPointsS[l];
-	      //double x,y,z;
-	       
-	      // given_boundary_data(x,y,z,value);
-	      value = 1.;
+	      boundface->GetXYZofTS(qPointsT[l], qPointsS[l], x, y, z);
+	      given_boundary_data(x,y,z,value);
 	    }
 	    else
 	    {
@@ -103,6 +103,8 @@ void BoundaryAssembling3D::rhs_g_v_n(BlockVector &rhs,
 	    } // endfor k (n. basis fcts)	    
 	  } // endfor l (Gauss points)
 	  // --------------------------------------------------------------
+
+	  
 	} // if on componentID
       } // if boundary face
     } // for n. of cells

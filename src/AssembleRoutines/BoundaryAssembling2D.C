@@ -44,31 +44,41 @@ void BoundaryAssembling2D::rhs_g_v_n(BlockVector &rhs,
     double mult)
 {
   // =========================================
-  int *BeginIndex = U_Space->GetBeginIndex();
-  int *GlobalNumbers = U_Space->GetGlobalNumbers();
-  int ActiveBound = U_Space->GetActiveBound();
 
   // Go through all boundary edges on the current boundary component
   for(size_t m = 0; m < boundaryEdgeList.size(); m++)
   {
+    // current edge
     TBoundEdge *boundedge = boundaryEdgeList[m];
+
     TBaseCell *cell = boundedge->GetNeighbour(0);
+    // mapping from local (cell) DOF to global DOF
+    int *DOF = U_Space->GetGlobalDOF(cell->GetCellIndex());
+
+    // --------------------------------------------------------------
+    ///@todo put the following part into FESpace2D::getEdgeQuadratureData
+    // compute values of all basis functions
+    // and their first partial derivatives at all quadrature points
     // get basis dimension and FE space data of the current cell
     FE2D FEId = U_Space->GetFE2D(0, cell);
-
     int BaseVectDim = 1; // we assume only scalar FE
     int joint_id = boundedge->get_index_in_neighbour(cell);
-
     // get a quadrature formula good enough for the argument of the integral
     int fe_degree = TFEDatabase2D::GetPolynomialDegreeFromFE2D(FEId);
     QuadFormula1D LineQuadFormula = TFEDatabase2D::GetQFLineFromDegree(2*fe_degree);
     std::vector<double> quadWeights, quadPoints;
     get_quadrature_formula_data(quadPoints, quadWeights, LineQuadFormula);
 
-    // compute values of all basis functions and their first partial derivatives at all quadrature points
     std::vector< std::vector<double> > uorig, u_dx_orig ,u_dy_orig;
-    get_original_values(FEId, joint_id, cell, quadPoints, BaseVectDim, uorig, u_dx_orig, u_dy_orig, LineQuadFormula);
+    get_original_values(FEId, joint_id, cell,
+			quadPoints, BaseVectDim,
+			uorig, u_dx_orig, u_dy_orig,
+			LineQuadFormula);
+    // --------------------------------------------------------------
+	  
 
+    // --------------------------------------------------------------
+    // get normal and edge length
     double x_0, x_1, y_0, y_1;
     boundedge->get_vertices(x_0, y_0, x_1, y_1);
     // compute length of the edge
@@ -76,58 +86,52 @@ void BoundaryAssembling2D::rhs_g_v_n(BlockVector &rhs,
     // normal vector to this boundary (normalized)
     double n1, n2;
     boundedge->get_normal(n1, n2);
-    // quadrature
+    double reference_joint_length = 2;
+    double transformationDeterminant = joint_length/reference_joint_length;
+    // --------------------------------------------------------------
+	  
+    
+    // --------------------------------------------------------------
+    // ***** COMPUTE INTEGRAL *****
     for(unsigned int k = 0; k < quadPoints.size(); k++)
     {
-      ///@attention in 1D the reference joint is [-1,1] => length = 2
-      double reference_joint_length = 2;
-      double x = x_0+(quadPoints[k]+1.)/2.*(x_1-x_0);
-      double y = y_0+(quadPoints[k]+1.)/2.*(y_1-y_0);
-
-      // Parametrization
-      double T;
-      boundedge->GetBoundComp()->GetTofXY(x, y, T);
-
-      int BDComponent = boundedge->GetBoundComp()->GetID();
-
-      // get the value of (\nabla u - pI) on the boundary component (here denoted by g) from the example, if possible
+      // get the value of (\nabla u - pI) on the boundary component (here denoted by g) 
       double value;
-
       if(given_boundary_data != nullptr)
       {
-        given_boundary_data(BDComponent, T, value);
+	double x = x_0+(quadPoints[k]+1.)/2.*(x_1-x_0);
+	double y = y_0+(quadPoints[k]+1.)/2.*(y_1-y_0);
+	double T;
+	boundedge->GetBoundComp()->GetTofXY(x, y, T);
+	given_boundary_data(boundedge->GetBoundComp()->GetID(), T, value);
       }
       else
       {
         value = 1;
       }
 
-      // mapping from local (cell) DOF to global DOF
-      int *DOF = GlobalNumbers + BeginIndex[cell->GetCellIndex()]; //BeginIndex[i];
-
+      double commonFactor = mult * quadWeights[k] * transformationDeterminant;
       for(unsigned int l = 0; l < uorig[k].size(); l++)
       {
         int global_dof_from_local = DOF[l];
 
         // if the DOF is Dirichlet, continue
-        if(global_dof_from_local >= ActiveBound)
-          continue;
-
-        // updating rhs: int_gamma rhsval v \cdot n
-        double v1 = uorig[k][l]; // value of test function (vtest = v1 = v2)
-        double v2 = v1;
-
-        // add for both components
-        rhs.block(0)[global_dof_from_local] += mult * quadWeights[k] * value * (v1 * n1) *
-          (joint_length/reference_joint_length);
-
-  if (rhs.n_blocks() == 2)
-  {
-        rhs.block(1)[global_dof_from_local] += mult * quadWeights[k] * value * (v2 * n2) *
-          (joint_length/reference_joint_length);
-  }
+        if(global_dof_from_local < U_Space->GetActiveBound()) {
+	  // updating rhs: int_gamma rhsval v \cdot n
+	  double v1 = uorig[k][l]; // value of test function (vtest = v1 = v2)
+	  double v2 = v1;
+	  // add for both components
+	  rhs.block(0)[global_dof_from_local] += commonFactor * value * (v1 * n1);
+	  if (rhs.n_blocks() == 2)
+	  {
+	    rhs.block(1)[global_dof_from_local] += commonFactor * value * (v2 * n2);
+	  }
+	}	
       } //for(l=0;l<N_BaseFunct;l++)
     }
+    // --------------------------------------------------------------
+
+    
   } // endif
 }
 
