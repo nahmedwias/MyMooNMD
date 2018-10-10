@@ -5,6 +5,9 @@
 #include <GridTransfer.h>
 #include <Multigrid.h>
 #include <Assemble2D.h>
+#include <NSE_local_assembling_routines.h>
+#include <BoundaryAssembling2D.h>
+#include "LPS_scott_zhang.h"
 
 #include <Hotfixglobal_AssembleNSE.h> // a temporary hotfix - check documentation!
 #include <AuxParam2D.h>
@@ -283,7 +286,8 @@ void NSE2D::get_velocity_pressure_orders(
 
 void NSE2D::set_parameters()
 {
-  if(!db["problem_type"].is(3) && !db["problem_type"].is(5))
+  if(!db["problem_type"].is(3) && !db["problem_type"].is(5) &&
+     !db["problem_type"].is(7) )
   {
     Output::warn<2>("The parameter problem_type doesn't correspond neither to NSE "
         "nor to Stokes. It is now reset to the default value for NSE (=5).");
@@ -402,6 +406,10 @@ void NSE2D::assemble()
                n_rect_mat, rect_matrices, N_Rhs, RHSs, fesprhs,
                boundary_conditions, non_const_bound_values.data(), la);
 
+    // assemble on the boundary if needed
+      assemble_boundary_terms();
+
+    
     // copy Dirichlet values from right hand side into solution
     s.solution.copy_nonactive(s.rhs);
 
@@ -411,6 +419,15 @@ void NSE2D::assemble()
     //tidy up
     delete fe_functions[0];
     delete fe_functions[1];
+    
+    if(db["space_discretization_type"].is("local_projection"))
+    {
+      LPS_parameter_set lp{db["lps_coeff_type"], db["lps_delta0"],
+                           db["lps_delta1"]};
+      auto C = LPS_for_pressure_Scott_Zhang(blocks.at(8), false,
+                                            this->example.get_nu(), lp);
+      s.matrix.replace_blocks(*C, {{2,2}}, {false}); // creates a copy
+    }
   }
 }
 
@@ -437,7 +454,8 @@ void NSE2D::assemble_nonlinear_term()
   
   bool mdml =  this->solver.is_using_multigrid() 
             && this->solver.get_multigrid()->is_using_mdml();
-  bool is_stokes = this->db["problem_type"].is(3); // otherwise Navier-Stokes
+  bool is_stokes = this->db["problem_type"].is(3) ||
+    this->db["problem_type"].is(7); // otherwise Navier-Stokes
   
   if ((mdml && !is_stokes)|| db["space_discretization_type"].is("upwind"))
   {
@@ -681,6 +699,22 @@ void NSE2D::solve()
     s.p.project_into_L20();
 }
 
+
+// this is a bad implementation, we need to find ways to pass parameters to the
+// TFEFunction2D::GetErrors method
+double delta0 = 0.;
+void natural_error_norm_infsup_stabilizations(
+  int N_Points, double *X, double *Y, double *AbsDetjk, double *Weights,
+  double hK, double **Der, double **Exact, double **coeffs, double *LocError);
+void parameter_function_for_errors(double *in, double *out)
+{
+  out[0] = in[2]; // u1 (for conformity within the coefficient function)
+  out[1] = in[3]; // u2 (for conformity within the coefficient function)
+  out[2] = in[4]; // u1_xx
+  out[3] = in[5]; // u1_yy
+  out[4] = in[6]; // u2_xx
+  out[5] = in[7]; // u2_yy
+}
 /** ************************************************************************ */
 void NSE2D::output(int i)
 {
@@ -736,6 +770,35 @@ void NSE2D::output(int i)
     Output::print<1>("L2(p)     : ", setprecision(14), errors[3]);
     Output::print<1>("H1-semi(p): ", setprecision(14), errors[4]);    
     
+    auto sdt(db["space_discretization_type"]);
+    bool pspg = sdt.is("pspg");
+    bool symm_gls = sdt.is("symm_gls");
+    bool nonsymm_gls = sdt.is("nonsymm_gls");
+    if(pspg || symm_gls || nonsymm_gls)
+    {
+      double nu = example.get_nu();
+      double error_in_natural_norm = nu * errors[2]*errors[2];
+      if(symm_gls)
+        error_in_natural_norm += (1./nu) * errors[3]*errors[3];
+      delta0 = db["pspg_delta0"];
+      TFEFunction2D* fe_functions_u[2] = {u1, u2};
+      int fevalue_fctindex[6] = {0, 1, 0, 0, 1, 1};
+      MultiIndex2D fevalue_multiindex[6] = {D00, D00, D20, D02, D20, D02};
+      int beginparameter = 0;
+      ParamFct * parameter_function = &parameter_function_for_errors;
+      TAuxParam2D NSE_aux(1, 6, fe_functions_u, &parameter_function, 
+                          fevalue_fctindex, fevalue_multiindex, 6,
+                          &beginparameter);
+      s.p.GetErrors(example.get_exact(2), 3, NSAllDerivatives, 1,
+                    natural_error_norm_infsup_stabilizations,
+                    get_example().get_coeffs(), &NSEaux_error, 1,
+                    &pressure_space, err);
+      error_in_natural_norm += err[0]*err[0];
+      error_in_natural_norm = std::sqrt(error_in_natural_norm);
+      errors[5] = error_in_natural_norm;
+      Output::print("Error in natural(", sdt, ") norm: ", std::setprecision(14),
+                    errors[5]);
+    }
   } // if(this->db["compute_errors"])
   delete u1;
   delete u2;
@@ -765,7 +828,7 @@ void NSE2D::output_problem_size_info() const
 }
 
 /** ************************************************************************ */
-std::array< double, int(5) > NSE2D::get_errors() const
+std::array< double, int(6) > NSE2D::get_errors() const
 {
   return errors;
 }
@@ -800,3 +863,89 @@ void NSE2D::reset_residuals()
   this->oldResiduals = FixedSizeQueue<10, Residuals>();
 }
 
+
+void natural_error_norm_infsup_stabilizations(int N_Points, double *X,
+                                              double *Y, double *AbsDetjk,
+                                              double *Weights, double hK,
+                                              double **Der, double **Exact,
+                                              double **coeffs, double *LocError)
+{
+  LocError[0] = 0.0;
+  for(int i=0;i<N_Points;i++)
+  {
+    double nu = coeffs[i][0];
+    double delta = compute_PSPG_delta(delta0, hK, nu);
+    double *deriv = Der[i];
+    double *exactval = Exact[i];
+    double w = delta*Weights[i]*AbsDetjk[i];
+
+    double t = deriv[1]-exactval[1];
+    LocError[0] += w*t*t;
+      
+    t = deriv[2]-exactval[2];
+    LocError[0] += w*t*t;
+  }
+}
+
+
+void NSE2D::assemble_boundary_terms()
+{
+  int n_neumann_bd = db["n_neumann_bd"];
+  int n_nitsche_bd = db["n_nitsche_bd"];
+
+  for(System_per_grid& s : this->systems)
+  {
+    if (n_neumann_bd)
+    {
+      // Neumann BC
+      std::vector<size_t> neumann_id = db["neumann_id"];
+      std::vector<double> neumann_value = db["neumann_value"];
+    
+      for (int k = 0; k < neumann_id.size(); k++)
+      {
+        Output::print<1>(" Neumann BC on boundary: ", neumann_id[k]);
+        const TFESpace2D * v_space = s.velocity_space.get();
+        BoundaryAssembling2D::rhs_g_v_n(s.rhs, v_space,
+            nullptr,neumann_id[k],
+            -1.*neumann_value[k]);
+      }
+    }
+    
+    if (n_nitsche_bd)
+    {
+      // Nitsche penalty for weak essential BC
+      std::vector<size_t> nitsche_id = db["nitsche_id"];
+      std::vector<double> nitsche_penalty = db["nitsche_penalty"];
+
+      for (int k = 0; k < nitsche_id.size(); k++)
+      {
+        const TFESpace2D * v_space = s.velocity_space.get();
+        const TFESpace2D * p_space = s.pressure_space.get();
+        Output::print<1>(" Nitsche BC on boundary: ", nitsche_id[k]);
+        double effective_viscosity = this->example.get_nu();
+        int sym_u = db["symmetric_nitsche_u"];
+        int sym_p = db["symmetric_nitsche_p"];
+
+        BoundaryAssembling2D::nitsche_bc(s.matrix,s.rhs,
+            v_space, p_space,
+            this->example.get_bd(0),this->example.get_bd(1),
+            nitsche_id[k], nitsche_penalty[k],effective_viscosity,
+            sym_u,sym_p);
+      }
+    }
+
+    double corner_stab = db["corner_stab"];
+    if (corner_stab)
+    {
+      const TFESpace2D * v_space = s.velocity_space.get();
+      Output::print<1>(" Corner stabilization is applied. ");
+      double effective_viscosity = this->example.get_nu();
+      double sigma = this->example.get_inverse_permeability();
+      double L_0 = TDatabase::ParamDB->L_0; //db["L_0"];
+      BoundaryAssembling2D::matrix_cornerjump_u_n_cornerjump_v_n(s.matrix, v_space, // TDatabase::ParamDB->nitsche_boundary_id[k],
+          1, // nBoundaryParts
+          corner_stab * effective_viscosity + sigma * L_0 * L_0 );
+
+    }
+  }
+}

@@ -32,12 +32,16 @@ int main(int argc, char* argv[])
   parmoon_db.merge(NSE2D::default_NSE_database());
   parmoon_db.read(argv[1]);
   
+  //open OUTFILE, this is where all output is written to (additionally to console)
+  Output::set_outfile(parmoon_db["outfile"], parmoon_db["script_mode"]);
+  Output::setVerbosity(parmoon_db["verbosity"]);
+  
+  bool linear_problem = (parmoon_db["problem_type"].is(3)
+                         || parmoon_db["problem_type"].is(7));
+  TDatabase::ParamDB->INTERNAL_PROBLEM_LINEAR = linear_problem;
+  
   /** set variables' value in TDatabase using argv[1] (*.dat file) */
   TDomain domain(parmoon_db, argv[1]);
-  
-  //open OUTFILE, this is where all output is written to (additionally to console)
-  Output::set_outfile(parmoon_db["outfile"]);
-  Output::setVerbosity(parmoon_db["verbosity"]);
   
   // possibly change parameters in the database, if they are not meaningful now
   check_parameters_consistency_NSE(parmoon_db);
@@ -76,11 +80,11 @@ int main(int argc, char* argv[])
   // in function 'stopIt' termination condition is checked
   for(unsigned int k = 1;; k++)
   {
-    Output::print(); // new line for a new nonlinear iteration
+    Output::print<3>(); // new line for a new nonlinear iteration
     ns.solve();
     
-    //no nonlinear iteration for Stokes problem
-    if(parmoon_db["problem_type"].is(3))
+    //no nonlinear iteration for Stokes or Brinkman problems
+    if(linear_problem)
       break;
     
     ns.assemble_nonlinear_term();

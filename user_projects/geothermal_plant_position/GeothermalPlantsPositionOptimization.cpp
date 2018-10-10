@@ -178,9 +178,19 @@ void GeothermalPlantsPositionOptimization::apply_control_and_solve(const double*
   using namespace std::placeholders;
   CoeffFct2D coeff = std::bind(approximate_delta_functions, _1, _2, _3, _4, _5,
                                distance);
-  LocalAssembling2D la(2, {D00, D00}, {0, 1}, {}, {}, {0, 0, 1}, coeff, 
-                       NSRightHandSide<2>, nullptr, 0, 3, 0, {}, {}, 0, nullptr,
-                       0, {}, {});
+  std::string disc_type = this->db["space_discretization_type"];
+  bool nonsymm_gls = (disc_type == std::string("nonsymm_gls"));
+  int rhs_div_sign = 1;
+  if (nonsymm_gls)
+  {
+    rhs_div_sign = -1;
+  }
+  LocalAssembling<2> la(2, {D00, D00}, {0, 1}, {}, {}, {0, 0, 1}, coeff, 
+			std::bind(NSRightHandSide<2>, _1, _2, _3, _4, _5, _6,
+				  _7, _8, rhs_div_sign),
+			nullptr, 0, 3, 0, {}, {}, 0, nullptr,
+			0, {}, {});
+
   auto& v_space = brinkman2d_primal.get_velocity_space();
   auto& p_space = brinkman2d_primal.get_pressure_space();
   std::array<const TFESpace2D*, 3> fespaces = {{&v_space, &v_space, &p_space}};

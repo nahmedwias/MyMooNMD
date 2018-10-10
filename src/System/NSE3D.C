@@ -269,11 +269,6 @@ void NSE3D::check_parameters()
   {
     ErrThrow("Every LAPLACETYPE except 0 is untested!");
   }
-  if(TDatabase::ParamDB->NSE_NONLINEAR_FORM != 0)
-  {
-    ErrThrow("Every NSE_NONLINEAR_FORM except 0 is untested!");
-  }
-
 }
 
 void NSE3D::get_velocity_pressure_orders(std::pair< int, int >& velocity_pressure_orders)
@@ -928,7 +923,7 @@ void NSE3D::output(int i)
     err_send[3]=err_u2[1];
     err_send[4]=err_u3[0];
     err_send[5]=err_u3[1];
-    err_send[6]=div_error;
+    err_send[6]=div_error*div_error;
     err_send[7]=err_p[0];
     err_send[8]=err_p[1];
 

@@ -33,15 +33,6 @@ namespace sine2_sine2
 {
 #include "Brinkman_2D/Sin2Sin2.h"
 }
-//namespace driven_cavity
-//{
-//#include "Brinkman_2D/DrivenCavity.h"
-//}
-//
-//namespace flow_around_cylinder
-//{
-//#include "Brinkman_2D/flow_around_cylinder.h"
-//}
 
 namespace poiseuille_channel
 {
@@ -57,6 +48,17 @@ namespace SinCos_BadiaCodina_ForDarcyLimitOfBrinkman2D
 namespace Discacciati_Flow
 {
 #include "Brinkman_2D/Discacciati_Flow.h"
+}
+
+
+namespace Geothermal_Energy_Brinkman2D
+{
+#include "Brinkman_2D/Geothermal_Energy_Brinkman2D.h"
+}
+
+namespace Riverbed_Brinkman2D
+{
+#include "Brinkman_2D/Riverbed_Brinkman2D.h"
 }
 
 
@@ -86,10 +88,6 @@ Example_Brinkman2D::Example_Brinkman2D(
 
       /** coefficients */
       problem_coefficients = poiseuille_brinkman::LinCoeffs;
-
-      //this->example_database["equal_order_stab_weight"] = 500;
-      ////poiseuille_brinkman::stab_weight = this->example_database["equal_order_stab_weight"];
-      //double equal_order_stab_weight = this->example_database["equal_order_stab_weight"];
 
       // read parameters from local database
       poiseuille_brinkman::viscosity = get_viscosity();
@@ -207,48 +205,6 @@ Example_Brinkman2D::Example_Brinkman2D(
       sine2_sine2::ExampleFile();
       break;
 
-      //        case 3:
-      //            /** exact_solution */
-      //            exact_solution.push_back( driven_cavity::ExactU1 );
-      //            exact_solution.push_back( driven_cavity::ExactU2 );
-      //            exact_solution.push_back( driven_cavity::ExactP );
-      //
-      //            /** boundary condition */
-      //            boundary_conditions.push_back( driven_cavity::BoundCondition );
-      //            boundary_conditions.push_back( driven_cavity::BoundCondition );
-      //            boundary_conditions.push_back( BoundConditionNoBoundCondition );
-      //
-      //            /** boundary values */
-      //            boundary_data.push_back( driven_cavity::U1BoundValue );
-      //            boundary_data.push_back( driven_cavity::U2BoundValue );
-      //            boundary_data.push_back( BoundaryValueHomogenous );
-      //
-      //            /** coefficients */
-      //            problem_coefficients = driven_cavity::LinCoeffs;
-      //
-      //            driven_cavity::ExampleFile();
-      //            break;
-      //        case 4:
-      //            /** exact_solution */
-      //            exact_solution.push_back( flow_around_cylinder::ExactU1 );
-      //            exact_solution.push_back( flow_around_cylinder::ExactU2 );
-      //            exact_solution.push_back( flow_around_cylinder::ExactP );
-      //
-      //            /** boundary condition */
-      //            boundary_conditions.push_back( flow_around_cylinder::BoundCondition );
-      //            boundary_conditions.push_back( flow_around_cylinder::BoundCondition );
-      //            boundary_conditions.push_back( BoundConditionNoBoundCondition );
-      //
-      //            /** boundary values */
-      //            boundary_data.push_back( flow_around_cylinder::U1BoundValue );
-      //            boundary_data.push_back( flow_around_cylinder::U2BoundValue );
-      //            boundary_data.push_back( BoundaryValueHomogenous );
-      //            
-      //            /** coefficients */
-      //            problem_coefficients = flow_around_cylinder::LinCoeffs;
-      //            
-      //            flow_around_cylinder::ExampleFile();
-      //            break;
     case 7:
       /** exact_solution */
       exact_solution.push_back( poiseuille_channel::ExactU1 );
@@ -328,6 +284,61 @@ Example_Brinkman2D::Example_Brinkman2D(
       Discacciati_Flow::permeability = get_permeablity();
 
       Discacciati_Flow::ExampleFile();
+      break;
+
+case 10: // Geothermal_Energy_Brinkman2D
+      /** exact_solution */
+      exact_solution.push_back( Geothermal_Energy_Brinkman2D::ExactU1 );
+      exact_solution.push_back( Geothermal_Energy_Brinkman2D::ExactU2 );
+      exact_solution.push_back( Geothermal_Energy_Brinkman2D::ExactP );
+
+      /** boundary condition */
+      boundary_conditions.push_back( Geothermal_Energy_Brinkman2D::BoundCondition );
+      boundary_conditions.push_back( Geothermal_Energy_Brinkman2D::BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+
+      /** boundary values */
+      boundary_data.push_back( Geothermal_Energy_Brinkman2D::U1BoundValue );
+      boundary_data.push_back( Geothermal_Energy_Brinkman2D::U2BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+
+      /** coefficients */
+      problem_coefficients = Geothermal_Energy_Brinkman2D::LinCoeffs;
+
+      // read parameters from local database
+      Geothermal_Energy_Brinkman2D::viscosity = get_viscosity();
+      Geothermal_Energy_Brinkman2D::effective_viscosity = get_effective_viscosity();
+      Geothermal_Energy_Brinkman2D::permeability = get_permeablity();
+
+      Geothermal_Energy_Brinkman2D::ExampleFile();
+      break;
+
+
+case 11: // Riverbed
+      /** exact_solution */
+      exact_solution.push_back( Riverbed_Brinkman2D::ExactU1 );
+      exact_solution.push_back( Riverbed_Brinkman2D::ExactU2 );
+      exact_solution.push_back( Riverbed_Brinkman2D::ExactP );
+
+      /** boundary condition */
+      boundary_conditions.push_back( Riverbed_Brinkman2D::BoundCondition );
+      boundary_conditions.push_back( Riverbed_Brinkman2D::BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+
+      /** boundary values */
+      boundary_data.push_back( Riverbed_Brinkman2D::U1BoundValue );
+      boundary_data.push_back( Riverbed_Brinkman2D::U2BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+
+      /** coefficients */
+      problem_coefficients = Riverbed_Brinkman2D::LinCoeffs;
+
+      // read parameters from local database
+      Riverbed_Brinkman2D::viscosity = get_viscosity();
+      Riverbed_Brinkman2D::effective_viscosity = get_effective_viscosity();
+      Riverbed_Brinkman2D::permeability = get_permeablity();
+
+      Riverbed_Brinkman2D::ExampleFile();
       break;
 
     default:

@@ -4,7 +4,6 @@
 #include <Database.h>
 #include <FEDatabase3D.h>
 #include <Darcy.h>
-#include <Example_Darcy2D.h>
 
 // =======================================================================
 // main program

@@ -402,6 +402,8 @@ void TDatabase::SetDefaultParameters()
   ParamDB->SIGN_MATRIX_BI = 1;
   ParamDB->l_T = 1;
   ParamDB->L_0 = 1;
+  ParamDB->SOURCE_SINK_FUNCTION = false;
+
   
   ParamDB->LAPLACETYPE = 0;
   ParamDB->USE_ISOPARAMETRIC = 1;
@@ -450,8 +452,6 @@ void TDatabase::SetDefaultParameters()
   ParamDB->DIV_DIV_STAB_TYPE = 0;        // stabilization for div-div term 
   ParamDB->DIV_DIV_STAB_C1 = 2;
   ParamDB->DIV_DIV_STAB_C2 = 1;
-
-  ParamDB->NSE_NONLINEAR_FORM = 0;       // skew symmetric convective term in NSE
 
   ParamDB->LP_FULL_GRADIENT = 1;
   ParamDB->LP_STREAMLINE = 0;
@@ -1089,6 +1089,7 @@ void TDatabase::WriteParamDB(char *ExecutedFile)
   printToFile("SIGN_MATRIX_BI: ", ParamDB->SIGN_MATRIX_BI);
   printToFile("l_T: ", ParamDB->l_T);
   printToFile("L_0: ", ParamDB->L_0); 
+  printToFile("SOURCE_SINK_FUNCTION: ", ParamDB->SOURCE_SINK_FUNCTION);
 
   printToFile("RE_NR: ", ParamDB->RE_NR);
   printToFile("RA_NR: ", ParamDB->RA_NR);
@@ -1144,7 +1145,6 @@ void TDatabase::WriteParamDB(char *ExecutedFile)
   printToFile("DIV_DIV_STAB_TYPE: ", ParamDB->DIV_DIV_STAB_TYPE); 
   printToFile("DIV_DIV_STAB_C1: ", ParamDB->DIV_DIV_STAB_C1); 
   printToFile("DIV_DIV_STAB_C2: ", ParamDB->DIV_DIV_STAB_C2); 
-  printToFile("NSE_NONLINEAR_FORM: ", ParamDB->NSE_NONLINEAR_FORM);
   printToFile("OSEEN_ZERO_ORDER_COEFF: ", ParamDB->OSEEN_ZERO_ORDER_COEFF);
 
   printToFile("LP_FULL_GRADIENT: ", ParamDB->LP_FULL_GRADIENT);
@@ -1670,25 +1670,19 @@ void check_parameters_consistency_NSE(ParameterDatabase& db)
   }
 
   // rotational form
-  if (TDatabase::ParamDB->NSE_NONLINEAR_FORM==2||(TDatabase::ParamDB->NSE_NONLINEAR_FORM==4))
+  Parameter nonlin_form(db["nse_nonlinear_form"]);
+  if(nonlin_form.is("rotational"))
   {
     if (TDatabase::ParamDB->NSTYPE<=2)
     {
       TDatabase::ParamDB->NSTYPE+=2;
       if(my_rank==0)
       {
-        Output::warn<1>("NSE Parameter Consistency","NSTYPE changed to ", TDatabase::ParamDB->NSTYPE);
-        Output::warn<1>("NSE Parameter Consistency"," because of NSE_NONLINEAR_FORM = ", TDatabase::ParamDB->NSE_NONLINEAR_FORM);
+        Output::warn<1>("NSE Parameter Consistency",
+                        "NSTYPE changed to ", TDatabase::ParamDB->NSTYPE);
+        Output::warn<1>("NSE Parameter Consistency",
+                        " because of nse_nonlinear_form = ", nonlin_form);
       }
-    }
-      // change 'db["discretization_type]" for internal reasons
-    if ( db["space_discretization_type"].is("galerkin") )
-    {
-      db["space_discretization_type"].set("smagorinsky");
-      TDatabase::ParamDB->TURBULENT_VISCOSITY_TYPE = 0;
-      if(my_rank==0)
-        Output::warn<1>("NSE Parameter Consistency","discretization_type changed to 'smagorinsky' (4)"
-            " for internal reasons, turbulent viscosity is switched off.");
     }
   }
 

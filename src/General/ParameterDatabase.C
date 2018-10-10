@@ -1245,8 +1245,8 @@ ParameterDatabase ParameterDatabase::parmoon_default_database()
          "1: stationary convection-diffusion,  2: time-dependent "
          "convection-diffusion,  3: stationary Stokes,  4: time-dependent "
          "Stokes,  5: stationary Navier-Stokes,  6: time-dependent "
-         "Navier-Stokes.",
-         0u, 6u);
+         "Navier-Stokes 7: Brinkman.",
+         0u, 7u);
 
   db.add("output_write_ps", false,
 	 "Draw a postscript file of the domain. This only works in two space "

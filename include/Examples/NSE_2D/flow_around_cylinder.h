@@ -102,6 +102,9 @@ void LinCoeffs(int n_points, double *x, double *y,
     coeff[1] = 0; // f1
     coeff[2] = 0; // f2
     coeff[3] = 0; // g (divergence)
+     
+    // additional coefficient (used only in the Brinkman problem)
+    coeff[4] = 0.;
   }
 }
 
