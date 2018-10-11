@@ -150,12 +150,18 @@ int Boundary::isOnComponent(double x, double y, double &t)
 	  double angle0 = parts[i][k].parameters[4];
 	  double angle1 = parts[i][k].parameters[5];
 	  double theta=atan2(y-parts[i][k].parameters[1],x-parts[i][k].parameters[0]);
+    bool full_circle = (2*pi - std::abs(angle0-angle1)) < 1.e-6;
 
 	  if (angle0<angle1) {
 	    // the boundary has "positive" sign
 	    while (theta<angle0) {
 	      theta= theta + 2*pi;
 	    }
+      if(full_circle && std::abs(theta - angle0) < 1.e-6)
+      {
+        t = k;
+        return i;
+      }
 	    if (theta<angle1) {
 	      // return the value of the angle renormalized between 0 and 1
 	      t = k + (theta-angle0)/(angle1-angle0);
@@ -168,6 +174,11 @@ int Boundary::isOnComponent(double x, double y, double &t)
 	    while (theta<angle1) {
 	      theta = theta + 2*pi;
 	    }
+      if(full_circle && std::abs(theta - angle1) < 1.e-6)
+      {
+        t = k;
+        return i;
+      }
 	    if (theta<angle0) {
 	      // return the value of the angle renormalized between 0 and 1
 	      t = k + (theta-angle0)/(angle1-angle0);
