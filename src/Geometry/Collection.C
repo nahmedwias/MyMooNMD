@@ -1042,7 +1042,8 @@ void TCollection::get_face_list_on_component(int boundary_component_id, std::vec
         if (boundface->GetBoundComp()->get_physical_id() == boundary_component_id)
         {
           ///@todo set the boundedge properties in the function MakeGrid
-          //boundface->SetNeighbour(cell); //todo check if ok
+          boundface->SetNeighbour(cell); //todo check if ok
+
           //boundface->set_index_in_neighbour(cell, joint_id); //todo check if ok
           faces.push_back(boundface);
         }

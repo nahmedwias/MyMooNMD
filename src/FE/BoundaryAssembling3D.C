@@ -1,5 +1,5 @@
 // ============================================================================ //
-// @(#)BoundaryAssembling3D.C        28.10.16                                   //
+// @(#)BoundaryAssembling3D.C        28.10.16  revision started 10.10.18                                 //
 //                                                                              //
 // Functions for (external and internal) boundary integral                      //
 //                                                                              //
@@ -13,8 +13,86 @@
 #include <BoundFace.h>
 #include <BaseCell.h>
 
-// ===========================================================================
+// int_{Gamma} mult*given_boundary_data(x,y,z)*<v,normal>
+void BoundaryAssembling3D::rhs_g_v_n(BlockVector &rhs,
+    const TFESpace3D *U_Space,
+    BoundValueFunct3D *given_boundary_data,
+    std::vector<TBaseCell*> &boundaryCells,
+    int componentID,
+    double mult)
+{
+  TCollection* coll = U_Space->GetCollection();
 
+  std::vector<TBoundFace*> boundaryFaceList;
+  coll->get_face_list_on_component(componentID, boundaryFaceList);
+
+  for(size_t m = 0; m < boundaryFaceList.size(); m++)
+  {
+    TBoundFace *boundface = boundaryFaceList[m];
+    TBaseCell *cell = ( (TJoint *)boundface)->GetNeighbour(0);
+
+    // mapping from local (cell) DOF to global DOF
+    int *DOF = U_Space->GetGlobalDOF(cell->GetCellIndex());
+
+    int joint_id = boundface->get_index_in_neighbour(cell);
+
+    // get all data necessary for computing the integral:
+    // quadrature weights, points, functions values, normal, determinant
+    std:: vector<double> qWeights, qPointsT, qPointsS;
+    std::vector< std::vector<double> > basisFunctionsValues;
+    //this->getQuadratureData(U_Space,cell,joint_id,qWeights,
+    //        qPointsT,qPointsS,basisFunctionsValues);
+    U_Space->getFaceQuadratureData(cell, joint_id,
+        qWeights, qPointsT, qPointsS,
+        basisFunctionsValues);
+
+    std::vector<double> normal;
+    double transformationDeterminant;
+    cell->computeNormalAndTransformationData(joint_id, normal,
+        transformationDeterminant);
+
+    double x, y, z;
+    double value;
+    normal.resize(3);
+    boundface->GetXYZofTS(qPointsT[0], qPointsS[0], x, y, z);
+    boundface->get_normal_vector(x, y, z, normal[0], normal[1], normal[2]);
+
+    // loop over Gauss points
+    for (size_t l = 0; l < qWeights.size(); l++)
+    {
+      // NEW LB 11.10.18
+      // get the boundary values of rhs
+      boundface->GetBoundComp()->GetXYZofTS(qPointsT[l], qPointsS[l], x, y, z);
+
+      if(given_boundary_data != nullptr)
+        /// NEW LB 11.10.18
+        given_boundary_data(x, y, z, value);
+      // OLD value = 1.;
+      else
+        value = 1.;
+
+      double scale_factor = mult * qWeights[l] * transformationDeterminant;
+
+      for (size_t k = 0; k < basisFunctionsValues[l].size(); k++)
+      {
+        int global_dof_from_local = DOF[k];
+
+        if (global_dof_from_local < U_Space->GetActiveBound())
+        {
+          double v1 = basisFunctionsValues[l][k]; // value of test function (vtest = vx = vy =vz)
+          double v2 = v1;
+          double v3 = v1;
+
+          rhs.block(0)[global_dof_from_local] += scale_factor * value * (v1*normal[0]);
+          rhs.block(1)[global_dof_from_local] += scale_factor * value * (v2*normal[1]);
+          rhs.block(2)[global_dof_from_local] += scale_factor * value * (v3*normal[2]);
+        }
+      }
+    }
+  }
+}
+
+/*
 // int_{Gamma} mult*given_boundary_data(x,y,z)*<v,normal>
 void BoundaryAssembling3D::rhs_g_v_n(BlockVector &rhs,
     const TFESpace3D *U_Space,
@@ -34,6 +112,7 @@ void BoundaryAssembling3D::rhs_g_v_n(BlockVector &rhs,
 
     // mapping from local (cell) DOF to global DOF
     int *DOF = U_Space->GetGlobalDOF(cell->GetCellIndex());
+        cout << "cell->GetCellIndex(): " << cell->GetCellIndex() << endl;
 
     for(size_t joint_id = 0; joint_id < (size_t) cell->GetN_Faces(); joint_id++)
     {
@@ -104,7 +183,7 @@ void BoundaryAssembling3D::rhs_g_v_n(BlockVector &rhs,
     }
   }
 }
-
+*/
 
 // ===========================================================================
 void BoundaryAssembling3D::getQuadratureData(const TFESpace3D *fespace,TBaseCell *cell, int m,
@@ -197,83 +276,73 @@ void BoundaryAssembling3D::matrix_p_v_n(BlockFEMatrix &M,
    * @todo: check if the matrix structure is correct:
    * we need 4 square matrices with the same FE spaces
    */
-  ///@todo create a boundary cell list
-  // loop over all boundary cells (at the moment it consists of all cells!!)
-  for (size_t i = 0; i< boundaryCells.size(); i++)
+
+  TCollection* coll = U_Space->GetCollection();
+
+  std::vector<TBoundFace*> boundaryFaceList;
+  coll->get_face_list_on_component(componentID, boundaryFaceList);
+
+  for(size_t m = 0; m < boundaryFaceList.size(); m++)
   {
-    TBaseCell* cell = boundaryCells[i];
+    TBoundFace *boundface = boundaryFaceList[m];
+    TBaseCell *cell = ( (TJoint *)boundface)->GetNeighbour(0);
+
     // mapping from local (cell) DOF to global DOF
     int *DOF_u = U_Space->GetGlobalDOF(cell->GetCellIndex());
     // mapping from local (cell) DOF to global DOF
     int *DOF_p = P_Space->GetGlobalDOF(cell->GetCellIndex());
 
-    // loop over the faces (joints)
-    for (size_t joint_id = 0; joint_id < (size_t) cell->GetN_Faces(); joint_id++)
+    int joint_id = boundface->get_index_in_neighbour(cell);
+
+    // get all data necessary for computing the integral:
+    // quadrature weights, points, functions values, normal, determinant
+    std:: vector<double> qWeights_u, qPointsT_u, qPointsS_u, qWeights_p, qPointsT_p, qPointsS_p; // S,T for parametrization in 3D
+    std::vector< std::vector<double> > basisFunctionsValues_u, basisFunctionsValues_p;
+    this->getQuadratureData(U_Space, cell, joint_id,
+        qWeights_u, qPointsT_u, qPointsS_u, basisFunctionsValues_u);
+    this->getQuadratureData(P_Space, cell, joint_id,
+        qWeights_p, qPointsT_p, qPointsS_p, basisFunctionsValues_p);
+
+    std::vector<double> normal;
+    double transformationDeterminant;
+    this->computeNormalAndTransformationData(cell, joint_id, normal,
+        transformationDeterminant);
+
+    // rescale local integral by mesh-size (important for Nitsche boundary)
+    for (size_t l = 0; l < qWeights_u.size(); l++)
     {
-      TJoint* joint = cell->GetJoint(joint_id);
+      double scale_factor  = mult * qWeights_u[l] * transformationDeterminant;
 
-      // select boundary faces
-      if (joint->GetType() == BoundaryFace || joint->GetType() == IsoBoundFace)
+      for (size_t k1 = 0; k1 < basisFunctionsValues_u[l].size(); k1++)
       {
-        // convert the joint to an object of BoundFace type
-        TBoundFace *boundface = (TBoundFace *)joint;
+        int global_dof_from_local_u = DOF_u[k1]; // Test-DOF
 
-        //Output::print(boundface->GetBoundComp()->get_physical_id()," comp, ",componentID);
-
-        if (boundface->GetBoundComp()->get_physical_id() == componentID)
+        if (global_dof_from_local_u < U_Space->GetActiveBound())
         {
-          // get all data necessary for computing the integral:
-          // quadrature weights, points, functions values, normal, determinant
-          std:: vector<double> qWeights_u, qPointsT_u, qPointsS_u, qWeights_p, qPointsT_p, qPointsS_p; // S,T for parametrization in 3D
-          std::vector< std::vector<double> > basisFunctionsValues_u, basisFunctionsValues_p;
-          this->getQuadratureData(U_Space, cell, joint_id,
-              qWeights_u, qPointsT_u, qPointsS_u, basisFunctionsValues_u);
-          this->getQuadratureData(P_Space, cell, joint_id,
-              qWeights_p, qPointsT_p, qPointsS_p, basisFunctionsValues_p);
+          double v1 = basisFunctionsValues_u[l][k1]; // value of test function (vtest = vx = vy =vz)
+          double v2 = v1;
+          double v3 = v1;
 
-          std::vector<double> normal;
-          double transformationDeterminant;
-          this->computeNormalAndTransformationData(cell, joint_id, normal,
-              transformationDeterminant);
-
-          // rescale local integral by mesh-size (important for Nitsche boundary)
-          for (size_t l = 0; l < qWeights_u.size(); l++)
+          for (size_t k2 = 0; k2 < basisFunctionsValues_p[l].size(); k2++)
           {
-            double scale_factor  = mult * qWeights_u[l] * transformationDeterminant;
+            int global_dof_from_local_p = DOF_p[k2]; // Ansatz-DOF
 
-            for (size_t k1 = 0; k1 < basisFunctionsValues_u[l].size(); k1++)
+            if (global_dof_from_local_p < P_Space->GetActiveBound())
             {
-              int global_dof_from_local_u = DOF_u[k1]; // Test-DOF
+              double p = basisFunctionsValues_p[l][k2]; // value of ansatz function
 
-              if (global_dof_from_local_u < U_Space->GetActiveBound())
-              {
-                double v1 = basisFunctionsValues_u[l][k1]; // value of test function (vtest = vx = vy =vz)
-                double v2 = v1;
-                double v3 = v1;
+              double  n1 = normal[0];
+              double  n2 = normal[1];
+              double  n3 = normal[2];
 
-                for (size_t k2 = 0; k2 < basisFunctionsValues_p[l].size(); k2++)
-                {
-                  int global_dof_from_local_p = DOF_p[k2]; // Ansatz-DOF
-
-                  if (global_dof_from_local_p < P_Space->GetActiveBound())
-                  {
-                    double p = basisFunctionsValues_p[l][k2]; // value of ansatz function
-
-                    double  n1 = normal[0];
-                    double  n2 = normal[1];
-                    double  n3 = normal[2];
-
-                    // add for all three components
-                    blocks[3]->add(DOF_u[k1],  DOF_p[k2], scale_factor * p * v1 * n1 ); // B1
-                    blocks[7]->add(DOF_u[k1],  DOF_p[k2], scale_factor * p * v2 * n2 ); // B2
-                    blocks[11]->add(DOF_u[k1], DOF_p[k2], scale_factor * p * v3 * n3 ); // B3
-                  }
-                } //for(l=0;l<N_BaseFunct;l++)
-              }
-            } // endif
-          }
+              // add for all three components
+              blocks[3]->add(DOF_u[k1],  DOF_p[k2], scale_factor * p * v1 * n1 ); // B1
+              blocks[7]->add(DOF_u[k1],  DOF_p[k2], scale_factor * p * v2 * n2 ); // B2
+              blocks[11]->add(DOF_u[k1], DOF_p[k2], scale_factor * p * v3 * n3 ); // B3
+            }
+          } //for(l=0;l<N_BaseFunct;l++)
         }
-      }
+      } // endif
     }
   }
 }
@@ -292,90 +361,80 @@ void BoundaryAssembling3D::matrix_q_u_n(BlockFEMatrix &M,
    * @todo: check if the matrix structure is correct:
    * we need 4 square matrices with the same FE spaces
    */
-  ///@todo create a boundary cell list
-  // loop over all boundary cells (at the moment it consists of all cells!!)
-  for (size_t i = 0; i < boundaryCells.size(); i++)
+
+  TCollection* coll = U_Space->GetCollection();
+
+  std::vector<TBoundFace*> boundaryFaceList;
+  coll->get_face_list_on_component(componentID, boundaryFaceList);
+
+  for(size_t m = 0; m < boundaryFaceList.size(); m++)
   {
-    TBaseCell* cell = boundaryCells[i];
+    TBoundFace *boundface = boundaryFaceList[m];
+    TBaseCell *cell = ( (TJoint *)boundface)->GetNeighbour(0);
+
     // mapping from local (cell) DOF to global DOF
     int *DOF_u = U_Space->GetGlobalDOF(cell->GetCellIndex());
     // mapping from local (cell) DOF to global DOF
     int *DOF_p = P_Space->GetGlobalDOF(cell->GetCellIndex());
 
-    // loop over the faces (joints)
-    for (size_t joint_id = 0; joint_id < (size_t) cell->GetN_Faces(); joint_id++)
+    int joint_id = boundface->get_index_in_neighbour(cell);
+
+    // get all data necessary for computing the integral:
+    // quadrature weights, points, functions values, normal, determinant
+    std:: vector<double> qWeights_u, qPointsT_u, qPointsS_u, qWeights_p, qPointsT_p, qPointsS_p; // S,T for parametrization in 3D
+    std::vector< std::vector<double> > basisFunctionsValues_u, basisFunctionsValues_p;
+    this->getQuadratureData(U_Space, cell,joint_id,
+        qWeights_u, qPointsT_u, qPointsS_u, basisFunctionsValues_u);
+    this->getQuadratureData(P_Space, cell,joint_id,
+        qWeights_p, qPointsT_p, qPointsS_p, basisFunctionsValues_p);
+
+    std::vector<double> normal;
+    double transformationDeterminant;
+    this->computeNormalAndTransformationData(cell, joint_id, normal,
+        transformationDeterminant);
+
+    // rescale local integral by mesh-size (important for Nitsche boundary)
+    for (size_t l = 0; l < qWeights_u.size(); l++)
     {
-      TJoint* joint = cell->GetJoint(joint_id);
+      double scale_factor  = mult * qWeights_u[l] * transformationDeterminant;
 
-      // select boundary faces
-      if (joint->GetType() == BoundaryFace || joint->GetType() == IsoBoundFace)
+      for (size_t k1 = 0; k1 < basisFunctionsValues_p[l].size(); k1++)
       {
-        // convert the joint to an object of BoundFace type
-        TBoundFace *boundface = (TBoundFace *)joint;
+        int global_dof_from_local_p = DOF_p[k1]; // Test-DOF
 
-        //Output::print(boundface->GetBoundComp()->get_physical_id()," comp, ",componentID);
-
-        if (boundface->GetBoundComp()->get_physical_id()==componentID)
+        if (global_dof_from_local_p < U_Space->GetActiveBound())
         {
-          // get all data necessary for computing the integral:
-          // quadrature weights, points, functions values, normal, determinant
-          std:: vector<double> qWeights_u, qPointsT_u, qPointsS_u, qWeights_p, qPointsT_p, qPointsS_p; // S,T for parametrization in 3D
-          std::vector< std::vector<double> > basisFunctionsValues_u, basisFunctionsValues_p;
-          this->getQuadratureData(U_Space, cell,joint_id,
-              qWeights_u, qPointsT_u, qPointsS_u, basisFunctionsValues_u);
-          this->getQuadratureData(P_Space, cell,joint_id,
-              qWeights_p, qPointsT_p, qPointsS_p, basisFunctionsValues_p);
+          double q = basisFunctionsValues_p[l][k1]; // value of test function (vtest = vx = vy =vz)
 
-          std::vector<double> normal;
-          double transformationDeterminant;
-          this->computeNormalAndTransformationData(cell, joint_id, normal,
-              transformationDeterminant);
-
-          // rescale local integral by mesh-size (important for Nitsche boundary)
-          for (size_t l = 0; l < qWeights_u.size(); l++)
+          for (size_t k2 = 0; k2 < basisFunctionsValues_u[l].size(); k2++)
           {
-            double scale_factor  = mult * qWeights_u[l] * transformationDeterminant;
+            int global_dof_from_local_u = DOF_u[k2]; // Ansatz-DOF
 
-            for (size_t k1 = 0; k1 < basisFunctionsValues_p[l].size(); k1++)
+            if (global_dof_from_local_u < U_Space->GetActiveBound())
             {
-              int global_dof_from_local_p = DOF_p[k1]; // Test-DOF
+              double u1 = basisFunctionsValues_u[l][k2]; // value of ansatz function
+              double u2 = u1; // value of ansatz function
+              double u3 = u1; // value of ansatz function
 
-              if (global_dof_from_local_p < U_Space->GetActiveBound())
-              {
-                double q = basisFunctionsValues_p[l][k1]; // value of test function (vtest = vx = vy =vz)
+              double  n1 = normal[0];
+              double  n2 = normal[1];
+              double  n3 = normal[2];
 
-                for (size_t k2 = 0; k2 < basisFunctionsValues_u[l].size(); k2++)
-                {
-                  int global_dof_from_local_u = DOF_u[k2]; // Ansatz-DOF
-
-                  if (global_dof_from_local_u < U_Space->GetActiveBound())
-                  {
-                    double u1 = basisFunctionsValues_u[l][k2]; // value of ansatz function
-                    double u2 = u1; // value of ansatz function
-                    double u3 = u1; // value of ansatz function
-
-                    double  n1 = normal[0];
-                    double  n2 = normal[1];
-                    double  n3 = normal[2];
-
-                    // add for all three components
-                    blocks[12]->add(DOF_u[k1],  DOF_p[k2], scale_factor * q * u1 * n1 ); // B1
-                    blocks[13]->add(DOF_u[k1],  DOF_p[k2], scale_factor * q * u2 * n2 ); // B2
-                    blocks[14]->add(DOF_u[k1], DOF_p[k2], scale_factor * q * u3 * n3 ); // B3
-                  }
-                } //for(l=0;l<N_BaseFunct;l++)
-              }
-            } // endif
-          }
+              // add for all three components
+              blocks[12]->add(DOF_u[k1],  DOF_p[k2], scale_factor * q * u1 * n1 ); // B1
+              blocks[13]->add(DOF_u[k1],  DOF_p[k2], scale_factor * q * u2 * n2 ); // B2
+              blocks[14]->add(DOF_u[k1], DOF_p[k2], scale_factor * q * u3 * n3 ); // B3
+            }
+          } //for(l=0;l<N_BaseFunct;l++)
         }
-      }
+      } // endif
     }
   }
 }
 
 
 // ===========================================================================
-// int_{Gamma} q*u*n
+// int_{Gamma} (q, u.n)
 void BoundaryAssembling3D::rhs_q_uD_n(BlockVector &rhs,
     const TFESpace3D *U_Space,
     const TFESpace3D *P_Space,
@@ -386,102 +445,91 @@ void BoundaryAssembling3D::rhs_q_uD_n(BlockVector &rhs,
     int componentID,
     double mult)
 {
-  //    std::vector<std::shared_ptr<FEMatrix>> blocks = M.get_blocks_uniquely();
-
   /**
    * @todo: check if the matrix structure is correct:
    * we need 4 square matrices with the same FE spaces
    */
-  ///@todo create a boundary cell list
-  // loop over all boundary cells (at the moment it consists of all cells!!)
-  for (size_t i = 0; i< boundaryCells.size(); i++)
+
+  TCollection *coll = U_Space->GetCollection();
+  std::vector<TBoundFace*> boundaryFaceList;
+  coll->get_face_list_on_component(componentID, boundaryFaceList);
+
+  for(size_t m = 0; m < boundaryFaceList.size(); m++)
   {
-    TBaseCell* cell = boundaryCells[i];
+    TBoundFace *boundface = boundaryFaceList[m];
+    TBaseCell *cell = ( (TJoint *)boundface)->GetNeighbour(0);
+
+    // mapping from local (cell) DOF to global DOF
+    int *DOF = U_Space->GetGlobalDOF(cell->GetCellIndex());
     //        // mapping from local (cell) DOF to global DOF
     //        int *DOF_u = U_Space->GetGlobalDOF(cell->GetCellIndex());
     // mapping from local (cell) DOF to global DOF
     int *DOF_p = P_Space->GetGlobalDOF(cell->GetCellIndex());
 
-    // loop over the faces (joints)
-    for (size_t joint_id = 0; joint_id < (size_t) cell->GetN_Faces(); joint_id++)
+    int joint_id = boundface->get_index_in_neighbour(cell);
+
+    // get all data necessary for computing the integral:
+    // quadrature weights, points, functions values, normal, determinant
+    std:: vector<double> qWeights_u, qPointsT_u, qPointsS_u, qWeights_p,qPointsT_p,qPointsS_p; // S,T for parametrization in 3D
+    std::vector< std::vector<double> > basisFunctionsValues_u, basisFunctionsValues_p;
+    this->getQuadratureData(U_Space, cell, joint_id,
+        qWeights_u, qPointsT_u, qPointsS_u, basisFunctionsValues_u);
+    this->getQuadratureData(P_Space, cell, joint_id,
+        qWeights_p, qPointsT_p, qPointsS_p, basisFunctionsValues_p);
+
+    std::vector<double> normal;
+    double transformationDeterminant;
+    this->computeNormalAndTransformationData(cell, joint_id, normal,
+        transformationDeterminant);
+
+    double x, y, z;
+    std::vector<double> uDirichlet(3);
+
+    // rescale local integral by mesh-size (important for Nitsche boundary)
+    for (size_t l = 0; l < qWeights_u.size(); l++)
     {
-      TJoint* joint = cell->GetJoint(joint_id);
+      // NEW LB 11.10.18
+      // get the boundary values of rhs
+      boundface->GetBoundComp()->GetXYZofTS(qPointsT_u[l], qPointsS_u[l], x, y, z);
 
-      // select boundary faces
-      if (joint->GetType() == BoundaryFace || joint->GetType() == IsoBoundFace)
+      if(given_boundary_data0 != nullptr)
+        given_boundary_data0(x, y, z, uDirichlet[0]);
+      else
+        uDirichlet[0] = 0.;
+
+      if(given_boundary_data1 != nullptr)
+        given_boundary_data1(x, y, z, uDirichlet[1]);
+      else
+        uDirichlet[1] = 0.;
+
+      if(given_boundary_data2 != nullptr)
+        given_boundary_data2(x, y, z, uDirichlet[2]);
+      else
+        uDirichlet[2] = 0.;
+
+      double scale_factor  = mult * qWeights_u[l] * transformationDeterminant;
+
+      for (size_t k1 = 0; k1 < basisFunctionsValues_p[l].size(); k1++)
       {
-        // convert the joint to an object of BoundFace type
-        TBoundFace *boundface = (TBoundFace *)joint;
+        int global_dof_from_local_p = DOF_p[k1]; // Test-DOF
 
-        //Output::print(boundface->GetBoundComp()->get_physical_id()," comp, ",componentID);
-
-        if (boundface->GetBoundComp()->get_physical_id() == componentID)
+        if (global_dof_from_local_p < P_Space->GetActiveBound())
         {
-          // get all data necessary for computing the integral:
-          // quadrature weights, points, functions values, normal, determinant
-          std:: vector<double> qWeights_u, qPointsT_u, qPointsS_u, qWeights_p,qPointsT_p,qPointsS_p; // S,T for parametrization in 3D
-          std::vector< std::vector<double> > basisFunctionsValues_u, basisFunctionsValues_p;
-          this->getQuadratureData(U_Space, cell, joint_id,
-              qWeights_u, qPointsT_u, qPointsS_u, basisFunctionsValues_u);
-          this->getQuadratureData(P_Space, cell, joint_id,
-              qWeights_p, qPointsT_p, qPointsS_p, basisFunctionsValues_p);
+          double q = basisFunctionsValues_p[l][k1]; // value of test function (vtest = vx = vy =vz)
 
-          std::vector<double> normal;
-          double transformationDeterminant;
-          this->computeNormalAndTransformationData(cell, joint_id, normal,
-              transformationDeterminant);
+          double  n1 = normal[0];
+          double  n2 = normal[1];
+          double  n3 = normal[2];
 
-          double x, y, z;
-          std::vector<double> uDirichlet(3);
+          // add for all three components
+          // rhs.block(0)[global_dof_from_local_p] += scale_factor * q * uDirichlet[0] * n1;
+          // rhs.block(1)[global_dof_from_local_p] += scale_factor * q * uDirichlet[1] * n2;
+          // rhs.block(2)[global_dof_from_local_p] += scale_factor * q * uDirichlet[2] * n3;
+          rhs.block(2)[global_dof_from_local_p] += scale_factor * q * uDirichlet[0] * n1;
+          rhs.block(2)[global_dof_from_local_p] += scale_factor * q * uDirichlet[1] * n2;
+          rhs.block(2)[global_dof_from_local_p] += scale_factor * q * uDirichlet[2] * n3;
 
-          // rescale local integral by mesh-size (important for Nitsche boundary)
-                        for (size_t l = 0; l < qWeights_u.size(); l++)
-                        {
-                          // NEW LB 11.10.18
-                          // get the boundary values of rhs
-                          boundface->GetBoundComp()->GetXYZofTS(qPointsT_u[l], qPointsS_u[l], x, y, z);
-
-                          if(given_boundary_data0 != nullptr)
-                            given_boundary_data0(x, y, z, uDirichlet[0]);
-                          else
-                            uDirichlet[0] = 0.;
-
-                          if(given_boundary_data1 != nullptr)
-                            given_boundary_data1(x, y, z, uDirichlet[1]);
-                          else
-                            uDirichlet[1] = 0.;
-
-                          if(given_boundary_data2 != nullptr)
-                            given_boundary_data2(x, y, z, uDirichlet[2]);
-                          else
-                            uDirichlet[2] = 0.;
-
-                          double scale_factor  = mult * qWeights_u[l] * transformationDeterminant;
-
-                          for (size_t k1 = 0; k1 < basisFunctionsValues_p[l].size(); k1++)
-                          {
-                            int global_dof_from_local_p = DOF_p[k1]; // Test-DOF
-
-                            if (global_dof_from_local_p < P_Space->GetActiveBound())
-                            {
-                              double q = basisFunctionsValues_p[l][k1]; // value of test function (vtest = vx = vy =vz)
-
-                              double  n1 = normal[0];
-                              double  n2 = normal[1];
-                              double  n3 = normal[2];
-
-                              // add for all three components
-                              // rhs.block(0)[global_dof_from_local_p] += scale_factor * q * uDirichlet[0] * n1;
-                              // rhs.block(1)[global_dof_from_local_p] += scale_factor * q * uDirichlet[1] * n2;
-                              // rhs.block(2)[global_dof_from_local_p] += scale_factor * q * uDirichlet[2] * n3;
-                              rhs.block(2)[global_dof_from_local_p] += scale_factor * q * uDirichlet[0] * n1;
-                              rhs.block(2)[global_dof_from_local_p] += scale_factor * q * uDirichlet[1] * n2;
-                              rhs.block(2)[global_dof_from_local_p] += scale_factor * q * uDirichlet[2] * n3;
-
-                              //todo: check if scaling with transformation size is necessary (see Boundary_Assembling_2D.C)
-                            } //for(l=0;l<N_BaseFunct;l++)
-                          }
-                        } // endif
+          //todo: check if scaling with transformation size is necessary (see Boundary_Assembling_2D.C)
         }
       }
     }
@@ -501,94 +549,82 @@ void BoundaryAssembling3D::matrix_gradu_n_v(BlockFEMatrix &M,
 {
   std::vector<std::shared_ptr<FEMatrix>> blocks = M.get_blocks_uniquely();
 
-  ///@todo create a boundary cell list
-  // loop over all boundary cells (at the moment it consists of all cells!!)
-  for (size_t i = 0; i < boundaryCells.size(); i++)
+  TCollection* coll = U_Space->GetCollection();
+
+  std::vector<TBoundFace*> boundaryFaceList;
+  coll->get_face_list_on_component(componentID, boundaryFaceList);
+
+  for(size_t m = 0; m < boundaryFaceList.size(); m++)
   {
-    TBaseCell* cell = boundaryCells[i];
+    TBoundFace *boundface = boundaryFaceList[m];
+    TBaseCell *cell = ( (TJoint *)boundface)->GetNeighbour(0);
 
     // mapping from local (cell) DOF to global DOF
     int *DOF = U_Space->GetGlobalDOF(cell->GetCellIndex());
 
-    // loop over the faces (joints)
-    for (size_t joint_id = 0; joint_id < (size_t) cell->GetN_Faces(); joint_id++)
+    int joint_id = boundface->get_index_in_neighbour(cell);
+
+    // get all data necessary for computing the integral:
+    // quadrature weights, points, functions values, normal, determinant
+    std:: vector<double> qWeights, qPointsT, qPointsS; // S,T for parametrization in 3D
+    std::vector< std::vector<double> > basisFunctionsValues, basisFunctionsValues_derivative_x, basisFunctionsValues_derivative_y, basisFunctionsValues_derivative_z;
+    this->getQuadratureDataIncludingFirstDerivatives(U_Space, cell,joint_id,
+        qWeights, qPointsT, qPointsS,basisFunctionsValues,
+        basisFunctionsValues_derivative_x, basisFunctionsValues_derivative_y, basisFunctionsValues_derivative_z );
+    std::vector<double> normal;
+    double transformationDeterminant;
+    this->computeNormalAndTransformationData(cell, joint_id, normal,
+        transformationDeterminant);
+
+    // rescale local integral by mesh-size (important for Nitsche boundary)
+    for (size_t l = 0; l < qWeights.size(); l++)
     {
-      TJoint* joint = cell->GetJoint(joint_id);
+      double scale_factor = mult * qWeights[l] * transformationDeterminant;
 
-      // select boundary faces
-      if (joint->GetType() == BoundaryFace || joint->GetType() == IsoBoundFace)
+      for (size_t k1 = 0; k1 < basisFunctionsValues[l].size(); k1++)
       {
-        // convert the joint to an object of BoundFace type
-        TBoundFace *boundface = (TBoundFace *)joint;
+        int global_dof_from_local = DOF[k1]; // Test-DOF
 
-        //Output::print(boundface->GetBoundComp()->get_physical_id()," comp, ",componentID);
-
-        if (boundface->GetBoundComp()->get_physical_id() == componentID)
+        if (global_dof_from_local < U_Space->GetActiveBound())
         {
-          // get all data necessary for computing the integral:
-          // quadrature weights, points, functions values, normal, determinant
-          std:: vector<double> qWeights, qPointsT, qPointsS; // S,T for parametrization in 3D
-          std::vector< std::vector<double> > basisFunctionsValues, basisFunctionsValues_derivative_x, basisFunctionsValues_derivative_y, basisFunctionsValues_derivative_z;
-          this->getQuadratureDataIncludingFirstDerivatives(U_Space, cell,joint_id,
-              qWeights, qPointsT, qPointsS,basisFunctionsValues,
-              basisFunctionsValues_derivative_x, basisFunctionsValues_derivative_y, basisFunctionsValues_derivative_z );
-          std::vector<double> normal;
-          double transformationDeterminant;
-          this->computeNormalAndTransformationData(cell, joint_id, normal,
-              transformationDeterminant);
+          double v1 = basisFunctionsValues[l][k1]; // value of test function (vtest = vx = vy =vz)
+          double v2 = v1;
+          double v3 = v1;
 
-          // rescale local integral by mesh-size (important for Nitsche boundary)
-                        for (size_t l = 0; l < qWeights.size(); l++)
-                        {
-                          double scale_factor = mult * qWeights[l] * transformationDeterminant;
+          for (size_t k2 = 0; k2 < basisFunctionsValues[l].size(); k2++)
+          {
+            int global_dof_from_local = DOF[k2]; // Ansatz-DOF
 
-                          for (size_t k1 = 0; k1 < basisFunctionsValues[l].size(); k1++)
-                          {
-                            int global_dof_from_local = DOF[k1]; // Test-DOF
+            if (global_dof_from_local < U_Space->GetActiveBound())
+            {
+              //double u_x = basisFunctionsValues[l][k2]; // value of test function (vtest = vx = vy =vz)
+              //double u_y = u_x;
+              //double u_z = u_x;
 
-                            if (global_dof_from_local < U_Space->GetActiveBound())
-                            {
-                              double v1 = basisFunctionsValues[l][k1]; // value of test function (vtest = vx = vy =vz)
-                              double v2 = v1;
-                              double v3 = v1;
+              double  n1=normal[0];
+              double  n2=normal[1];
+              double  n3=normal[2];
 
-                              for (size_t k2 = 0; k2 < basisFunctionsValues[l].size(); k2++)
-                              {
-                                int global_dof_from_local = DOF[k2]; // Ansatz-DOF
+              double u_dx = basisFunctionsValues_derivative_x[l][k2];
+              double u_dy = basisFunctionsValues_derivative_x[l][k2];
+              double u_dz = basisFunctionsValues_derivative_x[l][k2];
 
-                                if (global_dof_from_local < U_Space->GetActiveBound())
-                                {
-                                  //double u_x = basisFunctionsValues[l][k2]; // value of test function (vtest = vx = vy =vz)
-                                  //double u_y = u_x;
-                                  //double u_z = u_x;
+              // (see the note about blocks at the beginning of the function)
+              blocks[0]->add(DOF[k1], DOF[k2],  scale_factor * v1 * u_dx * n1 ); // A11
+              blocks[0]->add(DOF[k1], DOF[k2],  scale_factor * v1 * u_dy * n2 ); // A11
+              blocks[0]->add(DOF[k1], DOF[k2],  scale_factor * v1 * u_dz * n3 ); // A11
 
-                                  double  n1=normal[0];
-                                  double  n2=normal[1];
-                                  double  n3=normal[2];
+              blocks[5]->add(DOF[k1], DOF[k2],  scale_factor * v2 * u_dx * n1 ); // A22
+              blocks[5]->add(DOF[k1], DOF[k2],  scale_factor * v2 * u_dy * n2 ); // A22
+              blocks[5]->add(DOF[k1], DOF[k2],  scale_factor * v2 * u_dz * n3 ); // A22
 
-                                  double u_dx = basisFunctionsValues_derivative_x[l][k2];
-                                  double u_dy = basisFunctionsValues_derivative_x[l][k2];
-                                  double u_dz = basisFunctionsValues_derivative_x[l][k2];
-
-                                  // (see the note about blocks at the beginning of the function)
-                                  blocks[0]->add(DOF[k1], DOF[k2],  scale_factor * v1 * u_dx * n1 ); // A11
-                                  blocks[0]->add(DOF[k1], DOF[k2],  scale_factor * v1 * u_dy * n2 ); // A11
-                                  blocks[0]->add(DOF[k1], DOF[k2],  scale_factor * v1 * u_dz * n3 ); // A11
-
-                                  blocks[5]->add(DOF[k1], DOF[k2],  scale_factor * v2 * u_dx * n1 ); // A22
-                                  blocks[5]->add(DOF[k1], DOF[k2],  scale_factor * v2 * u_dy * n2 ); // A22
-                                  blocks[5]->add(DOF[k1], DOF[k2],  scale_factor * v2 * u_dz * n3 ); // A22
-
-                                  blocks[10]->add(DOF[k1], DOF[k2], scale_factor * v3 * u_dx * n1 ); // A33
-                                  blocks[10]->add(DOF[k1], DOF[k2], scale_factor * v3 * u_dy * n2 ); // A33
-                                  blocks[10]->add(DOF[k1], DOF[k2], scale_factor * v3 * u_dz * n3 ); // A33
-                                }
-                              } //for(l=0;l<N_BaseFunct;l++)
-                            }
-                          } // endif
-                        }
+              blocks[10]->add(DOF[k1], DOF[k2], scale_factor * v3 * u_dx * n1 ); // A33
+              blocks[10]->add(DOF[k1], DOF[k2], scale_factor * v3 * u_dy * n2 ); // A33
+              blocks[10]->add(DOF[k1], DOF[k2], scale_factor * v3 * u_dz * n3 ); // A33
+            }
+          } //for(l=0;l<N_BaseFunct;l++)
         }
-      }
+      } // endif
     }
   }
 }
@@ -604,101 +640,91 @@ void BoundaryAssembling3D::matrix_gradv_n_u(BlockFEMatrix &M,
 {
   std::vector<std::shared_ptr<FEMatrix>> blocks = M.get_blocks_uniquely();
 
-  ///@todo create a boundary cell list
-  // loop over all boundary cells (at the moment it consists of all cells!!)
-  for (size_t i = 0; i< boundaryCells.size(); i++)
+  TCollection* coll = U_Space->GetCollection();
+
+  std::vector<TBoundFace*> boundaryFaceList;
+  coll->get_face_list_on_component(componentID, boundaryFaceList);
+
+  // loop over the faces (joints)
+  for(size_t m = 0; m < boundaryFaceList.size(); m++)
   {
-    TBaseCell* cell = boundaryCells[i];
+    TBoundFace *boundface = boundaryFaceList[m];
+    TBaseCell *cell = ( (TJoint *)boundface)->GetNeighbour(0);
 
     // mapping from local (cell) DOF to global DOF
     int *DOF = U_Space->GetGlobalDOF(cell->GetCellIndex());
-    // loop over the faces (joints)
-    for (size_t joint_id = 0; joint_id< (size_t) cell->GetN_Faces(); joint_id++)
+
+    int joint_id = boundface->get_index_in_neighbour(cell);
+
+    // get all data necessary for computing the integral:
+    // quadrature weights, points, functions values, normal, determinant
+    std:: vector<double> qWeights, qPointsT, qPointsS; // S,T for parametrization in 3D
+    std::vector< std::vector<double> > basisFunctionsValues, basisFunctionsValues_derivative_x, basisFunctionsValues_derivative_y, basisFunctionsValues_derivative_z ;
+    this->getQuadratureDataIncludingFirstDerivatives(U_Space, cell,joint_id,
+        qWeights, qPointsT, qPointsS,
+        basisFunctionsValues,
+        basisFunctionsValues_derivative_x,
+        basisFunctionsValues_derivative_y,
+        basisFunctionsValues_derivative_z );
+    std::vector<double> normal;
+    double transformationDeterminant;
+    this->computeNormalAndTransformationData(cell, joint_id, normal,
+        transformationDeterminant);
+
+    // rescale local integral by mesh-size (important for Nitsche boundary)
+    for (size_t l = 0 ; l < qWeights.size(); l++)
     {
-      TJoint* joint = cell->GetJoint(joint_id);
+      double scale_factor = mult * qWeights[l] * transformationDeterminant;
 
-      // select boundary faces
-      if (joint->GetType() == BoundaryFace || joint->GetType() == IsoBoundFace)
+      for (size_t k1 = 0; k1 < basisFunctionsValues[l].size(); k1++)
       {
-        // convert the joint to an object of BoundFace type
-        TBoundFace *boundface = (TBoundFace *)joint;
+        int global_dof_from_local = DOF[k1]; // Test-DOF
 
-        //Output::print(boundface->GetBoundComp()->get_physical_id()," comp, ",componentID);
-
-        if (boundface->GetBoundComp()->get_physical_id() == componentID)
+        if (global_dof_from_local < U_Space->GetActiveBound())
         {
-          // get all data necessary for computing the integral:
-          // quadrature weights, points, functions values, normal, determinant
-          std:: vector<double> qWeights, qPointsT, qPointsS; // S,T for parametrization in 3D
-          std::vector< std::vector<double> > basisFunctionsValues, basisFunctionsValues_derivative_x, basisFunctionsValues_derivative_y, basisFunctionsValues_derivative_z ;
-          this->getQuadratureDataIncludingFirstDerivatives(U_Space, cell,joint_id,
-              qWeights, qPointsT, qPointsS,
-              basisFunctionsValues,
-              basisFunctionsValues_derivative_x,
-              basisFunctionsValues_derivative_y,
-              basisFunctionsValues_derivative_z );
-          std::vector<double> normal;
-          double transformationDeterminant;
-          this->computeNormalAndTransformationData(cell, joint_id, normal,
-              transformationDeterminant);
+          //double v_x = basisFunctionsValues[l][k1]; // value of test function (vtest = vx = vy =vz)
+          //double v_y = v_x;
+          //double v_z = v_x;
 
-          // rescale local integral by mesh-size (important for Nitsche boundary)
-                        for (size_t l = 0 ; l < qWeights.size(); l++)
-                        {
-                          double scale_factor = mult * qWeights[l] * transformationDeterminant;
+          double v_dx = basisFunctionsValues_derivative_x[l][k1];
+          double v_dy = basisFunctionsValues_derivative_x[l][k1];
+          double v_dz = basisFunctionsValues_derivative_x[l][k1];
 
-                          for (size_t k1 = 0; k1 < basisFunctionsValues[l].size(); k1++)
-                          {
-                            int global_dof_from_local = DOF[k1]; // Test-DOF
+          for(size_t k2=0;k2<basisFunctionsValues[l].size();k2++) {
+            int global_dof_from_local = DOF[k2]; // Ansatz-DOF
 
-                            if (global_dof_from_local < U_Space->GetActiveBound())
-                            {
-                              //double v_x = basisFunctionsValues[l][k1]; // value of test function (vtest = vx = vy =vz)
-                              //double v_y = v_x;
-                              //double v_z = v_x;
+            if(global_dof_from_local < U_Space->GetActiveBound()) {
+              double u1 = basisFunctionsValues[l][k2]; // value of test function (vtest = vx = vy =vz)
+              double u2 = u1;
+              double u3 = u1;
 
-                              double v_dx = basisFunctionsValues_derivative_x[l][k1];
-                              double v_dy = basisFunctionsValues_derivative_x[l][k1];
-                              double v_dz = basisFunctionsValues_derivative_x[l][k1];
+              double  n1=normal[0];
+              double  n2=normal[1];
+              double  n3=normal[2];
 
-                              for(size_t k2=0;k2<basisFunctionsValues[l].size();k2++) {
-                                int global_dof_from_local = DOF[k2]; // Ansatz-DOF
+              // (see the note about blocks at the beginning of the function)
+              blocks[0]->add(DOF[k1], DOF[k2], scale_factor * u1 * v_dx * n1 ); // A11
+              blocks[0]->add(DOF[k1], DOF[k2], scale_factor * u1 * v_dy * n2); // A11
+              blocks[0]->add(DOF[k1], DOF[k2], scale_factor * u1 * v_dz * n3 ); // A11
 
-                                if(global_dof_from_local < U_Space->GetActiveBound()) {
-                                  double u1 = basisFunctionsValues[l][k2]; // value of test function (vtest = vx = vy =vz)
-                                  double u2 = u1;
-                                  double u3 = u1;
+              blocks[5]->add(DOF[k1], DOF[k2], scale_factor * u2 * v_dx * n1 ); // A22
+              blocks[5]->add(DOF[k1], DOF[k2], scale_factor * u2 * v_dy * n2 ); // A22
+              blocks[5]->add(DOF[k1], DOF[k2], scale_factor * u2 * v_dz * n3 ); // A22
 
-                                  double  n1=normal[0];
-                                  double  n2=normal[1];
-                                  double  n3=normal[2];
-
-                                  // (see the note about blocks at the beginning of the function)
-                                  blocks[0]->add(DOF[k1], DOF[k2], scale_factor * u1 * v_dx * n1 ); // A11
-                                  blocks[0]->add(DOF[k1], DOF[k2], scale_factor * u1 * v_dy * n2); // A11
-                                  blocks[0]->add(DOF[k1], DOF[k2], scale_factor * u1 * v_dz * n3 ); // A11
-
-                                  blocks[5]->add(DOF[k1], DOF[k2], scale_factor * u2 * v_dx * n1 ); // A22
-                                  blocks[5]->add(DOF[k1], DOF[k2], scale_factor * u2 * v_dy * n2 ); // A22
-                                  blocks[5]->add(DOF[k1], DOF[k2], scale_factor * u2 * v_dz * n3 ); // A22
-
-                                  blocks[10]->add(DOF[k1], DOF[k2], scale_factor * u3 * v_dx * n1 ); // A33
-                                  blocks[10]->add(DOF[k1], DOF[k2], scale_factor * u3 * v_dy * n2 ); // A33
-                                  blocks[10]->add(DOF[k1], DOF[k2], scale_factor * u3 * v_dz * n3 ); // A33
-                                }
-                              } //for(l=0;l<N_BaseFunct;l++)
-                            }
-                          } // endif
-                        }
+              blocks[10]->add(DOF[k1], DOF[k2], scale_factor * u3 * v_dx * n1 ); // A33
+              blocks[10]->add(DOF[k1], DOF[k2], scale_factor * u3 * v_dy * n2 ); // A33
+              blocks[10]->add(DOF[k1], DOF[k2], scale_factor * u3 * v_dz * n3 ); // A33
+            }
+          } //for(l=0;l<N_BaseFunct;l++)
         }
-      }
+      } // endif
     }
   }
 }
 
 
 // ===========================================================================
-// int_{Gamma} mult*grad v*n*uD
+// int_{Gamma} mult * < (grad v).n, uD >
 void BoundaryAssembling3D::rhs_gradv_n_uD(BlockVector &rhs,
     const TFESpace3D *U_Space,
     BoundValueFunct3D *given_boundary_data0,
@@ -707,96 +733,83 @@ void BoundaryAssembling3D::rhs_gradv_n_uD(BlockVector &rhs,
     std::vector<TBaseCell*> &boundaryCells,
     int componentID,
     double mult)
-
 {
-  //    std::vector<std::shared_ptr<FEMatrix>> blocks = M.get_blocks_uniquely();
+  TCollection *coll = U_Space->GetCollection();
+  std::vector<TBoundFace*> boundaryFaceList;
+  coll->get_face_list_on_component(componentID, boundaryFaceList);
 
-  ///@todo create a boundary cell list
-  // loop over all boundary cells (at the moment it consists of all cells!!)
-  for (size_t i = 0; i < boundaryCells.size(); i++)
+  // loop over the faces (joints)
+  for(size_t m = 0; m < boundaryFaceList.size(); m++)
   {
-    TBaseCell* cell = boundaryCells[i];
+    TBoundFace *boundface = boundaryFaceList[m];
+    TBaseCell *cell = ( (TJoint *)boundface)->GetNeighbour(0);
 
     // mapping from local (cell) DOF to global DOF
     int *DOF = U_Space->GetGlobalDOF(cell->GetCellIndex());
-    // loop over the faces (joints)
-    for (size_t joint_id = 0; joint_id < (size_t) cell->GetN_Faces(); joint_id++)
+
+    int joint_id = boundface->get_index_in_neighbour(cell);
+    // get all data necessary for computing the integral:
+    // quadrature weights, points, functions values, normal, determinant
+    std:: vector<double> qWeights, qPointsT, qPointsS; // S,T for parametrization in 3D
+    std::vector< std::vector<double> > basisFunctionsValues, basisFunctionsValues_derivative_x, basisFunctionsValues_derivative_y, basisFunctionsValues_derivative_z ;
+    this->getQuadratureDataIncludingFirstDerivatives(U_Space, cell, joint_id,
+        qWeights, qPointsT, qPointsS,
+        basisFunctionsValues, basisFunctionsValues_derivative_x, basisFunctionsValues_derivative_y, basisFunctionsValues_derivative_z );
+    std::vector<double> normal;
+    double transformationDeterminant;
+    this->computeNormalAndTransformationData(cell, joint_id, normal,
+        transformationDeterminant);
+
+    std::vector<double> uDirichlet(3);
+    double x, y, z;
+
+    // loop over Gauss points
+    for (size_t l = 0; l < qWeights.size(); l++)
     {
-      TJoint* joint = cell->GetJoint(joint_id);
+      // get the boundary values of rhs
+      boundface->GetBoundComp()->GetXYZofTS(qPointsT[l], qPointsS[l], x, y, z);
 
-      // select boundary faces
-      if (joint->GetType() == BoundaryFace || joint->GetType() == IsoBoundFace)
+      // NEW LB 11.10.18
+      if(given_boundary_data0 != nullptr)
+        given_boundary_data0(x, y, z, uDirichlet[0]);
+      else
+        uDirichlet[0] = 0.;
+
+      if(given_boundary_data1 != nullptr)
+        given_boundary_data1(x, y, z, uDirichlet[1]);
+      else
+        uDirichlet[1] = 0.;
+
+      if(given_boundary_data2 != nullptr)
+        given_boundary_data2(x, y, z, uDirichlet[2]);
+      else
+        uDirichlet[2] = 0.;
+
+      // rescale local integral by mesh-size (important for Nitsche boundary)
+      double scale_factor = mult * qWeights[l] * transformationDeterminant;
+
+      for (size_t k1 = 0; k1 < basisFunctionsValues[l].size(); k1++)
       {
-        // convert the joint to an object of BoundFace type
-        TBoundFace *boundface = (TBoundFace *)joint;
+        int global_dof_from_local = DOF[k1]; // Test-DOF
 
-        if (boundface->GetBoundComp()->get_physical_id() == componentID)
+        if (global_dof_from_local < U_Space->GetActiveBound())
         {
-          // get all data necessary for computing the integral:
-          // quadrature weights, points, functions values, normal, determinant
-          std:: vector<double> qWeights, qPointsT, qPointsS; // S,T for parametrization in 3D
-          std::vector< std::vector<double> > basisFunctionsValues, basisFunctionsValues_derivative_x, basisFunctionsValues_derivative_y, basisFunctionsValues_derivative_z ;
-          this->getQuadratureDataIncludingFirstDerivatives(U_Space, cell, joint_id,
-              qWeights, qPointsT, qPointsS,
-              basisFunctionsValues, basisFunctionsValues_derivative_x, basisFunctionsValues_derivative_y, basisFunctionsValues_derivative_z );
-          std::vector<double> normal;
-          double transformationDeterminant;
-          this->computeNormalAndTransformationData(cell, joint_id, normal,
-              transformationDeterminant);
+          //double v_x = basisFunctionsValues[l][k1]; // value of test function (vtest = vx = vy =vz)
+          //double v_y = v_x;
+          //double v_z = v_x;
 
-          std::vector<double> uDirichlet(3);
-          double x, y, z;
+          double v_dx = basisFunctionsValues_derivative_x[l][k1];
+          double v_dy = basisFunctionsValues_derivative_x[l][k1];
+          double v_dz = basisFunctionsValues_derivative_x[l][k1];
 
-          // loop over Gauss points
-          for (size_t l = 0; l < qWeights.size(); l++)
-          {
-            // get the boundary values of rhs
-            boundface->GetBoundComp()->GetXYZofTS(qPointsT[l], qPointsS[l], x, y, z);
+          double  n1 = normal[0];
+          double  n2 = normal[1];
+          double  n3 = normal[2];
 
-            // NEW LB 11.10.18
-            if(given_boundary_data0 != nullptr)
-              given_boundary_data0(x, y, z, uDirichlet[0]);
-            else
-              uDirichlet[0] = 0.;
-
-            if(given_boundary_data1 != nullptr)
-              given_boundary_data1(x, y, z, uDirichlet[1]);
-            else
-              uDirichlet[1] = 0.;
-
-            if(given_boundary_data2 != nullptr)
-              given_boundary_data2(x, y, z, uDirichlet[2]);
-            else
-              uDirichlet[2] = 0.;
-
-            // rescale local integral by mesh-size (important for Nitsche boundary)
-            double scale_factor = mult * qWeights[l] * transformationDeterminant;
-
-            for (size_t k1 = 0; k1 < basisFunctionsValues[l].size(); k1++)
-            {
-              int global_dof_from_local = DOF[k1]; // Test-DOF
-
-              if (global_dof_from_local < U_Space->GetActiveBound())
-              {
-                //double v_x = basisFunctionsValues[l][k1]; // value of test function (vtest = vx = vy =vz)
-                //double v_y = v_x;
-                //double v_z = v_x;
-
-                double v_dx = basisFunctionsValues_derivative_x[l][k1];
-                double v_dy = basisFunctionsValues_derivative_x[l][k1];
-                double v_dz = basisFunctionsValues_derivative_x[l][k1];
-
-                double  n1 = normal[0];
-                double  n2 = normal[1];
-                double  n3 = normal[2];
-
-                rhs.block(0)[global_dof_from_local] += scale_factor * uDirichlet[0] * v_dx * n1;
-                rhs.block(1)[global_dof_from_local] += scale_factor * uDirichlet[1] * v_dy * n2;
-                rhs.block(2)[global_dof_from_local] += scale_factor * uDirichlet[2] * v_dz * n3;
-              }
-            } //for(l=0;l<N_BaseFunct;l++)
-          }
-        } // endif
+          rhs.block(0)[global_dof_from_local] += scale_factor * uDirichlet[0] * v_dx * n1;
+          rhs.block(1)[global_dof_from_local] += scale_factor * uDirichlet[1] * v_dy * n2;
+          rhs.block(2)[global_dof_from_local] += scale_factor * uDirichlet[2] * v_dz * n3;
+        }
       }
     }
   }
@@ -805,7 +818,7 @@ void BoundaryAssembling3D::rhs_gradv_n_uD(BlockVector &rhs,
 
 
 // ===========================================================================
-// int_{Gamma} mult * (u. v)
+// int_{Gamma} mult * < u, v >
 void BoundaryAssembling3D::matrix_u_v(BlockFEMatrix &M,
     const TFESpace3D *U_Space,
     std::vector<TBaseCell*> &boundaryCells,
@@ -815,79 +828,70 @@ void BoundaryAssembling3D::matrix_u_v(BlockFEMatrix &M,
 {
   std::vector<std::shared_ptr<FEMatrix>> blocks = M.get_blocks_uniquely();
 
-  ///@todo create a boundary cell list
-  // loop over all boundary cells (at the moment it consists of all cells!!)
-  for (size_t i = 0; i < boundaryCells.size(); i++)
+  TCollection* coll = U_Space->GetCollection();
+
+  std::vector<TBoundFace*> boundaryFaceList;
+  coll->get_face_list_on_component(componentID, boundaryFaceList);
+
+  // loop over the faces (joints)
+  for(size_t m = 0; m < boundaryFaceList.size(); m++)
   {
-    TBaseCell* cell = boundaryCells[i];
+    TBoundFace *boundface = boundaryFaceList[m];
+    TBaseCell *cell = ( (TJoint *)boundface)->GetNeighbour(0);
 
     // mapping from local (cell) DOF to global DOF
     int *DOF = U_Space->GetGlobalDOF(cell->GetCellIndex());
 
-    // loop over the faces (joints)
-    for (size_t joint_id = 0; joint_id < (size_t) cell->GetN_Faces(); joint_id++)
+    int joint_id = boundface->get_index_in_neighbour(cell);
+
+    // get all data necessary for computing the integral:
+    // quadrature weights, points, functions values, normal, determinant
+    std:: vector<double> qWeights, qPointsT, qPointsS; // S,T for parametrization in 3D
+    std::vector< std::vector<double> > basisFunctionsValues;
+    this->getQuadratureData(U_Space, cell, joint_id,
+        qWeights, qPointsT, qPointsS, basisFunctionsValues);
+    std::vector<double> normal;
+    double transformationDeterminant;
+    this->computeNormalAndTransformationData(cell, joint_id, normal,
+        transformationDeterminant);
+
+    // rescale local integral by mesh-size (important for Nitsche boundary)
+    for (size_t l = 0; l < qWeights.size(); l++)
     {
-      TJoint* joint = cell->GetJoint(joint_id);
+      double scale_factor = mult * qWeights[l] * transformationDeterminant;
 
-      // select boundary faces
-      if (joint->GetType() == BoundaryFace || joint->GetType() == IsoBoundFace)
+      if (rescale_by_h)
       {
-        // convert the joint to an object of BoundFace type
-        TBoundFace *boundface = (TBoundFace *)joint;
+        double h = cell->Get_hK(0);
+        scale_factor = scale_factor / h;
+      }
 
-        if (boundface->GetBoundComp()->get_physical_id() == componentID)
+      for (size_t k1 = 0; k1 < basisFunctionsValues[l].size(); k1++)
+      {
+        int global_dof_from_local = DOF[k1]; // Test-DOF
+
+        if (global_dof_from_local < U_Space->GetActiveBound())
         {
-          // get all data necessary for computing the integral:
-          // quadrature weights, points, functions values, normal, determinant
-          std:: vector<double> qWeights, qPointsT, qPointsS; // S,T for parametrization in 3D
-          std::vector< std::vector<double> > basisFunctionsValues;
-          this->getQuadratureData(U_Space, cell, joint_id,
-              qWeights, qPointsT, qPointsS, basisFunctionsValues);
-          std::vector<double> normal;
-          double transformationDeterminant;
-          this->computeNormalAndTransformationData(cell, joint_id, normal,
-              transformationDeterminant);
+          double v1 = basisFunctionsValues[l][k1]; // value of test function (vtest = vx = vy =vz)
+          double v2 = v1;
+          double v3 = v1;
 
-          // rescale local integral by mesh-size (important for Nitsche boundary)
-                        for (size_t l = 0; l < qWeights.size(); l++)
-                        {
-                          double scale_factor = mult * qWeights[l] * transformationDeterminant;
+          for (size_t k2 = 0; k2 < basisFunctionsValues[l].size(); k2++)
+          {
+            int global_dof_from_local = DOF[k2]; // Ansatz-DOF
 
-                          if (rescale_by_h)
-                          {
-                            double h = cell->Get_hK(0);
-                            scale_factor = scale_factor / h;
-                          }
+            if (global_dof_from_local < U_Space->GetActiveBound())
+            {
+              double u1 = basisFunctionsValues[l][k2]; // value of test function (vtest = vx = vy =vz)
+              double u2 = u1;
+              double u3 = u2;
 
-                          for (size_t k1 = 0; k1 < basisFunctionsValues[l].size(); k1++)
-                          {
-                            int global_dof_from_local = DOF[k1]; // Test-DOF
-
-                            if (global_dof_from_local < U_Space->GetActiveBound())
-                            {
-                              double v1 = basisFunctionsValues[l][k1]; // value of test function (vtest = vx = vy =vz)
-                              double v2 = v1;
-                              double v3 = v1;
-
-                              for (size_t k2 = 0; k2 < basisFunctionsValues[l].size(); k2++)
-                              {
-                                int global_dof_from_local = DOF[k2]; // Ansatz-DOF
-
-                                if (global_dof_from_local < U_Space->GetActiveBound())
-                                {
-                                  double u1 = basisFunctionsValues[l][k2]; // value of test function (vtest = vx = vy =vz)
-                                  double u2 = u1;
-                                  double u3 = u2;
-
-                                  // add for all three components
-                                  blocks[0]->add(DOF[k1], DOF[k2], scale_factor * u1 * v1 ); // A11
-                                  blocks[5]->add(DOF[k1], DOF[k2], scale_factor * u2 * v2 ); // A22
-                                  blocks[10]->add(DOF[k1], DOF[k2], scale_factor * u3 * v3 ); // A33
-                                }
-                              }
-                            }
-                          }
-                        }
+              // add for all three components
+              blocks[0]->add(DOF[k1], DOF[k2], scale_factor * u1 * v1 ); // A11
+              blocks[5]->add(DOF[k1], DOF[k2], scale_factor * u2 * v2 ); // A22
+              blocks[10]->add(DOF[k1], DOF[k2], scale_factor * u3 * v3 ); // A33
+            }
+          }
         }
       }
     }
@@ -907,95 +911,86 @@ void BoundaryAssembling3D::rhs_uD_v(BlockVector &rhs,
     double mult,
     bool rescale_by_h)
 {
-  // Todo: create a boundary cell list
-  // loop over all boundary cells (at the moment it consists of all cells!!)
-  for (size_t i = 0; i < boundaryCells.size(); i++)
+  TCollection *coll = U_Space->GetCollection();
+  std::vector<TBoundFace*> boundaryFaceList;
+  coll->get_face_list_on_component(componentID, boundaryFaceList);
+
+  for(size_t m = 0; m < boundaryFaceList.size(); m++)
   {
-    TBaseCell* cell = boundaryCells[i];
+    TBoundFace *boundface = boundaryFaceList[m];
+    TBaseCell *cell = ( (TJoint *)boundface)->GetNeighbour(0);
 
     // mapping from local (cell) DOF to global DOF
     int *DOF = U_Space->GetGlobalDOF(cell->GetCellIndex());
 
-    for (size_t joint_id = 0; joint_id < (size_t) cell->GetN_Faces(); joint_id++)
+    int joint_id = boundface->get_index_in_neighbour(cell);
+
+    // get all data necessary for computing the integral:
+    // quadrature weights, points, functions values, normal, determinant
+    std:: vector<double> qWeights, qPointsT, qPointsS;
+    std::vector< std::vector<double> > basisFunctionsValues;
+    this->getQuadratureData(U_Space, cell, joint_id, qWeights,
+        qPointsT, qPointsS, basisFunctionsValues);
+
+    std::vector<double> normal;
+    double transformationDeterminant;
+    this->computeNormalAndTransformationData(cell, joint_id, normal,
+        transformationDeterminant);
+
+    double x, y, z;
+    std::vector<double> uDirichlet(3);
+
+    // loop over Gauss points
+    for (size_t l = 0; l < qWeights.size(); l++)
     {
-      TJoint* joint = cell->GetJoint(joint_id);
+      // NEW LB 11.10.18
+      // get the boundary values of rhs
+      boundface->GetBoundComp()->GetXYZofTS(qPointsT[l], qPointsS[l], x, y, z);
 
-      if (joint->GetType() == BoundaryFace || joint->GetType() == IsoBoundFace)
+      if(given_boundary_data0 != nullptr)
+        given_boundary_data0(x, y, z, uDirichlet[0]);
+      else
+        uDirichlet[0] = 0.;
+
+      if(given_boundary_data1 != nullptr)
+        given_boundary_data1(x, y, z, uDirichlet[1]);
+      else
+        uDirichlet[1] = 0.;
+
+      if(given_boundary_data2 != nullptr)
+        given_boundary_data2(x, y, z, uDirichlet[2]);
+      else
+        uDirichlet[2] = 0.;
+
+
+      double scale_factor = mult * qWeights[l] * transformationDeterminant;
+
+      for (size_t k = 0; k < basisFunctionsValues[l].size(); k++)
       {
-        // convert the joint to an object of BoundFace type
-        TBoundFace *boundface = (TBoundFace *)joint;
+        int global_dof_from_local = DOF[k];
 
-        if (boundface->GetBoundComp()->get_physical_id() == componentID)
+        if (global_dof_from_local < U_Space->GetActiveBound())
         {
-          // get all data necessary for computing the integral:
-          // quadrature weights, points, functions values, normal, determinant
-          std:: vector<double> qWeights, qPointsT, qPointsS;
-          std::vector< std::vector<double> > basisFunctionsValues;
-          this->getQuadratureData(U_Space, cell, joint_id, qWeights,
-              qPointsT, qPointsS, basisFunctionsValues);
+          double v1 = basisFunctionsValues[l][k]; // value of test function (vtest = vx = vy =vz)
+          double v2 = v1;
+          double v3 = v1;
 
-          std::vector<double> normal;
-          double transformationDeterminant;
-          this->computeNormalAndTransformationData(cell, joint_id, normal,
-              transformationDeterminant);
-
-          double x, y, z;
-          std::vector<double> uDirichlet(3);
-
-          // loop over Gauss points
-          for (size_t l = 0; l < qWeights.size(); l++)
+          // add for all three components
+          if (!rescale_by_h)
           {
-            // NEW LB 11.10.18
-            // get the boundary values of rhs
-            boundface->GetBoundComp()->GetXYZofTS(qPointsT[l], qPointsS[l], x, y, z);
+            rhs.block(0)[global_dof_from_local] += scale_factor * uDirichlet[0] * v1;
+            //rhs[0][global_dof_from_local+N_U] +=
+            rhs.block(1)[global_dof_from_local] += scale_factor * uDirichlet[1] * v2;
+            //rhs[0][global_dof_from_local+N_U] +=
+            rhs.block(2)[global_dof_from_local] += scale_factor * uDirichlet[2] * v3;
+          }
+          else
+          {
+            double h = cell->Get_hK(0);
 
-            if(given_boundary_data0 != nullptr)
-              given_boundary_data0(x, y, z, uDirichlet[0]);
-            else
-              uDirichlet[0] = 0.;
-
-            if(given_boundary_data1 != nullptr)
-              given_boundary_data1(x, y, z, uDirichlet[1]);
-            else
-              uDirichlet[1] = 0.;
-
-            if(given_boundary_data2 != nullptr)
-              given_boundary_data2(x, y, z, uDirichlet[2]);
-            else
-              uDirichlet[2] = 0.;
-
-
-            double scale_factor = mult * qWeights[l] * transformationDeterminant;
-
-            for (size_t k = 0; k < basisFunctionsValues[l].size(); k++)
-            {
-              int global_dof_from_local = DOF[k];
-
-              if (global_dof_from_local < U_Space->GetActiveBound())
-              {
-                double v1 = basisFunctionsValues[l][k]; // value of test function (vtest = vx = vy =vz)
-                double v2 = v1;
-                double v3 = v1;
-
-                // add for all three components
-                if (!rescale_by_h)
-                {
-                  rhs.block(0)[global_dof_from_local] += scale_factor * uDirichlet[0] * v1;
-                  //rhs[0][global_dof_from_local+N_U] +=
-                  rhs.block(1)[global_dof_from_local] += scale_factor * uDirichlet[1] * v2;
-                  //rhs[0][global_dof_from_local+N_U] +=
-                  rhs.block(2)[global_dof_from_local] += scale_factor * uDirichlet[2] * v3;
-                }
-                else
-                {
-                  double h = cell->Get_hK(0);
-
-                  rhs.block(0)[global_dof_from_local] += ( scale_factor * uDirichlet[0] * v1) /h;
-                  rhs.block(1)[global_dof_from_local] += ( scale_factor * uDirichlet[1] * v2) /h;
-                  rhs.block(2)[global_dof_from_local] += ( scale_factor * uDirichlet[2] * v3) /h;
-                }
-              }
-            }
+            rhs.block(0)[global_dof_from_local] += ( scale_factor * uDirichlet[0] * v1) /h;
+            rhs.block(1)[global_dof_from_local] += ( scale_factor * uDirichlet[1] * v2) /h;
+            rhs.block(2)[global_dof_from_local] += ( scale_factor * uDirichlet[2] * v3) /h;
           }
         }
       }
@@ -1058,12 +1053,9 @@ void BoundaryAssembling3D::getQuadratureDataIncludingFirstDerivatives(
   BaseFunct3D *BaseFuncts = TFEDatabase3D::GetBaseFunct3D_IDFromFE3D();
   int* N_BaseFunct = TFEDatabase3D::GetN_BaseFunctFromFE3D();
 
-
   // values of base functions in all quadrature points on face
   double **JointValues = TFEDatabase3D::GetJointValues3D
       (BaseFuncts[FEId], FaceQuadFormula, m);
-
-
 
   double **JointValues_derivative_xi = TFEDatabase3D::GetJointDerivatives3D
       (BaseFuncts[FEId], FaceQuadFormula, m, D100);
@@ -1073,8 +1065,6 @@ void BoundaryAssembling3D::getQuadratureDataIncludingFirstDerivatives(
 
   double **JointValues_derivative_rho = TFEDatabase3D::GetJointDerivatives3D
       (BaseFuncts[FEId], FaceQuadFormula, m, D001);
-
-
 
   TFEDatabase3D::GetBaseFunct3D(BaseFuncts[FEId])->ChangeBF(fespace->GetCollection(), cell, qWeights.size(), JointValues);
   TFEDatabase3D::GetBaseFunct3D(BaseFuncts[FEId])->ChangeBF(fespace->GetCollection(), cell, qWeights.size(), JointValues_derivative_xi);
