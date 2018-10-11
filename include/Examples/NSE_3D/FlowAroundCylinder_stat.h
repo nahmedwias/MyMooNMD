@@ -149,6 +149,7 @@ void LinCoeffs(int n_points, double *X, double *Y, double *Z,
     coeff[2] = 0;   // f2
     coeff[3] = 0;   // f3
     coeff[4] = 0;   // g
+    coeff[5] = 0; // sigma
   }
 }
 
