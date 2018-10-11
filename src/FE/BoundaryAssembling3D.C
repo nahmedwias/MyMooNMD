@@ -17,14 +17,17 @@
 void BoundaryAssembling3D::rhs_g_v_n(BlockVector &rhs,
     const TFESpace3D *U_Space,
     BoundValueFunct3D *given_boundary_data,
-    std::vector<TBaseCell*> &boundaryCells,
+    std::vector<TBoundFace*> boundaryFaceList,
     int componentID,
     double mult)
 {
+  if (boundaryFaceList.empty())
+  {
   TCollection* coll = U_Space->GetCollection();
 
-  std::vector<TBoundFace*> boundaryFaceList;
+ // std::vector<TBoundFace*> boundaryFaceList;
   coll->get_face_list_on_component(componentID, boundaryFaceList);
+  }
 
   for(size_t m = 0; m < boundaryFaceList.size(); m++)
   {
@@ -267,7 +270,7 @@ void BoundaryAssembling3D::getQuadratureData(const TFESpace3D *fespace,TBaseCell
 void BoundaryAssembling3D::matrix_p_v_n(BlockFEMatrix &M,
     const TFESpace3D *U_Space,
     const TFESpace3D *P_Space,
-    std::vector<TBaseCell*> &boundaryCells,
+    std::vector<TBoundFace*> boundaryFaceList,
     int componentID,
     double mult)
 {
@@ -277,10 +280,12 @@ void BoundaryAssembling3D::matrix_p_v_n(BlockFEMatrix &M,
    * we need 4 square matrices with the same FE spaces
    */
 
+  if (boundaryFaceList.empty())
+    {
   TCollection* coll = U_Space->GetCollection();
 
-  std::vector<TBoundFace*> boundaryFaceList;
   coll->get_face_list_on_component(componentID, boundaryFaceList);
+    }
 
   for(size_t m = 0; m < boundaryFaceList.size(); m++)
   {
@@ -352,7 +357,7 @@ void BoundaryAssembling3D::matrix_p_v_n(BlockFEMatrix &M,
 void BoundaryAssembling3D::matrix_q_u_n(BlockFEMatrix &M,
     const TFESpace3D *U_Space,
     const TFESpace3D *P_Space,
-    std::vector<TBaseCell*> &boundaryCells,
+    std::vector<TBoundFace*> boundaryFaceList,
     int componentID,
     double mult)
 {
@@ -362,10 +367,11 @@ void BoundaryAssembling3D::matrix_q_u_n(BlockFEMatrix &M,
    * we need 4 square matrices with the same FE spaces
    */
 
+  if (boundaryFaceList.empty())
+    {
   TCollection* coll = U_Space->GetCollection();
-
-  std::vector<TBoundFace*> boundaryFaceList;
   coll->get_face_list_on_component(componentID, boundaryFaceList);
+    }
 
   for(size_t m = 0; m < boundaryFaceList.size(); m++)
   {
@@ -441,7 +447,7 @@ void BoundaryAssembling3D::rhs_q_uD_n(BlockVector &rhs,
     BoundValueFunct3D *given_boundary_data0,
     BoundValueFunct3D *given_boundary_data1,
     BoundValueFunct3D *given_boundary_data2,
-    std::vector<TBaseCell*> &boundaryCells,
+    std::vector<TBoundFace*> boundaryFaceList,
     int componentID,
     double mult)
 {
@@ -450,9 +456,11 @@ void BoundaryAssembling3D::rhs_q_uD_n(BlockVector &rhs,
    * we need 4 square matrices with the same FE spaces
    */
 
+  if (boundaryFaceList.empty())
+      {
   TCollection *coll = U_Space->GetCollection();
-  std::vector<TBoundFace*> boundaryFaceList;
   coll->get_face_list_on_component(componentID, boundaryFaceList);
+      }
 
   for(size_t m = 0; m < boundaryFaceList.size(); m++)
   {
@@ -542,17 +550,18 @@ void BoundaryAssembling3D::rhs_q_uD_n(BlockVector &rhs,
 // int_{Gamma} mult * ( (grad u).n, v )
 void BoundaryAssembling3D::matrix_gradu_n_v(BlockFEMatrix &M,
     const TFESpace3D *U_Space,
-    std::vector<TBaseCell*> &boundaryCells,
+    std::vector<TBoundFace*> boundaryFaceList,
     int componentID,
     double mult)
 
 {
   std::vector<std::shared_ptr<FEMatrix>> blocks = M.get_blocks_uniquely();
 
+  if (boundaryFaceList.empty())
+      {
   TCollection* coll = U_Space->GetCollection();
-
-  std::vector<TBoundFace*> boundaryFaceList;
   coll->get_face_list_on_component(componentID, boundaryFaceList);
+      }
 
   for(size_t m = 0; m < boundaryFaceList.size(); m++)
   {
@@ -633,17 +642,18 @@ void BoundaryAssembling3D::matrix_gradu_n_v(BlockFEMatrix &M,
 // int_{Gamma} mult*grad v*n*u
 void BoundaryAssembling3D::matrix_gradv_n_u(BlockFEMatrix &M,
     const TFESpace3D *U_Space,
-    std::vector<TBaseCell*> &boundaryCells,
+    std::vector<TBoundFace*> boundaryFaceList,
     int componentID,
     double mult)
 
 {
   std::vector<std::shared_ptr<FEMatrix>> blocks = M.get_blocks_uniquely();
 
+  if (boundaryFaceList.empty())
+      {
   TCollection* coll = U_Space->GetCollection();
-
-  std::vector<TBoundFace*> boundaryFaceList;
   coll->get_face_list_on_component(componentID, boundaryFaceList);
+      }
 
   // loop over the faces (joints)
   for(size_t m = 0; m < boundaryFaceList.size(); m++)
@@ -730,13 +740,15 @@ void BoundaryAssembling3D::rhs_gradv_n_uD(BlockVector &rhs,
     BoundValueFunct3D *given_boundary_data0,
     BoundValueFunct3D *given_boundary_data1,
     BoundValueFunct3D *given_boundary_data2,
-    std::vector<TBaseCell*> &boundaryCells,
+    std::vector<TBoundFace*> boundaryFaceList,
     int componentID,
     double mult)
 {
+  if (boundaryFaceList.empty())
+      {
   TCollection *coll = U_Space->GetCollection();
-  std::vector<TBoundFace*> boundaryFaceList;
   coll->get_face_list_on_component(componentID, boundaryFaceList);
+      }
 
   // loop over the faces (joints)
   for(size_t m = 0; m < boundaryFaceList.size(); m++)
@@ -821,17 +833,18 @@ void BoundaryAssembling3D::rhs_gradv_n_uD(BlockVector &rhs,
 // int_{Gamma} mult * < u, v >
 void BoundaryAssembling3D::matrix_u_v(BlockFEMatrix &M,
     const TFESpace3D *U_Space,
-    std::vector<TBaseCell*> &boundaryCells,
+    std::vector<TBoundFace*> boundaryFaceList,
     int componentID,
     double mult,
     bool rescale_by_h)
 {
   std::vector<std::shared_ptr<FEMatrix>> blocks = M.get_blocks_uniquely();
 
+  if (boundaryFaceList.empty())
+       {
   TCollection* coll = U_Space->GetCollection();
-
-  std::vector<TBoundFace*> boundaryFaceList;
   coll->get_face_list_on_component(componentID, boundaryFaceList);
+       }
 
   // loop over the faces (joints)
   for(size_t m = 0; m < boundaryFaceList.size(); m++)
@@ -906,14 +919,16 @@ void BoundaryAssembling3D::rhs_uD_v(BlockVector &rhs,
     BoundValueFunct3D *given_boundary_data0,
     BoundValueFunct3D *given_boundary_data1,
     BoundValueFunct3D *given_boundary_data2,
-    std::vector<TBaseCell*> &boundaryCells,
+    std::vector<TBoundFace*> boundaryFaceList,
     int componentID,
     double mult,
     bool rescale_by_h)
 {
+  if (boundaryFaceList.empty())
+       {
   TCollection *coll = U_Space->GetCollection();
-  std::vector<TBoundFace*> boundaryFaceList;
   coll->get_face_list_on_component(componentID, boundaryFaceList);
+       }
 
   for(size_t m = 0; m < boundaryFaceList.size(); m++)
   {
@@ -1318,33 +1333,33 @@ int BoundaryAssembling3D::getNumberOfFaceVertices(TBaseCell *cell, int m)
 void BoundaryAssembling3D::nitsche_bc(BlockFEMatrix &s_matrix, BlockVector &s_rhs,
     const TFESpace3D * v_space, const TFESpace3D *p_space,
     BoundValueFunct3D * U1, BoundValueFunct3D *U2, BoundValueFunct3D *U3,
-    std::vector<TBaseCell*> &boundaryCells,
+    std::vector<TBoundFace*> boundaryFaceList,
     int bd_comp, double gamma, double mu,
     int sym_u, int sym_p)
 {
   // gamma/h (u,v)
-  matrix_u_v(s_matrix, v_space, boundaryCells, bd_comp, gamma*mu, true);  // rescale local integral by edge values
+  matrix_u_v(s_matrix, v_space, boundaryFaceList, bd_comp, gamma*mu, true);  // rescale local integral by edge values
 
   // gamma/h (uD,v) [rhs]
-  rhs_uD_v(s_rhs, v_space, U1, U2, U3, boundaryCells, bd_comp, gamma*mu, true);   // rescale local integral by edge values
+  rhs_uD_v(s_rhs, v_space, U1, U2, U3, boundaryFaceList, bd_comp, gamma*mu, true);   // rescale local integral by edge values
 
   // - (mu grad(u)n,v)
-  matrix_gradu_n_v(s_matrix, v_space, boundaryCells, bd_comp, -1. * mu);  // OK
+  matrix_gradu_n_v(s_matrix, v_space, boundaryFaceList, bd_comp, -1. * mu);  // OK
 
   // - sign_u * (u, mu grad(v)n) [sign_u=1: symmetrix, -1: skew-symmetric]
-  matrix_gradv_n_u(s_matrix, v_space, boundaryCells, bd_comp, (-1) * sym_u * mu);
+  matrix_gradv_n_u(s_matrix, v_space, boundaryFaceList, bd_comp, (-1) * sym_u * mu);
 
   // - sign_u * (uD,mu grad(v)n) [rhs]
-  rhs_gradv_n_uD(s_rhs, v_space, U1, U2, U3, boundaryCells, bd_comp, (-1) * sym_u * mu );
+  rhs_gradv_n_uD(s_rhs, v_space, U1, U2, U3, boundaryFaceList, bd_comp, (-1) * sym_u * mu );
 
   // (pn,v)
-  matrix_p_v_n(s_matrix, v_space, p_space, boundaryCells, bd_comp, 1.);
+  matrix_p_v_n(s_matrix, v_space, p_space, boundaryFaceList, bd_comp, 1.);
 
   // sign_p * (u,qn)
-  matrix_q_u_n(s_matrix, v_space, p_space, boundaryCells, bd_comp, sym_p);
+  matrix_q_u_n(s_matrix, v_space, p_space, boundaryFaceList, bd_comp, sym_p);
 
   // sign_p * (uD,qn) [rhs]
-  rhs_q_uD_n(s_rhs, v_space, p_space, U1, U2, U3, boundaryCells, bd_comp, sym_p);
+  rhs_q_uD_n(s_rhs, v_space, p_space, U1, U2, U3, boundaryFaceList, bd_comp, sym_p);
 }
 
 
