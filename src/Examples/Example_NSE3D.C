@@ -41,6 +41,10 @@ namespace simple_coriolis // 6
 {
 #include "NSE_3D/Coriolis_simple.h"
 }
+namespace brinkman_poiseuille // 7
+{
+  #include "NSE_3D/Brinkman_Poiseuille.h"
+}
 
 //test examples
 namespace test_u_0_p_0 //-1
@@ -279,6 +283,37 @@ Example_NSE3D::Example_NSE3D(const ParameterDatabase& user_input_parameter_db)
       simple_coriolis::include_coriolis_term = true;
       simple_coriolis::ExampleFile();
       break;
+
+    case 7:
+      /** exact_solution */
+      exact_solution.push_back( brinkman_poiseuille::ExactU1 );
+      exact_solution.push_back( brinkman_poiseuille::ExactU2 );
+      exact_solution.push_back( brinkman_poiseuille::ExactU3 );
+      exact_solution.push_back( brinkman_poiseuille::ExactP );
+
+      /** boundary condition */
+      boundary_conditions.push_back( brinkman_poiseuille::BoundCondition );
+      boundary_conditions.push_back( brinkman_poiseuille::BoundCondition );
+      boundary_conditions.push_back( brinkman_poiseuille::BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+
+      /** boundary values */
+      boundary_data.push_back( brinkman_poiseuille::U1BoundValue );
+      boundary_data.push_back( brinkman_poiseuille::U2BoundValue );
+      boundary_data.push_back( brinkman_poiseuille::U3BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+
+      /** coefficients */
+      problem_coefficients = brinkman_poiseuille::LinCoeffs;
+
+      // Set dimensionless viscosity
+      brinkman_poiseuille::effective_viscosity = get_nu();
+      brinkman_poiseuille::sigma = get_inverse_permeability();
+      brinkman_poiseuille::neumann_id = get_neumann_id();
+      brinkman_poiseuille::nitsche_id = get_nitsche_id();
+
+      brinkman_poiseuille::ExampleFile();
+      break;
     }
     case -1:
     {
@@ -426,3 +461,20 @@ double Example_NSE3D::get_nu() const
   inverse_reynolds = 1/inverse_reynolds;
   return inverse_reynolds;
 }
+
+double Example_NSE3D::get_inverse_permeability() const
+{
+  return this->example_database["inverse_permeability"];
+}
+
+std::vector<size_t> Example_NSE3D::get_neumann_id() const
+{
+  return this->example_database["neumann_id"];
+}
+
+
+std::vector<size_t> Example_NSE3D::get_nitsche_id() const
+{
+  return this->example_database["nitsche_id"];
+}
+
