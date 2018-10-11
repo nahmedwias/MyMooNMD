@@ -996,15 +996,8 @@ void NSE3D::assemble_boundary_terms()
 
   for(System_per_grid& s : this->systems_)
   {
-    // get all cells: this is at the moment needed for the boundary assembling
-    /// @todo get only the (relevant) boundary cells
-    /// e.g., bdCells = coll->get_cells_on_component(i)
     TCollection* coll = s.velocitySpace_.get()->GetCollection();
-    std::vector<TBaseCell*> allCells;
-    for (int i = 0; i < coll->GetN_Cells(); i++)
-    {
-      allCells.push_back(coll->GetCell(i));
-    }
+    std::vector<TBoundFace*> boundaryFaceList;
 
     BoundaryAssembling3D ba;
     if (n_neumann_bd)
@@ -1016,8 +1009,9 @@ void NSE3D::assemble_boundary_terms()
       for (int k = 0; k < neumann_id.size(); k++)
       {
         Output::print<1>(" Neumann BC on boundary: ", neumann_id[k]);
+        coll->get_face_list_on_component(neumann_id[k], boundaryFaceList);
         const TFESpace3D * v_space = s.velocitySpace_.get();
-        ba.rhs_g_v_n(s.rhs_, v_space, nullptr, allCells, (int) neumann_id[k], -1.*neumann_value[k]);
+        ba.rhs_g_v_n(s.rhs_, v_space, nullptr, boundaryFaceList, (int) neumann_id[k], -1.*neumann_value[k]);
       }
     }
 
@@ -1029,16 +1023,18 @@ void NSE3D::assemble_boundary_terms()
 
       for (int k = 0; k < nitsche_id.size(); k++)
       {
+        Output::print<1>(" Nitsche BC on boundary: ", nitsche_id[k]);
+        coll->get_face_list_on_component(nitsche_id[k], boundaryFaceList);
         const TFESpace3D * v_space = s.velocitySpace_.get();
         const TFESpace3D * p_space = s.pressureSpace_.get();
-        Output::print<1>(" Nitsche BC on boundary: ", nitsche_id[k]);
+
         double effective_viscosity = this->example_.get_nu();
         int sym_u = db["symmetric_nitsche_u"];
         int sym_p = db["symmetric_nitsche_p"];
 
         ba.nitsche_bc(s.matrix_, s.rhs_, v_space, p_space,
             this->example_.get_bd(0), this->example_.get_bd(1), this->example_.get_bd(2),
-            allCells,
+            boundaryFaceList,
             nitsche_id[k], nitsche_penalty[k], effective_viscosity,
             sym_u, sym_p);
       }
