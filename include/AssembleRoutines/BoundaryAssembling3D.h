@@ -133,6 +133,7 @@ public:
      @param[in] mult: given multiplicative factor (e.g., viscosity or a penalty)
      */
     void rhs_q_uD_n( BlockVector &rhs,
+                    const TFESpace3D *V_Space,
                     const TFESpace3D *P_Space,
                     BoundValueFunct3D *given_boundary_data1,
                     BoundValueFunct3D *given_boundary_data2,
@@ -202,6 +203,18 @@ public:
 //                   double &h);
     
     
+    /**
+      @brief Assemble the terms needed for Nitsche BC on a given boundary
+    */
+    void nitsche_bc(BlockFEMatrix &s_matrix,BlockVector &s_rhs,
+        const TFESpace3D * v_space, const TFESpace3D *p_space,
+        BoundValueFunct3D * U1, BoundValueFunct3D *U2, BoundValueFunct3D *U3,
+        std::vector<TBaseCell*> &boundaryCells,
+        int bd_comp, double gamma, double mu,
+        int sym_u, int sym_p);
+
+
+
     /** @brief For a joint in a cell with joint_id=m compute the number of vertices
      @param[in] *cell: cell
      @param[in] m: joint ID
