@@ -15,6 +15,7 @@
 #include <BaseCell.h>
 #include <JointCollection.h>
 #include <BoundEdge.h>
+#include <BoundFace.h>
 
 /** @brief store cells in an array, used by cell iterators */
 class TCollection
@@ -142,6 +143,11 @@ class TCollection
    
    void get_boundary_edge_list(std::vector<TBoundEdge*> &edges);
    
+   //New LB 11.10.18
+#ifdef __3D__
+   void get_face_list_on_component(int boundary_component_id, std::vector< TBoundFace* > &faces);
+#endif
+
    //####################################################
    //--------------- used in DataWriter -----------------
    //####################################################

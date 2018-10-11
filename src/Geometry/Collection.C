@@ -999,6 +999,7 @@ void TCollection::get_edge_list_on_component(int id,std::vector<TBoundEdge*> &ed
         }
     }
 }
+
 void TCollection::get_boundary_edge_list(std::vector<TBoundEdge*> &edges)
 {
   edges.clear();
@@ -1019,6 +1020,37 @@ void TCollection::get_boundary_edge_list(std::vector<TBoundEdge*> &edges)
     }
   }
 }
+
+//New LB 11.10.18
+#ifdef __3D__
+void TCollection::get_face_list_on_component(int boundary_component_id, std::vector<TBoundFace*> &faces)
+{
+  faces.clear();
+  for (int i = 0; i < this->N_Cells; i++)
+  {
+    TBaseCell *cell = this->Cells[i];
+
+    for(size_t joint_id = 0; joint_id < (size_t) cell->GetN_Faces(); joint_id++)
+    {
+      TJoint* joint = cell->GetJoint(joint_id);
+
+      if (joint->GetType() == BoundaryFace || joint->GetType() == IsoBoundFace)
+      {
+        // convert the joint to an object of BoundFace type
+        TBoundFace *boundface = (TBoundFace *)joint;
+
+        if (boundface->GetBoundComp()->get_physical_id() == boundary_component_id)
+        {
+          ///@todo set the boundedge properties in the function MakeGrid
+          //boundface->SetNeighbour(cell); //todo check if ok
+          //boundface->set_index_in_neighbour(cell, joint_id); //todo check if ok
+          faces.push_back(boundface);
+        }
+      }
+    }
+  }
+}
+#endif
 
 #ifdef _MPI
 int TCollection::find_process_of_point(double x, double y, double z) const
