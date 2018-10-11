@@ -627,6 +627,7 @@ void Brinkman3D::assemble()
                             1.*TDatabase::ParamDB->s2);
             
             bi.rhs_q_uD_n( s.rhs,
+                          v_space,
                           p_space,
                           nullptr, //this->example.get_bd(0),                                 // access to U1BoundValue in the example,
                           nullptr, //this->example.get_bd(1),                                 // access to U2BoundValue in the example,
