@@ -16,6 +16,7 @@
 #include <BlockFEMatrix.h>
 #include <BlockVector.h>
 #include <Point.h>
+#include <BoundFace.h>
 
 class BoundaryAssembling3D
 {
