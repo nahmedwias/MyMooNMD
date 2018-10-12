@@ -10,6 +10,7 @@ void NSResistanceMassMatrixSingle(double Mult, double *coeff,
   double ** MatrixA = LocMatrices[0];
   int N_U = N_BaseFuncts[0];
   double * u = OrigValues[0];
+  double sigma = d == 2 ? coeff[4] : coeff[5];
   
   for(int i = 0; i < N_U; i++)
   {
@@ -17,7 +18,7 @@ void NSResistanceMassMatrixSingle(double Mult, double *coeff,
     for(int j = 0; j < N_U; j++)
     {
       double ansatz = u[j];
-      MatrixA[i][j] += Mult * coeff[4] * (test*ansatz) ;
+      MatrixA[i][j] += Mult * sigma * (test*ansatz);
     }
   }
 }
@@ -32,6 +33,7 @@ void NSResistanceMassMatrix(double Mult, double *coeff, double *param,
   double ** MatrixA33 = d == 2 ? nullptr : LocMatrices[8];
   int N_U = N_BaseFuncts[0];
   double * u = OrigValues[0];
+  double sigma = d == 2 ? coeff[4] : coeff[5];
   
   for(int i = 0; i < N_U; i++)
   {
@@ -39,7 +41,7 @@ void NSResistanceMassMatrix(double Mult, double *coeff, double *param,
     for(int j = 0; j < N_U; j++)
     {
       double ansatz = u[j];
-      double val = Mult * coeff[4] * ( test * ansatz );
+      double val = Mult * sigma * ( test * ansatz );
       MatrixA11[i][j] += val;
       MatrixA22[i][j] += val;
       if(d == 3)
@@ -545,7 +547,7 @@ void NSGradDiv(double Mult, double *coeff, double *param, double hK,
   double * u_z = d == 2 ? nullptr : OrigValues[4];
   
   double nu = coeff[0]; // = 1/reynolds_number
-  double sigma = coeff[4]; // = 1/reynolds_number
+  double sigma = d == 2 ? coeff[4] : coeff[5]; // = 1/reynolds_number
   ///@todo generalize characteristic lenght. One could also give the option of
   // using L_0 = h
   double L_0 = 0.1; // characteristic length
@@ -596,9 +598,9 @@ void NSGradDiv_RightHandSide(double Mult, double *coeff, double *param, double h
   double * u_z = d == 2 ? nullptr : OrigValues[4];
   
   double nu = coeff[0]; // = 1/reynolds_number
-  double sigma = coeff[4]; // = 1/permeability
+  double sigma = d == 2 ? coeff[4] : coeff[5]; // = 1/permeability
   double L_0 = 1.;
-  double g = coeff[3];
+  double g = d == 2 ? coeff[3] : coeff[4];
   double delta = (nu + sigma*L_0*L_0) * stab;
 
   for (int i = 0; i < N_U; i++)
@@ -727,7 +729,7 @@ void NS_GLS(double Mult, double *coeff, double *param, double hK,
   double * u_zz = d == 2 ? nullptr : OrigValues[13];
   double nu = coeff[0]; // = 1/reynolds_number
 
-  double sigma = coeff[4]; // =1/permeability
+  double sigma = d == 2 ? coeff[4] : coeff[5]; // =1/permeability
   
   double delta = compute_GLS_delta(delta0, hK, nu, sigma);
   
@@ -735,7 +737,7 @@ void NS_GLS(double Mult, double *coeff, double *param, double hK,
   {
     double laplace_v = nu * (u_xx[i] + u_yy[i] + (d == 2 ? 0. : u_zz[i]));
     // resistance term for Brinkman-type problems
-    double resistance_v = coeff[4] * u[i];
+    double resistance_v = sigma * u[i];
 
     // multiply by -1 for non-sym GLS
     //laplace_v *= delta * sign *
@@ -745,7 +747,7 @@ void NS_GLS(double Mult, double *coeff, double *param, double hK,
     {
       double laplace_u = nu * (u_xx[j] + u_yy[j] + (d == 2 ? 0. : u_zz[j]));
 
-      double resistance_u = coeff[4] * u[j];
+      double resistance_u = sigma * u[j];
       double residue_u = -laplace_u + resistance_u;
       //MatrixA11[i][j] -= Mult*laplace_v*laplace_u;
       //MatrixA22[i][j] -= Mult*laplace_v*laplace_u;
@@ -779,7 +781,7 @@ void NS_GLS(double Mult, double *coeff, double *param, double hK,
     for(int j = 0; j < N_U; j++)
     {
       double laplace_u = nu * (u_xx[j] + u_yy[j] + (d == 2 ? 0. : u_zz[j]));
-      double resistance_u = coeff[4] * u[j];
+      double resistance_u = sigma * u[j];
       double residue_u = -laplace_u + resistance_u;
       
       MatrixB1[i][j] += sign * Mult * delta * (-q_x) * residue_u;
@@ -824,7 +826,7 @@ void NS_GLS_RightHandSide(double Mult, double *coeff, double *param, double hK,
   double f1 = coeff[1];
   double f2 = coeff[2];
   double f3 = d == 2 ? 0. : coeff[3];
-  double sigma = coeff[4]; // = 1/permeability
+  double sigma = d == 2 ? coeff[4] : coeff[5]; // = 1/permeability
   
   double delta = compute_GLS_delta(delta0, hK, nu, sigma);
   for(int i = 0; i < N_U; i++)

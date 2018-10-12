@@ -50,14 +50,13 @@ int TJoint::SetNeighbour(TBaseCell *Neighb)
             return 0;
             
         case BoundaryEdge:
+        case BoundaryFace:
             Neighb0 = Neighb;
             
             return 0;
-            
- 
-            
-        default:
-            return -1;
+
+       default:
+            ErrThrow("Unknown joint type", this->GetType());
     }
 }
 

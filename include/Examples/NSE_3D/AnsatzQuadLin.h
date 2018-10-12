@@ -128,6 +128,7 @@ void LinCoeffs(int n_points, double *X, double *Y, double *Z,
     coeffs[i][2] = -2*eps - 2; // f2
     coeffs[i][3] = -10*eps + 7; // f3
     coeffs[i][4] = 0.; // divergence
+    coeffs[i][5] = 0.; // sigma
   }
   if (TDatabase::ParamDB->FLOW_PROBLEM_TYPE != 3) // Navier-Stokes
   {
