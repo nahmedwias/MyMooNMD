@@ -1029,13 +1029,14 @@ void TCollection::get_face_list_on_component(int boundary_component_id, std::vec
   for (int i = 0; i < this->N_Cells; i++)
   {
     TBaseCell *cell = this->Cells[i];
-
+//cout << "Jooooooo" << endl;
     for(size_t joint_id = 0; joint_id < (size_t) cell->GetN_Faces(); joint_id++)
     {
       TJoint* joint = cell->GetJoint(joint_id);
-
-      if (joint->GetType() == BoundaryFace || joint->GetType() == IsoBoundFace)
+     // cout << "joint_id: " << joint_id << endl;
+      if ((joint->GetType() == BoundaryFace) || (joint->GetType() == IsoBoundFace))
       {
+        //cout << "joint_id on boundary: " << joint_id << endl;
         // convert the joint to an object of BoundFace type
         TBoundFace *boundface = (TBoundFace *)joint;
 
@@ -1044,7 +1045,7 @@ void TCollection::get_face_list_on_component(int boundary_component_id, std::vec
           ///@todo set the boundedge properties in the function MakeGrid
           boundface->SetNeighbour(cell); //todo check if ok
 
-          //boundface->set_index_in_neighbour(cell, joint_id); //todo check if ok
+          boundface->set_index_in_neighbour(cell, joint_id); //todo check if ok
           faces.push_back(boundface);
         }
       }

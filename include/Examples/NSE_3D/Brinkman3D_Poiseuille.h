@@ -18,7 +18,7 @@ std::vector<size_t> nitsche_id;
 
 void ExampleFile()
 {
-  Output::print<1>("Example: Brinkman_Poiseuille.h");
+  Output::print<1>("Example: Brinkman3D_Poiseuille.h");
 }
 
 // ========================================================================
@@ -103,7 +103,9 @@ void ExactP(double x, double y, double z, double *values)
 // kind of boundary condition (for FE space needed)
 void BoundCondition(double x, double y, double z, BoundCond &cond)
 {
-  cond = DIRICHLET;
+
+  cond = DIRICHLET_WEAK;
+  //cond = DIRICHLET;
 
   // set Neumann BC
 
@@ -118,12 +120,14 @@ void BoundCondition(double x, double y, double z, BoundCond &cond)
       cond = NEUMANN;
     }
   }
-
-  if ( ( (x*x + y*y - 4) < 1e-14) && (nitsche_id[0] == 2) )
+//cout << "r: "<< r <<endl;
+ /* else if (  ( fabs(r-2.) < 1.e-2 ) && (nitsche_id[0] == 2) )
   {
+    cout << "DIICHLET-WEAK"<< endl;
+    cout << x <<", "<< y <<", "<< z << endl;
     cond = DIRICHLET_WEAK;
   }
-
+*/
   /*
    for (int j = 0; j < neumann_id.size(); j++)
     {

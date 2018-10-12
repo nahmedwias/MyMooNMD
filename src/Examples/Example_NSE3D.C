@@ -41,9 +41,9 @@ namespace simple_coriolis // 6
 {
 #include "NSE_3D/Coriolis_simple.h"
 }
-namespace brinkman_poiseuille // 7
+namespace brinkman3d_poiseuille // 7
 {
-  #include "NSE_3D/Brinkman_Poiseuille.h"
+  #include "NSE_3D/Brinkman3D_Poiseuille.h"
 }
 
 //test examples
@@ -283,36 +283,37 @@ Example_NSE3D::Example_NSE3D(const ParameterDatabase& user_input_parameter_db)
       simple_coriolis::include_coriolis_term = true;
       simple_coriolis::ExampleFile();
       break;
-
+    }
     case 7:
+    {
       /** exact_solution */
-      exact_solution.push_back( brinkman_poiseuille::ExactU1 );
-      exact_solution.push_back( brinkman_poiseuille::ExactU2 );
-      exact_solution.push_back( brinkman_poiseuille::ExactU3 );
-      exact_solution.push_back( brinkman_poiseuille::ExactP );
+      exact_solution.push_back( brinkman3d_poiseuille::ExactU1 );
+      exact_solution.push_back( brinkman3d_poiseuille::ExactU2 );
+      exact_solution.push_back( brinkman3d_poiseuille::ExactU3 );
+      exact_solution.push_back( brinkman3d_poiseuille::ExactP );
 
       /** boundary condition */
-      boundary_conditions.push_back( brinkman_poiseuille::BoundCondition );
-      boundary_conditions.push_back( brinkman_poiseuille::BoundCondition );
-      boundary_conditions.push_back( brinkman_poiseuille::BoundCondition );
+      boundary_conditions.push_back( brinkman3d_poiseuille::BoundCondition );
+      boundary_conditions.push_back( brinkman3d_poiseuille::BoundCondition );
+      boundary_conditions.push_back( brinkman3d_poiseuille::BoundCondition );
       boundary_conditions.push_back( BoundConditionNoBoundCondition );
 
       /** boundary values */
-      boundary_data.push_back( brinkman_poiseuille::U1BoundValue );
-      boundary_data.push_back( brinkman_poiseuille::U2BoundValue );
-      boundary_data.push_back( brinkman_poiseuille::U3BoundValue );
+      boundary_data.push_back( brinkman3d_poiseuille::U1BoundValue );
+      boundary_data.push_back( brinkman3d_poiseuille::U2BoundValue );
+      boundary_data.push_back( brinkman3d_poiseuille::U3BoundValue );
       boundary_data.push_back( BoundaryValueHomogenous );
 
       /** coefficients */
-      problem_coefficients = brinkman_poiseuille::LinCoeffs;
+      problem_coefficients = brinkman3d_poiseuille::LinCoeffs;
 
       // Set dimensionless viscosity
-      brinkman_poiseuille::effective_viscosity = get_nu();
-      brinkman_poiseuille::sigma = get_inverse_permeability();
-      brinkman_poiseuille::neumann_id = get_neumann_id();
-      brinkman_poiseuille::nitsche_id = get_nitsche_id();
+      brinkman3d_poiseuille::effective_viscosity = get_nu();
+      brinkman3d_poiseuille::sigma = get_inverse_permeability();
+      brinkman3d_poiseuille::neumann_id = get_neumann_id();
+      brinkman3d_poiseuille::nitsche_id = get_nitsche_id();
 
-      brinkman_poiseuille::ExampleFile();
+      brinkman3d_poiseuille::ExampleFile();
       break;
     }
     case -1:
