@@ -65,7 +65,7 @@ void BoundaryAssembling3D::rhs_g_v_n(BlockVector &rhs,
       if(given_boundary_data != nullptr)
         given_boundary_data(x, y, z, value);
       else
-        value = 1.;
+        value = 1.; // the actual value is then set via mult and the .dat file
 
       double scale_factor = mult * qWeights[l] * transformationDeterminant;
 
@@ -489,17 +489,17 @@ void BoundaryAssembling3D::rhs_q_uD_n(BlockVector &rhs,
       if(given_boundary_data0 != nullptr)
         given_boundary_data0(x, y, z, uDirichlet[0]);
       else
-        uDirichlet[0] = 1.; //0.;
+        uDirichlet[0] = 0.; // 1.; //
 
       if(given_boundary_data1 != nullptr)
         given_boundary_data1(x, y, z, uDirichlet[1]);
       else
-        uDirichlet[1] = 1.; //0.;
+        uDirichlet[1] = 0.; // 1.; //
 
       if(given_boundary_data2 != nullptr)
         given_boundary_data2(x, y, z, uDirichlet[2]);
       else
-        uDirichlet[2] = 1.; //0.;
+        uDirichlet[2] = 0.; //1.; //
 
       double scale_factor  = mult * qWeights_u[l] * transformationDeterminant;
 
@@ -509,7 +509,6 @@ void BoundaryAssembling3D::rhs_q_uD_n(BlockVector &rhs,
 
         if (global_dof_from_local_p < P_Space->GetActiveBound())
         {
-
           double q = basisFunctionsValues_p[l][k1]; // value of test function (vtest = vx = vy =vz)
 
           double  n1 = normal[0];
@@ -737,6 +736,9 @@ void BoundaryAssembling3D::rhs_gradv_n_uD(BlockVector &rhs,
     int *DOF = U_Space->GetGlobalDOF(cell->GetCellIndex());
 
     int joint_id = boundface->get_index_in_neighbour(cell);
+
+  //  cout << "joint_id from get index in neighbour: "<< joint_id << endl;
+
     // get all data necessary for computing the integral:
     // quadrature weights, points, functions values, normal, determinant
     std:: vector<double> qWeights, qPointsT, qPointsS; // S,T for parametrization in 3D
@@ -748,6 +750,28 @@ void BoundaryAssembling3D::rhs_gradv_n_uD(BlockVector &rhs,
     double transformationDeterminant;
     this->computeNormalAndTransformationData(cell, joint_id, normal,
         transformationDeterminant);
+
+
+   // if ( normal[0] == 0 && normal[1] == 0 && normal[2] == 1)
+    //{
+      cout << "n1, n2, n3: "<< normal[0] << ", "<< normal[1] << ", " << normal[2] <<endl;
+   //   cout << "cell->GetCellIndex(): "<< cell->GetCellIndex() << endl;
+      //cout << "cell->GetBd_Part(): " << cell->GetBd_Part() << endl;
+      //cout << "Face_ID: "<< boundface->get_index_in_neighbour(cell) << endl;
+      TVertex *ver0;
+      for (int j = 0; j < 4; j++)
+      {
+        ver0 = cell->GetVertex(j);
+   //     cout << ver0->GetX() << ", "<< ver0->GetY() << ", " << ver0->GetZ() <<endl;
+
+      }
+      //TCollection *coll = U_Space->GetCollection();
+      //coll->writeMesh("3DTest.mesh");
+
+      //cout << "cell->GetCellIndex(): "<< cell->GetCellIndex() << endl;
+   // }
+
+
 
     std::vector<double> uDirichlet(3);
     double x, y, z;
@@ -762,17 +786,17 @@ void BoundaryAssembling3D::rhs_gradv_n_uD(BlockVector &rhs,
       if(given_boundary_data0 != nullptr)
         given_boundary_data0(x, y, z, uDirichlet[0]);
       else
-        uDirichlet[0] = 1.; //0.;
+        uDirichlet[0] = 0.; //1.; //
 
       if(given_boundary_data1 != nullptr)
         given_boundary_data1(x, y, z, uDirichlet[1]);
       else
-        uDirichlet[1] = 1.; //0.;
+        uDirichlet[1] = 0.; // 1.; //
 
       if(given_boundary_data2 != nullptr)
         given_boundary_data2(x, y, z, uDirichlet[2]);
       else
-        uDirichlet[2] = 1.; //0.;
+        uDirichlet[2] = 0.; //0.; //
 
       // rescale local integral by mesh-size (important for Nitsche boundary)
       double scale_factor = mult * qWeights[l] * transformationDeterminant;
@@ -948,7 +972,7 @@ void BoundaryAssembling3D::rhs_uD_v(BlockVector &rhs,
       if(given_boundary_data2 != nullptr)
         given_boundary_data2(x, y, z, uDirichlet[2]);
       else
-        uDirichlet[2] = 1.; //0.;
+        uDirichlet[2] = 0.; //1.; //
 
       double scale_factor = mult * qWeights[l] * transformationDeterminant;
 
@@ -1092,11 +1116,13 @@ void BoundaryAssembling3D::computeNormalAndTransformationData(TBaseCell *cell, i
   // note: in the case that faces of an element have differennt number of
   // vertices (e.g. a pyramid), the faceVertexMap lists have all lenght equal to
   // maxNVerticesPerFace, and these are filled with 0 for the faces with less vertices
-  cell->GetShapeDesc()->GetFaceVertex(faceVertexMap,faceVertexMapLength,maxNVerticesPerFace);
+  cell->GetShapeDesc()->GetFaceVertex(faceVertexMap, faceVertexMapLength, maxNVerticesPerFace);
   // simplify: number of vertices on face m (m=joint_id)
-  size_t nFaceVertices = faceVertexMapLength[ m ];
-  std::vector< Point > faceVertices(nFaceVertices,Point((unsigned int) 3));
-  for (size_t l1=0; l1<nFaceVertices; l1++) {
+  size_t nFaceVertices = faceVertexMapLength[m];
+  std::vector< Point > faceVertices(nFaceVertices, Point((unsigned int) 3));
+
+  for (size_t l1 = 0; l1 < nFaceVertices; l1++)
+  {
     double _x,_y,_z;
     cell->GetVertex(faceVertexMap[ m*maxNVerticesPerFace+l1 ])->GetCoords(_x,_y,_z);
     faceVertices[l1].x() = _x;
@@ -1106,9 +1132,24 @@ void BoundaryAssembling3D::computeNormalAndTransformationData(TBaseCell *cell, i
 
   normal.resize(3);
   double xc1, yc1, zc1, xc2, yc2, zc2;
-  switch(faceVertices.size()) {
+  double areaT, areaT1, areaT2, area_parallelogramm, area_parallelogramm_1, area_parallelogramm_2;
+  switch(faceVertices.size())
+  {
   case 3:
-    // compute the 2 vectors that span the plane containing the current face
+    xc1 = faceVertices[1].x() - faceVertices[0].x();
+    xc2 = faceVertices[2].x() - faceVertices[0].x();
+
+    yc1 = faceVertices[1].y() - faceVertices[0].y();
+    yc2 = faceVertices[2].y() - faceVertices[0].y();
+
+    zc1 = faceVertices[1].z() - faceVertices[0].z();
+    zc2 = faceVertices[2].z() - faceVertices[0].z();
+
+    // normal vector
+    normal[0] = yc1*zc2 - zc1*yc2;
+    normal[1] = zc1*xc2 - xc1*zc2;
+    normal[2] = xc1*yc2 - yc1*xc2;
+   /* // compute the 2 vectors that span the plane containing the current face
     xc1 = faceVertices[1].x() - faceVertices[0].x();
     xc2 = faceVertices[2].x() - faceVertices[0].x();
 
@@ -1120,21 +1161,21 @@ void BoundaryAssembling3D::computeNormalAndTransformationData(TBaseCell *cell, i
 
     // plane spanned by vectors v1=(xc1, yc1, zc1) and v2=(xc2, yc2, zc2)
     // Area of the triangle: 0.5*||v1 x v2||
-    // normed Normal vector = v1 x v2/||v1 x v2||
+    // normed Normal vector = (v1 x v2)/||v1 x v2||
     // Area of reference triangle (0,0)-(0,1)-(1,0): 1/2*g*h=0.5
-    // Determinant of tranform.: A(triangle)/A(ref triangle) = ||v1 x v2||
-    normal[0] = yc1*zc2 - zc1*yc2;
-    normal[1] = zc1*xc2 - xc1*zc2;
-    normal[2] = xc1*yc2 - yc1*xc2;
+ */   // Determinant of tranform.: A(triangle)/A(ref triangle) = ||v1 x v2||
+    normal[0] = yc2*zc1 - zc2*yc1;// yc1*zc2 - zc1*yc2;
+    normal[1] = zc2*xc1 - xc2*zc1; //zc1*xc2 - xc1*zc2;
+    normal[2] = xc2*yc1 - yc2*xc1; //xc1*yc2 - yc1*xc2;
+
     // determinant of reference trafo in order to get a normed normal vector
-    transformationDeterminant =
-        sqrt(normal[0]*normal[0] + normal[1]*normal[1] + normal[2]*normal[2]);
-    normal[0] /= transformationDeterminant;
-    normal[1] /= transformationDeterminant;
-    normal[2] /= transformationDeterminant;
-
+    area_parallelogramm = sqrt(normal[0]*normal[0] + normal[1]*normal[1] + normal[2]*normal[2]);
+    normal[0] /= area_parallelogramm;
+    normal[1] /= area_parallelogramm;
+    normal[2] /= area_parallelogramm;
+    areaT = area_parallelogramm / 2.0;
+    transformationDeterminant = areaT / 0.5;
     break;
-
   case 4:
     // We consider a quadrilateral (P0,P1,P2,P3) as composed by 2 triangles
     // T1: P0,P1,P2
@@ -1145,52 +1186,57 @@ void BoundaryAssembling3D::computeNormalAndTransformationData(TBaseCell *cell, i
     // area reference element [-1,1]x[-1,1]: 4
     // first triangle
     xc1 = faceVertices[1].x() - faceVertices[0].x();
-    xc2 = faceVertices[2].x() - faceVertices[0].x();
+    xc2 = faceVertices[3].x() - faceVertices[0].x(); //faceVertices[2].x() - faceVertices[0].x();
 
     yc1 = faceVertices[1].y() - faceVertices[0].y();
-    yc2 = faceVertices[2].y() - faceVertices[0].y();
+    yc2 = faceVertices[3].y() - faceVertices[0].y(); //faceVertices[2].y() - faceVertices[0].y();
 
     zc1 = faceVertices[1].z() - faceVertices[0].z();
-    zc2 = faceVertices[2].z() - faceVertices[0].z();
+    zc2 = faceVertices[3].z() - faceVertices[0].z(); //faceVertices[2].z() - faceVertices[0].z();
 
     // normal vector (the same (except for length) for T1 and T2)
-    normal[0] = yc1*zc2 - zc1*yc2;
-    normal[1] = zc1*xc2 - xc1*zc2;
-    normal[2] = xc1*yc2 - yc1*xc2;
+    normal[0] = yc2*zc1 - zc2*yc1;// yc1*zc2 - zc1*yc2;
+    normal[1] = zc2*xc1 - xc2*zc1; //zc1*xc2 - xc1*zc2;
+    normal[2] = xc2*yc1 - yc2*xc1; //xc1*yc2 - yc1*xc2;
 
     // determinant of reference transformation in order to get a normed normal vector
-    double areaT1 =
-        sqrt(normal[0]*normal[0] + normal[1]*normal[1] + normal[2]*normal[2]);
-    areaT1 /= 2.0;
+    area_parallelogramm_1 = sqrt(normal[0]*normal[0] + normal[1]*normal[1] + normal[2]*normal[2]);
+
+    normal[0] /= area_parallelogramm_1;
+    normal[1] /= area_parallelogramm_1;
+    normal[2] /= area_parallelogramm_1;
+
+    areaT1 = area_parallelogramm_1 / 2.0;
     // second triangle
     xc1 = faceVertices[3].x() - faceVertices[2].x();
-    xc2 = faceVertices[0].x() - faceVertices[2].x();
+    xc2 = faceVertices[1].x() - faceVertices[2].x(); //faceVertices[0].x() - faceVertices[2].x();
 
     yc1 = faceVertices[3].y() - faceVertices[2].y();
-    yc2 = faceVertices[0].y() - faceVertices[2].y();
+    yc2 = faceVertices[1].y() - faceVertices[2].y(); //faceVertices[0].y() - faceVertices[2].y();
 
     zc1 = faceVertices[3].z() - faceVertices[2].z();
-    zc2 = faceVertices[0].z() - faceVertices[2].z();
+    zc2 = faceVertices[1].z() - faceVertices[2].z(); //faceVertices[0].z() - faceVertices[2].z();
 
 
     // normal vector (the same (except for length) for T1 and T2)
-    normal[0] = yc1*zc2 - zc1*yc2;
-    normal[1] = zc1*xc2 - xc1*zc2;
-    normal[2] = xc1*yc2 - yc1*xc2;
+    normal[0] = yc2*zc1 - zc2*yc1;// yc1*zc2 - zc1*yc2;
+    normal[1] = zc2*xc1 - xc2*zc1; //zc1*xc2 - xc1*zc2;
+    normal[2] = xc2*yc1 - yc2*xc1; //xc1*yc2 - yc1*xc2;
 
     // determinant of reference trasformation in order to get a normed normal vector
-    double areaT2 =
-        sqrt(normal[0]*normal[0] + normal[1]*normal[1] + normal[2]*normal[2]);
-    normal[0] /= areaT2;
-    normal[1] /= areaT2;
-    normal[2] /= areaT2;
+    area_parallelogramm_2 = sqrt(normal[0]*normal[0] + normal[1]*normal[1] + normal[2]*normal[2]);
+    normal[0] /= area_parallelogramm_2;
+    normal[1] /= area_parallelogramm_2;
+    normal[2] /= area_parallelogramm_2;
 
-    areaT2 /= 2.0;
+    areaT2 = area_parallelogramm_2 / 2.0;
 
     // note: the reference element is [-1,1] x [-1,1]
-    transformationDeterminant = (areaT1+areaT2)/4.;
+    transformationDeterminant = (areaT1 + areaT2)/4.;
 
     break;
+  default:
+    ErrThrow("Unknown cell type in BoundaryAssembling3D::computeNormalAndTransformationData()");
 
   } // tria or quads
 
@@ -1316,7 +1362,7 @@ void BoundaryAssembling3D::nitsche_bc(BlockFEMatrix &s_matrix, BlockVector &s_rh
   // - (mu grad(u)n,v)
   matrix_gradu_n_v(s_matrix, v_space, boundaryFaceList, bd_comp, -1. * mu);  // OK
 
-  // - sign_u * (u, mu grad(v)n) [sign_u=1: symmetrix, -1: skew-symmetric]
+  // - sign_u * (u, mu grad(v)n) [sign_u=1: symmetric, -1: skew-symmetric]
   matrix_gradv_n_u(s_matrix, v_space, boundaryFaceList, bd_comp, (-1) * sym_u * mu);
 
   // - sign_u * (uD,mu grad(v)n) [rhs]
