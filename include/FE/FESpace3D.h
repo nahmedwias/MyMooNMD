@@ -146,12 +146,29 @@ class TFESpace3D : public TFESpace
     bool CheckMesh() const;
 
     /**
+     * @brief get degree of FE space on a given cell
+     **/
+    int getFEDegree(TBaseCell *cell) const;
+      
+    /**
      * @brief get quadrature data on the m-th face of a given cell
     **/
     void getFaceQuadratureData(TBaseCell *cell, int m,
-			   std::vector<double>& qWeights,std::vector<double>& qPointsT,
-			   std::vector<double>& qPointsS,
-			   std::vector< std::vector<double> >& basisFunctionsValues) const;
+			       std::vector<double>& qWeights,std::vector<double>& qPointsT,
+			       std::vector<double>& qPointsS,
+			       std::vector< std::vector<double> >& basisFunctionsValues,
+			       int _deg = -1) const;
+
+    /**
+     * @brief get the right quadrature formula for a given space on m-th face of a given cell
+    **/
+    QuadFormula2D getFaceQuadratureFormula(TBaseCell *cell, int m, int d=-1) const;
+      
+    /**
+     * @brief get quadrature value on the m-th face of a given cell for a given quad formula
+    **/
+    void getFaceQuadratureValue(TBaseCell *cell, int m, QuadFormula2D FaceQuadFormula,
+				std::vector< std::vector<double> >& basisFunctionsValues) const;
 
 #ifdef  _MPI
     /**
