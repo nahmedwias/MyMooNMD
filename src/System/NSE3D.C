@@ -503,7 +503,7 @@ void NSE3D::assemble_linear_terms()
                boundContion, boundValues.data(), la);
     
 
-    // NEW LB 10.10.18
+
     // assemble on the boundary if needed
       assemble_boundary_terms();
       
@@ -1007,12 +1007,14 @@ void NSE3D::assemble_boundary_terms()
       std::vector<size_t> neumann_id = db["neumann_id"];
       std::vector<double> neumann_value = db["neumann_value"];
 
+      std::vector<TBaseCell*> dummy;
       for (int k = 0; k < neumann_id.size(); k++)
       {
         Output::print<1>(" Neumann BC on boundary: ", neumann_id[k]);
         coll->get_face_list_on_component(neumann_id[k], boundaryFaceList);
         const TFESpace3D * v_space = s.velocitySpace_.get();
         ba.rhs_g_v_n(s.rhs_, v_space, nullptr, boundaryFaceList, (int) neumann_id[k], -1.*neumann_value[k]);
+	//ba.rhs_g_v_n(s.rhs_, v_space, nullptr, dummy, (int) neumann_id[k], -1.*neumann_value[k]);
       }
     }
 

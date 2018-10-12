@@ -23,56 +23,55 @@ void BoundaryAssembling3D::rhs_g_v_n(BlockVector &rhs,
 {
   if (boundaryFaceList.empty())
   {
-  TCollection* coll = U_Space->GetCollection();
-  coll->get_face_list_on_component(componentID, boundaryFaceList);
+    TCollection* coll = U_Space->GetCollection();
+    coll->get_face_list_on_component(componentID, boundaryFaceList);
   }
 
   for(size_t m = 0; m < boundaryFaceList.size(); m++)
   {
     TBoundFace *boundface = boundaryFaceList[m];
     TBaseCell *cell = ( (TJoint *)boundface)->GetNeighbour(0);
-
+    
     // mapping from local (cell) DOF to global DOF
     int *DOF = U_Space->GetGlobalDOF(cell->GetCellIndex());
-
+    
     int joint_id = boundface->get_index_in_neighbour(cell);
-
+    
     // get all data necessary for computing the integral:
     // quadrature weights, points, functions values, normal, determinant
     std:: vector<double> qWeights, qPointsT, qPointsS;
     std::vector< std::vector<double> > basisFunctionsValues;
     this->getQuadratureData(U_Space, cell, joint_id, qWeights,
-            qPointsT, qPointsS, basisFunctionsValues);
-
+			    qPointsT, qPointsS, basisFunctionsValues);
+    
     std::vector<double> n;
     double transformationDeterminant;
     cell->computeNormalAndTransformationData(joint_id, n,
-        transformationDeterminant);
-
+					     transformationDeterminant);
+    
     double x, y, z;
     double value;
     n.resize(3);
     boundface->GetXYZofTS(qPointsT[0], qPointsS[0], x, y, z);
     boundface->get_normal_vector(x, y, z, n[0], n[1], n[2]);
-
+    
     // loop over Gauss points
     for (size_t l = 0; l < qWeights.size(); l++)
-    {
-      // NEW LB 11.10.18
-      // get the boundary values of rhs
-      boundface->GetBoundComp()->GetXYZofTS(qPointsT[l], qPointsS[l], x, y, z);
-
-      if(given_boundary_data != nullptr)
-        given_boundary_data(x, y, z, value);
-      else
-        value = 1.; // the actual value is then set via mult and the .dat file
-
-      double scale_factor = mult * qWeights[l] * transformationDeterminant;
-
-      for (size_t k = 0; k < basisFunctionsValues[l].size(); k++)
       {
-        int global_dof_from_local = DOF[k];
-
+	
+	if(given_boundary_data != nullptr) {
+	  boundface->GetBoundComp()->GetXYZofTS(qPointsT[l], qPointsS[l], x, y, z);
+	  given_boundary_data(x, y, z, value);
+	}
+	else
+	  value = 1.; // the actual value is then set via mult and the .dat file
+	
+	double scale_factor = mult * qWeights[l] * transformationDeterminant;
+	
+	for (size_t k = 0; k < basisFunctionsValues[l].size(); k++)
+	  {
+	    int global_dof_from_local = DOF[k];
+	    
         if (global_dof_from_local < U_Space->GetActiveBound())
         {
           double v1 = basisFunctionsValues[l][k]; // value of test function (vtest = vx = vy =vz)
@@ -105,8 +104,7 @@ void BoundaryAssembling3D::rhs_g_v_n(BlockVector &rhs,
 
     // mapping from local (cell) DOF to global DOF
     int *DOF = U_Space->GetGlobalDOF(cell->GetCellIndex());
-        cout << "cell->GetCellIndex(): " << cell->GetCellIndex() << endl;
-
+    
     for(size_t joint_id = 0; joint_id < (size_t) cell->GetN_Faces(); joint_id++)
     {
       TJoint* joint = cell->GetJoint(joint_id);
@@ -1363,7 +1361,8 @@ void BoundaryAssembling3D::nitsche_bc(BlockFEMatrix &s_matrix, BlockVector &s_rh
   matrix_u_v(s_matrix, v_space, boundaryFaceList, bd_comp, gamma*mu, true);  // rescale local integral by edge values
 
   // gamma/h (uD,v) [rhs]
-  rhs_uD_v(s_rhs, v_space, U1, U2, U3, boundaryFaceList, bd_comp, gamma*mu, true);   // rescale local integral by edge values
+  // rescale local integral by edge values
+  //rhs_uD_v(s_rhs, v_space, U1, U2, U3, boundaryFaceList, bd_comp, gamma*mu, true);   
 
   // - (mu grad(u)n,v)
   matrix_gradu_n_v(s_matrix, v_space, boundaryFaceList, bd_comp, -1. * mu);  // OK
@@ -1372,16 +1371,16 @@ void BoundaryAssembling3D::nitsche_bc(BlockFEMatrix &s_matrix, BlockVector &s_rh
   matrix_gradv_n_u(s_matrix, v_space, boundaryFaceList, bd_comp, (-1) * sym_u * mu);
 
   // - sign_u * (uD,mu grad(v)n) [rhs]
-  rhs_gradv_n_uD(s_rhs, v_space, U1, U2, U3, boundaryFaceList, bd_comp, (-1) * sym_u * mu );
-
+  //rhs_gradv_n_uD(s_rhs, v_space, U1, U2, U3, boundaryFaceList, bd_comp, (-1) * sym_u * mu );
+  
   // (pn,v)
   matrix_p_v_n(s_matrix, v_space, p_space, boundaryFaceList, bd_comp, 1.);
-
+  
   // sign_p * (u,qn)
   matrix_q_u_n(s_matrix, v_space, p_space, boundaryFaceList, bd_comp, sym_p);
-
+  
   // sign_p * (uD,qn) [rhs]
-  rhs_q_uD_n(s_rhs, v_space, p_space, U1, U2, U3, boundaryFaceList, bd_comp, sym_p);
+  //rhs_q_uD_n(s_rhs, v_space, p_space, U1, U2, U3, boundaryFaceList, bd_comp, sym_p);
 }
 
 
