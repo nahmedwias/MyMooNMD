@@ -1003,6 +1003,7 @@ void NSE3D::assemble_boundary_terms()
     {
       // Neumann BC
       std::vector<TBoundFace*> boundaryFaceList;
+      boundaryFaceList.clear();
       std::vector<size_t> neumann_id = db["neumann_id"];
       std::vector<double> neumann_value = db["neumann_value"];
 
@@ -1019,6 +1020,7 @@ void NSE3D::assemble_boundary_terms()
     {
       // Nitsche penalty for weak essential BC
       std::vector<TBoundFace*> boundaryFaceList;
+      boundaryFaceList.clear();
       std::vector<size_t> nitsche_id = db["nitsche_id"];
       std::vector<double> nitsche_penalty = db["nitsche_penalty"];
 
@@ -1035,10 +1037,21 @@ void NSE3D::assemble_boundary_terms()
         int sym_p = db["symmetric_nitsche_p"];
 
         ba.nitsche_bc(s.matrix_, s.rhs_, v_space, p_space,
-            this->example_.get_bd(0), this->example_.get_bd(1), this->example_.get_bd(2),
+            nullptr, nullptr, nullptr,//this->example_.get_bd(0), this->example_.get_bd(1), this->example_.get_bd(2),
             boundaryFaceList,
             nitsche_id[k], nitsche_penalty[k], effective_viscosity,
             sym_u, sym_p);
+
+        cout << "this->example_.get_bd(0): " << this->example_.get_bd()[0] << endl;
+        cout << "this->example_.get_bd(1): " << this->example_.get_bd(1) << endl;
+        cout << "this->example_.get_bd(2): " << this->example_.get_bd(2) << endl;
+
+        cout << "nitsche_id[k]: " << nitsche_id[k] << endl;
+        cout << "nitsche_penalty[k]: " << nitsche_penalty[k] << endl;
+        cout << "effective_viscosity: " << effective_viscosity << endl;
+        cout << "sym_u: " << sym_u << endl;
+        cout << "sym_p: " << sym_p << endl;
+
       }
     }
 

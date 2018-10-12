@@ -51,6 +51,7 @@ int TJoint::SetNeighbour(TBaseCell *Neighb)
             
         case BoundaryEdge:
         case BoundaryFace:
+        case IsoBoundFace:
             Neighb0 = Neighb;
             
             return 0;

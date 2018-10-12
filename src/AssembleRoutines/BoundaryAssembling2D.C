@@ -279,7 +279,7 @@ void BoundaryAssembling2D::rhs_gradv_n_uD(BlockVector &rhs,
   int *GlobalNumbers = U_Space->GetGlobalNumbers();
   int ActiveBound = U_Space->GetActiveBound();
 
-  for(size_t m = 0; m < boundaryEdgeList.size(); m++)
+  for (size_t m = 0; m < boundaryEdgeList.size(); m++)
   {
     TBoundEdge *boundedge = boundaryEdgeList[m];
     TBaseCell *cell = boundedge->GetNeighbour(0);
