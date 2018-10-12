@@ -54,7 +54,7 @@ std::shared_ptr<FEMatrix> LPS_for_pressure_Scott_Zhang(
   double val[6];
   MultiIndex2D der[3] = {D00, D10, D01};
 
-  constexpr int MaxN_EntriesPerRow = 200;
+  constexpr int MaxN_EntriesPerRow = 400;
   constexpr int N_MaxBaseFuncts = 25;
   constexpr int N_MaxQuadPoints = 100;
   double values_in_quad_points[N_MaxBaseFuncts][3][N_MaxQuadPoints];
