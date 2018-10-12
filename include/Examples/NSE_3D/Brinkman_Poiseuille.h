@@ -105,16 +105,49 @@ void BoundCondition(double x, double y, double z, BoundCond &cond)
 {
   cond = DIRICHLET;
 
+  // set Neumann BC
+
   // Neumann boundary condition on outlet  (top)
   double _R_CYLINDER = 2.;
   double _HEIGHT = 10.;
   double r = sqrt(x*x+y*y);
-  if ((fabs(z-_HEIGHT)<1e-8) || (fabs(z-0)<1e-8) ) {
+  if ((fabs(z-_HEIGHT)<1e-8) || (fabs(z-0)<1e-8) )
+  {
     if( fabs(r - _R_CYLINDER)>1e-8  )
-        {
+    {
       cond = NEUMANN;
     }
   }
+
+  if ( ( (x*x + y*y - 4) < 1e-14) && (nitsche_id[0] == 2) )
+  {
+    cond = DIRICHLET_WEAK;
+  }
+
+  /*
+   for (int j = 0; j < neumann_id.size(); j++)
+    {
+      if (i == neumann_id[j])
+      {
+        cond = NEUMANN;
+        return;
+      }
+    }
+
+  // set Nitsche BC
+  for (int j = 0; j < nitsche_id.size(); j++)
+  {
+    if (i == nitsche_id[j])
+    {
+      cond = DIRICHLET_WEAK;
+
+      return;
+    }
+  }
+  */
+
+
+
 
   /*
   // Neumann boundary condition on inlet  (bottom)
@@ -251,7 +284,7 @@ void LinCoeffs(int n_points, double *x, double *y, double *z,
 {
   double val_u1[4];
   double val_u2[4];
- double val_u3[4];
+  double val_u3[4];
   //double val_p[4];
 
   for(int i = 0; i < n_points; i++)

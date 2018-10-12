@@ -13,7 +13,7 @@
 #include <BoundFace.h>
 #include <BaseCell.h>
 
-// int_{Gamma} mult*given_boundary_data(x,y,z)*<v,normal>
+// int_{Gamma} mult * given_boundary_data(x,y,z) * < v, normal >
 void BoundaryAssembling3D::rhs_g_v_n(BlockVector &rhs,
     const TFESpace3D *U_Space,
     BoundValueFunct3D *given_boundary_data,
@@ -24,8 +24,6 @@ void BoundaryAssembling3D::rhs_g_v_n(BlockVector &rhs,
   if (boundaryFaceList.empty())
   {
   TCollection* coll = U_Space->GetCollection();
-
- // std::vector<TBoundFace*> boundaryFaceList;
   coll->get_face_list_on_component(componentID, boundaryFaceList);
   }
 
@@ -43,22 +41,19 @@ void BoundaryAssembling3D::rhs_g_v_n(BlockVector &rhs,
     // quadrature weights, points, functions values, normal, determinant
     std:: vector<double> qWeights, qPointsT, qPointsS;
     std::vector< std::vector<double> > basisFunctionsValues;
-    //this->getQuadratureData(U_Space,cell,joint_id,qWeights,
-    //        qPointsT,qPointsS,basisFunctionsValues);
-    U_Space->getFaceQuadratureData(cell, joint_id,
-        qWeights, qPointsT, qPointsS,
-        basisFunctionsValues);
+    this->getQuadratureData(U_Space, cell, joint_id, qWeights,
+            qPointsT, qPointsS, basisFunctionsValues);
 
-    std::vector<double> normal;
+    std::vector<double> n;
     double transformationDeterminant;
-    cell->computeNormalAndTransformationData(joint_id, normal,
+    cell->computeNormalAndTransformationData(joint_id, n,
         transformationDeterminant);
 
     double x, y, z;
     double value;
-    normal.resize(3);
+    n.resize(3);
     boundface->GetXYZofTS(qPointsT[0], qPointsS[0], x, y, z);
-    boundface->get_normal_vector(x, y, z, normal[0], normal[1], normal[2]);
+    boundface->get_normal_vector(x, y, z, n[0], n[1], n[2]);
 
     // loop over Gauss points
     for (size_t l = 0; l < qWeights.size(); l++)
@@ -68,9 +63,7 @@ void BoundaryAssembling3D::rhs_g_v_n(BlockVector &rhs,
       boundface->GetBoundComp()->GetXYZofTS(qPointsT[l], qPointsS[l], x, y, z);
 
       if(given_boundary_data != nullptr)
-        /// NEW LB 11.10.18
         given_boundary_data(x, y, z, value);
-      // OLD value = 1.;
       else
         value = 1.;
 
@@ -86,9 +79,9 @@ void BoundaryAssembling3D::rhs_g_v_n(BlockVector &rhs,
           double v2 = v1;
           double v3 = v1;
 
-          rhs.block(0)[global_dof_from_local] += scale_factor * value * (v1*normal[0]);
-          rhs.block(1)[global_dof_from_local] += scale_factor * value * (v2*normal[1]);
-          rhs.block(2)[global_dof_from_local] += scale_factor * value * (v3*normal[2]);
+          rhs.block(0)[global_dof_from_local] += scale_factor * value * v1 * n[0];
+          rhs.block(1)[global_dof_from_local] += scale_factor * value * v2 * n[1];
+          rhs.block(2)[global_dof_from_local] += scale_factor * value * v3 * n[2];
         }
       }
     }
@@ -189,8 +182,8 @@ void BoundaryAssembling3D::rhs_g_v_n(BlockVector &rhs,
 */
 
 // ===========================================================================
-void BoundaryAssembling3D::getQuadratureData(const TFESpace3D *fespace,TBaseCell *cell, int m,
-    std::vector<double>& qWeights,std::vector<double>& qPointsT,
+void BoundaryAssembling3D::getQuadratureData(const TFESpace3D *fespace, TBaseCell *cell, int m,
+    std::vector<double>& qWeights, std::vector<double>& qPointsT,
     std::vector<double>& qPointsS,
     std::vector< std::vector<double> >& basisFunctionsValues)
 {
@@ -275,17 +268,12 @@ void BoundaryAssembling3D::matrix_p_v_n(BlockFEMatrix &M,
     double mult)
 {
   std::vector<std::shared_ptr<FEMatrix>> blocks = M.get_blocks_uniquely();
-  /**
-   * @todo: check if the matrix structure is correct:
-   * we need 4 square matrices with the same FE spaces
-   */
 
   if (boundaryFaceList.empty())
-    {
-  TCollection* coll = U_Space->GetCollection();
-
-  coll->get_face_list_on_component(componentID, boundaryFaceList);
-    }
+  {
+    TCollection* coll = U_Space->GetCollection();
+    coll->get_face_list_on_component(componentID, boundaryFaceList);
+  }
 
   for(size_t m = 0; m < boundaryFaceList.size(); m++)
   {
@@ -345,15 +333,15 @@ void BoundaryAssembling3D::matrix_p_v_n(BlockFEMatrix &M,
               blocks[7]->add(DOF_u[k1],  DOF_p[k2], scale_factor * p * v2 * n2 ); // B2
               blocks[11]->add(DOF_u[k1], DOF_p[k2], scale_factor * p * v3 * n3 ); // B3
             }
-          } //for(l=0;l<N_BaseFunct;l++)
+          }
         }
-      } // endif
+      }
     }
   }
 }
 
 // ===========================================================================
-// int_{Gamma} q*u*n
+// int_{Gamma} < q, u.n >
 void BoundaryAssembling3D::matrix_q_u_n(BlockFEMatrix &M,
     const TFESpace3D *U_Space,
     const TFESpace3D *P_Space,
@@ -364,14 +352,14 @@ void BoundaryAssembling3D::matrix_q_u_n(BlockFEMatrix &M,
   std::vector<std::shared_ptr<FEMatrix>> blocks = M.get_blocks_uniquely();
   /**
    * @todo: check if the matrix structure is correct:
-   * we need 4 square matrices with the same FE spaces
+   * we need 6 square matrices with the same FE spaces
    */
 
   if (boundaryFaceList.empty())
-    {
-  TCollection* coll = U_Space->GetCollection();
-  coll->get_face_list_on_component(componentID, boundaryFaceList);
-    }
+  {
+    TCollection* coll = U_Space->GetCollection();
+    coll->get_face_list_on_component(componentID, boundaryFaceList);
+  }
 
   for(size_t m = 0; m < boundaryFaceList.size(); m++)
   {
@@ -404,43 +392,42 @@ void BoundaryAssembling3D::matrix_q_u_n(BlockFEMatrix &M,
     {
       double scale_factor  = mult * qWeights_u[l] * transformationDeterminant;
 
-      for (size_t k1 = 0; k1 < basisFunctionsValues_p[l].size(); k1++)
+      for (size_t k1 = 0; k1 < basisFunctionsValues_u[l].size(); k1++)
       {
-        int global_dof_from_local_p = DOF_p[k1]; // Test-DOF
-
-        if (global_dof_from_local_p < U_Space->GetActiveBound())
+        int global_dof_from_local_u = DOF_u[k1]; // ansatz-DOF
+        if (global_dof_from_local_u < U_Space->GetActiveBound())
         {
-          double q = basisFunctionsValues_p[l][k1]; // value of test function (vtest = vx = vy =vz)
+          double u1 = basisFunctionsValues_u[l][k1]; // value of ansatz function
+          double u2 = u1; // value of ansatz function
+          double u3 = u1; // value of ansatz function
 
-          for (size_t k2 = 0; k2 < basisFunctionsValues_u[l].size(); k2++)
+          for (size_t k2 = 0; k2 < basisFunctionsValues_p[l].size(); k2++)
           {
-            int global_dof_from_local_u = DOF_u[k2]; // Ansatz-DOF
+            int global_dof_from_local_p = DOF_p[k2]; // test-DOF
 
-            if (global_dof_from_local_u < U_Space->GetActiveBound())
+            if (global_dof_from_local_p < P_Space->GetActiveBound())
             {
-              double u1 = basisFunctionsValues_u[l][k2]; // value of ansatz function
-              double u2 = u1; // value of ansatz function
-              double u3 = u1; // value of ansatz function
+              double q = basisFunctionsValues_p[l][k2]; // value of test function (vtest = vx = vy =vz)
 
               double  n1 = normal[0];
               double  n2 = normal[1];
               double  n3 = normal[2];
 
               // add for all three components
-              blocks[12]->add(DOF_u[k1],  DOF_p[k2], scale_factor * q * u1 * n1 ); // B1
-              blocks[13]->add(DOF_u[k1],  DOF_p[k2], scale_factor * q * u2 * n2 ); // B2
-              blocks[14]->add(DOF_u[k1], DOF_p[k2], scale_factor * q * u3 * n3 ); // B3
+              blocks[12]->add(DOF_p[k1], DOF_u[k2], scale_factor * q * u1 * n1 ); // B1
+              blocks[13]->add(DOF_p[k1], DOF_u[k2], scale_factor * q * u2 * n2 ); // B2
+              blocks[14]->add(DOF_p[k1], DOF_u[k2], scale_factor * q * u3 * n3 ); // B3
             }
-          } //for(l=0;l<N_BaseFunct;l++)
+          }
         }
-      } // endif
+      }
     }
   }
 }
 
 
 // ===========================================================================
-// int_{Gamma} (q, u.n)
+// int_{Gamma}  < q, u.n >
 void BoundaryAssembling3D::rhs_q_uD_n(BlockVector &rhs,
     const TFESpace3D *U_Space,
     const TFESpace3D *P_Space,
@@ -457,10 +444,10 @@ void BoundaryAssembling3D::rhs_q_uD_n(BlockVector &rhs,
    */
 
   if (boundaryFaceList.empty())
-      {
-  TCollection *coll = U_Space->GetCollection();
-  coll->get_face_list_on_component(componentID, boundaryFaceList);
-      }
+  {
+    TCollection *coll = U_Space->GetCollection();
+    coll->get_face_list_on_component(componentID, boundaryFaceList);
+  }
 
   for(size_t m = 0; m < boundaryFaceList.size(); m++)
   {
@@ -496,24 +483,23 @@ void BoundaryAssembling3D::rhs_q_uD_n(BlockVector &rhs,
     // rescale local integral by mesh-size (important for Nitsche boundary)
     for (size_t l = 0; l < qWeights_u.size(); l++)
     {
-      // NEW LB 11.10.18
-      // get the boundary values of rhs
       boundface->GetBoundComp()->GetXYZofTS(qPointsT_u[l], qPointsS_u[l], x, y, z);
 
+      // get the boundary values of rhs
       if(given_boundary_data0 != nullptr)
         given_boundary_data0(x, y, z, uDirichlet[0]);
       else
-        uDirichlet[0] = 0.;
+        uDirichlet[0] = 1.; //0.;
 
       if(given_boundary_data1 != nullptr)
         given_boundary_data1(x, y, z, uDirichlet[1]);
       else
-        uDirichlet[1] = 0.;
+        uDirichlet[1] = 1.; //0.;
 
       if(given_boundary_data2 != nullptr)
         given_boundary_data2(x, y, z, uDirichlet[2]);
       else
-        uDirichlet[2] = 0.;
+        uDirichlet[2] = 1.; //0.;
 
       double scale_factor  = mult * qWeights_u[l] * transformationDeterminant;
 
@@ -523,6 +509,7 @@ void BoundaryAssembling3D::rhs_q_uD_n(BlockVector &rhs,
 
         if (global_dof_from_local_p < P_Space->GetActiveBound())
         {
+
           double q = basisFunctionsValues_p[l][k1]; // value of test function (vtest = vx = vy =vz)
 
           double  n1 = normal[0];
@@ -530,13 +517,9 @@ void BoundaryAssembling3D::rhs_q_uD_n(BlockVector &rhs,
           double  n3 = normal[2];
 
           // add for all three components
-          // rhs.block(0)[global_dof_from_local_p] += scale_factor * q * uDirichlet[0] * n1;
-          // rhs.block(1)[global_dof_from_local_p] += scale_factor * q * uDirichlet[1] * n2;
-          // rhs.block(2)[global_dof_from_local_p] += scale_factor * q * uDirichlet[2] * n3;
-          rhs.block(2)[global_dof_from_local_p] += scale_factor * q * uDirichlet[0] * n1;
-          rhs.block(2)[global_dof_from_local_p] += scale_factor * q * uDirichlet[1] * n2;
-          rhs.block(2)[global_dof_from_local_p] += scale_factor * q * uDirichlet[2] * n3;
-
+          rhs.block(3)[global_dof_from_local_p] += scale_factor * q * uDirichlet[0] * n1;
+          rhs.block(3)[global_dof_from_local_p] += scale_factor * q * uDirichlet[1] * n2;
+          rhs.block(3)[global_dof_from_local_p] += scale_factor * q * uDirichlet[2] * n3;
           //todo: check if scaling with transformation size is necessary (see Boundary_Assembling_2D.C)
         }
       }
@@ -558,10 +541,10 @@ void BoundaryAssembling3D::matrix_gradu_n_v(BlockFEMatrix &M,
   std::vector<std::shared_ptr<FEMatrix>> blocks = M.get_blocks_uniquely();
 
   if (boundaryFaceList.empty())
-      {
-  TCollection* coll = U_Space->GetCollection();
-  coll->get_face_list_on_component(componentID, boundaryFaceList);
-      }
+  {
+    TCollection* coll = U_Space->GetCollection();
+    coll->get_face_list_on_component(componentID, boundaryFaceList);
+  }
 
   for(size_t m = 0; m < boundaryFaceList.size(); m++)
   {
@@ -606,17 +589,13 @@ void BoundaryAssembling3D::matrix_gradu_n_v(BlockFEMatrix &M,
 
             if (global_dof_from_local < U_Space->GetActiveBound())
             {
-              //double u_x = basisFunctionsValues[l][k2]; // value of test function (vtest = vx = vy =vz)
-              //double u_y = u_x;
-              //double u_z = u_x;
-
-              double  n1=normal[0];
-              double  n2=normal[1];
-              double  n3=normal[2];
+              double  n1 = normal[0];
+              double  n2 = normal[1];
+              double  n3 = normal[2];
 
               double u_dx = basisFunctionsValues_derivative_x[l][k2];
-              double u_dy = basisFunctionsValues_derivative_x[l][k2];
-              double u_dz = basisFunctionsValues_derivative_x[l][k2];
+              double u_dy = basisFunctionsValues_derivative_y[l][k2];
+              double u_dz = basisFunctionsValues_derivative_z[l][k2];
 
               // (see the note about blocks at the beginning of the function)
               blocks[0]->add(DOF[k1], DOF[k2],  scale_factor * v1 * u_dx * n1 ); // A11
@@ -631,15 +610,15 @@ void BoundaryAssembling3D::matrix_gradu_n_v(BlockFEMatrix &M,
               blocks[10]->add(DOF[k1], DOF[k2], scale_factor * v3 * u_dy * n2 ); // A33
               blocks[10]->add(DOF[k1], DOF[k2], scale_factor * v3 * u_dz * n3 ); // A33
             }
-          } //for(l=0;l<N_BaseFunct;l++)
+          }
         }
-      } // endif
+      }
     }
   }
 }
 
 // ===========================================================================
-// int_{Gamma} mult*grad v*n*u
+// int_{Gamma} mult * < (grad v).n, u >
 void BoundaryAssembling3D::matrix_gradv_n_u(BlockFEMatrix &M,
     const TFESpace3D *U_Space,
     std::vector<TBoundFace*> boundaryFaceList,
@@ -650,10 +629,10 @@ void BoundaryAssembling3D::matrix_gradv_n_u(BlockFEMatrix &M,
   std::vector<std::shared_ptr<FEMatrix>> blocks = M.get_blocks_uniquely();
 
   if (boundaryFaceList.empty())
-      {
-  TCollection* coll = U_Space->GetCollection();
-  coll->get_face_list_on_component(componentID, boundaryFaceList);
-      }
+  {
+    TCollection* coll = U_Space->GetCollection();
+    coll->get_face_list_on_component(componentID, boundaryFaceList);
+  }
 
   // loop over the faces (joints)
   for(size_t m = 0; m < boundaryFaceList.size(); m++)
@@ -682,7 +661,7 @@ void BoundaryAssembling3D::matrix_gradv_n_u(BlockFEMatrix &M,
         transformationDeterminant);
 
     // rescale local integral by mesh-size (important for Nitsche boundary)
-    for (size_t l = 0 ; l < qWeights.size(); l++)
+    for (size_t l = 0; l < qWeights.size(); l++)
     {
       double scale_factor = mult * qWeights[l] * transformationDeterminant;
 
@@ -692,25 +671,23 @@ void BoundaryAssembling3D::matrix_gradv_n_u(BlockFEMatrix &M,
 
         if (global_dof_from_local < U_Space->GetActiveBound())
         {
-          //double v_x = basisFunctionsValues[l][k1]; // value of test function (vtest = vx = vy =vz)
-          //double v_y = v_x;
-          //double v_z = v_x;
-
           double v_dx = basisFunctionsValues_derivative_x[l][k1];
-          double v_dy = basisFunctionsValues_derivative_x[l][k1];
-          double v_dz = basisFunctionsValues_derivative_x[l][k1];
+          double v_dy = basisFunctionsValues_derivative_y[l][k1];
+          double v_dz = basisFunctionsValues_derivative_z[l][k1];
 
-          for(size_t k2=0;k2<basisFunctionsValues[l].size();k2++) {
+          for (size_t k2 = 0; k2 < basisFunctionsValues[l].size(); k2++)
+          {
             int global_dof_from_local = DOF[k2]; // Ansatz-DOF
 
-            if(global_dof_from_local < U_Space->GetActiveBound()) {
+            if(global_dof_from_local < U_Space->GetActiveBound())
+            {
               double u1 = basisFunctionsValues[l][k2]; // value of test function (vtest = vx = vy =vz)
               double u2 = u1;
               double u3 = u1;
 
-              double  n1=normal[0];
-              double  n2=normal[1];
-              double  n3=normal[2];
+              double  n1 = normal[0];
+              double  n2 = normal[1];
+              double  n3 = normal[2];
 
               // (see the note about blocks at the beginning of the function)
               blocks[0]->add(DOF[k1], DOF[k2], scale_factor * u1 * v_dx * n1 ); // A11
@@ -725,9 +702,9 @@ void BoundaryAssembling3D::matrix_gradv_n_u(BlockFEMatrix &M,
               blocks[10]->add(DOF[k1], DOF[k2], scale_factor * u3 * v_dy * n2 ); // A33
               blocks[10]->add(DOF[k1], DOF[k2], scale_factor * u3 * v_dz * n3 ); // A33
             }
-          } //for(l=0;l<N_BaseFunct;l++)
+          }
         }
-      } // endif
+      }
     }
   }
 }
@@ -745,10 +722,10 @@ void BoundaryAssembling3D::rhs_gradv_n_uD(BlockVector &rhs,
     double mult)
 {
   if (boundaryFaceList.empty())
-      {
-  TCollection *coll = U_Space->GetCollection();
-  coll->get_face_list_on_component(componentID, boundaryFaceList);
-      }
+  {
+    TCollection *coll = U_Space->GetCollection();
+    coll->get_face_list_on_component(componentID, boundaryFaceList);
+  }
 
   // loop over the faces (joints)
   for(size_t m = 0; m < boundaryFaceList.size(); m++)
@@ -785,17 +762,17 @@ void BoundaryAssembling3D::rhs_gradv_n_uD(BlockVector &rhs,
       if(given_boundary_data0 != nullptr)
         given_boundary_data0(x, y, z, uDirichlet[0]);
       else
-        uDirichlet[0] = 0.;
+        uDirichlet[0] = 1.; //0.;
 
       if(given_boundary_data1 != nullptr)
         given_boundary_data1(x, y, z, uDirichlet[1]);
       else
-        uDirichlet[1] = 0.;
+        uDirichlet[1] = 1.; //0.;
 
       if(given_boundary_data2 != nullptr)
         given_boundary_data2(x, y, z, uDirichlet[2]);
       else
-        uDirichlet[2] = 0.;
+        uDirichlet[2] = 1.; //0.;
 
       // rescale local integral by mesh-size (important for Nitsche boundary)
       double scale_factor = mult * qWeights[l] * transformationDeterminant;
@@ -806,21 +783,17 @@ void BoundaryAssembling3D::rhs_gradv_n_uD(BlockVector &rhs,
 
         if (global_dof_from_local < U_Space->GetActiveBound())
         {
-          //double v_x = basisFunctionsValues[l][k1]; // value of test function (vtest = vx = vy =vz)
-          //double v_y = v_x;
-          //double v_z = v_x;
-
           double v_dx = basisFunctionsValues_derivative_x[l][k1];
-          double v_dy = basisFunctionsValues_derivative_x[l][k1];
-          double v_dz = basisFunctionsValues_derivative_x[l][k1];
+          double v_dy = basisFunctionsValues_derivative_y[l][k1];
+          double v_dz = basisFunctionsValues_derivative_z[l][k1];
 
           double  n1 = normal[0];
           double  n2 = normal[1];
           double  n3 = normal[2];
 
-          rhs.block(0)[global_dof_from_local] += scale_factor * uDirichlet[0] * v_dx * n1;
-          rhs.block(1)[global_dof_from_local] += scale_factor * uDirichlet[1] * v_dy * n2;
-          rhs.block(2)[global_dof_from_local] += scale_factor * uDirichlet[2] * v_dz * n3;
+          rhs.block(0)[global_dof_from_local] += scale_factor * uDirichlet[0] * (v_dx * n1 + v_dy * n2 + v_dz * n3);
+          rhs.block(1)[global_dof_from_local] += scale_factor * uDirichlet[1] * (v_dx * n1 + v_dy * n2 + v_dz * n3);
+          rhs.block(2)[global_dof_from_local] += scale_factor * uDirichlet[2] * (v_dx * n1 + v_dy * n2 + v_dz * n3);
         }
       }
     }
@@ -841,13 +814,13 @@ void BoundaryAssembling3D::matrix_u_v(BlockFEMatrix &M,
   std::vector<std::shared_ptr<FEMatrix>> blocks = M.get_blocks_uniquely();
 
   if (boundaryFaceList.empty())
-       {
-  TCollection* coll = U_Space->GetCollection();
-  coll->get_face_list_on_component(componentID, boundaryFaceList);
-       }
+  {
+    TCollection* coll = U_Space->GetCollection();
+    coll->get_face_list_on_component(componentID, boundaryFaceList);
+  }
 
   // loop over the faces (joints)
-  for(size_t m = 0; m < boundaryFaceList.size(); m++)
+  for (size_t m = 0; m < boundaryFaceList.size(); m++)
   {
     TBoundFace *boundface = boundaryFaceList[m];
     TBaseCell *cell = ( (TJoint *)boundface)->GetNeighbour(0);
@@ -881,7 +854,7 @@ void BoundaryAssembling3D::matrix_u_v(BlockFEMatrix &M,
 
       for (size_t k1 = 0; k1 < basisFunctionsValues[l].size(); k1++)
       {
-        int global_dof_from_local = DOF[k1]; // Test-DOF
+        int global_dof_from_local = DOF[k1]; // test-DOF
 
         if (global_dof_from_local < U_Space->GetActiveBound())
         {
@@ -891,7 +864,7 @@ void BoundaryAssembling3D::matrix_u_v(BlockFEMatrix &M,
 
           for (size_t k2 = 0; k2 < basisFunctionsValues[l].size(); k2++)
           {
-            int global_dof_from_local = DOF[k2]; // Ansatz-DOF
+            int global_dof_from_local = DOF[k2]; // ansatz-DOF
 
             if (global_dof_from_local < U_Space->GetActiveBound())
             {
@@ -913,7 +886,7 @@ void BoundaryAssembling3D::matrix_u_v(BlockFEMatrix &M,
 
 
 // ===========================================================================
-// int_{Gamma} mult*given_boundary_data(x,y,z)*v
+// int_{Gamma} mult * given_boundary_data(x,y,z) * v
 void BoundaryAssembling3D::rhs_uD_v(BlockVector &rhs,
     const TFESpace3D *U_Space,
     BoundValueFunct3D *given_boundary_data0,
@@ -925,10 +898,10 @@ void BoundaryAssembling3D::rhs_uD_v(BlockVector &rhs,
     bool rescale_by_h)
 {
   if (boundaryFaceList.empty())
-       {
-  TCollection *coll = U_Space->GetCollection();
-  coll->get_face_list_on_component(componentID, boundaryFaceList);
-       }
+  {
+    TCollection *coll = U_Space->GetCollection();
+    coll->get_face_list_on_component(componentID, boundaryFaceList);
+  }
 
   for(size_t m = 0; m < boundaryFaceList.size(); m++)
   {
@@ -975,8 +948,7 @@ void BoundaryAssembling3D::rhs_uD_v(BlockVector &rhs,
       if(given_boundary_data2 != nullptr)
         given_boundary_data2(x, y, z, uDirichlet[2]);
       else
-        uDirichlet[2] = 0.;
-
+        uDirichlet[2] = 1.; //0.;
 
       double scale_factor = mult * qWeights[l] * transformationDeterminant;
 
@@ -994,9 +966,7 @@ void BoundaryAssembling3D::rhs_uD_v(BlockVector &rhs,
           if (!rescale_by_h)
           {
             rhs.block(0)[global_dof_from_local] += scale_factor * uDirichlet[0] * v1;
-            //rhs[0][global_dof_from_local+N_U] +=
             rhs.block(1)[global_dof_from_local] += scale_factor * uDirichlet[1] * v2;
-            //rhs[0][global_dof_from_local+N_U] +=
             rhs.block(2)[global_dof_from_local] += scale_factor * uDirichlet[2] * v3;
           }
           else
