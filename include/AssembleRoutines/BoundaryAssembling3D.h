@@ -223,11 +223,7 @@ public:
 
 
 
-    /** @brief For a joint in a cell with joint_id=m compute the number of vertices
-     @param[in] *cell: cell
-     @param[in] m: joint ID
-     */
-    int getNumberOfFaceVertices(TBaseCell *cell, int m);
+    
     
 protected:
     
