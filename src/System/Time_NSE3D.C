@@ -1072,20 +1072,12 @@ void Time_NSE3D::call_assembling_routine(Time_NSE3D::System_per_grid& s,
 
     const TFESpace3D *v_space = &s.velocitySpace_;
     const TFESpace3D *p_space = &s.pressureSpace_;
-    // get all cells: this is at the moment needed for the boundary assembling
-    /// @todo get only the (relevant) boundary cells
-    /// e.g., bdCells = coll->get_cells_on_component(i)
-    TCollection* coll = v_space->GetCollection();
-    std::vector<TBaseCell*> allCells;
-    for (int i=0 ; i < coll->GetN_Cells(); i++)
-    {
-      allCells.push_back(coll->GetCell(i));
-    }
-	
+
+    std::vector<TBoundFace*> boundaryFaceList;
+
     BoundaryAssembling3D bi;
-    for (int k=0;k<TDatabase::ParamDB->n_neumann_boundary;k++)
+    for (int k = 0; k < TDatabase::ParamDB->n_neumann_boundary; k++)
     {
-      
       double t=TDatabase::TimeDB->CURRENTTIME;
       double PI = acos(-1.0);
       double pressure_of_t = TDatabase::ParamDB->neumann_boundary_value[k]*sin(2*PI*t);
@@ -1093,12 +1085,9 @@ void Time_NSE3D::call_assembling_routine(Time_NSE3D::System_per_grid& s,
       Output::print(" ** set value ", pressure_of_t,
 		    " on boundary ",TDatabase::ParamDB->neumann_boundary_id[k]);
       
-      bi.rhs_g_v_n(s.rhs_,v_space,nullptr,
-		   allCells,
-		   TDatabase::ParamDB->neumann_boundary_id[k],
-		   pressure_of_t);
+      bi.rhs_g_v_n(s.rhs_, v_space, nullptr, boundaryFaceList,
+		   TDatabase::ParamDB->neumann_boundary_id[k], pressure_of_t);
     }
-
   }
   
   // assemble all the matrices and right hand side 

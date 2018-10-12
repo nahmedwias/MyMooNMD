@@ -546,27 +546,21 @@ void Brinkman3D::assemble()
         
         //======================================================================================================//
         //  Weakly Imposing Boundary Conditions - Boundary Integrals
-        
-        TCollection* coll = v_space->GetCollection();
-        std::vector<TBaseCell*> allCells;
-        for (int i=0 ; i < coll->GetN_Cells(); i++)
-        {
-            allCells.push_back(coll->GetCell(i));
-        }
-        
+        std::vector<TBoundFace*> boundaryFaceList;
+
         BoundaryAssembling3D bi;
         
-        for (int k=0;k<TDatabase::ParamDB->n_neumann_boundary;k++)
+        for (int k = 0; k < TDatabase::ParamDB->n_neumann_boundary; k++)
         {
             bi.rhs_g_v_n(s.rhs,v_space,nullptr,
-                         allCells,
+                         boundaryFaceList,
                          TDatabase::ParamDB->neumann_boundary_id[k],
                          -TDatabase::ParamDB->neumann_boundary_value[k]);
         }
         
         
         // Nitsche combination - weak Dirichlet
-        for (int k=0;k<TDatabase::ParamDB->n_nitsche_boundary;k++)
+        for (int k = 0; k < TDatabase::ParamDB->n_nitsche_boundary; k++)
         {
             double K = (double) brinkman3d_db["permeability"];
             double nu = (double) brinkman3d_db["viscosity"];
@@ -576,13 +570,13 @@ void Brinkman3D::assemble()
             
             bi.matrix_gradu_n_v(s.matrix,
                                 v_space,
-                                allCells,
+                                boundaryFaceList,
                                 TDatabase::ParamDB->nitsche_boundary_id[k],     // boundary component
                                 -(double) brinkman3d_db["effective_viscosity"]);
             
             bi.matrix_u_v(s.matrix,
                           v_space,
-                          allCells,
+                          boundaryFaceList,
                           TDatabase::ParamDB->nitsche_boundary_id[k],           // boundary component
                           t*TDatabase::ParamDB->nitsche_penalty[k],             // mult
                           true);                                                // rescale local integral by edge values
@@ -592,14 +586,14 @@ void Brinkman3D::assemble()
                         this->example.get_bd(0),                                 // access to U1BoundValue in the example,
                         this->example.get_bd(1),                                 // access to U2BoundValue in the example,
                         this->example.get_bd(2),                                 // access to U3BoundValue in the example,
-                        allCells,
+                        boundaryFaceList,
                         TDatabase::ParamDB->nitsche_boundary_id[k],              // boundary component
                         t*TDatabase::ParamDB->nitsche_penalty[k],                // mult
                         true);                                                   // rescale local integral by edge values
             
             bi.matrix_gradv_n_u(s.matrix,
                                 v_space,
-                                allCells,
+                                boundaryFaceList,
                                 TDatabase::ParamDB->nitsche_boundary_id[k],
                                 -TDatabase::ParamDB->s1 * (double) brinkman3d_db["effective_viscosity"]);
             
@@ -608,30 +602,31 @@ void Brinkman3D::assemble()
                               nullptr, //this->example.get_bd(0),                                 // access to U1BoundValue in the example,
                               nullptr, //this->example.get_bd(1),                                 // access to U2BoundValue in the example,
                               nullptr, //this->example.get_bd(2),
-                              allCells,
+                              boundaryFaceList,
                               TDatabase::ParamDB->nitsche_boundary_id[k],
                               -TDatabase::ParamDB->s1 * (double) brinkman3d_db["effective_viscosity"]);
             
             bi.matrix_p_v_n(s.matrix,
                             v_space,
                             p_space,
-                            allCells,
+                            boundaryFaceList,
                             TDatabase::ParamDB->nitsche_boundary_id[k],           // boundary component
                             1.);
             
             bi.matrix_q_u_n(s.matrix,
                             v_space,
                             p_space,
-                            allCells,
+                            boundaryFaceList,
                             TDatabase::ParamDB->nitsche_boundary_id[k],
                             1.*TDatabase::ParamDB->s2);
             
             bi.rhs_q_uD_n( s.rhs,
+                          v_space,
                           p_space,
                           nullptr, //this->example.get_bd(0),                                 // access to U1BoundValue in the example,
                           nullptr, //this->example.get_bd(1),                                 // access to U2BoundValue in the example,
                           nullptr, //this->example.get_bd(2),
-                          allCells,
+                          boundaryFaceList,
                           TDatabase::ParamDB->nitsche_boundary_id[k],
                           1.*TDatabase::ParamDB->s2);
             

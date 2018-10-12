@@ -229,6 +229,12 @@ class NSE3D
      */
     void assemble_non_linear_term();
     
+    /** @brief assemble boundary term
+     * Assemble terms defined over specific set of edges. These can
+     * be related to Neumann bc, or to Nitsche penalty method.
+    */
+   void assemble_boundary_terms();
+
     //! Solve the current linear system. Nonlinear loop is outside of this class.
     void solve();
 

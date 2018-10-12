@@ -99,15 +99,10 @@ void LinCoeffs(int n_points, double *X, double *Y, double *Z,
         coeff = coeffs[i];
         
         coeff[0] = 1;//eps;
-//        coeff[5]=0;//TDatabase::ParamDB->VISCOSITY;//0.;
-//        coeff[6]= TDatabase::ParamDB->EFFECTIVE_VISCOSITY;
-//        coeff[7]=1e10;//TDatabase::ParamDB->PERMEABILITY;
-        coeff[1] = 0; // coeff[6]*(-12)+(-1)+(coeff[5]/coeff[7])*(3*(1-(Y[i]*Y[i]+Z[i]*Z[i]))); // f1
+        coeff[1] = 0; // (1/coeff[0])*(-12)+(-1)+(coeff[5])*(3*(1-(Y[i]*Y[i]+Z[i]*Z[i]))); // f1
         coeff[2] = 0; // f2
-        coeff[3] = 0.;//-coeff[6]*(-4)+(1)+(coeff[5]/coeff[7])*(1-(Y[i]*Y[i]+X[i]*X[i])); // 0; // f3
+        coeff[3] = 0.;//-(1/coeff[0])*(-4)+(1)+(coeff[5])*(1-(Y[i]*Y[i]+X[i]*X[i])); // 0; // f3
         coeff[4] = 0; // g
-//        coeff[8]=TDatabase::ParamDB->equal_order_stab_weight_P1P1;
-//        coeff[9]=TDatabase::ParamDB->equal_order_stab_weight_P2P2;
+        coeff[5] = 0; // sigma
     }
- 
 }

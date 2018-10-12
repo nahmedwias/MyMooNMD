@@ -2,6 +2,7 @@
 #include <Database.h>
 #include "LocalAssembling.h"
 #include <Assemble3D.h>
+#include <NSE_local_assembling_routines.h>
 #include <MainUtilities.h>
 #include <LinAlg.h>
 #include <DirectSolver.h>
@@ -253,7 +254,8 @@ NSE3D::NSE3D(std::list<TCollection* > collections, const ParameterDatabase& para
 
 void NSE3D::check_parameters()
 {
-  if(!db["problem_type"].is(3) && !db["problem_type"].is(5))
+  if(!db["problem_type"].is(3) && !db["problem_type"].is(5) &&
+      !db["problem_type"].is(7) )
   {
     Output::warn<2>("The parameter problem_type doesn't correspond neither to NSE "
         "nor to Stokes. It is now reset to the default value for NSE (=5).");
@@ -500,34 +502,11 @@ void NSE3D::assemble_linear_terms()
                nRhs, rhsArray.data(), rhsSpaces,
                boundContion, boundValues.data(), la);
     
-    Output::print(" ** START ASSEMBLE PRESSURE BC ON RHS **");
 
-    // get all cells: this is at the moment needed for the boundary assembling
-    /// @todo get only the (relevant) boundary cells
-    /// e.g., bdCells = coll->get_cells_on_component(i)
-    TCollection* coll = v_space->GetCollection();
-    std::vector<TBaseCell*> allCells;
-    for (int i=0 ; i < coll->GetN_Cells(); i++)
-    {
-      allCells.push_back(coll->GetCell(i));
-    }
-	
-    BoundaryAssembling3D bi;
-    for (int k=0;k<TDatabase::ParamDB->n_neumann_boundary;k++)
-    {
+    // NEW LB 10.10.18
+    // assemble on the boundary if needed
+      assemble_boundary_terms();
       
-      double t=TDatabase::TimeDB->CURRENTTIME;
-      double PI = acos(-1.0);
-      double pressure_of_t = TDatabase::ParamDB->neumann_boundary_value[k]*sin(2*PI*t);
-
-      Output::print(" ** set value ", pressure_of_t,
-		    " on boundary ",TDatabase::ParamDB->neumann_boundary_id[k]);
-      
-      bi.rhs_g_v_n(s.rhs_,v_space,nullptr,
-		   allCells,
-		   TDatabase::ParamDB->neumann_boundary_id[k],
-		   pressure_of_t);
-    }
     //delete the temorary feFunctions gained by GetComponent
     for(int i = 0; i<3; ++i)
       delete feFunction[i];
@@ -587,7 +566,8 @@ void NSE3D::assemble_non_linear_term()
   
   bool mdml =  this->solver.is_using_multigrid() 
             && this->solver.get_multigrid()->is_using_mdml();
-  bool is_stokes = this->db["problem_type"].is(3); // otherwise Navier-Stokes
+  bool is_stokes = this->db["problem_type"].is(3) ||
+      this->db["problem_type"].is(7); // otherwise Navier-Stokes
   if ((mdml && !is_stokes)|| db["space_discretization_type"].is("upwind"))
   {
     // in case of upwinding we only assemble the linear terms. The nonlinear
@@ -1007,3 +987,75 @@ std::array<double, int(5)> NSE3D::get_errors() const
 {
   return errors_;
 }
+
+// NEW LB 10.10.18
+void NSE3D::assemble_boundary_terms()
+{
+  int n_neumann_bd = db["n_neumann_bd"];
+  int n_nitsche_bd = db["n_nitsche_bd"];
+
+  for(System_per_grid& s : this->systems_)
+  {
+    TCollection* coll = s.velocitySpace_.get()->GetCollection();
+
+    BoundaryAssembling3D ba;
+    if (n_neumann_bd)
+    {
+      // Neumann BC
+      std::vector<TBoundFace*> boundaryFaceList;
+      std::vector<size_t> neumann_id = db["neumann_id"];
+      std::vector<double> neumann_value = db["neumann_value"];
+
+      for (int k = 0; k < neumann_id.size(); k++)
+      {
+        Output::print<1>(" Neumann BC on boundary: ", neumann_id[k]);
+        coll->get_face_list_on_component(neumann_id[k], boundaryFaceList);
+        const TFESpace3D * v_space = s.velocitySpace_.get();
+        ba.rhs_g_v_n(s.rhs_, v_space, nullptr, boundaryFaceList, (int) neumann_id[k], -1.*neumann_value[k]);
+      }
+    }
+
+    if (n_nitsche_bd)
+    {
+      // Nitsche penalty for weak essential BC
+      std::vector<TBoundFace*> boundaryFaceList;
+      std::vector<size_t> nitsche_id = db["nitsche_id"];
+      std::vector<double> nitsche_penalty = db["nitsche_penalty"];
+
+      for (int k = 0; k < nitsche_id.size(); k++)
+      {
+        Output::print<1>(" Nitsche BC on boundary: ", nitsche_id[k]);
+        coll->get_face_list_on_component(nitsche_id[k], boundaryFaceList);
+        cout<< "boundaryFaceList.size(): "<< boundaryFaceList.size() << endl;
+        const TFESpace3D * v_space = s.velocitySpace_.get();
+        const TFESpace3D * p_space = s.pressureSpace_.get();
+
+        double effective_viscosity = this->example_.get_nu();
+        int sym_u = db["symmetric_nitsche_u"];
+        int sym_p = db["symmetric_nitsche_p"];
+
+        ba.nitsche_bc(s.matrix_, s.rhs_, v_space, p_space,
+            this->example_.get_bd(0), this->example_.get_bd(1), this->example_.get_bd(2),
+            boundaryFaceList,
+            nitsche_id[k], nitsche_penalty[k], effective_viscosity,
+            sym_u, sym_p);
+      }
+    }
+
+    /*   double corner_stab = db["corner_stab"];
+    if (corner_stab)
+    {
+      const TFESpace3D * v_space = s.velocitySpace_.get();
+      Output::print<1>(" Corner stabilization is applied. ");
+      double effective_viscosity = this->example_.get_nu();
+      double sigma = this->example_.get_inverse_permeability();
+      double L_0 = TDatabase::ParamDB->L_0; //db["L_0"];
+      BoundaryAssembling3D::matrix_cornerjump_u_n_cornerjump_v_n(s.matrix_, v_space, // TDatabase::ParamDB->nitsche_boundary_id[k],
+          1, // nBoundaryParts
+          corner_stab * effective_viscosity + sigma * L_0 * L_0 );
+
+    }
+     */
+  }
+}
+

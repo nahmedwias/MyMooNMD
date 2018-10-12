@@ -46,6 +46,15 @@ class Example_NSE3D : public Example3D
     /// Return kinematic viscosity, if set.
     double get_nu() const;
   
+    /// Return permeability, if set.
+    double get_inverse_permeability() const;
+
+    /// Return neumann boundary ids, if set
+    std::vector<size_t> get_neumann_id() const;
+
+    /// Return nitsche boundary ids, if set
+    std::vector<size_t> get_nitsche_id() const;
+
     //Declaration of special member functions - rule of zero
 
     //! Default copy constructor. Performs deep copy.
