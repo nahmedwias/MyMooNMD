@@ -16,6 +16,9 @@ double sigma = -1;
 std::vector<size_t> neumann_id;
 std::vector<size_t> nitsche_id;
 
+double _R_CYLINDER = 2.;
+double _HEIGHT = 10.;
+double _DELTA_P = 2.;
 void ExampleFile()
 {
   Output::print<1>("Example: Brinkman3D_Poiseuille.h");
@@ -23,6 +26,8 @@ void ExampleFile()
 
 // ========================================================================
 // exact solution
+// Note: computed assuming a pressure drop = 2, and mean pressure = 0
+//       radius = 1 and height = 10
 // ========================================================================
 
 
@@ -32,7 +37,7 @@ void ExactU1(double x, double y, double z, double *values)
   values[1] = 0.;
   values[2] = 0.;
   values[3] = 0.;
-  values[4] = 0.;
+  values[4] = 0.; // Delta u2=u2_xx+u2_yy+u2_zz
 }
 
 void ExactU2(double x, double y, double z, double *values)
@@ -41,7 +46,7 @@ void ExactU2(double x, double y, double z, double *values)
   values[1] = 0.;
   values[2] = 0.;
   values[3] = 0.;
-  values[4] = 0.;
+  values[4] = 0.; // Delta u2=u2_xx+u2_yy+u2_zz
 }
 
 void ExactU3(double x, double y, double z, double *values)
@@ -49,19 +54,25 @@ void ExactU3(double x, double y, double z, double *values)
   // ratio between Stokes and Darcy terms
   double t = fabs(sqrt( effective_viscosity/sigma));
 
+
+  // DeltaP = 4 mu  L Umax / R ^2
+  // Umax = R^2 * DeltaP / (4 mu L) = 1/(10 mu)
+  double _UMAX = _DELTA_P * _R_CYLINDER*_R_CYLINDER /( 4. * _HEIGHT *  effective_viscosity);
+  double _R2 = _R_CYLINDER*_R_CYLINDER;
+
   if ( fabs(sigma) < 1e-10 )
   {
     // Stokes regime
-    values[0] = 0.; //1./(2.*effective_viscosity) * ((1/4)*x+(1/2) + (1/4)*y+(1/2)) * (1.- ((1/4)*x+(1/2) + (1/4)*y+(1/2)));
-    values[1] = 1./(2.*effective_viscosity) * (1. - 2.* (x));
-    values[2] = 1./(2.*effective_viscosity) * (1. - 2.* (y));
+    values[0] = _UMAX * (1 - (x*x + y*y)/_R2 ); 
+    values[1] = _UMAX * (- 2. * x /_R2 );
+    values[2] = _UMAX * (- 2. * y /_R2);
     values[3] = 0.;
-    values[4] = 2*(-1./(effective_viscosity));
+    values[4] = -4 * _UMAX/_R2;
   }
   else if  (t == 0)
   {
     // Darcy regime
-    values[0] = 1./sigma;  
+    values[0] = _DELTA_P/_HEIGHT * 1./sigma;  
     values[1] = 0.;
     values[2] = 0.;
     values[3] = 0.;
@@ -69,6 +80,7 @@ void ExactU3(double x, double y, double z, double *values)
   }
   else
   {
+    ///@todo check the solution for  t>0
     values[0] = (1./sigma) * (1+exp(2/t)-exp( (2- sqrt(x*x+y*y)  )/t) - exp( sqrt(x*x+y*y)/t)) / (1+exp(2/t));
         //(1./sigma) * (1+exp(1/t)-exp(1- ( (1/4)*x+(1/2)  )/t) - exp( ((1/4)*x+(1/2) )/t)) / (1+exp(1/t))+
                  //(1./sigma) * (1+exp(1/t)-exp(1- (  (1/4)*y+(1/2) )/t) - exp( ( (1/4)*y+(1/2) )/t)) / (1+exp(1/t));
@@ -88,10 +100,10 @@ void ExactU3(double x, double y, double z, double *values)
  */
 void ExactP(double x, double y, double z, double *values)
 {
-  values[0] = 1-(2/10)*z;
+  values[0] = 1-(_DELTA_P/_HEIGHT)*z;
   values[1] = 0.;
   values[2] = 0.;
-  values[3] = -(2/10);
+  values[3] = -(_DELTA_P/_HEIGHT);
   values[4] = 0.;
 }
 
@@ -158,18 +170,8 @@ void U3BoundValue(double x, double y, double z, double &value)
 void LinCoeffs(int n_points, double *x, double *y, double *z,
     double **parameters, double **coeffs)
 {
-  double val_u1[4];
-  double val_u2[4];
-  double val_u3[4];
-  //double val_p[4];
-
   for(int i = 0; i < n_points; i++)
   {
-    ExactU1(x[i], y[i], z[i], val_u1);
-    ExactU2(x[i], y[i], z[i], val_u2);
-    ExactU3(x[i], y[i], z[i], val_u3);
-    //ExactP(x[i], y[i], z[i], val_p);
-
     // physical parameters
     coeffs[i][0] = effective_viscosity;
     coeffs[i][5] = sigma;
@@ -180,7 +182,7 @@ void LinCoeffs(int n_points, double *x, double *y, double *z,
     coeffs[i][3] = 0;
 
     //g(x,y):  RHS for mass conservation equation
-    coeffs[i][4] = 0; //val_u1[1] + val_u2[2] + val_u3[3];
+    coeffs[i][4] = 0; 
   }
 }
 

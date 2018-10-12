@@ -1,4 +1,5 @@
 #include "NSE_local_assembling_routines.h"
+#include <MooNMD_Io.h>
 
 template<int d>
 void NSResistanceMassMatrixSingle(double Mult, double *coeff,
@@ -547,7 +548,7 @@ void NSGradDiv(double Mult, double *coeff, double *param, double hK,
   double * u_z = d == 2 ? nullptr : OrigValues[4];
   
   double nu = coeff[0]; // = 1/reynolds_number
-  double sigma = d == 2 ? coeff[4] : coeff[5]; // = 1/reynolds_number
+  double sigma = d == 2 ? coeff[4] : coeff[5]; 
   ///@todo generalize characteristic lenght. One could also give the option of
   // using L_0 = h
   double L_0 = 0.1; // characteristic length
@@ -599,7 +600,7 @@ void NSGradDiv_RightHandSide(double Mult, double *coeff, double *param, double h
   
   double nu = coeff[0]; // = 1/reynolds_number
   double sigma = d == 2 ? coeff[4] : coeff[5]; // = 1/permeability
-  double L_0 = 1.;
+  double L_0 = .1;
   double g = d == 2 ? coeff[3] : coeff[4];
   double delta = (nu + sigma*L_0*L_0) * stab;
 
@@ -613,6 +614,7 @@ void NSGradDiv_RightHandSide(double Mult, double *coeff, double *param, double h
     if (d == 3)
       Rhs_u3[i] = delta * g * v_z;
   }
+
 }
 
 

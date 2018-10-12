@@ -1038,12 +1038,6 @@ void NSE3D::assemble_boundary_terms()
         int sym_u = db["symmetric_nitsche_u"];
         int sym_p = db["symmetric_nitsche_p"];
 
-        ba.nitsche_bc(s.matrix_, s.rhs_, v_space, p_space,
-            nullptr, nullptr, nullptr,//this->example_.get_bd(0), this->example_.get_bd(1), this->example_.get_bd(2),
-            boundaryFaceList,
-            nitsche_id[k], nitsche_penalty[k], effective_viscosity,
-            sym_u, sym_p);
-
         cout << "this->example_.get_bd(0): " << this->example_.get_bd()[0] << endl;
         cout << "this->example_.get_bd(1): " << this->example_.get_bd(1) << endl;
         cout << "this->example_.get_bd(2): " << this->example_.get_bd(2) << endl;
@@ -1053,6 +1047,14 @@ void NSE3D::assemble_boundary_terms()
         cout << "effective_viscosity: " << effective_viscosity << endl;
         cout << "sym_u: " << sym_u << endl;
         cout << "sym_p: " << sym_p << endl;
+
+	ba.nitsche_bc(s.matrix_, s.rhs_, v_space, p_space,
+		      nullptr, nullptr, nullptr,
+		      boundaryFaceList,
+		      nitsche_id[k], nitsche_penalty[k], effective_viscosity,
+		      sym_u, sym_p);
+
+
 
       }
     }
