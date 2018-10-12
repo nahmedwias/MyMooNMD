@@ -997,12 +997,12 @@ void NSE3D::assemble_boundary_terms()
   for(System_per_grid& s : this->systems_)
   {
     TCollection* coll = s.velocitySpace_.get()->GetCollection();
-    std::vector<TBoundFace*> boundaryFaceList;
 
     BoundaryAssembling3D ba;
     if (n_neumann_bd)
     {
       // Neumann BC
+      std::vector<TBoundFace*> boundaryFaceList;
       std::vector<size_t> neumann_id = db["neumann_id"];
       std::vector<double> neumann_value = db["neumann_value"];
 
@@ -1018,6 +1018,7 @@ void NSE3D::assemble_boundary_terms()
     if (n_nitsche_bd)
     {
       // Nitsche penalty for weak essential BC
+      std::vector<TBoundFace*> boundaryFaceList;
       std::vector<size_t> nitsche_id = db["nitsche_id"];
       std::vector<double> nitsche_penalty = db["nitsche_penalty"];
 
@@ -1025,6 +1026,7 @@ void NSE3D::assemble_boundary_terms()
       {
         Output::print<1>(" Nitsche BC on boundary: ", nitsche_id[k]);
         coll->get_face_list_on_component(nitsche_id[k], boundaryFaceList);
+        cout<< "boundaryFaceList.size(): "<< boundaryFaceList.size() << endl;
         const TFESpace3D * v_space = s.velocitySpace_.get();
         const TFESpace3D * p_space = s.pressureSpace_.get();
 
