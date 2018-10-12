@@ -897,7 +897,7 @@ void NS_BrezziPitkaeranta(double Mult, double *coeff, double *param, double hK,
   double * p_y = OrigValues[3+d];
   double * p_z = d == 2 ? nullptr : OrigValues[4+d];
   double nu = coeff[0]; // = 1/reynolds_number
-  double delta = compute_PSPG_delta(0.1, hK, nu);
+  double delta = compute_PSPG_delta(delta0, hK, nu);
   for(int i = 0; i < N_P; i++)
   {
     double test_x = delta * p_x[i];

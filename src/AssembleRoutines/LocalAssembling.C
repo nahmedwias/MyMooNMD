@@ -758,7 +758,8 @@ ParameterDatabase LocalAssembling<d>::default_local_assembling_database()
          "the stabilization parameter for pspg (Pressure Stabilization Petrov "
          "Galerkin) is delta0 * h^2 /nu, where h is a cell measure (e.g. "
          "diameter), nu is the inverse of the reynolds number, and delta0 is "
-         " this parameter.", 0., 10.);
+         " this parameter. This parameter is also used for Brezzi-Pitkaeranta",
+         0., 10.);
 
   ///@todo add a parameter for the characteristic length L_0 (Brinkman case)  
   db.add("graddiv_stab", 0., 
