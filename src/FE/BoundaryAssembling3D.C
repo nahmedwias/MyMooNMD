@@ -1025,7 +1025,7 @@ void BoundaryAssembling3D::getQuadratureDataIncludingFirstDerivatives(
     std::vector< std::vector<double> >& basisFunctionsValues_derivative_y,
     std::vector< std::vector<double> >& basisFunctionsValues_derivative_z)
 {
-  int nFaceVertices = getNumberOfFaceVertices(cell,m);
+  int nFaceVertices = cell->getNumberOfFaceVertices(m);
   // set quadrature formula and compute quadrature info
   FE3D FEId = fespace->GetFE3D(cell->GetCellIndex(),cell);
   int fe_degree = TFEDatabase3D::GetPolynomialDegreeFromFE3D(FEId);
@@ -1336,16 +1336,6 @@ void BoundaryAssembling3D::computeNormalAndTransformationData(TBaseCell *cell, i
 //}
 
 
-// ===========================================================================
-///@todo this functions should belong to TBaseCell
-int BoundaryAssembling3D::getNumberOfFaceVertices(TBaseCell *cell, int m)
-{
-  const int *faceVertexMap, *faceVertexMapLength;
-  int maxNVerticesPerFace;
-  cell->GetShapeDesc()->GetFaceVertex(faceVertexMap,faceVertexMapLength,maxNVerticesPerFace);
-  // simplify: number of vertices on face m
-  return faceVertexMapLength[ m ];
-}
 
 // ===========================================================================
 
