@@ -104,165 +104,37 @@ void ExactP(double x, double y, double z, double *values)
 void BoundCondition(double x, double y, double z, BoundCond &cond)
 {
 
-  cond = DIRICHLET_WEAK;
-  //cond = DIRICHLET;
-
-  // set Neumann BC
-
-  // Neumann boundary condition on outlet  (top)
   double _R_CYLINDER = 2.;
   double _HEIGHT = 10.;
   double r = sqrt(x*x+y*y);
+
+  if (nitsche_id.size()==1) {
+    if (nitsche_id[0] == 2) {
+      cond = DIRICHLET_WEAK;
+    } else {
+      Output::print(" Warning: Nitsche BC on component ", nitsche_id[0],
+		    " are not what I expect. Setting cond = DIRICHLET");
+      cond = DIRICHLET;
+    }
+    
+  } else {
+    cond = DIRICHLET;
+  }
+    
+  // set Neumann BC on top
   if ((fabs(z-_HEIGHT)<1e-8) || (fabs(z-0)<1e-8) )
   {
     if( fabs(r - _R_CYLINDER)>1e-8  )
-    {
-      cond = NEUMANN;
-    }
-  }
-//cout << "r: "<< r <<endl;
- /* else if (  ( fabs(r-2.) < 1.e-2 ) && (nitsche_id[0] == 2) )
-  {
-    cout << "DIICHLET-WEAK"<< endl;
-    cout << x <<", "<< y <<", "<< z << endl;
-    cond = DIRICHLET_WEAK;
-  }
-*/
-  /*
-   for (int j = 0; j < neumann_id.size(); j++)
-    {
-      if (i == neumann_id[j])
       {
-        cond = NEUMANN;
-        return;
+	cond = NEUMANN;
       }
-    }
-
-  // set Nitsche BC
-  for (int j = 0; j < nitsche_id.size(); j++)
-  {
-    if (i == nitsche_id[j])
-    {
-      cond = DIRICHLET_WEAK;
-
-      return;
-    }
   }
-  */
-
-
-
-
-  /*
-  // Neumann boundary condition on inlet  (bottom)
-   if (fabs(z)<1e-8) {
-    if ( fabs(r2 - _R_CYLINDER*_R_CYLINDER)>1e-8) {
-      cond = NEUMANN;
-      //Output::print("NEUMANN on bottom");
-    }
-  }
-  */
-
 }
-
-/*void BoundCondition(double x, double y, double z, BoundCond &cond) // (int i, double Param, BoundCond &cond)
-{
-
-  if (z == 0 || z == 10)
-    cond = NEUMANN;
-  else
-    cond = DIRICHLET; // default
-
-
-
-
-
-  // set Neumann BC
-  for (int j = 0; j < neumann_id.size(); j++)
-  {
-    if (i == neumann_id[j])
-    {
-      cond = NEUMANN;
-      return;
-    }
-  }
-
-  // set Nitsche BC
-  for (int j = 0; j < nitsche_id.size(); j++)
-  {
-    if (i == nitsche_id[j])
-    {
-      cond = DIRICHLET_WEAK;
-      
-      return;
-    }
-  }
-
-}*/
 
 void U1BoundValue(double x, double y, double z, double &value) // (int BdComp, double Param, double &value)
 {
     value = 0.;
 
-
-  /*
-  double t = fabs(sqrt(effective_viscosity/sigma));
-
-  // loop to impose Neumann boundary conditions
-  ///@attention we set =0 here, as Neumann BC are imposed using boundary assembling
-  for (int j = 0; j < neumann_id.size(); j++)
-  {
-    if ( BdComp == neumann_id[j])
-    {
-      switch(BdComp)
-      {
-      case 1:
-        value = 0.; 
-        break;
-      case 3:
-        value = 0.; 
-        break;
-      default:
-        Output::print("I cannot impose Neumann boundary condition on component ",
-            BdComp);
-        exit(1);
-        break;
-      }
-      return;
-    }
-  }
-
-
-
-  // loop to impose (strong or weak) Dirichlet
-  switch(BdComp)
-  {
-  case 0: value = 0;
-  break;
-  case 1:
-    if (fabs(sigma)<1e-10) {
-      // Stokes solution
-      value = 1./(2.*effective_viscosity) * Param * (1.-Param);
-    } else {
-      value = (1./sigma) *
-          (1+exp(1./t)-exp((1.-Param)/t) - exp(Param/t)) / (1.+exp(1./t));
-    }
-    break;
-  case 2: value = 0;
-  break;
-  case 3:
-    if (fabs(sigma)<1e-10) {
-      // Stokes solution
-      value = 1./(2.*effective_viscosity) * Param * (1.-Param);
-    } else {
-      value = (1./sigma) *
-          (1.+exp(1./t)-exp((Param)/t) - exp((1.-Param)/t)) / (1.+exp(1./t));
-    }
-    break;
-  default: cout << "No boundary component with this number." << endl;
-  break;
-  }
-    */
 }
 
 void U2BoundValue(double x, double y, double z, double &value)

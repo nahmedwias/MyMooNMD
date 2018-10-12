@@ -476,6 +476,11 @@ std::vector<size_t> Example_NSE3D::get_neumann_id() const
 
 std::vector<size_t> Example_NSE3D::get_nitsche_id() const
 {
-  return this->example_database["nitsche_id"];
+  std::vector<size_t> nitsche_id;
+  int n_nitsche_bd = this->example_database["n_nitsche_bd"];
+  if (n_nitsche_bd) 
+    return this->example_database["nitsche_id"];
+  else
+    return nitsche_id;
 }
 
