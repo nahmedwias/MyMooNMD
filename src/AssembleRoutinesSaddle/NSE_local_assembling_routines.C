@@ -500,9 +500,9 @@ void NSCoriolis(double Mult, double *coeff, double *param, double hK,
 
   double* Orig3 = OrigValues[3]; // u
 
-  double Omega1 = coeff[5];
-  double Omega2 = coeff[6];
-  double Omega3 = coeff[7];
+  double Omega1 = coeff[6];
+  double Omega2 = coeff[7];
+  double Omega3 = coeff[8];
 
   for(int i=0;i<N_U;i++)
   {
