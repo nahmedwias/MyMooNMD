@@ -31,12 +31,12 @@ void BoundaryAssembling3D::rhs_g_v_n(BlockVector &rhs,
   {
     TBoundFace *boundface = boundaryFaceList[m];
     TBaseCell *cell = ( (TJoint *)boundface)->GetNeighbour(0);
-    
+
     // mapping from local (cell) DOF to global DOF
     int *DOF = U_Space->GetGlobalDOF(cell->GetCellIndex());
     
     int joint_id = boundface->get_index_in_neighbour(cell);
-    
+    cout<< "Neumann Joint_ID: "<< joint_id  << endl;
     // get all data necessary for computing the integral:
     // quadrature weights, points, functions values, normal, determinant
     std:: vector<double> qWeights, qPointsT, qPointsS;
@@ -48,13 +48,13 @@ void BoundaryAssembling3D::rhs_g_v_n(BlockVector &rhs,
     double transformationDeterminant;
     cell->computeNormalAndTransformationData(joint_id, n,
 					     transformationDeterminant);
-    
+
     double x, y, z;
     double value;
     n.resize(3);
     boundface->GetXYZofTS(qPointsT[0], qPointsS[0], x, y, z);
     boundface->get_normal_vector(x, y, z, n[0], n[1], n[2]);
-    
+
     // loop over Gauss points
     for (size_t l = 0; l < qWeights.size(); l++)
       {
@@ -136,6 +136,7 @@ void BoundaryAssembling3D::rhs_g_v_n(BlockVector &rhs,
 
           double x, y, z;
           double value;
+          normal.clear();
           normal.resize(3);
           boundface->GetXYZofTS(qPointsT[0], qPointsS[0], x, y, z);
           boundface->get_normal_vector(x, y, z, normal[0], normal[1], normal[2]);
@@ -174,8 +175,6 @@ void BoundaryAssembling3D::rhs_g_v_n(BlockVector &rhs,
               }
             }
           }
-
-	  
         }
       }
     }
@@ -192,7 +191,6 @@ void BoundaryAssembling3D::matrix_u_v(BlockFEMatrix &M,
 				      double mult,
 				      bool rescale_by_h)
 {
-  
   if (boundaryFaceList.empty())
   {
     TCollection* coll = U_Space->GetCollection();
@@ -219,7 +217,6 @@ void BoundaryAssembling3D::matrix_u_v(BlockFEMatrix &M,
 				   qWeights, qPointsT, qPointsS,
 				   basisFunctionsValues);
     // --------------------------------------------------------------
-	  
 
     // --------------------------------------------------------------
     // get normal and face area
@@ -227,11 +224,7 @@ void BoundaryAssembling3D::matrix_u_v(BlockFEMatrix &M,
     double transformationDeterminant;
     cell->computeNormalAndTransformationData(joint_id, normal,
 					     transformationDeterminant);
-    
-    double x, y, z;
-    normal.resize(3);
-    boundface->GetXYZofTS(qPointsT[0], qPointsS[0], x, y, z);
-    boundface->get_normal_vector(x, y, z, normal[0], normal[1], normal[2]);
+
     // --------------------------------------------------------------
 
     std::vector<std::shared_ptr<FEMatrix>> blocks = M.get_blocks_uniquely();
@@ -254,18 +247,17 @@ void BoundaryAssembling3D::matrix_u_v(BlockFEMatrix &M,
           double v2 = v1;
           double v3 = v1;
 
-	  // ansatz
+          // ansatz
           for (size_t k2 = 0; k2 < basisFunctionsValues[l].size(); k2++)
           {
-	    double u1 = basisFunctionsValues[l][k2]; 
-	    double u2 = u1;
-	    double u3 = u2;
+            double u1 = basisFunctionsValues[l][k2];
+            double u2 = u1;
+            double u3 = u2;
 
-	    // add for all three components
-	    blocks[0]->add(DOF[k1], DOF[k2], scale_factor * u1 * v1 ); // A11
-	    blocks[5]->add(DOF[k1], DOF[k2], scale_factor * u2 * v2 ); // A22
-	    blocks[10]->add(DOF[k1], DOF[k2], scale_factor * u3 * v3 ); // A33
-            
+            // add for all three components
+            blocks[0]->add(DOF[k1], DOF[k2], scale_factor * u1 * v1 ); // A11
+            blocks[5]->add(DOF[k1], DOF[k2], scale_factor * u2 * v2 ); // A22
+            blocks[10]->add(DOF[k1], DOF[k2], scale_factor * u3 * v3 ); // A33
           }
         }
       }
@@ -303,7 +295,7 @@ void BoundaryAssembling3D::matrix_p_v_n(BlockFEMatrix &M,
     // get all data necessary for computing the integral:
     // quadrature weights, points, functions values, normal, determinant
     std:: vector<double> qWeights, qPointsT, qPointsS;
-    std::vector< std::vector<double> > basisFunctionsValues_u,basisFunctionsValues_p;
+    std::vector< std::vector<double> > basisFunctionsValues_u, basisFunctionsValues_p;
 
     int quad_degree = U_Space->getFEDegree(cell) * P_Space->getFEDegree(cell);
     U_Space->getFaceQuadratureData(cell, joint_id,
@@ -323,16 +315,18 @@ void BoundaryAssembling3D::matrix_p_v_n(BlockFEMatrix &M,
     double transformationDeterminant;
     cell->computeNormalAndTransformationData(joint_id, normal,
               transformationDeterminant);
+
     double x, y, z;
+    normal.clear();
     normal.resize(3);
     boundface->GetXYZofTS(qPointsT[0], qPointsS[0], x, y, z);
     boundface->get_normal_vector(x, y, z, normal[0], normal[1], normal[2]);
-    double  n1 = normal[0];
-    double  n2 = normal[1];
-    double  n3 = normal[2];
+    double n1 = normal[0];
+    double n2 = normal[1];
+    double n3 = normal[2];
 
-    
     std::vector<std::shared_ptr<FEMatrix>> blocks = M.get_blocks_uniquely();
+
     for (size_t l = 0; l < qWeights.size(); l++)
     {
       double scale_factor  = mult * qWeights[l] * transformationDeterminant;
@@ -340,25 +334,22 @@ void BoundaryAssembling3D::matrix_p_v_n(BlockFEMatrix &M,
       // test
       for (size_t k1 = 0; k1 < basisFunctionsValues_u[l].size(); k1++)
       {
-
         if (DOF_u[k1] < U_Space->GetActiveBound())
         {
           double v1 = basisFunctionsValues_u[l][k1]; 
           double v2 = v1;
           double v3 = v1;
 
-	  // ansatz
+          // ansatz
           for (size_t k2 = 0; k2 < basisFunctionsValues_p[l].size(); k2++)
           {
-	    double p = basisFunctionsValues_p[l][k2]; // value of ansatz function
+            double p = basisFunctionsValues_p[l][k2]; // value of ansatz function
 
-	    // add for all three components
-	    blocks[3]->add(DOF_u[k1],  DOF_p[k2], scale_factor * p * v1 * n1 ); // B1
-	    blocks[7]->add(DOF_u[k1],  DOF_p[k2], scale_factor * p * v2 * n2 ); // B2
-	    blocks[11]->add(DOF_u[k1], DOF_p[k2], scale_factor * p * v3 * n3 ); // B3
-	  
-	  }
-	  
+            // add for all three components
+            blocks[3]->add(DOF_u[k1],  DOF_p[k2], scale_factor * p * v1 * n1 ); // B1T
+            blocks[7]->add(DOF_u[k1],  DOF_p[k2], scale_factor * p * v2 * n2 ); // B2T
+            blocks[11]->add(DOF_u[k1], DOF_p[k2], scale_factor * p * v3 * n3 ); // B3T
+          }
         }
       }
     }
@@ -404,15 +395,39 @@ void BoundaryAssembling3D::matrix_q_u_n(BlockFEMatrix &M,
     // quadrature weights, points, functions values, normal, determinant
     std:: vector<double> qWeights_u, qPointsT_u, qPointsS_u, qWeights_p, qPointsT_p, qPointsS_p; // S,T for parametrization in 3D
     std::vector< std::vector<double> > basisFunctionsValues_u, basisFunctionsValues_p;
+
+    int quad_degree = U_Space->getFEDegree(cell) * P_Space->getFEDegree(cell);
+
+        U_Space->getFaceQuadratureData(cell, joint_id,
+               qWeights_u, qPointsT_u, qPointsS_u,
+               basisFunctionsValues_u,
+               quad_degree);
+        // we need to get the formula in order to use the same quadrature points for P
+        // (in the case that fe spaces are different)
+        QuadFormula2D faceQuadFormula =
+          U_Space->getFaceQuadratureFormula(cell, joint_id, quad_degree);
+
+        P_Space->getFaceQuadratureValue(cell, joint_id, faceQuadFormula,
+                basisFunctionsValues_p);
+
+
+  /* OLD 15.10.18 LB:
     this->getQuadratureData(U_Space, cell,joint_id,
         qWeights_u, qPointsT_u, qPointsS_u, basisFunctionsValues_u);
-    this->getQuadratureData(P_Space, cell,joint_id,
+    this->getQuadratureData(P_Space, cell, joint_id,
         qWeights_p, qPointsT_p, qPointsS_p, basisFunctionsValues_p);
+*/
 
     std::vector<double> normal;
     double transformationDeterminant;
     this->computeNormalAndTransformationData(cell, joint_id, normal,
         transformationDeterminant);
+
+    double x, y, z;
+    normal.clear();
+    normal.resize(3);
+    boundface->GetXYZofTS(qPointsT_u[0], qPointsS_u[0], x, y, z);
+    boundface->get_normal_vector(x, y, z, normal[0], normal[1], normal[2]);
 
     // rescale local integral by mesh-size (important for Nitsche boundary)
     for (size_t l = 0; l < qWeights_u.size(); l++)
@@ -441,9 +456,9 @@ void BoundaryAssembling3D::matrix_q_u_n(BlockFEMatrix &M,
               double  n3 = normal[2];
 
               // add for all three components
-              blocks[12]->add(DOF_p[k1], DOF_u[k2], scale_factor * q * u1 * n1 ); // B1
-              blocks[13]->add(DOF_p[k1], DOF_u[k2], scale_factor * q * u2 * n2 ); // B2
-              blocks[14]->add(DOF_p[k1], DOF_u[k2], scale_factor * q * u3 * n3 ); // B3
+              blocks[12]->add(DOF_p[k2], DOF_u[k1], scale_factor * q * u1 * n1 ); // B1  //NEW 14.10.18
+              blocks[13]->add(DOF_p[k2], DOF_u[k1], scale_factor * q * u2 * n2 ); // B2
+              blocks[14]->add(DOF_p[k2], DOF_u[k1], scale_factor * q * u3 * n3 ); // B3
             }
           }
         }
@@ -505,6 +520,12 @@ void BoundaryAssembling3D::rhs_q_uD_n(BlockVector &rhs,
         transformationDeterminant);
 
     double x, y, z;
+    normal.clear();
+    normal.resize(3);
+    boundface->GetXYZofTS(qPointsT_u[0], qPointsS_u[0], x, y, z);
+    boundface->get_normal_vector(x, y, z, normal[0], normal[1], normal[2]);
+
+
     std::vector<double> uDirichlet(3);
 
     // rescale local integral by mesh-size (important for Nitsche boundary)
@@ -562,7 +583,6 @@ void BoundaryAssembling3D::matrix_gradu_n_v(BlockFEMatrix &M,
     std::vector<TBoundFace*> boundaryFaceList,
     int componentID,
     double mult)
-
 {
   std::vector<std::shared_ptr<FEMatrix>> blocks = M.get_blocks_uniquely();
 
@@ -572,7 +592,7 @@ void BoundaryAssembling3D::matrix_gradu_n_v(BlockFEMatrix &M,
     coll->get_face_list_on_component(componentID, boundaryFaceList);
   }
 
-  for(size_t m = 0; m < boundaryFaceList.size(); m++)
+  for (size_t m = 0; m < boundaryFaceList.size(); m++)
   {
     TBoundFace *boundface = boundaryFaceList[m];
     TBaseCell *cell = ( (TJoint *)boundface)->GetNeighbour(0);
@@ -586,13 +606,26 @@ void BoundaryAssembling3D::matrix_gradu_n_v(BlockFEMatrix &M,
     // quadrature weights, points, functions values, normal, determinant
     std:: vector<double> qWeights, qPointsT, qPointsS; // S,T for parametrization in 3D
     std::vector< std::vector<double> > basisFunctionsValues, basisFunctionsValues_derivative_x, basisFunctionsValues_derivative_y, basisFunctionsValues_derivative_z;
-    this->getQuadratureDataIncludingFirstDerivatives(U_Space, cell,joint_id,
-        qWeights, qPointsT, qPointsS,basisFunctionsValues,
+    this->getQuadratureDataIncludingFirstDerivatives(U_Space, cell, joint_id,
+        qWeights, qPointsT, qPointsS, basisFunctionsValues,
         basisFunctionsValues_derivative_x, basisFunctionsValues_derivative_y, basisFunctionsValues_derivative_z );
+
     std::vector<double> normal;
     double transformationDeterminant;
+
     this->computeNormalAndTransformationData(cell, joint_id, normal,
         transformationDeterminant);
+    cout << "transformationDeterminant: "<< transformationDeterminant << endl;
+
+    double x, y, z;
+    normal.clear();
+    normal.resize(3);
+    boundface->GetXYZofTS(qPointsT[0], qPointsS[0], x, y, z);
+    boundface->get_normal_vector(x, y, z, normal[0], normal[1], normal[2]);
+
+    cout<< "Nitsche Joint_ID: "<< joint_id  << endl;
+    cout<< "cell->GetCellIndex(): "<< cell->GetCellIndex() << endl;
+    cout << "n1, n2, n3: "<< normal[0] << ", "<< normal[1] << ", " << normal[2] <<endl;
 
     // rescale local integral by mesh-size (important for Nitsche boundary)
     for (size_t l = 0; l < qWeights.size(); l++)
@@ -609,6 +642,9 @@ void BoundaryAssembling3D::matrix_gradu_n_v(BlockFEMatrix &M,
           double v2 = v1;
           double v3 = v1;
 
+          cout << "l: " << l << "k1: " << k1 << endl;
+          cout << "basisFunctionsValues[l][k1]: " << basisFunctionsValues[l][k1] << endl;
+
           for (size_t k2 = 0; k2 < basisFunctionsValues[l].size(); k2++)
           {
             int global_dof_from_local = DOF[k2]; // Ansatz-DOF
@@ -622,6 +658,11 @@ void BoundaryAssembling3D::matrix_gradu_n_v(BlockFEMatrix &M,
               double u_dx = basisFunctionsValues_derivative_x[l][k2];
               double u_dy = basisFunctionsValues_derivative_y[l][k2];
               double u_dz = basisFunctionsValues_derivative_z[l][k2];
+
+              cout << "l: " << l << "k2: " << k2 << endl;
+              cout << "basisFunctionsValues_derivative_x[l][k2]: " << basisFunctionsValues_derivative_x[l][k2] << endl;
+              cout << "basisFunctionsValues_derivative_y[l][k2]: " << basisFunctionsValues_derivative_y[l][k2] << endl;
+              cout << "basisFunctionsValues_derivative_z[l][k2]: " << basisFunctionsValues_derivative_z[l][k2] << endl;
 
               // (see the note about blocks at the beginning of the function)
               blocks[0]->add(DOF[k1], DOF[k2],  scale_factor * v1 * u_dx * n1 ); // A11
@@ -686,6 +727,12 @@ void BoundaryAssembling3D::matrix_gradv_n_u(BlockFEMatrix &M,
     this->computeNormalAndTransformationData(cell, joint_id, normal,
         transformationDeterminant);
 
+    double x, y, z;
+    normal.clear();
+    normal.resize(3);
+    boundface->GetXYZofTS(qPointsT[0], qPointsS[0], x, y, z);
+    boundface->get_normal_vector(x, y, z, normal[0], normal[1], normal[2]);
+
     // rescale local integral by mesh-size (important for Nitsche boundary)
     for (size_t l = 0; l < qWeights.size(); l++)
     {
@@ -717,7 +764,7 @@ void BoundaryAssembling3D::matrix_gradv_n_u(BlockFEMatrix &M,
 
               // (see the note about blocks at the beginning of the function)
               blocks[0]->add(DOF[k1], DOF[k2], scale_factor * u1 * v_dx * n1 ); // A11
-              blocks[0]->add(DOF[k1], DOF[k2], scale_factor * u1 * v_dy * n2); // A11
+              blocks[0]->add(DOF[k1], DOF[k2], scale_factor * u1 * v_dy * n2 ); // A11
               blocks[0]->add(DOF[k1], DOF[k2], scale_factor * u1 * v_dz * n3 ); // A11
 
               blocks[5]->add(DOF[k1], DOF[k2], scale_factor * u2 * v_dx * n1 ); // A22
@@ -778,10 +825,16 @@ void BoundaryAssembling3D::rhs_gradv_n_uD(BlockVector &rhs,
     this->computeNormalAndTransformationData(cell, joint_id, normal,
         transformationDeterminant);
 
+    double x, y, z;
+    normal.clear();
+    normal.resize(3);
+    boundface->GetXYZofTS(qPointsT[0], qPointsS[0], x, y, z);
+    boundface->get_normal_vector(x, y, z, normal[0], normal[1], normal[2]);
 
    // if ( normal[0] == 0 && normal[1] == 0 && normal[2] == 1)
     //{
-      cout << "n1, n2, n3: "<< normal[0] << ", "<< normal[1] << ", " << normal[2] <<endl;
+
+     // cout << "n1, n2, n3: "<< normal[0] << ", "<< normal[1] << ", " << normal[2] <<endl;
    //   cout << "cell->GetCellIndex(): "<< cell->GetCellIndex() << endl;
       //cout << "cell->GetBd_Part(): " << cell->GetBd_Part() << endl;
       //cout << "Face_ID: "<< boundface->get_index_in_neighbour(cell) << endl;
@@ -801,7 +854,6 @@ void BoundaryAssembling3D::rhs_gradv_n_uD(BlockVector &rhs,
 
 
     std::vector<double> uDirichlet(3);
-    double x, y, z;
 
     // loop over Gauss points
     for (size_t l = 0; l < qWeights.size(); l++)
@@ -896,6 +948,11 @@ void BoundaryAssembling3D::rhs_uD_v(BlockVector &rhs,
         transformationDeterminant);
 
     double x, y, z;
+    normal.clear();
+    normal.resize(3);
+    boundface->GetXYZofTS(qPointsT[0], qPointsS[0], x, y, z);
+    boundface->get_normal_vector(x, y, z, normal[0], normal[1], normal[2]);
+
     std::vector<double> uDirichlet(3);
 
     // loop over Gauss points
@@ -973,7 +1030,9 @@ void BoundaryAssembling3D::getQuadratureDataIncludingFirstDerivatives(
   int fe_degree = TFEDatabase3D::GetPolynomialDegreeFromFE3D(FEId);
 
   QuadFormula2D FaceQuadFormula; //=BaryCenterTria;
-  switch(nFaceVertices) {
+
+  switch (nFaceVertices)
+  {
   case 3:
     // triangular face
     FaceQuadFormula = TFEDatabase3D::GetQFTriaFromDegree(2*fe_degree);
@@ -994,7 +1053,9 @@ void BoundaryAssembling3D::getQuadratureDataIncludingFirstDerivatives(
   qWeights.resize(N_Points);
   qPointsT.resize(N_Points);
   qPointsS.resize(N_Points);
-  for (size_t k=0; k<(size_t)N_Points; k++) {
+
+  for (size_t k = 0; k < (size_t) N_Points; k++)
+  {
     qWeights[k] = faceWeights[k];
     qPointsT[k] = t[k];
     qPointsS[k] = s[k];
@@ -1032,14 +1093,16 @@ void BoundaryAssembling3D::getQuadratureDataIncludingFirstDerivatives(
   basisFunctionsValues_derivative_y.resize(qWeights.size());
   basisFunctionsValues_derivative_z.resize(qWeights.size());
 
-  for (unsigned int l=0; l<qWeights.size(); l++) {
+  for (unsigned int l = 0; l < qWeights.size(); l++)
+  {
     basisFunctionsValues[l].resize(N_BaseFunct[FEId]);
     basisFunctionsValues_derivative_x[l].resize(N_BaseFunct[FEId]);
     basisFunctionsValues_derivative_y[l].resize(N_BaseFunct[FEId]);
     basisFunctionsValues_derivative_z[l].resize(N_BaseFunct[FEId]);
 
-    for (unsigned int k=0; k<basisFunctionsValues[l].size(); k++) {
-      basisFunctionsValues[l][k]=JointValues[l][k];
+    for (unsigned int k = 0; k < basisFunctionsValues[l].size(); k++)
+    {
+      basisFunctionsValues[l][k] = JointValues[l][k];
       basisFunctionsValues_derivative_x[l][k]=JointValues_derivative_xi[l][k];
       basisFunctionsValues_derivative_y[l][k]=JointValues_derivative_eta[l][k];
       basisFunctionsValues_derivative_z[l][k]=JointValues_derivative_rho[l][k];
@@ -1070,16 +1133,17 @@ void BoundaryAssembling3D::computeNormalAndTransformationData(TBaseCell *cell, i
   for (size_t l1 = 0; l1 < nFaceVertices; l1++)
   {
     double _x,_y,_z;
-    cell->GetVertex(faceVertexMap[ m*maxNVerticesPerFace+l1 ])->GetCoords(_x,_y,_z);
+    cell->GetVertex(faceVertexMap[ m * maxNVerticesPerFace + l1 ])->GetCoords(_x,_y,_z);
     faceVertices[l1].x() = _x;
     faceVertices[l1].y() = _y;
     faceVertices[l1].z() = _z;
   }
-
+  normal.clear();
   normal.resize(3);
   double xc1, yc1, zc1, xc2, yc2, zc2;
   double areaT, areaT1, areaT2, area_parallelogramm, area_parallelogramm_1, area_parallelogramm_2;
-  switch(faceVertices.size())
+
+  switch (faceVertices.size())
   {
   case 3:
     xc1 = faceVertices[1].x() - faceVertices[0].x();
@@ -1110,10 +1174,12 @@ void BoundaryAssembling3D::computeNormalAndTransformationData(TBaseCell *cell, i
     // normed Normal vector = (v1 x v2)/||v1 x v2||
     // Area of reference triangle (0,0)-(0,1)-(1,0): 1/2*g*h=0.5
  */   // Determinant of tranform.: A(triangle)/A(ref triangle) = ||v1 x v2||
+
+    /* Old 15.10.18
     normal[0] = yc2*zc1 - zc2*yc1;// yc1*zc2 - zc1*yc2;
     normal[1] = zc2*xc1 - xc2*zc1; //zc1*xc2 - xc1*zc2;
     normal[2] = xc2*yc1 - yc2*xc1; //xc1*yc2 - yc1*xc2;
-
+*/
     // determinant of reference trafo in order to get a normed normal vector
     area_parallelogramm = sqrt(normal[0]*normal[0] + normal[1]*normal[1] + normal[2]*normal[2]);
     normal[0] /= area_parallelogramm;
@@ -1185,7 +1251,6 @@ void BoundaryAssembling3D::computeNormalAndTransformationData(TBaseCell *cell, i
     ErrThrow("Unknown cell type in BoundaryAssembling3D::computeNormalAndTransformationData()");
 
   } // tria or quads
-
 }
 
 //// ===========================================================================
@@ -1289,31 +1354,32 @@ void BoundaryAssembling3D::nitsche_bc(BlockFEMatrix &s_matrix, BlockVector &s_rh
     int bd_comp, double gamma, double mu,
     int sym_u, int sym_p)
 {
+  cout<<"okkkk 0"<<endl;
   // gamma/h (u,v)
   // rescale local integral by edge values
-  matrix_u_v(s_matrix, v_space, boundaryFaceList, bd_comp, gamma*mu, true);  
-
+  matrix_u_v(s_matrix, v_space, boundaryFaceList, bd_comp, gamma*mu, true);
+cout<<"okkkk 1"<<endl;
   // gamma/h (uD,v) [rhs]
   // rescale local integral by edge values
-  //rhs_uD_v(s_rhs, v_space, U1, U2, U3, boundaryFaceList, bd_comp, gamma*mu, true);   
-
+  rhs_uD_v(s_rhs, v_space, U1, U2, U3, boundaryFaceList, bd_comp, gamma*mu, true);
+cout<<"okkkk 2"<<endl;
   // - (mu grad(u)n,v)
-  matrix_gradu_n_v(s_matrix, v_space, boundaryFaceList, bd_comp, -1. * mu);  // OK
-
+  matrix_gradu_n_v(s_matrix, v_space, boundaryFaceList, bd_comp, (-1.) * mu);  // OK
+cout<<"okkkk 3"<<endl;
   // - sign_u * (u, mu grad(v)n) [sign_u=1: symmetric, -1: skew-symmetric]
-  matrix_gradv_n_u(s_matrix, v_space, boundaryFaceList, bd_comp, (-1) * sym_u * mu);
-
+  matrix_gradv_n_u(s_matrix, v_space, boundaryFaceList, bd_comp, (-1.) * sym_u * mu);
+  cout<<"okkkk 4"<<endl;
   // - sign_u * (uD,mu grad(v)n) [rhs]
-  //rhs_gradv_n_uD(s_rhs, v_space, U1, U2, U3, boundaryFaceList, bd_comp, (-1) * sym_u * mu );
-  
+  rhs_gradv_n_uD(s_rhs, v_space, U1, U2, U3, boundaryFaceList, bd_comp, (-1) * sym_u * mu );
+  cout<<"okkkk 5"<<endl;
   // (pn,v)
   matrix_p_v_n(s_matrix, v_space, p_space, boundaryFaceList, bd_comp, 1.);
-  
+  cout<<"okkkk 6"<<endl;
   // sign_p * (u,qn)
   matrix_q_u_n(s_matrix, v_space, p_space, boundaryFaceList, bd_comp, sym_p);
-  
+  cout<<"okkkk 7"<<endl;
   // sign_p * (uD,qn) [rhs]
-  //rhs_q_uD_n(s_rhs, v_space, p_space, U1, U2, U3, boundaryFaceList, bd_comp, sym_p);
+  rhs_q_uD_n(s_rhs, v_space, p_space, U1, U2, U3, boundaryFaceList, bd_comp, sym_p);
 }
 
 
@@ -1331,7 +1397,8 @@ void BoundaryAssembling3D::getQuadratureData(const TFESpace3D *fespace, TBaseCel
   int fe_degree = TFEDatabase3D::GetPolynomialDegreeFromFE3D(FEId);
 
   QuadFormula2D FaceQuadFormula; //=BaryCenterTria;
-  switch(nFaceVertices) {
+  switch (nFaceVertices)
+  {
   case 3:
     // triangular face
     FaceQuadFormula = TFEDatabase3D::GetQFTriaFromDegree(2*fe_degree);
@@ -1371,18 +1438,22 @@ void BoundaryAssembling3D::getQuadratureData(const TFESpace3D *fespace, TBaseCel
   qWeights.resize(N_Points);
   qPointsT.resize(N_Points);
   qPointsS.resize(N_Points);
-  for (size_t k=0; k<(size_t)N_Points; k++) {
+
+  for (size_t k = 0; k < (size_t) N_Points; k++)
+  {
     qWeights[k] = faceWeights[k];
     qPointsT[k] = t[k];
     qPointsS[k] = s[k];
   }
 
+  basisFunctionsValues.resize(qWeights.size());
 
-  basisFunctionsValues.resize(qWeights.size());                       
-  for (unsigned int l=0; l<qWeights.size(); l++) {
+  for (unsigned int l = 0; l < qWeights.size(); l++)
+  {
     basisFunctionsValues[l].resize(N_BaseFunct[FEId]);                          
-    for (unsigned int k=0; k<basisFunctionsValues[l].size(); k++) {
-      basisFunctionsValues[l][k]=JointValues[l][k];
+    for (unsigned int k = 0; k < basisFunctionsValues[l].size(); k++)
+    {
+      basisFunctionsValues[l][k] = JointValues[l][k];
     }
   }
   // ====================================
