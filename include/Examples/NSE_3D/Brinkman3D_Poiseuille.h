@@ -120,26 +120,32 @@ void BoundCondition(double x, double y, double z, BoundCond &cond)
   double _HEIGHT = 10.;
   double r = sqrt(x*x+y*y);
 
-  if (nitsche_id.size()==1) {
-    if (nitsche_id[0] == 2) {
+  if (nitsche_id.size()==1)
+  {
+    if (nitsche_id[0] == 2)
+    {
       cond = DIRICHLET_WEAK;
-    } else {
+    }
+    else
+    {
       Output::print(" Warning: Nitsche BC on component ", nitsche_id[0],
 		    " are not what I expect. Setting cond = DIRICHLET");
       cond = DIRICHLET;
     }
     
-  } else {
+  }
+  else
+  {
     cond = DIRICHLET;
   }
-    
+
   // set Neumann BC on top
-  if ((fabs(z-_HEIGHT)<1e-8) || (fabs(z-0)<1e-8) )
+  if ((fabs(z-_HEIGHT)<1e-14) || (fabs(z-0)<1e-14) )
   {
-    if( fabs(r - _R_CYLINDER)>1e-8  )
-      {
-	cond = NEUMANN;
-      }
+    if( fabs(r - _R_CYLINDER)>1e-14  )
+    {
+      cond = NEUMANN;
+    }
   }
 }
 
@@ -156,7 +162,9 @@ void U2BoundValue(double x, double y, double z, double &value)
 
 void U3BoundValue(double x, double y, double z, double &value)
 {
-  value = 0;
+  double _UMAX = _DELTA_P * _R_CYLINDER*_R_CYLINDER /( 4. * _HEIGHT *  effective_viscosity);
+  double _R2 = _R_CYLINDER*_R_CYLINDER;
+  value = 0; //_UMAX * (1 - (x*x + y*y)/_R2 ); //
 }
 
 
