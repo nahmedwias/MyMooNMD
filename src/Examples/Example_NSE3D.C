@@ -470,7 +470,12 @@ double Example_NSE3D::get_inverse_permeability() const
 
 std::vector<size_t> Example_NSE3D::get_neumann_id() const
 {
-  return this->example_database["neumann_id"];
+  std::vector<size_t> neumann_id;
+  int n_neumann_bd = this->example_database["n_neumann_bd"];
+  if (n_neumann_bd)
+    return this->example_database["neumann_id"];
+  else
+    return neumann_id;
 }
 
 

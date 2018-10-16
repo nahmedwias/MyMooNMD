@@ -119,7 +119,7 @@ void BoundCondition(double x, double y, double z, BoundCond &cond)
   double _R_CYLINDER = 2.;
   double _HEIGHT = 10.;
   double r = sqrt(x*x+y*y);
-
+  
   if (nitsche_id.size()==1)
   {
     if (nitsche_id[0] == 2)
@@ -139,12 +139,18 @@ void BoundCondition(double x, double y, double z, BoundCond &cond)
     cond = DIRICHLET;
   }
 
-  // set Neumann BC on top
-  if ((fabs(z-_HEIGHT)<1e-14) || (fabs(z-0)<1e-14) )
+  if (neumann_id.size()==1)
+    Output::print(" Warning: neumann_id.size = 1. This example should not support this case");
+    
+  if (neumann_id.size()==2)
   {
-    if( fabs(r - _R_CYLINDER)>1e-14  )
+    // set Neumann BC on top and bottom
+    if ((fabs(z-_HEIGHT)<1e-14) || (fabs(z-0)<1e-14) )
     {
-      cond = NEUMANN;
+      if( fabs(r - _R_CYLINDER)>1e-14  )
+      {
+	cond = NEUMANN;
+      }
     }
   }
 }
@@ -162,9 +168,17 @@ void U2BoundValue(double x, double y, double z, double &value)
 
 void U3BoundValue(double x, double y, double z, double &value)
 {
-  double _UMAX = _DELTA_P * _R_CYLINDER*_R_CYLINDER /( 4. * _HEIGHT *  effective_viscosity);
-  double _R2 = _R_CYLINDER*_R_CYLINDER;
-  value = 0; //_UMAX * (1 - (x*x + y*y)/_R2 ); //
+  if (neumann_id.size())
+  {
+    value = 0.; // we only need Dirichlet on the wall, i.e., u = 0
+  }
+  else
+  {
+    // all dirichlet BC
+    double _UMAX = _DELTA_P * _R_CYLINDER*_R_CYLINDER /( 4. * _HEIGHT *  effective_viscosity);
+    double _R2 = _R_CYLINDER*_R_CYLINDER;
+    value = _UMAX * (1 - (x*x + y*y)/_R2 );
+  }
 }
 
 
