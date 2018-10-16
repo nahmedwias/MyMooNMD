@@ -36,7 +36,7 @@ void BoundaryAssembling3D::rhs_g_v_n(BlockVector &rhs,
     int *DOF = U_Space->GetGlobalDOF(cell->GetCellIndex());
     
     int joint_id = boundface->get_index_in_neighbour(cell);
-    cout<< "Neumann Joint_ID: "<< joint_id  << endl;
+    //cout<< "Neumann Joint_ID: "<< joint_id  << endl;
     // get all data necessary for computing the integral:
     // quadrature weights, points, functions values, normal, determinant
     std:: vector<double> qWeights, qPointsT, qPointsS;
