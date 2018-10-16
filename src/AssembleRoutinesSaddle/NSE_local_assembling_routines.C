@@ -19,7 +19,7 @@ void NSResistanceMassMatrixSingle(double Mult, double *coeff,
     for(int j = 0; j < N_U; j++)
     {
       double ansatz = u[j];
-      MatrixA[i][j] += Mult * sigma * (test*ansatz);
+      MatrixA[i][j] += Mult * sigma * (test * ansatz);
     }
   }
 }
@@ -42,7 +42,7 @@ void NSResistanceMassMatrix(double Mult, double *coeff, double *param,
     for(int j = 0; j < N_U; j++)
     {
       double ansatz = u[j];
-      double val = Mult * sigma * ( test * ansatz );
+      double val = Mult * sigma * (test * ansatz);
       MatrixA11[i][j] += val;
       MatrixA22[i][j] += val;
       if(d == 3)
@@ -73,8 +73,8 @@ void NSLaplaceGradGradSingle(double Mult, double *coeff, double *param,
       double ansatz_x = u_x[j];
       double ansatz_y = u_y[j];
       double ansatz_z = d == 2 ? 0. : u_z[j];
-      MatrixA[i][j] += Mult * nu*(test_x*ansatz_x + test_y*ansatz_y
-                                 +test_z * ansatz_z);
+      MatrixA[i][j] += Mult * nu * (test_x * ansatz_x + test_y * ansatz_y
+                                 + test_z * ansatz_z);
     }
   }
 }
@@ -104,7 +104,7 @@ void NSLaplaceGradGrad(double Mult, double *coeff, double *param,
       double ansatz_x = u_x[j];
       double ansatz_y = u_y[j];
       double ansatz_z = d == 2 ? 0. : u_z[j];
-      double val = Mult * nu*( test_x * ansatz_x + test_y * ansatz_y 
+      double val = Mult * nu* ( test_x * ansatz_x + test_y * ansatz_y
                              + test_z * ansatz_z);
       MatrixA11[i][j] += val;
       MatrixA22[i][j] += val;
@@ -185,10 +185,10 @@ void NSDivergenceBlocks(double Mult, double *coeff, double *param, double hK,
       double ansatz_x = u_x[j];
       double ansatz_y = u_y[j];
       double ansatz_z = d == 2 ? 0. : u_z[j];
-      MatrixB1[i][j] -= sign * Mult*test*ansatz_x;
-      MatrixB2[i][j] -= sign * Mult*test*ansatz_y;
+      MatrixB1[i][j] -= sign * Mult * test * ansatz_x;
+      MatrixB2[i][j] -= sign * Mult * test * ansatz_y;
       if(d == 3)
-        MatrixB3[i][j] -= sign * Mult*test*ansatz_z;
+        MatrixB3[i][j] -= sign * Mult * test * ansatz_z;
     }
   }
 }
@@ -215,10 +215,10 @@ void NSGradientBlocks(double Mult, double *coeff, double *param, double hK,
     for(int j = 0; j < N_P; j++)
     {
       double ansatz = p[j];
-      MatrixB1T[i][j] -= Mult*ansatz*test_x;
-      MatrixB2T[i][j] -= Mult*ansatz*test_y;
+      MatrixB1T[i][j] -= Mult * ansatz * test_x;
+      MatrixB2T[i][j] -= Mult * ansatz * test_y;
       if(d == 3)
-        MatrixB3T[i][j] -= Mult*ansatz*test_z;
+        MatrixB3T[i][j] -= Mult * ansatz * test_z;
     }
   }
 }
@@ -243,15 +243,15 @@ void NSRightHandSide(double Mult, double *coeff, double *param, double hK,
   for(int i = 0; i < N_U; i++)
   {
     double test = u[i];
-    Rhs1[i] += Mult*test*f1;
-    Rhs2[i] += Mult*test*f2;
+    Rhs1[i] += Mult * test * f1;
+    Rhs2[i] += Mult * test * f2;
     if(d == 3)
-      Rhs3[i] += Mult*test*f3;
+      Rhs3[i] += Mult * test * f3;
   }
   for(int i = 0; i < N_P; i++)
   {
     double test = p[i];
-    Rhs_div[i] -= Mult* sign * test * g;
+    Rhs_div[i] -= Mult * sign * test * g;
   }
 }
 
@@ -563,23 +563,21 @@ void NSGradDiv(double Mult, double *coeff, double *param, double hK,
     
     for(int j = 0; j < N_U; j++)
     {
-      
-      MatrixA11[i][j] += delta * v_x * u_x[j];
-      MatrixA12[i][j] += delta * v_x * u_y[j]; // v_y * u_x[j];
+      MatrixA11[i][j] += Mult * delta * v_x * u_x[j];
+      MatrixA12[i][j] += Mult * delta * v_x * u_y[j]; // v_y * u_x[j];
       if (d == 3)
-	MatrixA13[i][j] += delta * v_x * u_z[j]; //v_z * u_x[j];
+	       MatrixA13[i][j] += Mult * delta * v_x * u_z[j]; //v_z * u_x[j];
 
-      MatrixA21[i][j] += delta * v_y * u_x[j]; //* v_x * u_y[j];
-      MatrixA22[i][j] += delta * v_y * u_y[j];
+      MatrixA21[i][j] += Mult * delta * v_y * u_x[j]; //* v_x * u_y[j];
+      MatrixA22[i][j] += Mult * delta * v_y * u_y[j];
       if (d == 3)
-	MatrixA23[i][j] += delta * v_y * u_z[j]; //* v_z * u_y[j];
+	       MatrixA23[i][j] += Mult * delta * v_y * u_z[j]; //* v_z * u_y[j];
 
       if (d == 3) {
-	MatrixA31[i][j] += delta * v_z * u_x[j]; //* v_x * u_z[j];
-	MatrixA32[i][j] += delta * v_z * u_y[j];//* v_y * u_z[j];
-	MatrixA33[i][j] += delta * v_z * u_z[j];
+        MatrixA31[i][j] += Mult * delta * v_z * u_x[j]; //* v_x * u_z[j];
+        MatrixA32[i][j] += Mult * delta * v_z * u_y[j];//* v_y * u_z[j];
+        MatrixA33[i][j] += Mult * delta * v_z * u_z[j];
       }
-      
     }
   }
 }
@@ -609,14 +607,13 @@ void NSGradDiv_RightHandSide(double Mult, double *coeff, double *param, double h
     double v_x = u_x[i];
     double v_y = u_y[i];
     double v_z = d == 2 ? 0. : u_z[i];
-    Rhs_u1[i] = delta * g * v_x;
-    Rhs_u2[i] = delta * g * v_y;
+    Rhs_u1[i] += Mult * delta * g * v_x;
+    Rhs_u2[i] += Mult * delta * g * v_y;
     if (d == 3)
-      Rhs_u3[i] = delta * g * v_z;
+      Rhs_u3[i] += Mult * delta * g * v_z;
   }
 
 }
-
 
 double compute_PSPG_delta(double delta0, double hK, double nu)
 {
@@ -698,7 +695,7 @@ void NSPSPG_RightHandSide(double Mult, double *coeff, double *param, double hK,
 // general version (for Navier-Stokes and Brinkman problems)
 double compute_GLS_delta(double delta0, double hK, double nu, double sigma)
 {
-  double L_0 = 1.;
+  double L_0 = .1;
   return delta0 * hK * hK / (nu + sigma * L_0 * L_0);
 }
 
@@ -730,27 +727,25 @@ void NS_GLS(double Mult, double *coeff, double *param, double hK,
   double * u_yy = OrigValues[2+2*d+d];
   double * u_zz = d == 2 ? nullptr : OrigValues[13];
   double nu = coeff[0]; // = 1/reynolds_number
-
   double sigma = d == 2 ? coeff[4] : coeff[5]; // =1/permeability
   
   double delta = compute_GLS_delta(delta0, hK, nu, sigma);
   
-  for(int i = 0; i < N_U; i++)
+  for (int i = 0; i < N_U; i++)
   {
-    double laplace_v = nu * (u_xx[i] + u_yy[i] + (d == 2 ? 0. : u_zz[i]));
+    double laplace_v = u_xx[i] + u_yy[i] + (d == 2 ? 0. : u_zz[i]);
     // resistance term for Brinkman-type problems
-    double resistance_v = sigma * u[i];
+    double resistance_v = u[i];
 
     // multiply by -1 for non-sym GLS
     //laplace_v *= delta * sign *
-    double residue_v = laplace_v - resistance_v;
+    double residue_v = nu * laplace_v - sigma * resistance_v;
     
-    for(int j = 0; j < N_U; j++)
+    for (int j = 0; j < N_U; j++)
     {
-      double laplace_u = nu * (u_xx[j] + u_yy[j] + (d == 2 ? 0. : u_zz[j]));
-
-      double resistance_u = sigma * u[j];
-      double residue_u = -laplace_u + resistance_u;
+      double laplace_u = u_xx[j] + u_yy[j] + (d == 2 ? 0. : u_zz[j]);
+      double resistance_u =  u[j];
+      double residue_u = - nu * laplace_u + sigma * resistance_u;
       //MatrixA11[i][j] -= Mult*laplace_v*laplace_u;
       //MatrixA22[i][j] -= Mult*laplace_v*laplace_u;
       /*if(d == 3)
@@ -782,9 +777,9 @@ void NS_GLS(double Mult, double *coeff, double *param, double hK,
     
     for(int j = 0; j < N_U; j++)
     {
-      double laplace_u = nu * (u_xx[j] + u_yy[j] + (d == 2 ? 0. : u_zz[j]));
-      double resistance_u = sigma * u[j];
-      double residue_u = -laplace_u + resistance_u;
+      double laplace_u = u_xx[j] + u_yy[j] + (d == 2 ? 0. : u_zz[j]);
+      double resistance_u = u[j];
+      double residue_u = - nu * laplace_u + sigma * resistance_u;
       
       MatrixB1[i][j] += sign * Mult * delta * (-q_x) * residue_u;
       MatrixB2[i][j] += sign * Mult * delta * (-q_y) * residue_u;
@@ -797,8 +792,8 @@ void NS_GLS(double Mult, double *coeff, double *param, double hK,
       double ansatz_y = p_y[j];
       double ansatz_z = d == 2 ? 0. : p_z[j];
       // positive if sign=-1 (non-sym GLS)
-      MatrixC[i][j] -= sign * Mult * delta * (q_x*ansatz_x + q_y*ansatz_y
-                              +q_z*ansatz_z);
+      MatrixC[i][j] -= sign * Mult * delta * (q_x * ansatz_x + q_y * ansatz_y
+                              + q_z * ansatz_z);
     }
   }
 }
@@ -831,12 +826,13 @@ void NS_GLS_RightHandSide(double Mult, double *coeff, double *param, double hK,
   double sigma = d == 2 ? coeff[4] : coeff[5]; // = 1/permeability
   
   double delta = compute_GLS_delta(delta0, hK, nu, sigma);
-  for(int i = 0; i < N_U; i++)
+
+  for (int i = 0; i < N_U; i++)
   {
-    double laplace_v = nu * (u_xx[i] + u_yy[i] + (d == 2 ? 0. : u_zz[i]));
-    double resistance_v = sigma * u[i];
+    double laplace_v = u_xx[i] + u_yy[i] + (d == 2 ? 0. : u_zz[i]);
+    double resistance_v = u[i];
     
-    double residue_v = (laplace_v - resistance_v);
+    double residue_v = nu * laplace_v - sigma * resistance_v;
     Rhs1[i] += Mult * sign * delta * residue_v * f1;
     Rhs2[i] += Mult * sign * delta * residue_v * f2;
     if(d == 3)
@@ -847,7 +843,7 @@ void NS_GLS_RightHandSide(double Mult, double *coeff, double *param, double hK,
     double q_x = p_x[i];
     double q_y = p_y[i];
     double q_z = d == 2 ? 0. : p_z[i];
-    Rhs_div[i] -= Mult * delta * sign * (q_x*f1 + q_y*f2 + q_z*f3);
+    Rhs_div[i] -= Mult * delta * sign * (q_x * f1 + q_y * f2 + q_z * f3);
   }
 }
 
