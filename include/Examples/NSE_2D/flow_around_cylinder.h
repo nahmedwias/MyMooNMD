@@ -355,11 +355,14 @@ void compute_drag_lift_pdiff(NSE2D& nse2d)
   if(DIMENSIONLESS_VISCOSITY == reference_nu)
   {
     Output::print(" Drag = ", setprecision(16), drag, "  \terror: ",
-                  std::abs(drag - reference_drag));
+                  std::abs(drag - reference_drag), "  \trelative_error: ",
+                  std::abs(drag - reference_drag)/drag);
     Output::print(" Lift = ", setprecision(16), lift, "  \terror: ",
-                  std::abs(lift - reference_lift));
+                  std::abs(lift - reference_lift), "  \trelative_error: ",
+                  std::abs(lift - reference_lift)/lift);
     Output::print(" deltaP = ", setprecision(16), pdiff, "  \terror: ",
-                  std::abs(pdiff - reference_deltap));
+                  std::abs(pdiff - reference_deltap), "  \trelative_error: ",
+                  std::abs(pdiff - reference_deltap)/pdiff);
   }
   else
   {
