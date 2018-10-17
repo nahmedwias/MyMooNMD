@@ -1855,7 +1855,7 @@ RefTrans2D TFEDatabase2D::GetOrig(int N_LocalUsedElements,
 
     case BFUnitTriangle:
       if (MaxPolynomialDegree>0)
-	  QuadFormula = TFEDatabase2D::GetQFTriaFromDegree(N_terms*MaxPolynomialDegree-1);
+	  QuadFormula = TFEDatabase2D::GetQFTriaFromDegree(N_terms*MaxPolynomialDegree);
       else
           QuadFormula = TFEDatabase2D::GetQFTriaFromDegree(0);
       // more accurate quad rule for JohnMaubachTobiska1997.h

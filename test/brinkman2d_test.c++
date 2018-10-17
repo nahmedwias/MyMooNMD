@@ -235,12 +235,12 @@ void tests_on_triangles_P2P1_Example1(unsigned int nRefinements, ParameterDataba
   TDatabase::ParamDB->s2 = -1;
 
   Output::print("\nstarting with Brinkman2D on TwoTriangles (symmetric Galerkin formulation), Example 1, P2/P1, with Dirichlet and Neumann bcs and with visc_eff = visc = 0.004, perm = 1");
-  reference_errors = {{0.0054680957600273, 0.014317962190331, 0.1443805008035, 5.246987770953e-05, 0.00061083280165159}};
+  reference_errors = {{0.0058568178410394, 0.01431796219032, 0.14460835896882, 5.2469877709531e-05, 0.00061083280165148}};
   check_brinkman2d(domain, db, 2,1, reference_errors, nRefinements);
 
   db["Galerkin_type"] = "nonsymmetric Galerkin formulation";
   Output::print("\nstarting with Brinkman2D on TwoTriangles (nonsymmetric Galerkin formulation), Example 1, P2/P1, with Dirichlet and Neumann bcs and with visc_eff = visc = 0.004, perm = 1");
-  reference_errors = {{0.0054680957600273, 0.014317962190331, 0.1443805008035, 5.246987770953e-05, 0.00061083280165159}};
+  reference_errors = {{0.0058568178410394, 0.01431796219032, 0.14460835896882, 5.2469877709531e-05, 0.00061083280165148}};
   check_brinkman2d(domain, db, 2,1, reference_errors, nRefinements);
 }
 
@@ -276,7 +276,7 @@ void tests_on_triangles_P2P1_PenaltyFreeNonSymmetricNitsche_Example1(unsigned in
   TDatabase::ParamDB->s2 = -1;
 
   Output::print("\nstarting with Brinkman2D on TwoTriangles, Example 1, P2/P1, with penalty-free non-symmetric Nitsche approach and Neumann bcs and with visc_eff = visc = 0.004, perm = 1");
-  reference_errors = {{0.049354569383435, 0.049746071781475 , 0.20428824240268, 9.3291684594421e-05, 0.0010263458082476}};
+  reference_errors = {{0.049394982619311, 0.049746071781476, 0.20444890666219, 9.3291684594484e-05, 0.0010263458082477}};
   check_brinkman2d(domain, db, 2,1, reference_errors, nRefinements); 
 }
 
@@ -830,7 +830,7 @@ void tests_on_triangles_P2P2_GLSStab_cornerstab_PenaltyFreeNonSymmetricNitsche_G
 
  Output::print("\nstarting with Brinkman2D on TwoTriangles, Example 1, P2/P2-Stab (non-symmetric GLS) (0.1), Grad-Div stab (0.1), corner stab (1), scaling by L_0 (0.1), penalty-free non-symmetric Nitsche approach and with visc_eff = 0, visc = 1, perm = 0.001");
 
-  reference_errors = {{0.62363839833849, 1.0492228233602, 69.729941358015, 9.1990083634642e-05, 0.0046073708563482, 12.146138140402, 0.092490981212859}};
+  reference_errors = {{0.81412759047597, 1.0492228233603, 89.89334987863, 9.1990083634641e-05, 0.0046073708563482, 12.146138140402, 0.092490981212866}};
 
   check_brinkman2d_New(domain, db, 2, 2, reference_errors, nRefinements); 
 

@@ -840,7 +840,6 @@ void NSE2D::adjust_pressure()
       sign = 1;
     if(sign)
     {
-      Output::print("calling TFEFunction2D::add ", sign);
       auto u1 = s.u.GetComponent(0);
       auto u2 = s.u.GetComponent(1);
       TFEFunction2D::AnalyticFunction 
