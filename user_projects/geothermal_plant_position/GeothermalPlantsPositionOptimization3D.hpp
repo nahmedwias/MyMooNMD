@@ -3,15 +3,15 @@
 
 #include "Domain.h"
 #include "ParameterDatabase.h"
-#include "NSE2D.h"
-#include "CD2D_Temperature.hpp"
+#include "NSE3D.h"
+#include "CD3D_Temperature.hpp"
 #include "LoopInfo.h"
 
 
-class GeothermalPlantsPositionOptimization
+class GeothermalPlantsPositionOptimization3D
 {
   public:
-    GeothermalPlantsPositionOptimization(const TDomain& domain,
+    GeothermalPlantsPositionOptimization3D(const TDomain& domain,
                                          const ParameterDatabase& param_db);
     
     /// @brief compute the functional \f$ \hat J \f$ and, if necessary, its 
@@ -30,12 +30,12 @@ class GeothermalPlantsPositionOptimization
     ParameterDatabase db;
     /// @brief the size (dimension) of the control space
     unsigned n_control;
-    /// @brief the Brinkman and TCD2D  objects representing the primal solve
-    NSE2D brinkman2d_primal;
-    CD2D_Temperature tcd2d_primal;
-    /// @brief the Brinkman2D and TCD2D objects representing the adjoint solve
+    /// @brief the Brinkman and CD2D  objects representing the primal solve
+    NSE3D brinkman3d_primal;
+    CD3D_Temperature tcd3d_primal;
+    /// @brief the Brinkman2D and CD2D objects representing the adjoint solve
     //Brinkman2D_Adjoint brinkman2d_adjoint;
-    //TCD2D_Adjoint tcd2d_adjoint;
+    //CD2D_Adjoint cd2d_adjoint;
     
     /// variables during the optimization loop
     /// @brief keeping track of the optimization loop:
