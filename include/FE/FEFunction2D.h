@@ -128,6 +128,20 @@ class TFEFunction2D
      * required. The function 'OldFeFunction' could even live on a larger domain.
      */
     void Interpolate(TFEFunction2D *F);
+    
+    typedef std::function<double(const TBaseCell* cell, int cell_index,
+                                 double x, double y)> AnalyticFunction;
+    /**
+     * @brief add a given function f to this fe function
+     * 
+     * The cell and cell_index are from the collection of this TFEFunction2D
+     * and the point (x,y) is in that cell.
+     * 
+     * Note that this is similar to creating a second TFEFunction2D, 
+     * interpolating f on it and then adding it via operator+=. Here no second
+     * TFEFunction2D is required.
+     */
+    void add(AnalyticFunction f);
 
     /**
      * @brief project this functions into the space L20 (having zero mean value)

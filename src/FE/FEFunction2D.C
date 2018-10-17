@@ -1767,6 +1767,100 @@ void TFEFunction2D::Interpolate(TFEFunction2D *OldFeFunction)
 }
 
 /** ************************************************************************* */
+void TFEFunction2D::add(AnalyticFunction f)
+{
+  int N_Points;
+  double *xi, *eta;
+  // begin code
+
+  TCollection *Coll = FESpace2D->GetCollection();
+  int N_Cells = Coll->GetN_Cells();
+  int N_DOFs = FESpace2D->GetN_DegreesOfFreedom();
+  std::vector<int> IntIndex(N_DOFs, 0);
+
+  for(int i = 0; i < N_Cells; i++)
+  {
+    const TBaseCell * cell = Coll->GetCell(i);
+    const TFE2D& Element = FESpace2D->get_fe(i);
+    auto nf = Element.GetNodalFunctional2D();
+    nf->GetPointsForAll(N_Points, xi, eta);
+    int N_LocalDOFs = Element.GetN_DOF();
+    
+    if(Element.GetBaseFunct2D()->GetBaseVectDim() != 1)
+      ErrThrow("TFEFunction2D::add not implemented for vector-valued basis "
+               "functions");
+
+    BF2DRefElements RefElement = Element.GetBaseFunct2D()->GetRefElement();
+    int N_Edges = (RefElement == BFUnitSquare) ? 4 : 3; // else BFUnitTriangle
+    RefTrans2D RefTrans = Element.GetRefTransID();
+    bool IsIsoparametric = false;
+    if(TDatabase::ParamDB->USE_ISOPARAMETRIC)
+    {
+      for(int j = 0; j < N_Edges; j++)
+      {
+        const TJoint * joint = cell->GetJoint(j);
+        JointType jointtype = joint->GetType();
+        if(jointtype == BoundaryEdge)
+        {
+          auto bdjoint = static_cast<const TBoundEdge *>(joint);
+          BoundTypes bdtype = bdjoint->GetBoundComp()->GetType();
+          if(bdtype != Line)
+            IsIsoparametric = true;
+        }
+        if(jointtype == InterfaceJoint)
+        {
+          auto ifjoint = static_cast<const TInterfaceJoint*>(joint);
+          BoundTypes bdtype = ifjoint->GetBoundComp()->GetType();
+          if(bdtype != Line)
+            IsIsoparametric = true;
+        }
+        if(jointtype == IsoInterfaceJoint || jointtype == IsoBoundEdge)
+          IsIsoparametric = true;
+      }
+    }
+
+    if(IsIsoparametric)
+    {
+      RefTrans = (RefElement == BFUnitSquare) ? QuadIsoparametric 
+                                              : TriaIsoparametric;
+    }
+
+    TFEDatabase2D::SetCellForRefTrans(cell, RefTrans);
+    std::vector<double> X(N_Points, 0.);
+    std::vector<double> Y(N_Points, 0.);
+    std::vector<double> AbsDetjk(N_Points, 0.);
+    TFEDatabase2D::GetOrigFromRef(RefTrans, N_Points, xi, eta, X.data(),
+                                  Y.data(), AbsDetjk.data());
+    std::vector<double> PointValues(N_Points, 0.);
+
+    for(int j = 0; j < N_Points; j++)
+    {
+      PointValues[j] = f(cell, i, X[j], Y[j]);
+    }
+    std::vector<double> FunctionalValues(N_LocalDOFs, 0.);
+    nf->GetAllFunctionals(Coll, (TGridCell *)cell, PointValues.data(),
+        FunctionalValues.data());
+
+    int * DOF = FESpace2D->GetGlobalDOF(i);
+
+    for(int j = 0; j < N_LocalDOFs; j++)
+    {
+      if(IntIndex[DOF[j]] == 0)
+        Values[DOF[j]] += FunctionalValues[j];
+      IntIndex[DOF[j]] ++;
+    }
+  }
+
+  for(int i = 0; i < N_DOFs; i++)
+  {
+    if(IntIndex[i] == 0)
+    {     
+      ErrThrow("TFEFunction2D::add: unable to set dof ", i);
+    }
+  }
+}
+
+/** ************************************************************************* */
 void TFEFunction2D::compute_integral_and_measure(double& integral, 
     double& measure) const
 {

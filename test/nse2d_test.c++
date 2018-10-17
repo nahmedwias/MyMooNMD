@@ -161,7 +161,8 @@ void check_one_element(TDomain& domain, ParameterDatabase db,
                        int velocity_order, std::string nonlinear_form,
                        std::array<double, int(5)> errors)
 {
-  if(laplace_type == 0 && nonlinear_form != "rotational")
+  if(laplace_type == 0 && nonlinear_form != "rotational"
+     && nonlinear_form != "emac")
   {
     // NSTYPE = 1
     check(domain, db, velocity_order, 1, laplace_type, nonlinear_form, errors);
@@ -235,8 +236,11 @@ int main(int argc, char* argv[])
                 0.071847726858966, 1.3492605707623 }};
     check_one_element<0>(domain, db, 2, "skew_symmetric", errors);
     errors = {{ 0.0058223133010986, 0.10151294631171, 0.16681755987828,
-                0.96438232852434, 5.9699892417666 }};
+                0.11656139887643, 1.6481799215742 }};
     check_one_element<0>(domain, db, 2, "rotational", errors);
+    errors = {{ 0.0053606744744834, 0.094172082083708, 0.16306986422584,
+                0.16078031317273, 1.6649005549949 }};
+    check_one_element<0>(domain, db, 2, "emac", errors);
     
     //=========================================================================
     Output::print<1>("\nTesting the P3/P2 elements");
@@ -248,8 +252,11 @@ int main(int argc, char* argv[])
                 0.005343732181067, 0.20790149851372 }};
     check_one_element<0>(domain, db, 3, "skew_symmetric", errors);
     errors = {{ 0.00034351517928429, 0.0096256533312287, 0.013780390342581,
-                0.98758071809952, 5.4577802210272 }};
+                0.015443083603077, 0.39136930614163 }};
     check_one_element<0>(domain, db, 3, "rotational", errors);
+    errors = {{ 0.00031706470111175, 0.0086454126016252, 0.012993003704192,
+                0.014319110918966, 0.32796990188289 }};
+    check_one_element<0>(domain, db, 3, "emac", errors);
     
     //=========================================================================
     Output::print<1>("\nTesting the P4/P3 elements");
@@ -275,8 +282,11 @@ int main(int argc, char* argv[])
                 0.36760565517932, 5.3064844653778 }};
     check_one_element<0>(domain, db, 22, "skew_symmetric", errors);
     errors = {{ 0.0071856730855546, 0.081567156856757, 0.2120767352661,
-                1.0536610704615, 7.51116480206 }};
+                0.37174134839162, 5.4006410196856 }};
     check_one_element<0>(domain, db, 22, "rotational", errors);
+    errors = {{ 0.0071979487572762, 0.082123462115766, 0.21189447518786,
+                0.37027289021106, 5.3911935934541 }};
+    check_one_element<0>(domain, db, 22, "emac", errors);
     
     //=========================================================================
     Output::print<1>("\nTesting the P3-bubble/P2-disc elements");
@@ -349,8 +359,11 @@ int main(int argc, char* argv[])
                 0.017611281280989, 0.51158180834432 }};
     check_one_element<0>(domain, db, 2, "skew_symmetric", errors);
     errors = {{ 0.0046884833250869, 0.070877525721747, 0.11742828649332,
-                0.98755497621545, 5.7626046159782 }};
+                0.11040259260052, 1.0352007333739 }};
     check_one_element<0>(domain, db, 2, "rotational", errors);
+    errors = {{ 0.0045805109059847, 0.066717957084682, 0.11493220231642,
+                0.11124041590661, 0.94502906380428 }};
+    check_one_element<0>(domain, db, 2, "emac", errors);
     
     //=========================================================================
     Output::print<1>("\nTesting the Q3/Q2 elements");
@@ -362,8 +375,11 @@ int main(int argc, char* argv[])
                 0.0018454762090097, 0.057115940978707 }};
     check_one_element<0>(domain, db, 3, "skew_symmetric", errors);
     errors = {{ 0.00026177332079517, 0.0079927161285491, 0.010243629124348,
-                0.98774764559983, 5.4327961040808 }};
+                0.0094414547091167, 0.21505945593453 }};
     check_one_element<0>(domain, db, 3, "rotational", errors);
+    errors = {{ 0.00024830802922935, 0.0072493956722643, 0.0096501647507086,
+                0.0094088997257092, 0.18990292685865 }};
+    check_one_element<0>(domain, db, 3, "emac", errors);
     
     //=========================================================================
     Output::print<1>("\nTesting the Q4/Q3 elements");
@@ -389,8 +405,11 @@ int main(int argc, char* argv[])
                 0.030954083022779, 0.70858252999859 }};
     check_one_element<0>(domain, db, 22, "skew_symmetric", errors);
     errors = {{ 0.0041643538522174, 0.055554927078881, 0.10980572753403,
-                0.98506275149849, 5.0128441624737 }};
+                0.036275829042111, 0.75595849613121 }};
     check_one_element<0>(domain, db, 22, "rotational", errors);
+    errors = {{ 0.0041393709334753, 0.053107233911226, 0.10760054343883,
+                0.033157637926479, 0.72384438559736 }};
+    check_one_element<0>(domain, db, 22, "emac", errors);
     
     //=========================================================================
     Output::print<1>("\nTesting the Q3/P2-disc elements");

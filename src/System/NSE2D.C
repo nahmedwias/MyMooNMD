@@ -643,6 +643,7 @@ bool NSE2D::stopIt(unsigned int iteration_counter)
     if(slow_conv)
       Output::print<1>(" SLOW !!! ", normOfResidual/oldNormOfResidual);
     // stop iteration
+    adjust_pressure();
     return true;
   }
   else
@@ -826,6 +827,40 @@ void NSE2D::output_problem_size_info() const
   Output::dash("dof pressure       :  ", setw(10), n_p);
   Output::dash("dof all            :  ", setw(10), n_dof);
 }
+
+void NSE2D::adjust_pressure()
+{
+  System_per_grid& s = this->systems.front();
+  if(db["problem_type"].is(5)) // Navier--Stokes
+  {
+    int sign = 0;
+    if(db["nse_nonlinear_form"].is("rotational"))
+      sign = -1;
+    if(db["nse_nonlinear_form"].is("emac"))
+      sign = 1;
+    if(sign)
+    {
+      Output::print("calling TFEFunction2D::add ", sign);
+      auto u1 = s.u.GetComponent(0);
+      auto u2 = s.u.GetComponent(1);
+      TFEFunction2D::AnalyticFunction 
+      f = [&u1, &u2, sign](const TBaseCell* cell, int i, double x, double y)
+          {
+            double val_u1, val_u2;
+            u1->FindValueLocal(cell, i, x, y, &val_u1);
+            u2->FindValueLocal(cell, i, x, y, &val_u2);
+            return sign * 0.5 * (val_u1*val_u1 + val_u2*val_u2);
+          };
+      s.p.add(f);
+      delete u1;
+      delete u2;
+      // project pressure if necessary
+      if(s.matrix.pressure_projection_enabled())
+        s.p.project_into_L20();
+    }
+  }
+}
+
 
 /** ************************************************************************ */
 std::array< double, int(6) > NSE2D::get_errors() const
