@@ -314,6 +314,9 @@ class NSE3D
     TFEFunction3D& get_pressure()
     { return this->systems_.front().p_; }
 
+    const BlockVector & get_solution() const
+    { return this->systems_.front().solution_; }
+
     const TFESpace3D& get_velocity_space() const
     { return *this->systems_.front().velocitySpace_; }
 
@@ -325,6 +328,9 @@ class NSE3D
     const ParameterDatabase & get_db() const
     { return db; }
     
+    const Example_NSE3D & get_example() const
+    { return example_; }
+
     /// @brief Get the current residuals  (updated in compute_residuals)
     const Residuals& get_residuals() const;
     /// @brief get the current impuls residual (updated in compute_residuals)
