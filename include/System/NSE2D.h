@@ -164,6 +164,15 @@ class NSE2D
     /** @brief write some information (number of cells, dofs, ...) */
     void output_problem_size_info() const;
     
+    /** @brief modify computed pressure due to the used nonlinear form
+     * 
+     * Using the rotational or emac form of the nonlinear term leads to a 
+     * pressure which includes an additional term 0.5*|u|^2. This modification 
+     * is substracted, so that the resulting pressure is comparable to the ones
+     * from other nonlinear forms.
+     */
+    void adjust_pressure();
+    
     /// @brief default copy constructor (useful in derived classes)
     NSE2D(const NSE2D &) = default;
     
