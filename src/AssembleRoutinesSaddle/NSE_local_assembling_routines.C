@@ -464,18 +464,18 @@ void NSNonlinearTerm_emac(
       double ansatz_x = u_x[j];
       double ansatz_y = u_y[j];
       double ansatz_z = d == 2 ? 0. : u_z[j];
-      MatrixA11[i][j] += (2*u1*ansatz_x + 0.5*(ansatz_y*u2 + ansatz_z*u1))*test;
-      MatrixA12[i][j] += (0.5*ansatz_x*u2 + ansatz_y*u1) * test;
+      MatrixA11[i][j] += (3*u1*ansatz_x + (ansatz_y*u2 + ansatz_z*u3))*test;
+      MatrixA12[i][j] += (ansatz_x*u2 + ansatz_y*u1) * test;
       if(d == 3)
-        MatrixA13[i][j] += (0.5*ansatz_x*u3 + ansatz_z*u1) * test;
-      MatrixA21[i][j] += (0.5*ansatz_y*u1 + ansatz_x*u2) * test;
-      MatrixA22[i][j] += (2*ansatz_y*u2 + 0.5*(ansatz_x*u1 + ansatz_z*u3))*test;
+        MatrixA13[i][j] += (ansatz_x*u3 + ansatz_z*u1) * test;
+      MatrixA21[i][j] += (ansatz_y*u1 + ansatz_x*u2) * test;
+      MatrixA22[i][j] += (3*ansatz_y*u2 + (ansatz_x*u1 + ansatz_z*u3))*test;
       if(d == 3)
       {
-        MatrixA23[i][j] += (0.5*ansatz_y*u3 + ansatz_z*u2) * test;
-        MatrixA31[i][j] += (0.5*ansatz_z*u1 + ansatz_x*u3) * test;
-        MatrixA32[i][j] += (0.5*ansatz_z*u2 + ansatz_y*u3) * test;
-        MatrixA33[i][j] += (2*ansatz_z*u3 + 0.5*(ansatz_x*u1+ansatz_y*u2))*test;
+        MatrixA23[i][j] += (ansatz_y*u3 + ansatz_z*u2) * test;
+        MatrixA31[i][j] += (ansatz_z*u1 + ansatz_x*u3) * test;
+        MatrixA32[i][j] += (ansatz_z*u2 + ansatz_y*u3) * test;
+        MatrixA33[i][j] += (3*ansatz_z*u3 + (ansatz_x*u1+ansatz_y*u2))*test;
       }
     }
   }
