@@ -35,7 +35,7 @@ void Boundary::initFromFile(std::string PRM)
   
   getline(ifile,theline,'\n'); // NBCT
   ifile >> nBoundaryParts;
-  Output::print("n parts ",nBoundaryParts);
+  //Output::print("n parts ",nBoundaryParts);
 
   getline(ifile,theline,'\n'); 
   parts.resize(nBoundaryParts);
@@ -46,7 +46,7 @@ void Boundary::initFromFile(std::string PRM)
     getline(ifile,theline,'\n'); 
     getline(ifile,theline,'\n'); // NCOMP
     ifile >> nBoundaryComponent;
-    Output::print("n comp ",nBoundaryComponent);
+    //Output::print("n comp ",nBoundaryComponent);
     getline(ifile,theline,'\n'); 
     parts[i].resize(nBoundaryComponent);
     
@@ -56,7 +56,7 @@ void Boundary::initFromFile(std::string PRM)
       ifile >> iType;
       ifile >> nSpline;
       ifile >> nParameters;
-      Output::print("types ",iType,",",nSpline," ",nParameters);
+      //Output::print("types ",iType,",",nSpline," ",nParameters);
       
       switch (iType) {
       case 1:
@@ -82,20 +82,21 @@ void Boundary::initFromFile(std::string PRM)
 
   }
   getline(ifile,theline,'\n'); // PARAMETERS
-  Output::print(theline);
+  //Output::print(theline);
   for (int i=0; i<nBoundaryParts; i++) {
     for (unsigned int k=0; k<parts[i].size(); k++) {
       for (unsigned int p=0; p<parts[i][k].parameters.size()/2; p++) {
 
       ifile >> parts[i][k].parameters[2*p];
       ifile >> parts[i][k].parameters[2*p+1];
-      Output::print("param[2] ",parts[i][k].parameters[2*p]," ",parts[i][k].parameters[2*p+1]);
+      //Output::print("param[2] ", parts[i][k].parameters[2*p], " ",
+      //              parts[i][k].parameters[2*p+1]);
       }
       getline(ifile,theline,'\n');   
     }
   }
   
-  Output::print("  Boundary::initFromFile() finished reading ", PRM);
+  Output::print<4>("  Boundary::initFromFile() finished reading ", PRM);
 }
 
 // return the Id of the boundary component of the point (x,y) and its local parameter (if any)
