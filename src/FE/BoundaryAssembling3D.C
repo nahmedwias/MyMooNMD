@@ -302,6 +302,7 @@ void BoundaryAssembling3D::matrix_p_v_n(BlockFEMatrix &M,
 				   qWeights, qPointsT, qPointsS,
 				   basisFunctionsValues_u,
 				   quad_degree);
+
     // we need to get the formula in order to use the same quadrature points for P
     // (in the case that fe spaces are different)
     QuadFormula2D faceQuadFormula =
@@ -411,6 +412,7 @@ void BoundaryAssembling3D::matrix_q_u_n(BlockFEMatrix &M,
                 basisFunctionsValues_p);
 
 
+
   /* OLD 15.10.18 LB:
     this->getQuadratureData(U_Space, cell,joint_id,
         qWeights_u, qPointsT_u, qPointsS_u, basisFunctionsValues_u);
@@ -432,6 +434,12 @@ void BoundaryAssembling3D::matrix_q_u_n(BlockFEMatrix &M,
     // rescale local integral by mesh-size (important for Nitsche boundary)
     for (size_t l = 0; l < qWeights_u.size(); l++)
     {
+
+      cout << "l: "<<l<<endl;
+      cout << "basisFunctionsValues_u[l].size(): "<< basisFunctionsValues_u[l].size() <<endl;
+      cout << "basisFunctionsValues_p[l].size(): "<< basisFunctionsValues_p[l].size() <<endl;
+
+
       double scale_factor  = mult * qWeights_u[l] * transformationDeterminant;
 
       for (size_t k1 = 0; k1 < basisFunctionsValues_u[l].size(); k1++)
