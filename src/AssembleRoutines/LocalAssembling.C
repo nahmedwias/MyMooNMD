@@ -1017,7 +1017,7 @@ void LocalAssembling<d>::set_parameters_for_nse( LocalAssembling_type type)
   {
     if((nstype==1) || nstype==2)
     {
-      ErrThrow("nse_nonlinear_form", nonlin_form,
+      ErrThrow("nse_nonlinear_form ", nonlin_form,
                " is only supported for NSTYPE 3, 4, and 14");
     }
   }
