@@ -162,8 +162,8 @@ void tests_on_triangles(unsigned int nRefinements, ParameterDatabase& db)
   check_cd2d(domain, db, 1, errors);
   
   Output::print("\nstarting with P2");
-  errors = {{ 0.0036538021235418, 0.12682169595806, 0.12682169595806,
-              0.010487232211906 }};
+  errors = {{ 0.00421775248811, 0.12664905657584, 0.12664905657584,
+              0.013686550806003 }};
   check_cd2d(domain, db, 2, errors);
   
   Output::print("\nstarting with P3");
