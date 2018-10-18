@@ -66,17 +66,22 @@
  * - PlotOverLine source
  *
  * **You will certainly need other commands, for example, to deal with .vtk or .case files, or 
- * to make other data analysis and extraction (Calculator, Streamlines, Screenshots ...). Here is the way to find out
- * the commands you need by yourself.**
+ * to make other data analysis and extraction (Calculator, Streamlines, Screenshots ...). Here are some ways to find
+ * out the commands you need by yourself.**
  *
- * 1) Open Paraview and do the task you want manually (open vtk, create a plot, a table, and export data manually 
+ * 1) Open Paraview and in the Menu Bar, open **Tools > Start trace**. Set the properties as you want.
+ *
+ * 2) Do the tasks that you want manually (open vtk, create a plot, a table, and export data manually 
  * "File > Save Data" or "Save Screenshot")
  *
- * 2) Then, **File > Save State**, and choose the file type **Python state file (*.py)**.
+ * 3) Then, **Tools > Stop trace**. A "Script Editor" window should open automatically with the commands 
+ * corresponding to the tasks you have done manually....and that's it!
+ * 
+ * 4) You can also do **File > Save State**, and choose the file type **Python state file (*.py)**. Then, 
+ * open the .py file generated in a text editor to see commands related to the Paraview "State" (pipeline, 
+ * views, ...). 
  *
- * 3) Open the .py file generated in a text editor to see what are the commands that you have done, and that's it!!
- *
- * 4) It can happen that, for some reason, you can't find a command using this procedure. 
+ * 5) It can happen that, for some reason, you can't find a command using these procedures. 
  * In this case, check the documentation of Paraview or in the internet.
  *
  * \section sec_import_commands 3) Some import commands
@@ -132,8 +137,9 @@
  *
  * \snippet scripts/save_paraview_data.py block5
  *
- * Now, we can properly extract the data. In my case, I go through each time step and write the data in the .csv 
- * files, because it is the only way I found to extract the values I need. Here, the variable "source" is the 
+ * Now, we can properly extract the data. In my case, I create the Writer and set the property 
+ * "WriteAllTimeSteps" to 1.This writes the data in as much .csv files as there are time steps.
+ * Here, the variable "source" is the 
  * plotOverLine, see Line 8 above. The .csv can then be processed by other means, e.g., Matlab or Python itself.
  * 
  * \snippet scripts/save_paraview_data.py block6

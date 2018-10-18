@@ -84,14 +84,10 @@ for p in range(0,len(parameters)):
     //! [block4] 
 
     //! [block6]
-    for TimeStepNum in range(0,len(tsteps)):
-        view = GetActiveView()
-        view.ViewTime = tsteps[TimeStepNum]
-        Render()
-        writer = CreateWriter(results_directory + "velocity_timestep_%d.csv" %(TimeStepNum), source)
+        writer = CreateWriter(results_directory + "velocity_timestep.csv", source)
         writer.FieldAssociation = "Points"
+        writer.WriteAllTimeSteps = 1
         writer.UpdatePipeline()
-        Render()
         del writer
     //! [block6]
     
