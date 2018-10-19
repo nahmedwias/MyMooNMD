@@ -15,7 +15,7 @@
 double DIMENSIONLESS_VISCOSITY;
 constexpr double reference_nu = 0.001;
 constexpr double reference_drag = 5.57953523384;
-constexpr double reference_lift = 0.010618937712;
+constexpr double reference_lift = 0.010618948146;
 constexpr double reference_deltap = 0.11752016697;
 
 //side effect: sets the global parameter
