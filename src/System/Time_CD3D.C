@@ -17,7 +17,7 @@
 #endif
 
 //==============================================================================
-ParameterDatabase get_default_TCD3D_parameters()
+ParameterDatabase Time_CD3D::get_default_TCD3D_parameters()
 {
   Output::print<5>("creating a default Time_CD3D parameter database");
   // we use a parmoon default database because this way these parameters are
@@ -76,6 +76,8 @@ Time_CD3D::SystemPerGrid::SystemPerGrid(const Example_TimeCD3D& example,
 }
 
 #endif
+
+
 
 //==============================================================================
 Time_CD3D::Time_CD3D(std::list<TCollection* >collections,

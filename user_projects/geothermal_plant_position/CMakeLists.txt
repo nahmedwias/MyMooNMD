@@ -4,9 +4,11 @@ include_directories(${gppo_dir})
 # list of sources for boundary controlled optimization
 list(APPEND GTPSRC "${gppo_dir}/GeothermalPlantsPositionOptimization.cpp" )
 list(APPEND GTPSRC "${gppo_dir}/CD2D_Temperature.cpp" )
+list(APPEND GTPSRC "${gppo_dir}/NSE2D_GPPO.cpp" )
+
 list(APPEND GPPOSRC_3D "${gppo_dir}/GeothermalPlantsPositionOptimization3D.cpp" )
 list(APPEND GPPOSRC_3D "${gppo_dir}/CD3D_Temperature.cpp" )
-
+list(APPEND GPPOSRC_3D "${gppo_dir}/NSE3D_GPPO.cpp" )
 
 add_library(GTP_LIB_2D STATIC ${GTPSRC})
 target_compile_definitions(GTP_LIB_2D PUBLIC -D__2D__)
@@ -17,7 +19,7 @@ set_target_properties(GPPO_LIB_3D PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 
 set(all_gppo_libs GTP_LIB_2D parmoon_2d_${PARMOON_PARALLEL_TYPE} 
     ${_EXTERN_LIBRARIES} ${NLOPT_LIBRARIES})
-set(all_gppo_libs_3D GTP_LIB_3D parmoon_3d_${PARMOON_PARALLEL_TYPE} 
+set(all_gppo_libs_3D GPPO_LIB_3D parmoon_3d_${PARMOON_PARALLEL_TYPE} 
     ${_EXTERN_LIBRARIES} ${NLOPT_LIBRARIES})
 
 add_executable(gppo2d ${gppo_dir}/GPPO2D_ParMooN.cpp)

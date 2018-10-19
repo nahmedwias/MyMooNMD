@@ -160,6 +160,9 @@ class Time_CD3D
     int disctype;
 
   public:
+
+    ParameterDatabase get_default_TCD3D_parameters();
+
     /** @brief The standard constructor, can be used for multigrid and non-multigrid.
      *
      * It is user responsibility to call this constructor with correct TCollections.

@@ -439,6 +439,18 @@ Example_NSE3D::Example_NSE3D(const ParameterDatabase& user_input_parameter_db)
   }
 }
 
+
+Example_NSE3D::Example_NSE3D(std::vector<DoubleFunct3D *> exact,
+                             std::vector<BoundCondFunct3D *> bc,
+                             std::vector<BoundValueFunct3D *> bd,
+                             CoeffFct3D coeffs, double nu)
+ : Example3D(exact, bc, bd, coeffs)
+{
+  this->example_database["reynolds_number"] = 1./nu;
+}
+
+
+
 void Example_NSE3D::do_post_processing(NSE3D& nse3d) const
 {
   if(post_processing_stat)

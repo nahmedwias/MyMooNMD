@@ -1,6 +1,7 @@
 #include "ParameterDatabase.h"
 #include "Example_NSE3D.h"
 #include "Example_CD3D.h"
+#include "Example3D.h"
 
 constexpr double surrounding_temperature = 150.;
 
@@ -13,27 +14,27 @@ void unknown_solution(double, double, double, double *values)
   values[4] = 0.;
 }
 
-void all_Dirichlet_boundary_condition(int , double , BoundCond &cond)
+void all_Dirichlet_boundary_condition(double, double, double , BoundCond &cond)
 {
   cond = DIRICHLET;
 }
 
-void all_Neumann_boundary_condition(int , double , BoundCond &cond)
+void all_Neumann_boundary_condition(double, double, double , BoundCond &cond)
 {
   cond = NEUMANN;
 }
 
-void zero_boundary_value(int , double , double &value)
+void zero_boundary_value(double, double, double, double &value)
 {
   value = 0;
 }
 
-void temperature_boundary_value(int, double, double& value)
+void temperature_boundary_value(double, double, double, double& value)
 {
   value = surrounding_temperature;
 }
 
-void initial_condition_temperature(double x, double y, double *values)
+void initial_condition_temperature(double x, double y, double z, double *values)
 {
   values[0] = surrounding_temperature;
 }
@@ -86,8 +87,7 @@ Example_NSE3D get_gppo_flow_example(const ParameterDatabase & db)
   double reynolds_number = db["reynolds_number"];
   double sigma = db["inverse_permeability"];
   using namespace std::placeholders;
-  CoeffFct3D coeffs = std::bind(pde_coefficients_flow, _1, _2, _3, _4, _5,
-                                1./reynolds_number, sigma);
+  CoeffFct3D coeffs = std::bind(pde_coefficients_flow, _1, _2, _3, _4, _5, _6, 1./reynolds_number, sigma);
   return Example_NSE3D(exact, bc, bd, coeffs, 1./reynolds_number);
 }
 
@@ -100,7 +100,6 @@ Example_TimeCD3D get_gppo_temperature_example(const ParameterDatabase & db)
   std::vector <DoubleFunct3D*> ic(1, initial_condition_temperature);
   double nu = db["diffusion_coefficient"];
   using namespace std::placeholders;
-  CoeffFct3D coeffs = std::bind(pde_coefficients_temperature, _1, _2, _3, _4,
-                                _5, nu);
+  CoeffFct3D coeffs = std::bind(pde_coefficients_temperature, _1, _2, _3, _4, _5, _6, nu);
   return Example_TimeCD3D(exact, bc, bd, coeffs, false, false, ic);
 }

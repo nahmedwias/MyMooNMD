@@ -36,6 +36,7 @@ ParameterDatabase get_primal_flow_database(ParameterDatabase param_db)
   param_db["output_basename"].set(basename, false);
   return param_db;
 }
+
 ParameterDatabase get_primal_temperature_database(ParameterDatabase param_db)
 {
   std::string basename = param_db["output_basename"];
@@ -57,12 +58,10 @@ ParameterDatabase get_adjoint_database(const ParameterDatabase& param_db)
 }
 
 GeothermalPlantsPositionOptimization3D::GeothermalPlantsPositionOptimization3D(
-  const TDomain& domain, const ParameterDatabase& param_db)
+   TDomain& domain, const ParameterDatabase& param_db)
  : db(default_GPPO_database()), n_control(0), 
-   brinkman3d_primal(domain, get_primal_flow_database(param_db),
-                     get_gppo_flow_example(param_db)),
-   tcd3d_primal(domain, get_primal_temperature_database(param_db),
-               get_gppo_temperature_example(param_db)),
+   brinkman3d_primal(domain, get_primal_flow_database(param_db), get_gppo_flow_example(param_db)),
+   tcd3d_primal(domain, get_primal_temperature_database(param_db), get_gppo_temperature_example(param_db)),
    optimization_info("optimization", true, true, 1), // 1 -> full verbosity
    current_J_hat(std::numeric_limits<double>::infinity()), 
    control_old(), n_calls(0),
@@ -73,7 +72,12 @@ GeothermalPlantsPositionOptimization3D::GeothermalPlantsPositionOptimization3D(
   
   // assemble all terms in matrix and right hand side. This matrix is not
   // changed afterwards
-  brinkman3d_primal.assemble();
+  brinkman3d_primal.assemble_linear_terms(); //assemble();
+  if(!(param_db["problem_type"].is(3)) && !(param_db["problem_type"].is(7)))
+  {
+ Output::print<1>("ERROR: NSE3D_GPPO::assemble() is not considering nonlinear terms but your chosen problem_type ", param_db["problem_type"] , " does! ");
+ return;
+  }
   
   n_control = 1;
   control_old = std::vector<double>(n_control, 0.0);
@@ -178,7 +182,7 @@ void GeothermalPlantsPositionOptimization3D::apply_control_and_solve(const doubl
   double distance = x[0];
   Output::print("current control: ", std::setprecision(14), distance);
   using namespace std::placeholders;
-  CoeffFct3D coeff = std::bind(approximate_delta_functions, _1, _2, _3, _4, _5,
+  CoeffFct3D coeff = std::bind(approximate_delta_functions, _1, _2, _3, _4, _5, _6,
                                distance);
   std::string disc_type = this->db["space_discretization_type"];
   bool nonsymm_gls = (disc_type == std::string("nonsymm_gls"));
@@ -187,12 +191,40 @@ void GeothermalPlantsPositionOptimization3D::apply_control_and_solve(const doubl
   {
     rhs_div_sign = -1;
   }
-  LocalAssembling<3> la(2, {D00, D00}, {0, 1}, {}, {}, {0, 0, 0, 1}, coeff, 
-			std::bind(NSRightHandSide<3>, _1, _2, _3, _4, _5, _6,
-				  _7, _8, rhs_div_sign),
-			nullptr, 0, 3, 0, {}, {}, 0, nullptr,
-			0, {}, {});
+  LocalAssembling<3> la(2, {D000, D000},  {0, 1},  {},  {},   {0, 0, 0, 1}, coeff, 
+          std::bind(NSRightHandSide<3>, _1, _2, _3, _4, _5, _6, _7, _8, rhs_div_sign), 
+          nullptr, 
+          0, 
+          4, 
+          0, 
+          {}, 
+          {}, 
+          0, 
+          nullptr,	
+          0, 
+          {}, 
+          {});
 
+  /*
+   LocalAssembling(int myN_Terms,
+                  MultiIndex_vector myDerivatives,
+                  std::vector<int> myFESpaceNumber,
+                  std::vector<int> myRowSpace,
+                  std::vector<int> myColumnSpace,
+                  std::vector<int> myRhsSpace,
+                  CoeffFct myCoeffs, 
+                  AssembleFctParam myAssembleParam,
+                  ManipulateFct* myManipulate,
+                  int myN_Matrices, int myN_Rhs,
+                  int myN_ParamFct, std::vector<ParamFct*> myParameterFct,
+                  std::vector<int> myBeginParameter, int myN_Parameters,
+                  FEFunction** myFEFunctions3D,  int myN_FEValues,
+                  std::vector<int> myFEValue_FctIndex, 
+                  MultiIndex_vector myFEValue_MultiIndex,
+                  int discretization_type = 1);
+  */
+  
+  
   auto& v_space = brinkman3d_primal.get_velocity_space();
   auto& p_space = brinkman3d_primal.get_pressure_space();
   std::array<const TFESpace3D*, 4> fespaces = {{&v_space, &v_space, &v_space, &p_space}};
@@ -241,7 +273,7 @@ void GeothermalPlantsPositionOptimization3D::apply_control_and_solve(const doubl
     tcd3d_primal.assemble(brinkman3d_primal.get_velocity(), x,
                          db["diffusion_coefficient"]);
     tcd3d_primal.solve();
-    tcd3d_primal.descale_stiffness(tau, TDatabase::TimeDB->THETA1);
+    tcd3d_primal.descale_stiffness();
     
 //the output() of Time_CD3D needs some input --> Is it important for us?
 int m = 0;
