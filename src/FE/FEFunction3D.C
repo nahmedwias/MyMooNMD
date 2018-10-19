@@ -1606,6 +1606,16 @@ void TFEFunction3D::compute_integral_and_measure(double& integral,
 }
 
 
+/** compute mean value */
+double TFEFunction3D::compute_mean() const
+{
+  // compute current integral and measure of the domain:
+  double integral, measure;
+  this->compute_integral_and_measure(integral, measure);
+  return integral/measure;
+}
+
+
 /** project function into the space L20 (having zero mean value, or in general a mean value) */
 void TFEFunction3D::project_into_L20(double a)
 {

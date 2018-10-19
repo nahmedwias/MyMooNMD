@@ -3,6 +3,55 @@
 #include "LocalAssembling.h"
 #include "Assemble3D.h"
 
+
+
+
+/* **************************************************************************** */
+
+
+
+#ifdef _MPI
+CD3D_Temperature::CD3D_Temperature(TDomain& domain,
+                                   const ParameterDatabase& param_db,
+                                   const Example_TimeCD3D& example, 
+                                   int maxSubDomainPerDof)
+ : Time_CD3D(domain.refine_and_get_hierarchy_of_collections(param_db, maxSubDomainPerDof), param_db, example, maxSubDomainPerDof)
+{
+  if(this->solver.is_using_multigrid())
+  {
+    ErrThrow("assembling with a finite element function as convection is not "
+             "implemented for multigrid");
+  }
+}
+#else
+CD3D_Temperature::CD3D_Temperature( TDomain& domain,
+                                   const ParameterDatabase& param_db,
+                                   const Example_TimeCD3D& example)
+:Time_CD3D(domain.refine_and_get_hierarchy_of_collections(param_db), param_db, Example_TimeCD3D(param_db))
+{
+  if(this->solver.is_using_multigrid())
+  {
+    ErrThrow("assembling with a finite element function as convection is not "
+             "implemented for multigrid");
+  }
+}
+#endif
+
+
+#ifdef _MPI
+CD3D_Temperature::CD3D_Temperature( TDomain &domain, const ParameterDatabase& param_db, int maxSubDomainPerDof) 
+:Time_CD3D(domain.refine_and_get_hierarchy_of_collections(param_db, maxSubDomainPerDof), param_db, Example_TimeCD3D(param_db), maxSubDomainPerDof)
+}
+#else
+CD3D_Temperature::CD3D_Temperature(TDomain &domain, const ParameterDatabase& param_db) 
+:Time_CD3D(domain.refine_and_get_hierarchy_of_collections(param_db), param_db, Example_TimeCD3D(param_db))
+{
+}
+#endif
+
+
+
+/*
 CD3D_Temperature::CD3D_Temperature(std::list< TCollection* > collections, //const TDomain& domain,
                                    const ParameterDatabase& param_db,
                                    const Example_TimeCD3D& example_)
@@ -15,6 +64,7 @@ param_db, example_)
              "implemented for multigrid");
   }
 }
+*/
 
 void mapping_local_parameters(double *in, double *out)
 {
@@ -24,7 +74,7 @@ void mapping_local_parameters(double *in, double *out)
   out[2] = in[4];
 }
 
-void temperature_coefficients(int n_points, double *x, double *y,
+void temperature_coefficients(int n_points, double *x, double *y, double *z,
                               double **parameters, double **coeffs,
                               double distance, double nu)
 {
@@ -70,19 +120,22 @@ void CD3D_Temperature::assemble(const TFEVectFunct3D& convection,
   auto u3 = convection.GetComponent(2);  
   std::array<TFEFunction3D*, 3> fe_functions_pointers{{u1, u2, u3}};
   SystemPerGrid& s = this->systems_.front();
+  
   LocalAssembling3D la(this->db, LocalAssembling_type::TCD3D,
                        fe_functions_pointers.data(),
                        this->example_.get_coeffs(), 0);
+  
   using namespace std::placeholders;
-  la.ResetCoeffFct(std::bind(temperature_coefficients,_1, _2, _3, _4, _5,
+  la.ResetCoeffFct(std::bind(temperature_coefficients,_1, _2, _3, _4, _5, _6,
                              distance, nu));
+  
   la.setBeginParameter({0});
   la.SetN_Parameters(3);
   la.setN_ParamFct(1);
   la.setParameterFct({mapping_local_parameters});
   la.setN_FeValues(3);
   la.setFeValueFctIndex({0, 1, 2});
-  la.setFeValueMultiIndex({D00, D00, D00});
+  la.setFeValueMultiIndex({D000, D000, D000});
   
   auto fe_space = &this->get_space();
   auto blocks = s.stiffMatrix_.get_blocks_uniquely();
@@ -127,7 +180,7 @@ void CD3D_Temperature::assemble(const TFEVectFunct3D& convection,
   }
   
   // rhs += M*uold
-  s.mass_matrix.apply_scaled_add_actives(s.solution, s.rhs_, 1.0);
+  s.massMatrix_.apply_scaled_add_actives(s.solution_, s.rhs_, 1.0);
   // rhs -= tau*theta2*A_old*uold
   s.rhs_.addScaledActive(s.old_Au, -tau*TDatabase::TimeDB->THETA2);
   
@@ -140,20 +193,20 @@ void CD3D_Temperature::assemble(const TFEVectFunct3D& convection,
   const std::vector<std::vector<size_t>> cell_positions = {{0,0}};
   s.stiffMatrix_.scale_blocks_actives(tau*TDatabase::TimeDB->THETA1, cell_positions);
   // ...and add the mass matrix
-  const FEMatrix& mass_block = *s.mass_matrix.get_blocks().at(0).get();
+  const FEMatrix& mass_block = *s.massMatrix_.get_blocks().at(0).get();
   s.stiffMatrix_.add_matrix_actives(mass_block, 1.0, {{0,0}}, {false});
   
-  s.solution.copy_nonactive(systems[0].rhs_);
+  s.solution_.copy_nonactive(systems_[0].rhs_);
 }
 
 void CD3D_Temperature::reset_for_output()
 {
-  this->timeDependentOutput = DataWriter3D(this->db);
-  TFEFunction3D & fe_function = this->systems.front().fe_function;
-  this->timeDependentOutput.add_fe_function(&fe_function);
-  auto& s = this->systems.front();
+  this->outputWriter = DataWriter3D(this->db);
+  TFEFunction3D & feFunction = this->systems_.front().feFunction_;
+  this->outputWriter.add_fe_function(&feFunction);
+  auto& s = this->systems_.front();
   s.stiffMatrix_.reset();
-  s.mass_matrix_.reset();
+  s.massMatrix_.reset();
   s.rhs_.reset();
 }
 
