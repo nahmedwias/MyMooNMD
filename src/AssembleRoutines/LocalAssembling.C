@@ -376,7 +376,6 @@ LocalAssembling<d>::LocalAssembling(ParameterDatabase param_db,
       this->Derivatives = indices_up_to_order<d>(1);
       this->Needs2ndDerivatives = new bool[1];
       this->Needs2ndDerivatives[0] = false;
-      this->FESpaceNumber = std::vector<int>(d+1, 0);
       this->Manipulate = nullptr;
       this->local_assemblings_routines.push_back(BilinearAssembleGalerkin<d>);
       if((disc_type.is("supg") || disc_type.is("gls")))
@@ -384,7 +383,6 @@ LocalAssembling<d>::LocalAssembling(ParameterDatabase param_db,
         this->Derivatives = indices_up_to_order<d>(2);
         this->N_Terms = this->Derivatives.size();
         this->Needs2ndDerivatives[0] = true;
-        this->FESpaceNumber = std::vector<int>(d+d+1, 0);
         if(disc_type.is("supg"))
           this->local_assemblings_routines.push_back(
                     BilinearAssemble_SD<d>);
@@ -397,6 +395,7 @@ LocalAssembling<d>::LocalAssembling(ParameterDatabase param_db,
         ErrThrow("currently the discretization type ", disc_type,
                  " is not supported by the class CD3D");
       }
+      this->FESpaceNumber = std::vector<int>(this->Derivatives.size(), 0);
       break; // break for the type LocalAssembling3D_type::CD3D 
     }
     ///////////////////////////////////////////////////////////////////////////
