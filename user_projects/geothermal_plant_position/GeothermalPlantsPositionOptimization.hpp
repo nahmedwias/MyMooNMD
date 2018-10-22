@@ -3,7 +3,8 @@
 
 #include "Domain.h"
 #include "ParameterDatabase.h"
-#include "NSE2D.h"
+//#include "NSE2D.h"
+#include "NSE2D_GPPO.hpp"
 #include "CD2D_Temperature.hpp"
 #include "LoopInfo.h"
 
@@ -26,12 +27,13 @@ class GeothermalPlantsPositionOptimization
     static ParameterDatabase default_GPPO_database();
     
   protected:
+
     /// @brief keep all parameters for this optimization in one database
     ParameterDatabase db;
     /// @brief the size (dimension) of the control space
     unsigned n_control;
     /// @brief the Brinkman and TCD2D  objects representing the primal solve
-    NSE2D brinkman2d_primal;
+    NSE2D_GPPO brinkman2d_primal;
     CD2D_Temperature tcd2d_primal;
     /// @brief the Brinkman2D and TCD2D objects representing the adjoint solve
     //Brinkman2D_Adjoint brinkman2d_adjoint;

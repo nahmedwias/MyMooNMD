@@ -31,8 +31,8 @@ void initial_condition_temperature(double x, double y, double *values)
 {
   values[0] = surrounding_temperature;
 }
-void pde_coefficients_flow(int n_points, double *, double *, double **,
-                           double **coeffs, double nu, double sigma)
+void pde_coefficients_flow(int n_points, double *, double *, double ** parameters,
+        double **coeffs, double nu, double sigma)
 {
   for(int i = 0; i < n_points; i++)
   {
@@ -41,14 +41,21 @@ void pde_coefficients_flow(int n_points, double *, double *, double **,
     coeffs[i][1] = 0.; // f1
     coeffs[i][2] = 0.; // f2
     coeffs[i][3] = 0.; // divergence
-    coeffs[i][4] = sigma;
+    if (parameters[i] == nullptr) // initial assembling
+    {
+      coeffs[i][4] = sigma;
+    }
+    else
+    {
+      coeffs[i][4] = parameters[i][0];
+    }
   }
 }
 void pde_coefficients_temperature(int n_points, double *, double *, 
                                   double **parameters, double **coeffs,
                                   double nu)
 {
-  for(int i = 0; i < n_points; i++)
+  for (int i = 0; i < n_points; i++)
   {
     // physical parameters
     coeffs[i][0] = nu;

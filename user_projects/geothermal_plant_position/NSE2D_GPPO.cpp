@@ -1,3 +1,4 @@
+
 #include "NSE2D_GPPO.hpp"
 #include "Multigrid.h"
 #include "LocalAssembling.h"
@@ -5,60 +6,37 @@
 
 
 
-
-
 NSE2D_GPPO::NSE2D_GPPO(const TDomain &domain, const ParameterDatabase& param_db, const Example_NSE2D& example)
-:NSE2D(domain, param_db, example)
+:NSE2D(domain, param_db, example),   coefficient_function_FEspace(new TFESpace2D(this->get_pressure_space().GetCollection(), "coefficient_function_FEspace", "s",  BoundConditionNoBoundCondition, 1))
 {
+  cout <<" ***** coefficient_function_type 2 detected **** "<< endl;
+  Output::print("It is assumed that a mesh and a fitting TFEFunction2D ReadSol() file are provided.");
+
+  /// TCollection *coll = brinkman2d.get_pressure_space().GetCollection();
+
+  coefficient_function_vector = BlockVector(coefficient_function_FEspace->GetN_DegreesOfFreedom());
+
+  coefficient_function = TFEFunction2D(coefficient_function_FEspace.get(), "coefficient_function", "coefficient_function",
+                         &coefficient_function_vector.at(0), coefficient_function_FEspace->GetN_DegreesOfFreedom());
+
+  coefficient_function.ReadSol(param_db["read_coefficient_function_directory"]);
+  // coefficient_function.WriteSol("/Users/blank/ParMooN/Tests/Geothermal_Plants_Position_Optimization", "fe_function_permeability_mod_out.txt");
+  /////// coefficient_function.Interpolate(&read_coefficient_function);
 }
-
-
 
 
 // ******************************// START READ IN PERMEABILITY // ******************************** //
 
-void NSE2D_GPPO::read_coefficient_function(const ParameterDatabase& param_db, TCollection *coll, TFEFunction2D *coefficient_function_ptr)
-{
-
-  cout <<" ***** coefficient_function_type 2 detected **** "<< endl;
-  Output::print("It is assumed that a mesh and a fitting TFEFunction2D ReadSol() file are provided.");
-
-  // fe space of piecewise constant functions
-  /// TCollection *coll = brinkman2d.get_pressure_space().GetCollection();
-
-  TFESpace2D coefficient_function_FEspace(coll, "coefficient_function_FEspace", "s",
-          BoundConditionNoBoundCondition, 0);
-  BlockVector coefficient_function_vector(coefficient_function_FEspace.GetN_DegreesOfFreedom());
-
-  TFEFunction2D coefficient_function(&coefficient_function_FEspace, "coefficient_function", "coefficient_function",
-          &coefficient_function_vector.at(0), coefficient_function_FEspace.GetN_DegreesOfFreedom());
-
-  coefficient_function.ReadSol(param_db["read_coefficient_function_directory"]);
-
-  /////// coefficient_function.Interpolate(&read_coefficient_function);
-
-  /// TFEFunction2D *coefficient_function_ptr;
-  coefficient_function_ptr = &coefficient_function;
-
- /// brinkman2d.assemble(i, coefficient_function_ptr);
-
-}
-
-
-void mapping_local_parameters(double *in, double *out)
+void mapping_local_parameters_NSE(double *in, double *out)
 {
   // coordinates:  x at in[0], y at in[1]
   out[0] = in[2];
-
 }
 
-
-
 /** ************************************************************************ */
-
-void NSE2D_GPPO::assemble(TFEFunction2D* coefficient_function)
+void NSE2D_GPPO::assemble_with_coefficient_fct(TFEFunction2D* coefficient_function)
 {
-
+  cout << "coefficient_function: "<< coefficient_function << endl;
   const TFESpace2D *coefficient_function_space;
 
   for(System_per_grid& s : this->systems)
@@ -116,8 +94,9 @@ void NSE2D_GPPO::assemble(TFEFunction2D* coefficient_function)
  {
    // modify la such that it includes the TFEFunction2D coefficient_function
    la.setBeginParameter({0});
+   la.SetN_Parameters(1);
    la.setN_ParamFct(1);
-   la.setParameterFct({mapping_local_parameters});
+   la.setParameterFct({mapping_local_parameters_NSE});
    la.setN_FeValues(1);
    la.setFeValueFctIndex({3});
    la.setFeValueMultiIndex({D00});

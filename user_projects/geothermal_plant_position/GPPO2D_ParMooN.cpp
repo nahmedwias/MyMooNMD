@@ -8,6 +8,7 @@
 
 
 // this should be done inside the Domain class, but it is not yet.
+/** ************************************************************************ */
 void refine_domain(TDomain& domain, bool write_ps_file)
 {
   size_t n_ref = domain.get_n_initial_refinement_steps();
@@ -23,6 +24,7 @@ void refine_domain(TDomain& domain, bool write_ps_file)
   }
 }
 
+/** ************************************************************************ */
 int main(int argc, char* argv[])
 {
   
