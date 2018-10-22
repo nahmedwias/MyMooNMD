@@ -10,15 +10,19 @@ list(APPEND GPPOSRC_3D "${gppo_dir}/GeothermalPlantsPositionOptimization3D.cpp" 
 list(APPEND GPPOSRC_3D "${gppo_dir}/CD3D_Temperature.cpp" )
 list(APPEND GPPOSRC_3D "${gppo_dir}/NSE3D_GPPO.cpp" )
 
+
 add_library(GTP_LIB_2D STATIC ${GTPSRC})
 target_compile_definitions(GTP_LIB_2D PUBLIC -D__2D__)
 set_target_properties(GTP_LIB_2D PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
+
 add_library(GPPO_LIB_3D STATIC ${GPPOSRC_3D})
 target_compile_definitions(GPPO_LIB_3D PUBLIC -D__3D__)
 set_target_properties(GPPO_LIB_3D PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 
+
 set(all_gppo_libs GTP_LIB_2D parmoon_2d_${PARMOON_PARALLEL_TYPE} 
     ${_EXTERN_LIBRARIES} ${NLOPT_LIBRARIES})
+
 set(all_gppo_libs_3D GPPO_LIB_3D parmoon_3d_${PARMOON_PARALLEL_TYPE} 
     ${_EXTERN_LIBRARIES} ${NLOPT_LIBRARIES})
 

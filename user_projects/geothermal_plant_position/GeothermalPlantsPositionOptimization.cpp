@@ -8,7 +8,13 @@
 #include "TimeDiscRout.h"
 #include <algorithm>
 
+/*
+// NEW LB 22.10.18
+const std::string path = parmoon::source_directory;
+const std::string path_to_repo = path + "/data/input_files/";
+*/
 
+/** ************************************************************************ */
 ParameterDatabase GeothermalPlantsPositionOptimization::default_GPPO_database()
 {
   // is only needed for the adjoint problem, but there is only one global 
@@ -29,21 +35,36 @@ ParameterDatabase GeothermalPlantsPositionOptimization::default_GPPO_database()
   return db;
 }
 
+/** ************************************************************************ */
 ParameterDatabase get_primal_flow_database(ParameterDatabase param_db)
 {
   std::string basename = param_db["output_basename"];
   basename += std::string("flow");
   param_db["output_basename"].set(basename, false);
-  return param_db;
+
+  ParameterDatabase NSE2D_GPPO_db =  NSE2D::default_NSE_database();
+
+  NSE2D_GPPO_db.add("read_coefficient_function_directory", //path_to_repo +
+          "/Users/blank/ParMooN/Tests/Geothermal_Plants_Position_Optimization/written_fe_function_pressure0.Sol" ,
+        "This allows to use coefficient_function_type 2 and 3. "
+        "The File has to fit with the mesh (refinement level). A default file  is contained in input_files/ .");
+
+  NSE2D_GPPO_db.merge(param_db, false);
+
+  return  NSE2D_GPPO_db;
 }
+
+/** ************************************************************************ */
 ParameterDatabase get_primal_temperature_database(ParameterDatabase param_db)
 {
   std::string basename = param_db["output_basename"];
   basename += std::string("temperature");
   param_db["output_basename"].set(basename, false);
+
   return param_db;
 }
 
+/** ************************************************************************ */
 ParameterDatabase get_adjoint_database(const ParameterDatabase& param_db)
 {
   ParameterDatabase adjoint_db(ParameterDatabase::parmoon_default_database());
@@ -56,6 +77,7 @@ ParameterDatabase get_adjoint_database(const ParameterDatabase& param_db)
   return adjoint_db;
 }
 
+/** ************************************************************************ */
 GeothermalPlantsPositionOptimization::GeothermalPlantsPositionOptimization(
   const TDomain& domain, const ParameterDatabase& param_db)
  : db(default_GPPO_database()), n_control(0), 
@@ -71,17 +93,15 @@ GeothermalPlantsPositionOptimization::GeothermalPlantsPositionOptimization(
   Output::print<5>("Creating the GeothermalPlantsPositionOptimization object");
   db.merge(param_db, false);
   
-  // assemble all terms in matrix and right hand side. This matrix is not
-  // changed afterwards
-  brinkman2d_primal.assemble();
-  
+  brinkman2d_primal.assemble_with_coefficient_fct( & brinkman2d_primal.get_coefficient_function());
+
   n_control = 1;
   control_old = std::vector<double>(n_control, 0.0);
   Output::print<3>("Created the GeothermalPlantsPositionOptimization object, ",
                    "n_control = ", n_control);
 }
 
-
+/** ************************************************************************ */
 double GeothermalPlantsPositionOptimization::compute_functional_and_derivative(
   unsigned int n, const double* x, double* grad)
 {
@@ -130,6 +150,7 @@ double GeothermalPlantsPositionOptimization::compute_functional_and_derivative(
   return current_J_hat;
 }
 
+/** ************************************************************************ */
 void approximate_delta_functions(int n_points, double *x, double *y,
                                  double **parameters, double **coeffs,
                                  double distance)
@@ -169,6 +190,7 @@ void approximate_delta_functions(int n_points, double *x, double *y,
   }
 }
 
+/** ************************************************************************ */
 void GeothermalPlantsPositionOptimization::apply_control_and_solve(const double* x)
 {
   Chrono time;
@@ -217,6 +239,9 @@ void GeothermalPlantsPositionOptimization::apply_control_and_solve(const double*
   Output::print<2>("primal solve: flow");
   // solve the primal system
   brinkman2d_primal.solve();
+
+ // brinkman2d_primal.get_pressure().WriteSol("/Users/blank/ParMooN/Tests/Geothermal_Plants_Position_Optimization/", "written_fe_function_pressure");
+
   brinkman2d_primal.output(n_calls);
   time.restart_and_print("solving the stationary flow problem");
   Output::print<2>("primal solve: temperature");
@@ -245,7 +270,7 @@ void GeothermalPlantsPositionOptimization::apply_control_and_solve(const double*
   time.print_total_time("solving coupled forward problem");
 }
 
-
+/** ************************************************************************ */
 double GeothermalPlantsPositionOptimization::compute_functional(const double* x)
  const
 {
@@ -280,7 +305,7 @@ double GeothermalPlantsPositionOptimization::compute_functional(const double* x)
   return functional_value;
 }
 
-
+/** ************************************************************************ */
 void GeothermalPlantsPositionOptimization::solve_adjoint_equation()
 {
   auto u = brinkman2d_primal.get_velocity();
@@ -296,6 +321,7 @@ void GeothermalPlantsPositionOptimization::solve_adjoint_equation()
 //   brinkman2d_primal.output(n_calls);
 }
 
+/** ************************************************************************ */
 void GeothermalPlantsPositionOptimization::compute_derivative(const double* x, 
                                                         double* grad) const
 {

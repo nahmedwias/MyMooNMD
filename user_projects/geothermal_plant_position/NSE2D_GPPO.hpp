@@ -1,6 +1,7 @@
 #ifndef NSE2D_GPPO_H
 #define NSE2D_GPPO_H
 
+
 #include "NSE2D.h"
 #include "FEVectFunct2D.h"
 #include "Domain.h"
@@ -15,15 +16,23 @@
 
 class NSE2D_GPPO : public NSE2D
 {
-	public: 
 
+protected:
 
-NSE2D_GPPO(const TDomain &domain, const ParameterDatabase& param_db, const Example_NSE2D& example);
+  std::shared_ptr<const TFESpace2D> coefficient_function_FEspace;
+  BlockVector coefficient_function_vector;
+  TFEFunction2D coefficient_function;
 
+public:
 
-void read_coefficient_function(const ParameterDatabase& param_db, TCollection *coll, TFEFunction2D *coefficient_function_ptr);
+  NSE2D_GPPO(const TDomain &domain, const ParameterDatabase& param_db, const Example_NSE2D& example);
 
-void assemble(TFEFunction2D* coefficient_function);
+  void assemble_with_coefficient_fct(TFEFunction2D* coefficient_function = nullptr);
+
+  TFEFunction2D & get_coefficient_function()
+  {
+    return this->coefficient_function;
+  }
 
 };
 
