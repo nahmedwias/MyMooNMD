@@ -1,9 +1,10 @@
 /**
- * @brief A test program to test Time Stokes/Navier Stokes program
+ * @brief A test program to test Time-dependent Navier--Stokes
  * 
- * Residuals at the first nonlinear iteration are compared with the 
- * Volker main program (current MooNMD code)
- * Also the errors are compared with that code
+ * Residuals are checked at different time steps
+ *
+ * @history Reworked 22.10.2018 by Najib -
+ * added solvers as arguments + activated lsc test
  */
 #include <Domain.h>
 #include <Database.h>
@@ -12,30 +13,89 @@
 #include <TimeDiscRout.h>
 #include <MainUtilities.h>
 #include <FEFunction2D.h>
+#include <Multigrid.h> // newly implemented by clemens
 
+void set_solver_globals(std::string solver_name, ParameterDatabase& db)
+{
+  db["solver_type"] = std::string("iterative");
+  db["direct_solver_type"] = std::string("umfpack");
+  db["iterative_solver_type"] = std::string("fgmres");
+  db["preconditioner"] = std::string("no_preconditioner");
+  db["residual_tolerance"] = 1.0e-12;
 
-void compare(Time_NSE2D& tnse2d, std::array<double, int(4)> errors)
+  if (solver_name.compare("lsc") == 0)
+  {
+    db["preconditioner"] = "least_squares_commutator";
+    db["nonlinloop_epsilon"] = 1e-10;
+  }
+  else if (solver_name.compare("multigrid") == 0)
+  {
+    db.merge(Multigrid::default_multigrid_database());
+    db["preconditioner"] = "multigrid";
+    db["refinement_n_initial_steps"] = 1;
+    //control nonlinear loop
+    db["nonlinloop_epsilon"] = 1e-10;
+    db["nonlinloop_maxit"] = 5;
+    // New multigrid parameters
+    db["multigrid_n_levels"] = 2;
+    db["multigrid_cycle_type"] = "V";
+    db["multigrid_smoother"] = "nodal_vanka";
+    db["multigrid_smoother_coarse"] = "nodal_vanka";
+    db["multigrid_correction_damp_factor"] = 0.8;
+    db["multigrid_n_pre_smooth"] = 2;
+    db["multigrid_n_post_smooth"] = 2;
+    db["multigrid_coarse_residual"] = 1.0e-1;
+    db["multigrid_coarse_max_n_iterations"] = 5;
+    db["multigrid_vanka_damp_factor"]=0.7;
+
+  }
+  else if(solver_name.compare("umfpack") == 0)
+  {
+    db["solver_type"] = "direct";
+    db["direct_solver_type"] = "umfpack";
+    db["nonlinloop_epsilon"] = 1e-10;
+    db["nonlinloop_maxit"] = 2;
+  }
+  else
+  {
+    throw std::runtime_error("Unknown solver for Time_NSE2D problem!");
+  }
+}
+
+double get_tolerance(std::string solver_name)
+{
+  double val;
+  if(solver_name.compare("umfpack") == 0)
+    val = 1e-9;
+  if(solver_name.compare("lsc") == 0)
+    val = 1e-5;
+  if(solver_name.compare("multigrid") == 0)
+    val = 1e-6;
+  return val;
+}
+
+void compare(Time_NSE2D& tnse2d, std::array<double, int(4)> errors, double tol)
 {
   std::array<double, int(6)> computed_errors;
   computed_errors = tnse2d.get_errors();
   
-  // check the L2-error of the velcoity
-  if( fabs(computed_errors[0]-errors[0]) > 1e-6 )
+  // check the L2-error of the velocity
+  if( fabs(computed_errors[0]-errors[0]) > tol )
   {
     ErrThrow("L2 norm of velocity: ", computed_errors[0], "  ", errors[0]);
   }
-  // check the H1-error of the velcoity
-  if( fabs(computed_errors[1] - errors[1]) > 1e-6 )
+  // check the H1-error of the velocity
+  if( fabs(computed_errors[1] - errors[1]) > tol )
   {
     ErrThrow("H1 norm of velocity: ", computed_errors[1], "  ", errors[1]);
   }    
   // check the L2-error of the pressure
-  if( fabs(computed_errors[2] - errors[2]) > 1e-6)
+  if( fabs(computed_errors[2] - errors[2]) > tol)
   {
     ErrThrow("L2 norm of pressure: ", computed_errors[2], "  ", errors[2]);
   }
   // check the H1-error of the pressure
-  if(fabs(computed_errors[3] - errors[3]) > 1e-6 )
+  if(fabs(computed_errors[3] - errors[3]) > tol )
   {
     ErrThrow("H1 norm of pressure: ", computed_errors[3], "  ", errors[3]);
   }  
@@ -43,7 +103,7 @@ void compare(Time_NSE2D& tnse2d, std::array<double, int(4)> errors)
 
 void check(TDomain& domain, int velocity_order, int pressure_order, 
            int nstype, int laplace_type, int nonlinear_form, int time_disc, 
-           std::array<std::array<double, int(4)>,4> errors)
+           std::array<std::array<double, int(4)>,4> errors, char* argv[])
 {
 
   ParameterDatabase db = ParameterDatabase::parmoon_default_database();
@@ -54,13 +114,9 @@ void check(TDomain& domain, int velocity_order, int pressure_order,
   db["problem_type"] = 5;
   db["example"] = 0;
   db["reynolds_number"] = 1;
-  db["solver_type"] = "direct";
-  db["iterative_solver_type"] = "fgmres";
-  db["residual_tolerance"] = 1.e-12;
-  db["preconditioner"] = "least_squares_commutator";
 
-  db["nonlinloop_maxit"] = 2;
-  db["nonlinloop_epsilon"] = 1e-10;
+  set_solver_globals(std::string(argv[1]), db);
+  double tol = get_tolerance(std::string(argv[1]));
 
   TDatabase::ParamDB->VELOCITY_SPACE = velocity_order;
   TDatabase::ParamDB->PRESSURE_SPACE = -4711;
@@ -132,11 +188,11 @@ void check(TDomain& domain, int velocity_order, int pressure_order,
     tnse2d.output(tnse2d.get_time_stepping_scheme().current_step_);
     // check the errors
     if(tnse2d.get_time_stepping_scheme().current_step_==1)
-      compare(tnse2d, errors[0]);
+      compare(tnse2d, errors[0], tol);
     else if(tnse2d.get_time_stepping_scheme().current_step_ ==2)
-      compare(tnse2d, errors[1]);
+      compare(tnse2d, errors[1], tol);
     else if(tnse2d.get_time_stepping_scheme().current_step_ ==20)
-      compare(tnse2d, errors[2]);    
+      compare(tnse2d, errors[2], tol);
   }
   
 }
@@ -173,6 +229,7 @@ int main(int argc, char* argv[])
     for(unsigned int i=0; i< n_ref; ++i)
       domain.RegRefineAll();
 
+
     // test here
     std::array<std::array<double, int(4)>, 4> errors;
     // errors[0], errors[1] are at first two time steps
@@ -192,10 +249,10 @@ int main(int argc, char* argv[])
     errors[1] = {{0.002261228092, 0.02900169754, 0.02290308963, 0.1548609258}};
     errors[2] = {{0.01917368068, 0.2444306449, 0.1019443925, 1.213868823}};
     laplace_type = 0;
-    check(domain, 12, -4711, 1, laplace_type, nl_form, time_disc, errors);
-    check(domain, 12, -4711, 2, laplace_type, nl_form, time_disc, errors);
-    check(domain, 12, -4711, 3, laplace_type, nl_form, time_disc, errors);
-    check(domain, 12, -4711, 4, laplace_type, nl_form, time_disc, errors);
+    check(domain, 12, -4711, 1, laplace_type, nl_form, time_disc, errors, argv);
+    check(domain, 12, -4711, 2, laplace_type, nl_form, time_disc, errors, argv);
+    check(domain, 12, -4711, 3, laplace_type, nl_form, time_disc, errors, argv);
+    check(domain, 12, -4711, 4, laplace_type, nl_form, time_disc, errors, argv);
     
     Output::print<1>("LAPLACETYPE: ", 1, " NSTYPE's: ", 3, ", " , 4, 
     " TIME_DISC: ", time_disc );
@@ -203,8 +260,8 @@ int main(int argc, char* argv[])
     errors[1] = {{0.002224014719, 0.02909117943, 0.0220984703, 0.1527635601}};
     errors[2] = {{0.01881760343, 0.245035241, 0.08781391363, 1.185368926}};
     laplace_type = 1;
-    check(domain, 12, -4711, 3, laplace_type, nl_form, time_disc, errors);
-    check(domain, 12, -4711, 4, laplace_type, nl_form, time_disc, errors);
+    check(domain, 12, -4711, 3, laplace_type, nl_form, time_disc, errors, argv);
+    check(domain, 12, -4711, 4, laplace_type, nl_form, time_disc, errors, argv);
     //=============================================================================
     Output::print<1>("Testing the Q3/P2-disc elements");
     //=============================================================================
@@ -214,10 +271,10 @@ int main(int argc, char* argv[])
     errors[1] = {{0.0001999247874, 0.003792810533, 0.01926073977, 0.07440290132}};
     errors[2] = {{0.001688306366, 0.03196972361, 0.01508981038, 0.2468378611}};
     laplace_type=0;
-    check(domain, 13, -4711, 1, laplace_type, nl_form, time_disc, errors);
-    check(domain, 13, -4711, 2, laplace_type, nl_form, time_disc, errors);
-    check(domain, 13, -4711, 3, laplace_type, nl_form, time_disc, errors);
-    check(domain, 13, -4711, 4, laplace_type, nl_form, time_disc, errors);
+    check(domain, 13, -4711, 1, laplace_type, nl_form, time_disc, errors, argv);
+    check(domain, 13, -4711, 2, laplace_type, nl_form, time_disc, errors, argv);
+    check(domain, 13, -4711, 3, laplace_type, nl_form, time_disc, errors, argv);
+    check(domain, 13, -4711, 4, laplace_type, nl_form, time_disc, errors, argv);
     
     Output::print<1>("LAPLACETYPE: ", 1, " NSTYPE's: ", 3, ", " , 4, 
     " TIME_DISC: ", time_disc );
@@ -225,8 +282,8 @@ int main(int argc, char* argv[])
     errors[1] = {{0.0002016432211, 0.003804972955, 0.01926093964, 0.07442742209}};
     errors[2] = {{0.001701216631, 0.03207217596, 0.01515796884, 0.2477427189}};
     laplace_type=1; 
-    check(domain, 13, -4711, 3, laplace_type, nl_form, time_disc, errors);
-    check(domain, 13, -4711, 4, laplace_type, nl_form, time_disc, errors);
+    check(domain, 13, -4711, 3, laplace_type, nl_form, time_disc, errors, argv);
+    check(domain, 13, -4711, 4, laplace_type, nl_form, time_disc, errors, argv);
     //=============================================================================
     // more elements 
     //=============================================================================
@@ -243,10 +300,10 @@ int main(int argc, char* argv[])
     errors[1] = {{0.002257854029, 0.02900402091, 0.01381823763,0.1459569354}};
     errors[2] = {{0.0191888938, 0.2444304958, 0.1000448675, 1.21617188}};
     laplace_type = 0;
-    check(domain, 12, -4711, 1, laplace_type, nl_form, time_disc, errors);
-    check(domain, 12, -4711, 2, laplace_type, nl_form, time_disc, errors);
-    check(domain, 12, -4711, 3, laplace_type, nl_form, time_disc, errors);
-    check(domain, 12, -4711, 4, laplace_type, nl_form, time_disc, errors);
+    check(domain, 12, -4711, 1, laplace_type, nl_form, time_disc, errors, argv);
+    check(domain, 12, -4711, 2, laplace_type, nl_form, time_disc, errors, argv);
+    check(domain, 12, -4711, 3, laplace_type, nl_form, time_disc, errors, argv);
+    check(domain, 12, -4711, 4, laplace_type, nl_form, time_disc, errors, argv);
     
     Output::print<1>("LAPLACETYPE: ", 1, " NSTYPE's: ", 3, ", " , 4, 
     " TIME_DISC: ", time_disc );
@@ -254,8 +311,8 @@ int main(int argc, char* argv[])
     errors[1] = {{0.002221829805, 0.02909724362, 0.01167668865, 0.1422431078}};
     errors[2] = {{0.01883002947, 0.2450131733, 0.0861689347, 1.187591355}};
     laplace_type = 1;
-    check(domain, 12, -4711, 3, laplace_type, nl_form, time_disc, errors);
-    check(domain, 12, -4711, 4, laplace_type, nl_form, time_disc, errors);
+    check(domain, 12, -4711, 3, laplace_type, nl_form, time_disc, errors, argv);
+    check(domain, 12, -4711, 4, laplace_type, nl_form, time_disc, errors, argv);
     
     //=============================================================================
     // BACKWARD-EULER TIME STEPPING SCHEME
@@ -267,10 +324,10 @@ int main(int argc, char* argv[])
     errors[1] = {{0.00225621577, 0.02900533136, 0.01401455865,0.1462434268}};
     errors[2] = {{0.01917397891, 0.2444306295, 0.1023554738, 1.219801748}};
     laplace_type = 0;
-    check(domain, 12, -4711, 1, laplace_type, nl_form, time_disc, errors);
-    check(domain, 12, -4711, 2, laplace_type, nl_form, time_disc, errors);
-    check(domain, 12, -4711, 3, laplace_type, nl_form, time_disc, errors);
-    check(domain, 12, -4711, 4, laplace_type, nl_form, time_disc, errors);
+    check(domain, 12, -4711, 1, laplace_type, nl_form, time_disc, errors, argv);
+    check(domain, 12, -4711, 2, laplace_type, nl_form, time_disc, errors, argv);
+    check(domain, 12, -4711, 3, laplace_type, nl_form, time_disc, errors, argv);
+    check(domain, 12, -4711, 4, laplace_type, nl_form, time_disc, errors, argv);
   }
   
   Output::print<1>("TEST SUCCESFULL: ");

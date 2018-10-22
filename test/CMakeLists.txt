@@ -201,10 +201,13 @@ if(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL OR ${PARMOON_PARALLEL_TYPE} STRE
   add_test(lsc2d ParMooN_test_lsc)
   list(APPEND parmoon_tests ParMooN_test_lsc)
    
-  #tnse2d test (direct solver)
+  #tnse2d test (umfpack and lsc, multigrid's parameters are not set up in the test yet)
   add_executable(ParMooN_test_tnse2d tnse2d_test.c++)
-  target_link_libraries(ParMooN_test_tnse2d parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
-  add_test(tnse2d ParMooN_test_tnse2d)
+  target_link_libraries(ParMooN_test_tnse2d parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})  
+  #umfpack
+  add_test(NAME tnse2d_umfpack COMMAND ParMooN_test_tnse2d umfpack)
+  #lsc 
+  add_test(NAME tnse2d_lsc COMMAND ParMooN_test_tnse2d lsc)
   list(APPEND parmoon_tests ParMooN_test_tnse2d)
 	
   # test for hdiv elements
