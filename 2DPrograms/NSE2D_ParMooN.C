@@ -53,6 +53,8 @@ int main(int argc, char* argv[])
   size_t n_ref = domain.get_n_initial_refinement_steps();
   for(size_t i = 0; i < n_ref; i++)
     domain.RegRefineAll();
+  if(domain.get_database()["refinement_final_step_barycentric"])
+    domain.barycentric_refinement();
   
   // write grid into an Postscript file
   if(parmoon_db["output_write_ps"])
