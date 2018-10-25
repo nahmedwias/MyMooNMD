@@ -3,8 +3,20 @@
 #include "MainUtilities.h" // BoundaryValueHomogenous
 #include "Database.h" // to check TDatabase::ParamDB->NSTYPE
 
+namespace nse2d_adjoint
+{
+void zero_solution(double x, double y, double *values);
+void adjoint_assembling(double, double*, double*, double, double**, int*,
+                        double***, double**);
+void params_function(double *in, double *out);
+// very ugly to put this here, but I don't know how to get this into the local
+// assembling
+std::vector<double> cost_functional_weights;
+bool restricted_curl_functional;
+}
+
 constexpr double diagonal_scaling = 1.e30;
-void zero_solution(double x, double y, double *values)
+void nse2d_adjoint::zero_solution(double x, double y, double *values)
 {
   values[0] = 0;
   values[1] = 0;
@@ -24,7 +36,7 @@ NSE2D_Adjoint::NSE2D_Adjoint(const NSE2D& nse2d,
     ErrThrow("NSE2D_Adjoint::assemble_additional_terms not yet implemented for "
              "multigrid");
   }
-  std::vector<DoubleFunct2D*> adjoint_solutions(3, zero_solution);
+  std::vector<DoubleFunct2D*> adjoint_solutions(3, nse2d_adjoint::zero_solution);
   std::vector<BoundValueFunct2D*> adjoint_bd(3, BoundaryValueHomogenous);
   this->NSE2D::example = Example_NSE2D(adjoint_solutions,
                                        this->NSE2D::example.boundary_conditions,
@@ -37,14 +49,10 @@ NSE2D_Adjoint::NSE2D_Adjoint(const NSE2D& nse2d,
   this->NSE2D::solver = Solver<BlockFEMatrix, BlockVector>(param_db);
 }
 
-// very ugly to put this here, but I don't know how to get this into the local 
-// assembling
-std::vector<double> cost_functional_weights;
-bool restricted_curl_functional;
 
-void adjoint_assembling(double, double*, double*, double, double**, int*, 
-                        double***, double**);
-void params_function(double *in, double *out);
+//void adjoint_assembling(double, double*, double*, double, double**, int*,
+//                        double***, double**);
+//void params_function(double *in, double *out);
 
 void NSE2D_Adjoint::assemble(const TFEVectFunct2D& u, const TFEFunction2D& p,
                              const TFEVectFunct2D& stokes_u, 
@@ -69,8 +77,8 @@ void NSE2D_Adjoint::assemble(const TFEVectFunct2D& u, const TFEFunction2D& p,
     ErrThrow("primal and adjoint solutions should be defined on the same FE "
              "Space");
   }
-  cost_functional_weights = weights;
-  restricted_curl_functional = restricted_curl;
+  nse2d_adjoint::cost_functional_weights = weights;
+  nse2d_adjoint::restricted_curl_functional = restricted_curl;
   // delete the right-hand side and matrix
   s.rhs.reset();
   s.matrix.reset();
@@ -113,11 +121,11 @@ void NSE2D_Adjoint::assemble(const TFEVectFunct2D& u, const TFEFunction2D& p,
   std::vector<int> column_space = {0, 0, 0, 0};
   std::vector<int> rhs_space = {0, 0};
   CoeffFct2D coeffs = example.get_coeffs();
-  AssembleFctParam local_assembling_routine = adjoint_assembling;
+  AssembleFctParam local_assembling_routine = nse2d_adjoint::adjoint_assembling;
   ManipulateFct2D* manipulate_function = nullptr;
   int n_matrices = 4;
   int N_ParamFct = 1;
-  std::vector<ParamFct*> ParameterFct{params_function};
+  std::vector<ParamFct*> ParameterFct{nse2d_adjoint::params_function};
   std::vector<int> BeginParameter{0};
   int N_Parameters = 10;
   TFEFunction2D *FEFunctions2D[4] = { u.GetComponent(0), u.GetComponent(1),
@@ -169,7 +177,7 @@ void NSE2D_Adjoint::solve()
 }
 
 
-void adjoint_assembling(double Mult, double *coeff, double *param, double hK,
+void nse2d_adjoint::adjoint_assembling(double Mult, double *coeff, double *param, double hK,
                         double **OrigValues, int *N_BaseFuncts, 
                         double ***LocMatrices, double **LocRhs)
 {
@@ -189,11 +197,11 @@ void adjoint_assembling(double Mult, double *coeff, double *param, double hK,
   const double u2_stokes = param[7];
   const double x = param[8];
   bool restricted_curl = restricted_curl_functional && (x >= 8. || x <= 4.);
-  const double curl_u = restricted_curl ? 0 : (u2x - u1y) * cost_functional_weights[0] * Mult;
-  const double min_u1_0 = (u1 < 0. ? u1 : 0.) * cost_functional_weights[1] * Mult;
-  const double max_u2_0 = (u2 > 0. ? u2 : 0.) * cost_functional_weights[1] * Mult;
-  const double u1_diff = (u1 - u1_stokes) * cost_functional_weights[2] * Mult;
-  const double u2_diff = (u2 - u2_stokes) * cost_functional_weights[2] * Mult;
+  const double curl_u = restricted_curl ? 0 : (u2x - u1y) * nse2d_adjoint::cost_functional_weights[0] * Mult;
+  const double min_u1_0 = (u1 < 0. ? u1 : 0.) * nse2d_adjoint::cost_functional_weights[1] * Mult;
+  const double max_u2_0 = (u2 > 0. ? u2 : 0.) * nse2d_adjoint::cost_functional_weights[1] * Mult;
+  const double u1_diff = (u1 - u1_stokes) * nse2d_adjoint::cost_functional_weights[2] * Mult;
+  const double u2_diff = (u2 - u2_stokes) * nse2d_adjoint::cost_functional_weights[2] * Mult;
   
   double ** MatrixA11 = LocMatrices[0];
   double ** MatrixA12 = LocMatrices[1];
@@ -237,7 +245,7 @@ void adjoint_assembling(double Mult, double *coeff, double *param, double hK,
 }
 
 
-void params_function(double *in, double *out)
+void nse2d_adjoint::params_function(double *in, double *out)
 {
   out[0] = in[2]; // u1old
   out[1] = in[3]; // u2old

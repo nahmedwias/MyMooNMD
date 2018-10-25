@@ -102,6 +102,12 @@ class Time_BoundaryControlledOptimization
     /// @brief write solution vectors of all time steps into files (only for
     /// checking and debugging purposes)
     void write_all_solutions();
+
+    ///
+    ParameterDatabase get_primal_database(const ParameterDatabase& param_db);
+
+    ///
+    ParameterDatabase get_adjoint_database(const ParameterDatabase& param_db);
 };
 
 #endif // TIMEBOUNDARYCONTROLLEDOPTIMIZATION_H

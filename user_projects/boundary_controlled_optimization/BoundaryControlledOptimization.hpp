@@ -71,6 +71,12 @@ class BoundaryControlledOptimization
     
     /// @brief compute \f$ \hat J' \f$ using the adjoint solution and control
     void compute_derivative(const double * x, double* grad) const;
+
+    /// @brief
+    ParameterDatabase get_primal_database(const ParameterDatabase& param_db);
+
+    /// @brief
+    ParameterDatabase get_adjoint_database(const ParameterDatabase& param_db);
 };
 
 #endif // BOUNDARYCONTROLLEDOPTIMIZATION_H
