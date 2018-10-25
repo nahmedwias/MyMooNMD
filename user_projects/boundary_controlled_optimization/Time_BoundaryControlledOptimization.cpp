@@ -358,6 +358,16 @@ void Time_BoundaryControlledOptimization::apply_control_and_solve(const double* 
   tss.current_step_ = 0;
   tss.set_time_disc_parameters();
 
+  // it is necessary to re-set the initial conditions here to re-start correctly the
+  // optimization iteration
+  if(tnse_primal.get_db()["read_initial_solution"].is(true))
+  {//initial solution is given
+    std::string file = tnse_primal.get_db()["initial_solution_file"];
+    Output::info("Initial Solution", "Reading initial solution from file ", file);
+    BlockVector& sol_vector = tnse_primal.get_solution();
+    sol_vector.read_from_file(file);
+  }
+  else
   {///interpolate initial condition from the example
     Output::info<5>("Initial Solution", "Interpolating initial solution from example.");
     TFEFunction2D * u1 = tnse_primal.get_velocity_component(0);
