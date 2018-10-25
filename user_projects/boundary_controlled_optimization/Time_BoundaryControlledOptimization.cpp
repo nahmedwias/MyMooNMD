@@ -99,12 +99,12 @@ bool Time_BoundaryControlledOptimization::check_input_parameter_consistency(cons
 }
 
 
-ParameterDatabase get_primal_database(const ParameterDatabase& param_db)
+ParameterDatabase Time_BoundaryControlledOptimization::get_primal_database(const ParameterDatabase& param_db)
 {
   return param_db;
 }
 
-ParameterDatabase get_adjoint_database(const ParameterDatabase& param_db)
+ParameterDatabase Time_BoundaryControlledOptimization::get_adjoint_database(const ParameterDatabase& param_db)
 {
   ParameterDatabase adjoint_db(ParameterDatabase::parmoon_default_database());
   adjoint_db.merge(ParameterDatabase::default_output_database(), true);
