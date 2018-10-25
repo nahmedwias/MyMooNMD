@@ -25,6 +25,14 @@ class BoundaryControlledOptimization
     
     static ParameterDatabase default_BCO_database();
     
+    /// @brief get function for the current cost functional
+    const double & get_J_hat() const
+    { return current_J_hat;  }
+
+    /// @brief get function for the norm of the control vector
+    const std::vector<double> & get_control_old() const
+    { return control_old;  }
+
   protected:
     /// @brief keep all parameters for this optimization in one database
     ParameterDatabase db;

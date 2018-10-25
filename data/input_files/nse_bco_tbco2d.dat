@@ -49,11 +49,12 @@ example: 4
 
 controlled_boundary_component: 1
 ## L2_norm_of_curl, backward_facing_step, L2_norm_diff_stokes
-cost_functional: (1, 0.0, 0.0)
+cost_functional: (1.0, 0, 0)
 restricted_curl_functional: false
-# GD_STOGO/_RAND: 8-9, LD_LBFGS: 11, LD_VAR1/2: 13-14, Newton: 15-18, LD_SLSQP: 40, LN_COBYLA: 25
-algorithm_nlopt: 25
-max_n_evaluations: 2
+# GD_STOGO/_RAND: 8-9, LD_LBFGS: 11, LD_VAR1/2: 13-14, 
+# Newton: 15-18, LD_SLSQP: 40, LN_COBYLA: 25
+algorithm_nlopt: 25 {8,9,11,13,14,15,18,40,25}
+max_n_evaluations: 100
 set_lower_and_upper_bounds: false
 lower_bound: 0.0
 upper_bound: 10.0
@@ -64,7 +65,7 @@ xtol_abs: 1.e-5
 stop_val: 1.e-14
 n_vectors_stored: 50
 initial_control: 0.
-print_final_solution: false
+print_final_solution: true
 alpha_cost: 1.
 
 
@@ -92,7 +93,7 @@ steps_per_output: 1
 
 ## This string is prepended to most files written by ParMooN. 
 ## Especially this includes vtk-files 
-output_basename: tbco
+output_basename: images
 
 ## The maximum number of iterations to perform in a non-linear loop. 
 nonlinloop_maxit: 5   [ 0, 1000 ]
@@ -217,7 +218,7 @@ multigrid_vanka_damp_factor: 1   [ 0, 1 ]
 # -1 : use lowest order nonconforming elements
 # -2 : use Q2/P1 discont on quadrilaterals
 # -3 : use Q3/P2 discont on quadrilaterals
-VELOCITY_SPACE: 12
+VELOCITY_SPACE: 2
 PRESSURE_SPACE: -4711
 
 ----------------------------------------------------------------------
