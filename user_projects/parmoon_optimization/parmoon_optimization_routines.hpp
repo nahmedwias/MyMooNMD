@@ -148,13 +148,14 @@ namespace parmoon_opt
       Output::warn("optimization", "nlopt failed! ", result );
     }
     Output::print("optimization done because ", termination_reason(result));
-    Output::print("found minimum ", opt.last_optimum_value(), "  after ",
+    Output::print("found minimum ", setprecision(10), opt.last_optimum_value(), "  after ",
                   opt.get_numevals(), " evaluations with the algorithm ",
                   opt.get_algorithm_name());
     double norm_solution = std::accumulate(x.begin(), x.end(), 0.0, 
                                            [](double a, double b) 
                                            {return a + b * b;});
-    Output::print("norm of solution vector: ", std::sqrt(norm_solution));
+    Output::print("norm of solution vector: ", setprecision(10),
+                  std::sqrt(norm_solution));
     if(print_final_solution)
     {
       for(auto i = 0ul, n_control = x.size(); i < n_control; ++i)
