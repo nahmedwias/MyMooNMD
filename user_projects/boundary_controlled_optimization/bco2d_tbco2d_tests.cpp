@@ -10,15 +10,55 @@
 // Compare optimal solutions to a given one
 template <class Opt>
 void compare(const Opt& bco_tbco_object,
-             std::array<double, int(4)> errors, double tol)
+             std::array<double, 2> reference_solution, double tol)
 {
+    double solution = bco_tbco_object.get_J_hat();
+    std::vector<double> control = bco_tbco_object.get_control_old();
+    double norm_control = std::accumulate(control.begin(), control.end(), 0.0,
+                                               [](double a, double b)
+                                               {return a + b * b;});
+    norm_control = std::sqrt(norm_control);
 
+    // check the cost functional and the norm of the control vector
+    if( fabs(solution-reference_solution[0]) > tol ||
+        fabs(norm_control-reference_solution[1]) > tol ||
+        solution != solution) //check for nan!
+    {
+      ErrThrow("Solution is not correct! Computed solution = ", solution,
+               " , Reference solution = ", reference_solution[0],
+               " Computed norm of control vector = ", norm_control,
+               " , Reference = ", reference_solution[1]);
+    }
 }
 
-void set_errors(int test_case,
-                std::array<std::array<double, int(4)>,3>& errors)
+void set_ref_sol(int test_case,
+                 std::array<double, 2>& reference_solution)
 {
-
+  // Unfortunately, the solutions are slightly different from one solver
+  // to another. This explains the switch here.
+  // Note however that they should be in the same order of magnitude.
+  switch(test_case)
+  {
+    case 1: // test 1 - bco with gradient-free
+      // this is the solution when nonlinloop_maxiteration = 5, xtol =1.e-5,
+      // algorithm_nlopt = LN_COBYLA (gradient-free) = 25, max opt it = 100
+      // velo space = 2
+      // number of iterations needed: 95, computational time = 18.6s
+      reference_solution[0] = 17.4216; // min cost functional
+      reference_solution[1] = 1.00619; // norm of control vector
+      break;
+    case 2: // test 2 - bco with gradient-free
+      // with algo 40 LD_SLSQP (gradient-based)
+      // number of iterations needed: 79, computational time = 16.95
+      reference_solution[0] = 16.5384; // min cost functional 16.5334
+      reference_solution[1] = 1.31852; // norm of control vector 1.31763
+      // note that we take the solutions from (t)bco object, corresponding to
+      // the last iterations. They might slightly differ from the solution
+      // printed by the nlopt object.
+      break;
+    default:
+      ErrThrow("Unknown test case.");
+  }
 }
 
 
@@ -60,31 +100,56 @@ int main(int argc, char* argv[])
   refine_domain(domain, false);
   // Expected solution - if the results is equal to this given solution
   // then the test is passed
-  std::array<std::array<double, int(4)>,3> errors;
-  double tol = 1.e-9;
+  std::array<double, 2> reference_solution;
+  double tol = 1.e-5;
   int test_number;
 
   {
     //=======================================================================
-    //============= TEST 1 : (stationary) BCO ===============================
+    //============= TEST 1 : (stationary) BCO with gradient-free solver =====
     //=======================================================================
     test_number = 1;
-    set_errors(test_number, errors);
+    set_ref_sol(test_number, reference_solution);
     BoundaryControlledOptimization bco(domain, parmoon_db);
     parmoon_opt::optimize(bco, parmoon_db);
-    compare(bco,errors[0],tol);
-
+    compare(bco,reference_solution,tol);
   }
 
   {
     //=======================================================================
-    //============= TEST 2 : TimeBCO ========================================
+    //============= TEST 2 : (stationary) BCO with gradient-based solver ====
+    //== This is an important test to check the adjoint equations ===========
     //=======================================================================
     test_number = 2;
-    set_errors(test_number, errors);
-    Time_BoundaryControlledOptimization tbco(domain, parmoon_db);
-    parmoon_opt::optimize(tbco, parmoon_db);
-    compare(tbco,errors[0],tol);
+    parmoon_db["algorithm_nlopt"] = 40;
+    Output::print("Test ", test_number, ", Changing algoritm nlopt to: ",
+                  parmoon_db["algorithm_nlopt"]);
+    set_ref_sol(test_number, reference_solution);
+    BoundaryControlledOptimization bco2(domain, parmoon_db);
+    parmoon_opt::optimize(bco2, parmoon_db);
+    compare(bco2,reference_solution,tol);
   }
 
+
+  {
+//    //=======================================================================
+//    //============= TEST 3 : TimeBCO ========================================
+//    //=======================================================================
+//    test_number = 3;
+//    set_ref_sol(test_number, reference_solution);
+//    Time_BoundaryControlledOptimization tbco(domain, parmoon_db);
+//    parmoon_opt::optimize(tbco, parmoon_db);
+//    compare(tbco,reference_solution,tol);
+  }
+
+  /* If you want to add time-dependent tests, do not forget to
+   * re-initialize these global parameters
+     TDatabase::TimeDB->STARTTIME=0;
+     TDatabase::TimeDB->TIMESTEPLENGTH=parmoon_db["time_step_length"];
+     TDatabase::TimeDB->ENDTIME=0.03;
+     TDatabase::TimeDB->CURRENTTIME=  TDatabase::TimeDB->STARTTIME;
+   */
+
+  Output::print("TEST SUCCESSFUL!");
+  return 0;
 }
