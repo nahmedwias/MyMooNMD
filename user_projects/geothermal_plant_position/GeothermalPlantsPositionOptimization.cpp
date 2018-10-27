@@ -45,7 +45,8 @@ ParameterDatabase get_primal_flow_database(ParameterDatabase param_db)
   ParameterDatabase NSE2D_GPPO_db =  NSE2D::default_NSE_database();
 
   NSE2D_GPPO_db.add("read_coefficient_function_directory", //path_to_repo +
-          "/Users/blank/ParMooN/Tests/Geothermal_Plants_Position_Optimization/written_fe_function_pressure0.Sol" ,
+          "/Users/blank/ParMooN/Tests/Geothermal_Plants_Position_Optimization"
+          "/written_fe_function_pressure0.Sol" ,
         "This allows to use coefficient_function_type 2 and 3. "
         "The File has to fit with the mesh (refinement level). A default file  is contained in input_files/ .");
 
@@ -93,7 +94,15 @@ GeothermalPlantsPositionOptimization::GeothermalPlantsPositionOptimization(
   Output::print<5>("Creating the GeothermalPlantsPositionOptimization object");
   db.merge(param_db, false);
   
-  brinkman2d_primal.assemble_with_coefficient_fct( & brinkman2d_primal.get_coefficient_function());
+  bool use_coeff_fct = false;
+  if (use_coeff_fct)
+  {
+    brinkman2d_primal.assemble_with_coefficient_fct(& brinkman2d_primal.get_coefficient_function());
+  }
+  else
+  {
+  brinkman2d_primal.assemble_with_coefficient_fct(nullptr);
+  }
 
   n_control = 1;
   control_old = std::vector<double>(n_control, 0.0);

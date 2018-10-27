@@ -16,7 +16,10 @@
 
 class NSE2D_GPPO : public NSE2D
 {
-
+/*
+  // @brief standard destructor
+  ~NSE2D_GPPO();
+*/
 protected:
 
   std::shared_ptr<const TFESpace2D> coefficient_function_FEspace;
