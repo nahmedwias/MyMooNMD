@@ -7,13 +7,15 @@
 
 
 NSE2D_GPPO::NSE2D_GPPO(const TDomain &domain, const ParameterDatabase& param_db, const Example_NSE2D& example)
-:NSE2D(domain, param_db, example),   coefficient_function_FEspace(new TFESpace2D(this->get_pressure_space().GetCollection(), "coefficient_function_FEspace", "s",  BoundConditionNoBoundCondition, 1))
+:NSE2D(domain, param_db, example), coefficient_function_FEspace(new TFESpace2D(this->get_pressure_space().GetCollection(), "coefficient_function_FEspace", "s",  BoundConditionNoBoundCondition, 1))
 {
-  cout <<" ***** coefficient_function_type 2 detected **** "<< endl;
-  Output::print("It is assumed that a mesh and a fitting TFEFunction2D ReadSol() file are provided.");
+  bool use_coeff_fct = false;
+  if (use_coeff_fct)
+  {
+    cout <<" ***** coefficient_function_type 2 detected **** "<< endl;
+    Output::print("It is assumed that a mesh and a fitting TFEFunction2D ReadSol() file are provided.");
 
-  /// TCollection *coll = brinkman2d.get_pressure_space().GetCollection();
-
+    /// TCollection *coll = brinkman2d.get_pressure_space().GetCollection();
   coefficient_function_vector = BlockVector(coefficient_function_FEspace->GetN_DegreesOfFreedom());
 
   coefficient_function = TFEFunction2D(coefficient_function_FEspace.get(), "coefficient_function", "coefficient_function",
@@ -22,9 +24,15 @@ NSE2D_GPPO::NSE2D_GPPO(const TDomain &domain, const ParameterDatabase& param_db,
   coefficient_function.ReadSol(param_db["read_coefficient_function_directory"]);
   // coefficient_function.WriteSol("/Users/blank/ParMooN/Tests/Geothermal_Plants_Position_Optimization", "fe_function_permeability_mod_out.txt");
   /////// coefficient_function.Interpolate(&read_coefficient_function);
+  }
 }
 
-
+/*
+NSE2D_GPPO::~NSE2D_GPPO()
+{
+  //  delete coefficient_function_FEspace;
+}
+*/
 // ******************************// START READ IN PERMEABILITY // ******************************** //
 
 void mapping_local_parameters_NSE(double *in, double *out)
