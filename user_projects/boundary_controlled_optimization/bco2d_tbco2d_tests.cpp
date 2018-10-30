@@ -6,6 +6,7 @@
 #include <Domain.h>
 #include <FEDatabase2D.h>
 #include <LoopInfo.h>
+#include <ParMooN_repository_info.h> // to get SOURCE_DIRECTORY
 
 // Compare optimal solutions to a given one
 template <class Opt>
@@ -112,6 +113,11 @@ int main(int argc, char* argv[])
   TFEDatabase2D FEDatabase;
   ParameterDatabase parmoon_db = ParameterDatabase::parmoon_default_database();
   parmoon_db.read(argv[1]);
+
+  /** Hard-code for path to geometries **/
+  std::string path = parmoon::source_directory + std::string("/data/mesh/backward_facing_step/");
+  parmoon_db.add("boundary_file", path+"backward_facing_step.PRM", " ");
+  parmoon_db.add("geo_file", path+"backward_facing_step_tria1.mesh", " ");
 
   // possibly change parameters in the database, if they are not meaningful now
   check_parameters_consistency_NSE(parmoon_db);
