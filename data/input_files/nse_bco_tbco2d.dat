@@ -11,14 +11,14 @@ outfile: output_bco.out
 ## domain. You probably want to adjust this to be the path to some file 
 ## which typically has the extension 'PRM'. See the documentation 
 ## for GEO and PRM files. 
-boundary_file: ../../../ParMooN/data/mesh/backward_facing_step/backward_facing_step.PRM
+#boundary_file: my/path/to/ParMooN/data/mesh/backward_facing_step/backward_facing_step.PRM
 #boundary_file: Default_UnitSquare
 
 ## This files describes the computational mesh. You probably want to 
 ## adjust this to be the path to some file which typically has the 
 ## extension 'GEO' or 'xGEO'. See the documentation for GEO and PRM 
 ## files. 
-geo_file: ../../../ParMooN/data/mesh/backward_facing_step/backward_facing_step_tria1.mesh
+#geo_file: my/path/to/ParMooN/data/mesh/backward_facing_step/backward_facing_step_tria1.mesh
 #geo_file: UnitSquare
 
 ## number of uniform refinements of the initial mesh
