@@ -183,6 +183,7 @@ if(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL OR ${PARMOON_PARALLEL_TYPE} STRE
   add_executable(ParMooN_test_nse2d nse2d_test.c++)
   target_link_libraries(ParMooN_test_nse2d parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
   add_test(nse2d ParMooN_test_nse2d)
+  add_test(NAME nse2d_all COMMAND ParMooN_test_nse2d testall)
   list(APPEND parmoon_tests ParMooN_test_nse2d)
   
   #stokes equal order test
@@ -287,10 +288,13 @@ if(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL OR ${PARMOON_PARALLEL_TYPE} STRE
   register_executable(${_EXEC_NAME} ${_FILE_NAME})
   #umfpack
   add_test(NAME tnse3d_seq_umfpack COMMAND ParMooN_test_tnse3d_seq umfpack)
+  add_test(NAME tnse3d_seq_umfpack_all COMMAND ParMooN_test_tnse3d_seq umfpack testall)
   #multigrid
   add_test(NAME tnse3d_seq_multigrid COMMAND ParMooN_test_tnse3d_seq multigrid)
+  add_test(NAME tnse3d_seq_multigrid_all COMMAND ParMooN_test_tnse3d_seq multigrid testall)
   #lsc 
   add_test(NAME tnse3d_seq_lsc COMMAND ParMooN_test_tnse3d_seq lsc)
+  add_test(NAME tnse3d_seq_lsc_all COMMAND ParMooN_test_tnse3d_seq lsc testall)
   
     
   #multigrid tests
@@ -414,8 +418,10 @@ elseif(${PARMOON_PARALLEL_TYPE} STREQUAL MPI)
   register_executable(${_EXEC_NAME} ${_FILE_NAME})
   #mumps
   add_test(NAME tnse3d_mpi_mumps COMMAND ${PETSC_MPIEXEC} -n 2 ParMooN_test_tnse3d_mpi mumps)
+  add_test(NAME tnse3d_mpi_mumps_all COMMAND ${PETSC_MPIEXEC} -n 2 ParMooN_test_tnse3d_mpi mumps testall)
   #mumps
   add_test(NAME tnse3d_mpi_lsc COMMAND ${PETSC_MPIEXEC} -n 3 ParMooN_test_tnse3d_mpi lsc)
+  add_test(NAME tnse3d_mpi_lsc_all COMMAND ${PETSC_MPIEXEC} -n 3 ParMooN_test_tnse3d_mpi lsc testall)
   
   
   #read_write_fe_function_mpi test

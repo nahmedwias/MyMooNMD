@@ -180,6 +180,10 @@ void check_one_element(TDomain& domain, ParameterDatabase db,
 // =======================================================================
 int main(int argc, char* argv[])
 {
+  bool testall = false;
+  if (argv[1])
+    testall = (std::string(argv[1]).compare("testall") == 0);
+
   /** Program 1
    *  This program tests direct solve with galerkin discretization
    * direct solver; Tests for Triangles
@@ -258,6 +262,8 @@ int main(int argc, char* argv[])
                 0.014463947314389, 0.32790669662401 }};
     check_one_element<0>(domain, db, 3, "emac", errors);
     
+    if(testall)
+    {
     //=========================================================================
     Output::print<1>("\nTesting the P4/P3 elements");
     errors = {{ 1.1817023010728e-05, 0.00029575269112296, 0.0006435418450572, 
@@ -271,6 +277,7 @@ int main(int argc, char* argv[])
                 2.1824211773585e-05, 0.0016936362911126 }};
     // VELOCITY_SPACE = 5 and the pressure space is chosen in the class NSE2D
     check_one_element<0>(domain, db, 5, "convective", errors);
+    }
     
     //=========================================================================
     Output::print<1>("\nTesting the P2-bubble/P1-disc elements");
@@ -288,6 +295,8 @@ int main(int argc, char* argv[])
                 0.37027289021106, 5.3911935934541 }};
     check_one_element<0>(domain, db, 22, "emac", errors);
     
+    if(testall)
+    {
     //=========================================================================
     Output::print<1>("\nTesting the P3-bubble/P2-disc elements");
     errors = {{ 0.00026037876329682, 0.005726948664285, 0.010856952083041,
@@ -301,6 +310,7 @@ int main(int argc, char* argv[])
                 0.00063706731983293, 0.027783948983068 }};
     // VELOCITY_SPACE = 24 and the pressure space is chosen in the class NSE2D
     check_one_element<0>(domain, db, 24, "convective", errors);
+    }
   } // end program 1
   //=========================================================================
   /** Program 2
@@ -365,6 +375,8 @@ int main(int argc, char* argv[])
                 0.11124041590661, 0.94502906380428 }};
     check_one_element<0>(domain, db, 2, "emac", errors);
     
+    if(testall)
+    {
     //=========================================================================
     Output::print<1>("\nTesting the Q3/Q2 elements");
     errors = {{ 0.00019319433716041, 0.003563918945437, 0.0071078507849009,
@@ -394,6 +406,7 @@ int main(int argc, char* argv[])
                 4.9000676557526e-06, 0.00030469183949993 }};
     // VELOCITY_SPACE  = 5
     check_one_element<0>(domain, db, 5, "convective", errors);
+    }
     
     //=========================================================================
     Output::print<1>("\nTesting the Q2/P1-disc elements");
@@ -411,6 +424,8 @@ int main(int argc, char* argv[])
                 0.033157637926479, 0.72384438559736 }};
     check_one_element<0>(domain, db, 22, "emac", errors);
     
+    if(testall)
+    {
     //=========================================================================
     Output::print<1>("\nTesting the Q3/P2-disc elements");
     errors = {{ 0.00020642736694367, 0.0042373143298489, 0.0075794259144329,
@@ -431,6 +446,7 @@ int main(int argc, char* argv[])
                 2.81141239001e-05, 0.0018176331985532 }};
     // VELOCITY_SPACE  = 25
     check_one_element<0>(domain, db, 25, "convective", errors);
+    }
   }
   
   return 0;
