@@ -105,6 +105,10 @@ int main(int argc, char* argv[])
              "program 'boundary controlled optimization'");
   }
   
+  bool testall = false;
+  if (argv[2])
+    testall = (std::string(argv[2]).compare("testall") == 0);
+
   //  declaration of database, you need this in every program
   TDatabase Database;
   TFEDatabase2D FEDatabase;
@@ -140,23 +144,24 @@ int main(int argc, char* argv[])
     compare(bco,reference_solution,tol);
   }
 
-//  {
-//    //=======================================================================
-//    //============= TEST 2 : (stationary) BCO with gradient-based solver ====
-//    //== This is an important test to check the adjoint equations ===========
-//    //=======================================================================
-//    test_number = 2;
-//    parmoon_db["algorithm_nlopt"] = 40;
-//    parmoon_db["max_n_evaluations"] = 100;
-//    Output::print("Test ", test_number, ", Changing algoritm nlopt to: ",
-//                  parmoon_db["algorithm_nlopt"]);
-//    set_ref_sol(test_number, reference_solution);
-//    BoundaryControlledOptimization bco2(domain, parmoon_db);
-//    parmoon_opt::optimize(bco2, parmoon_db);
-//    compare(bco2,reference_solution,tol);
-//  }
+  if(testall)
+  {
+    //=======================================================================
+    //============= TEST 2 : (stationary) BCO with gradient-based solver ====
+    //== This is an important test to check the adjoint equations ===========
+    //=======================================================================
+    test_number = 2;
+    parmoon_db["algorithm_nlopt"] = 40;
+    parmoon_db["max_n_evaluations"] = 100;
+    Output::print("Test ", test_number, ", Changing algoritm nlopt to: ",
+                  parmoon_db["algorithm_nlopt"]);
+    set_ref_sol(test_number, reference_solution);
+    BoundaryControlledOptimization bco2(domain, parmoon_db);
+    parmoon_opt::optimize(bco2, parmoon_db);
+    compare(bco2,reference_solution,tol);
+  }
 
-
+  if(testall)
   {
     //=======================================================================
     //============= TEST 3 : TimeBCO ========================================
