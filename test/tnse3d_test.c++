@@ -309,6 +309,10 @@ void set_errors(int example, int velocity_order, int nstype,
 
 int main(int argc, char* argv[])
 {
+  bool testall = false;
+  if (argv[2])
+    testall = (std::string(argv[2]).compare("testall") == 0);
+
   //declaration of databases
   TDatabase Database;
 
@@ -387,30 +391,33 @@ int main(int argc, char* argv[])
                  std::string(argv[1]),0, errors);
       check(db, grid_collections, 12, -4711, 1, laplacetype, nonlineartype,
             timediscretizationtype, errors, tol);
-//
-//      check(db, domain_hex, 12, -4711, 2, laplacetype, nonlineartype,
-//            timediscretizationtype, errors, tol);
-//
-//      check(db, domain_hex, 12, -4711, 3, laplacetype, nonlineartype,
-//            timediscretizationtype, errors, tol);
-//
-//      check(db, domain_hex, 12, -4711, 4, laplacetype, nonlineartype,
-//          timediscretizationtype, errors, tol);
-//
+
+      if(testall)
+      {
+        check(db, grid_collections, 12, -4711, 2, laplacetype, nonlineartype,
+              timediscretizationtype, errors, tol);
+
+        check(db, grid_collections, 12, -4711, 3, laplacetype, nonlineartype,
+              timediscretizationtype, errors, tol);
+
+        check(db, grid_collections, 12, -4711, 4, laplacetype, nonlineartype,
+            timediscretizationtype, errors, tol);
+      }
 #else
-      set_errors(db["example"], 12, 1, timediscretizationtype, 
+      set_errors(db["example"], 12, 1, timediscretizationtype,
                  std::string(argv[1]),0, errors);
-//      check(db, domain_hex, 12, -4711, 1, laplacetype, nonlineartype,
-//            timediscretizationtype, errors, tol,maxSubDomainPerDof);
-//
-//      set_errors(db["example"], 12, 2, timediscretizationtype, 
-//                 std::string(argv[1]),0, errors);
-//      check(db, domain_hex, 12, -4711, 2, laplacetype, nonlineartype,
-//            timediscretizationtype, errors, tol,maxSubDomainPerDof);
-//
-//      check(db, domain_hex, 12, -4711, 3, laplacetype, nonlineartype,
-//            timediscretizationtype, errors, tol,maxSubDomainPerDof);
-//
+      if(testall)
+      {
+        check(db, grid_collections, 12, -4711, 1, laplacetype, nonlineartype,
+              timediscretizationtype, errors, tol,maxSubDomainPerDof);
+
+        check(db, grid_collections, 12, -4711, 2, laplacetype, nonlineartype,
+              timediscretizationtype, errors, tol,maxSubDomainPerDof);
+
+        check(db, grid_collections, 12, -4711, 3, laplacetype, nonlineartype,
+              timediscretizationtype, errors, tol,maxSubDomainPerDof);
+      }
+
       check(db, grid_collections, 12, -4711, 4, laplacetype, nonlineartype,
             timediscretizationtype, errors, tol,maxSubDomainPerDof);
 #endif
@@ -419,20 +426,22 @@ int main(int argc, char* argv[])
       Output::print<1>("Testing Q3/P2-disc elements for several NSTypes");
     //=============================================================================
 #ifndef _MPI // solve with umfpack in SEQ case
-//      set_errors(db["example"], 12, 1, timediscretizationtype, 
-//                 std::string(argv[1]),0, errors);
-//      check(db, domain_hex, 13, -4711, 1, laplacetype, nonlineartype,
-//            timediscretizationtype, errors, tol);
-//
-//      check(db, domain_hex, 13, -4711, 2, laplacetype, nonlineartype,
-//            timediscretizationtype, errors, tol);
-//
-//      check(db, domain_hex, 13, -4711, 3, laplacetype, nonlineartype,
-//            timediscretizationtype, errors, tol);
-//
-//      check(db, domain_hex, 13, -4711, 4, laplacetype, nonlineartype,
-//            timediscretizationtype, errors, tol);
-//
+    if(testall)
+    {
+      set_errors(db["example"], 12, 1, timediscretizationtype,
+                 std::string(argv[1]),0, errors);
+      check(db, grid_collections, 13, -4711, 1, laplacetype, nonlineartype,
+            timediscretizationtype, errors, tol);
+
+      check(db, grid_collections, 13, -4711, 2, laplacetype, nonlineartype,
+            timediscretizationtype, errors, tol);
+
+      check(db, grid_collections, 13, -4711, 3, laplacetype, nonlineartype,
+            timediscretizationtype, errors, tol);
+
+      check(db, grid_collections, 13, -4711, 4, laplacetype, nonlineartype,
+            timediscretizationtype, errors, tol);
+    }
 #else
       // Q3/P2-disc elements are not implemented yet in MPI
 #endif
@@ -441,50 +450,59 @@ int main(int argc, char* argv[])
       Output::print<1>("Testing Q2/Q1 elements for several NSTypes");
     //=============================================================================
 #ifndef _MPI // solve with umfpack in SEQ case
-//      set_errors(db["example"], 12, 1, timediscretizationtype, 
-//                 std::string(argv[1]),0, errors);
-//      check(db, domain_hex, 2, -4711, 1, laplacetype, nonlineartype,
-//            timediscretizationtype, errors, tol);
-//
-//      check(db, domain_hex, 2, -4711, 2, laplacetype, nonlineartype,
-//            timediscretizationtype, errors, tol);
-//
-//      check(db, domain_hex, 2, -4711, 3, laplacetype, nonlineartype,
-//            timediscretizationtype, errors, tol);
-//
-//      check(db, domain_hex, 2, -4711, 4, laplacetype, nonlineartype,
-//            timediscretizationtype, errors, tol);
+    if(testall)
+    {
+      set_errors(db["example"], 12, 1, timediscretizationtype,
+                 std::string(argv[1]),0, errors);
+      check(db, grid_collections, 2, -4711, 1, laplacetype, nonlineartype,
+            timediscretizationtype, errors, tol);
+
+      check(db, grid_collections, 2, -4711, 2, laplacetype, nonlineartype,
+            timediscretizationtype, errors, tol);
+
+      check(db, grid_collections, 2, -4711, 3, laplacetype, nonlineartype,
+            timediscretizationtype, errors, tol);
+
+      check(db, grid_collections, 2, -4711, 4, laplacetype, nonlineartype,
+            timediscretizationtype, errors, tol);
+    }
 #else
       check(db, grid_collections, 2, -4711, 1, laplacetype, nonlineartype,
             timediscretizationtype, errors, tol,maxSubDomainPerDof);
 
       check(db, grid_collections, 2, -4711, 2, laplacetype, nonlineartype,
             timediscretizationtype, errors, tol,maxSubDomainPerDof);
-//
-//      check(db, domain_hex, 2, -4711, 3, laplacetype, nonlineartype,
-//            timediscretizationtype, errors, tol,maxSubDomainPerDof);
-//
-//      check(db, domain_hex, 2, -4711, 4, laplacetype, nonlineartype,
-//            timediscretizationtype, errors, tol,maxSubDomainPerDof);
+
+      if(testall)
+      {
+      check(db, grid_collections, 2, -4711, 3, laplacetype, nonlineartype,
+            timediscretizationtype, errors, tol,maxSubDomainPerDof);
+
+      check(db, grid_collections, 2, -4711, 4, laplacetype, nonlineartype,
+            timediscretizationtype, errors, tol,maxSubDomainPerDof);
+      }
 #endif
     //=============================================================================
     if (my_rank == 0)
       Output::print<1>("Testing Q3/Q2 elements for several NSTypes");
     //=============================================================================
 #ifndef _MPI // solve with umfpack in SEQ case
-//      set_errors(db["example"], 12, 1, timediscretizationtype, 
-//                 std::string(argv[1]),0, errors);
-//      check(db, domain_hex, 3, -4711, 1, laplacetype, nonlineartype,
-//            timediscretizationtype, errors, tol);
-//
-//      check(db, domain_hex, 3, -4711, 2, laplacetype, nonlineartype,
-//            timediscretizationtype, errors, tol);
-//
-//      check(db, domain_hex, 3, -4711, 3, laplacetype, nonlineartype,
-//            timediscretizationtype, errors, tol);
-//
-//      check(db, domain_hex, 3, -4711, 4, laplacetype, nonlineartype,
-//            timediscretizationtype, errors, tol);
+    if(testall)
+    {
+      set_errors(db["example"], 12, 1, timediscretizationtype,
+                 std::string(argv[1]),0, errors);
+      check(db, grid_collections, 3, -4711, 1, laplacetype, nonlineartype,
+            timediscretizationtype, errors, tol);
+
+      check(db, grid_collections, 3, -4711, 2, laplacetype, nonlineartype,
+            timediscretizationtype, errors, tol);
+
+      check(db, grid_collections, 3, -4711, 3, laplacetype, nonlineartype,
+            timediscretizationtype, errors, tol);
+
+      check(db, grid_collections, 3, -4711, 4, laplacetype, nonlineartype,
+            timediscretizationtype, errors, tol);
+    }
 #else
       // Q3/Q2 elements are not implemented yet in MPI
 #endif
@@ -493,19 +511,22 @@ int main(int argc, char* argv[])
       Output::print<1>("Testing Q4/Q3 elements for several NSTypes");
     //=============================================================================
 #ifndef _MPI // solve with umfpack in SEQ case
-//      set_errors(db["example"], 12, 1, timediscretizationtype, 
-//                 std::string(argv[1]),0, errors);
-//      check(db, domain_hex, 4, -4711, 1, laplacetype, nonlineartype,
-//            timediscretizationtype, errors, tol);
-//
-//      check(db, domain_hex, 4, -4711, 2, laplacetype, nonlineartype,
-//            timediscretizationtype, errors, tol);
-//
-//      check(db, domain_hex, 4, -4711, 3, laplacetype, nonlineartype,
-//            timediscretizationtype, errors, tol);
-//
-//      check(db, domain_hex, 4, -4711, 4, laplacetype, nonlineartype,
-//            timediscretizationtype, errors, tol);
+    if(testall)
+    {
+      set_errors(db["example"], 12, 1, timediscretizationtype,
+                 std::string(argv[1]),0, errors);
+      check(db, grid_collections, 4, -4711, 1, laplacetype, nonlineartype,
+            timediscretizationtype, errors, tol);
+
+      check(db, grid_collections, 4, -4711, 2, laplacetype, nonlineartype,
+            timediscretizationtype, errors, tol);
+
+      check(db, grid_collections, 4, -4711, 3, laplacetype, nonlineartype,
+            timediscretizationtype, errors, tol);
+
+      check(db, grid_collections, 4, -4711, 4, laplacetype, nonlineartype,
+            timediscretizationtype, errors, tol);
+    }
 #else
       // Q4/Q3 elements are not implemented yet in MPI
 #endif
@@ -535,34 +556,40 @@ int main(int argc, char* argv[])
                  std::string(argv[1]),0, errors);
       check(db, grid_collections, 12, -4711, 1, laplacetype, nonlineartype,
             timediscretizationtype, errors, tol,maxSubDomainPerDof);
-//
-//      check(db, domain_hex, 12, -4711, 2, laplacetype, nonlineartype,
-//            timediscretizationtype, errors, tol,maxSubDomainPerDof);
-//
-//      check(db, domain_hex, 12, -4711, 3, laplacetype, nonlineartype,
-//            timediscretizationtype, errors, tol,maxSubDomainPerDof);
-//
-//      check(db, domain_hex, 12, -4711, 4, laplacetype, nonlineartype,
-//            timediscretizationtype, errors, tol,maxSubDomainPerDof);
+
+      if(testall)
+      {
+      check(db, grid_collections, 12, -4711, 2, laplacetype, nonlineartype,
+            timediscretizationtype, errors, tol,maxSubDomainPerDof);
+
+      check(db, grid_collections, 12, -4711, 3, laplacetype, nonlineartype,
+            timediscretizationtype, errors, tol,maxSubDomainPerDof);
+
+      check(db, grid_collections, 12, -4711, 4, laplacetype, nonlineartype,
+            timediscretizationtype, errors, tol,maxSubDomainPerDof);
+      }
 #endif
     //=============================================================================
     if (my_rank == 0)
       Output::print<1>("Testing Q3/P2-disc elements for several NSTypes");
     //=============================================================================
 #ifndef _MPI // solve with umfpack in SEQ case
-//      set_errors(db["example"], 12, 1, timediscretizationtype, 
-//                 std::string(argv[1]),0, errors);
-//      check(db, domain_hex, 13, -4711, 1, laplacetype, nonlineartype,
-//            timediscretizationtype, errors, tol);
-//
-//      check(db, domain_hex, 13, -4711, 2, laplacetype, nonlineartype,
-//            timediscretizationtype, errors, tol);
-//
-//      check(db, domain_hex, 13, -4711, 3, laplacetype, nonlineartype,
-//            timediscretizationtype, errors, tol);
-//
-//      check(db, domain_hex, 13, -4711, 4, laplacetype, nonlineartype,
-//            timediscretizationtype, errors, tol);
+    if(testall)
+    {
+      set_errors(db["example"], 12, 1, timediscretizationtype,
+                 std::string(argv[1]),0, errors);
+      check(db, grid_collections, 13, -4711, 1, laplacetype, nonlineartype,
+            timediscretizationtype, errors, tol);
+
+      check(db, grid_collections, 13, -4711, 2, laplacetype, nonlineartype,
+            timediscretizationtype, errors, tol);
+
+      check(db, grid_collections, 13, -4711, 3, laplacetype, nonlineartype,
+            timediscretizationtype, errors, tol);
+
+      check(db, grid_collections, 13, -4711, 4, laplacetype, nonlineartype,
+            timediscretizationtype, errors, tol);
+    }
 #else
       // Q3/P2-disc not implemented yet in MPI
 #endif
@@ -575,61 +602,78 @@ int main(int argc, char* argv[])
                  std::string(argv[1]),0, errors);
      check(db, grid_collections, 2, -4711, 1, laplacetype, nonlineartype,
            timediscretizationtype, errors, tol);
-//
-//      check(db, domain_hex, 2, -4711, 2, laplacetype, nonlineartype,
-//            timediscretizationtype, errors, tol);
+
+     if(testall)
+     {
+      check(db, grid_collections, 2, -4711, 2, laplacetype, nonlineartype,
+            timediscretizationtype, errors, tol);
+     }
 
      check(db, grid_collections, 2, -4711, 3, laplacetype, nonlineartype,
            timediscretizationtype, errors, tol);
-//
-//      check(db, domain_hex, 2, -4711, 4, laplacetype, nonlineartype,
-//            timediscretizationtype, errors, tol);
+
+     if(testall)
+     {
+      check(db, grid_collections, 2, -4711, 4, laplacetype, nonlineartype,
+            timediscretizationtype, errors, tol);
+     }
 #else
-//      check(db, domain_hex, 2, -4711, 1, laplacetype, nonlineartype,
-//            timediscretizationtype, errors, tol,maxSubDomainPerDof);
-//
+     if(testall)
+     {
+      check(db, grid_collections, 2, -4711, 1, laplacetype, nonlineartype,
+            timediscretizationtype, errors, tol,maxSubDomainPerDof);
+     }
+
       check(db, grid_collections, 2, -4711, 2, laplacetype, nonlineartype,
             timediscretizationtype, errors, tol,maxSubDomainPerDof);
-//
-//      check(db, domain_hex, 2, -4711, 3, laplacetype, nonlineartype,
-//            timediscretizationtype, errors, tol,maxSubDomainPerDof);
-//
-//      check(db, domain_hex, 2, -4711, 4, laplacetype, nonlineartype,
-//            timediscretizationtype, errors, tol,maxSubDomainPerDof);
-//
+
+      if(testall)
+      {
+      check(db, grid_collections, 2, -4711, 3, laplacetype, nonlineartype,
+            timediscretizationtype, errors, tol,maxSubDomainPerDof);
+
+      check(db, grid_collections, 2, -4711, 4, laplacetype, nonlineartype,
+            timediscretizationtype, errors, tol,maxSubDomainPerDof);
+      }
 #endif
     //=============================================================================
     if (my_rank == 0)
       Output::print<1>("Testing Q3/Q2 elements for several NSTypes");
     //=============================================================================
-//#ifndef _MPI // solve with umfpack in SEQ case
-//      check(db, domain_hex, 3, -4711, 1, laplacetype, nonlineartype,
-//            timediscretizationtype, errors, tol);
-//      check(db, domain_hex, 3, -4711, 2, laplacetype, nonlineartype,
-//            timediscretizationtype, errors, tol);
-//      check(db, domain_hex, 3, -4711, 3, laplacetype, nonlineartype,
-//           timediscretizationtype, errors, tol);
-//      check(db, domain_hex, 3, -4711, 4, laplacetype, nonlineartype,
-//            timediscretizationtype, errors, tol);
-//#else
-//      // Q3/Q2 not implemented yet in MPI
-//#endif
+#ifndef _MPI // solve with umfpack in SEQ case
+    if(testall)
+    {
+      check(db, grid_collections, 3, -4711, 1, laplacetype, nonlineartype,
+            timediscretizationtype, errors, tol);
+      check(db, grid_collections, 3, -4711, 2, laplacetype, nonlineartype,
+            timediscretizationtype, errors, tol);
+      check(db, grid_collections, 3, -4711, 3, laplacetype, nonlineartype,
+           timediscretizationtype, errors, tol);
+      check(db, grid_collections, 3, -4711, 4, laplacetype, nonlineartype,
+            timediscretizationtype, errors, tol);
+    }
+#else
+      // Q3/Q2 not implemented yet in MPI
+#endif
     //=============================================================================
     if (my_rank == 0)
       Output::print<1>("Testing Q4/Q3 elements for several NSTypes");
     //=============================================================================
-//#ifndef _MPI // solve with umfpack in SEQ case
-//      check(db, domain_hex, 4, -4711, 1, laplacetype, nonlineartype,
-//            timediscretizationtype, errors, tol);
-//      check(db, domain_hex, 4, -4711, 2, laplacetype, nonlineartype,
-//            timediscretizationtype, errors, tol);
-//      check(db, domain_hex, 4, -4711, 3, laplacetype, nonlineartype,
-//            timediscretizationtype, errors, tol);
-//      check(db, domain_hex, 4, -4711, 4, laplacetype, nonlineartype,
-//            timediscretizationtype, errors, tol);
-//#else
-//      // Q4/Q3 not implemented yet in MPI
-//#endif
+#ifndef _MPI // solve with umfpack in SEQ case
+    if(testall)
+    {
+      check(db, grid_collections, 4, -4711, 1, laplacetype, nonlineartype,
+            timediscretizationtype, errors, tol);
+      check(db, grid_collections, 4, -4711, 2, laplacetype, nonlineartype,
+            timediscretizationtype, errors, tol);
+      check(db, grid_collections, 4, -4711, 3, laplacetype, nonlineartype,
+            timediscretizationtype, errors, tol);
+      check(db, grid_collections, 4, -4711, 4, laplacetype, nonlineartype,
+            timediscretizationtype, errors, tol);
+    }
+#else
+      // Q4/Q3 not implemented yet in MPI
+#endif
   }
 
   //=======================================================================
@@ -681,51 +725,61 @@ int main(int argc, char* argv[])
 #ifndef _MPI // solve with umfpack in SEQ case
       set_errors(db["example"], 2, 1, timediscretizationtype,
                  std::string(argv[1]),1,errors);
-//      check(db, domain_tet, 2, -4711, 1, laplacetype, nonlineartype,
-//            timediscretizationtype, errors, tol);
-//
+      if(testall)
+      {
+      check(db, grid_collections, 2, -4711, 1, laplacetype, nonlineartype,
+            timediscretizationtype, errors, tol);
+      }
+
       check(db, grid_collections, 2, -4711, 2, laplacetype, nonlineartype,
             timediscretizationtype, errors, tol);
-//
-//      check(db, domain_tet, 2, -4711, 3, laplacetype, nonlineartype,
-//            timediscretizationtype, errors, tol);
-//
-//      check(db, domain_tet, 2, -4711, 4, laplacetype, nonlineartype,
-//            timediscretizationtype, errors, tol);
+      if(testall)
+      {
+      check(db, grid_collections, 2, -4711, 3, laplacetype, nonlineartype,
+            timediscretizationtype, errors, tol);
+
+      check(db, grid_collections, 2, -4711, 4, laplacetype, nonlineartype,
+            timediscretizationtype, errors, tol);
+      }
 #else
       set_errors(db["example"], 2, 1, timediscretizationtype,
                  std::string(argv[1]),1,errors);
       check(db, grid_collections, 2, -4711, 1, laplacetype, nonlineartype,
             timediscretizationtype, errors, tol,maxSubDomainPerDof);
-//
-//      check(db, domain_tet, 2, -4711, 2, laplacetype, nonlineartype,
-//            timediscretizationtype, errors, tol,maxSubDomainPerDof);
-//
-//      check(db, domain_tet, 2, -4711, 3, laplacetype, nonlineartype,
-//                 timediscretizationtype, errors, tol,maxSubDomainPerDof);
-//
-//      check(db, domain_tet, 2, -4711, 4, laplacetype, nonlineartype,
-//            timediscretizationtype, errors, tol,maxSubDomainPerDof);
-//
+
+      if(testall)
+      {
+      check(db, grid_collections, 2, -4711, 2, laplacetype, nonlineartype,
+            timediscretizationtype, errors, tol,maxSubDomainPerDof);
+
+      check(db, grid_collections, 2, -4711, 3, laplacetype, nonlineartype,
+                 timediscretizationtype, errors, tol,maxSubDomainPerDof);
+
+      check(db, grid_collections, 2, -4711, 4, laplacetype, nonlineartype,
+            timediscretizationtype, errors, tol,maxSubDomainPerDof);
+      }
 #endif
     //=============================================================================
     if (my_rank == 0)
       Output::print<1>("Testing P3/P2 elements for several NSTypes");
     //=============================================================================
 #ifndef _MPI // solve with umfpack in SEQ case
-//      set_errors(db["example"], 2, 1, timediscretizationtype, 
-//                 std::string(argv[1]),1,errors);
-//      check(db, domain_tet, 3, -4711, 1, laplacetype, nonlineartype,
-//            timediscretizationtype, errors, tol);
-//
-//      check(db, domain_tet, 3, -4711, 2, laplacetype, nonlineartype,
-//            timediscretizationtype, errors, tol);
-//
-//      check(db, domain_tet, 3, -4711, 3, laplacetype, nonlineartype,
-//            timediscretizationtype, errors, tol);
-//
-//      check(db, domain_tet, 3, -4711, 4, laplacetype, nonlineartype,
-//            timediscretizationtype, errors, tol);
+    if(testall)
+    {
+      set_errors(db["example"], 2, 1, timediscretizationtype,
+                 std::string(argv[1]),1,errors);
+      check(db, grid_collections, 3, -4711, 1, laplacetype, nonlineartype,
+            timediscretizationtype, errors, tol);
+
+      check(db, grid_collections, 3, -4711, 2, laplacetype, nonlineartype,
+            timediscretizationtype, errors, tol);
+
+      check(db, grid_collections, 3, -4711, 3, laplacetype, nonlineartype,
+            timediscretizationtype, errors, tol);
+
+      check(db, grid_collections, 3, -4711, 4, laplacetype, nonlineartype,
+            timediscretizationtype, errors, tol);
+    }
 #else
       // P3/P2 not implemented yet in MPI
 #endif
@@ -737,52 +791,61 @@ int main(int argc, char* argv[])
       Output::print<1>("Testing P2/P1 elements for several NSTypes");
     //=============================================================================
 #ifndef _MPI // solve with umfpack in SEQ case
-//      set_errors(db["example"], 2, 1, timediscretizationtype, 
-//                 std::string(argv[1]),1,errors);
-//      check(db, domain_tet, 2, -4711, 1, laplacetype, nonlineartype,
-//            timediscretizationtype, errors, tol);
-//
-//      check(db, domain_tet, 2, -4711, 2, laplacetype, nonlineartype,
-//            timediscretizationtype, errors, tol);
-//
-//      check(db, domain_tet, 2, -4711, 3, laplacetype, nonlineartype,
-//            timediscretizationtype, errors, tol);
-//
-//      check(db, domain_tet, 2, -4711, 4, laplacetype, nonlineartype,
-//            timediscretizationtype, errors, tol);
+    if(testall)
+    {
+      set_errors(db["example"], 2, 1, timediscretizationtype,
+                 std::string(argv[1]),1,errors);
+      check(db, grid_collections, 2, -4711, 1, laplacetype, nonlineartype,
+            timediscretizationtype, errors, tol);
+
+      check(db, grid_collections, 2, -4711, 2, laplacetype, nonlineartype,
+            timediscretizationtype, errors, tol);
+
+      check(db, grid_collections, 2, -4711, 3, laplacetype, nonlineartype,
+            timediscretizationtype, errors, tol);
+
+      check(db, grid_collections, 2, -4711, 4, laplacetype, nonlineartype,
+            timediscretizationtype, errors, tol);
+    }
 #else
-//      set_errors(db["example"], 2, 1, timediscretizationtype, 
-//                 std::string(argv[1]),1,errors);
-//      check(db, domain_tet, 2, -4711, 1, laplacetype, nonlineartype,
-//            timediscretizationtype, errors, tol,maxSubDomainPerDof);
-//
-//      check(db, domain_tet, 2, -4711, 2, laplacetype, nonlineartype,
-//            timediscretizationtype, errors, tol,maxSubDomainPerDof);
-//
-//      check(db, domain_tet, 2, -4711, 3, laplacetype, nonlineartype,
-//            timediscretizationtype, errors, tol,maxSubDomainPerDof);
-//
-//      check(db, domain_tet, 2, -4711, 4, laplacetype, nonlineartype,
-//            timediscretizationtype, errors, tol,maxSubDomainPerDof);
+    if(testall)
+    {
+      set_errors(db["example"], 2, 1, timediscretizationtype,
+                 std::string(argv[1]),1,errors);
+      check(db, grid_collections, 2, -4711, 1, laplacetype, nonlineartype,
+            timediscretizationtype, errors, tol,maxSubDomainPerDof);
+
+      check(db, grid_collections, 2, -4711, 2, laplacetype, nonlineartype,
+            timediscretizationtype, errors, tol,maxSubDomainPerDof);
+
+      check(db, grid_collections, 2, -4711, 3, laplacetype, nonlineartype,
+            timediscretizationtype, errors, tol,maxSubDomainPerDof);
+
+      check(db, grid_collections, 2, -4711, 4, laplacetype, nonlineartype,
+            timediscretizationtype, errors, tol,maxSubDomainPerDof);
+    }
 #endif
     //=============================================================================
     if (my_rank == 0)
       Output::print<1>("Testing P3/P2 elements for several NSTypes");
     //=============================================================================
 #ifndef _MPI // solve with umfpack in SEQ case
-//      set_errors(db["example"], 2, 1, timediscretizationtype, 
-//                 std::string(argv[1]),1,errors);
-//      check(db, domain_tet, 3, -4711, 1, laplacetype, nonlineartype,
-//            timediscretizationtype, errors, tol);
-//
-//      check(db, domain_tet, 3, -4711, 2, laplacetype, nonlineartype,
-//            timediscretizationtype, errors, tol);
-//
-//      check(db, domain_tet, 3, -4711, 3, laplacetype, nonlineartype,
-//            timediscretizationtype, errors, tol);
-//
-//      check(db, domain_tet, 3, -4711, 4, laplacetype, nonlineartype,
-//            timediscretizationtype, errors, tol);
+    if(testall)
+    {
+      set_errors(db["example"], 2, 1, timediscretizationtype,
+                 std::string(argv[1]),1,errors);
+      check(db, grid_collections, 3, -4711, 1, laplacetype, nonlineartype,
+            timediscretizationtype, errors, tol);
+
+      check(db, grid_collections, 3, -4711, 2, laplacetype, nonlineartype,
+            timediscretizationtype, errors, tol);
+
+      check(db, grid_collections, 3, -4711, 3, laplacetype, nonlineartype,
+            timediscretizationtype, errors, tol);
+
+      check(db, grid_collections, 3, -4711, 4, laplacetype, nonlineartype,
+            timediscretizationtype, errors, tol);
+    }
 #else
       // P3/P2 not implemented yet in MPI
 #endif

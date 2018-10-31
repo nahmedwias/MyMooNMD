@@ -1,5 +1,5 @@
 /**
-\page page_unit_testing Unit testing
+\page page_unit_testing Unit testing, make check, and make checkall
 \author Ulrich Wilbrandt <Ulrich.Wilbrandt@wias-berlin.de>
 \author Laura Blank <Laura.Blank@wias-berlin.de>
 \date 2015/11/12
@@ -73,6 +73,7 @@ after you called `cmake` of course, which is described
 \ref page_build_system "here". This will build everything needed to run the 
 test, and then run it. Internally we use `ctest` which ships with `cmake`. 
 
+
 The output will list all the tests together with their status (Passed/Failed) 
 and the duration of the test. In the end a summary is provided showing the 
 number of passed/failed tests. We always want all tests to pass. Do not commit 
@@ -86,6 +87,10 @@ will not change the test result. That's why ParMooN implements the `make check`
 target which overcomes this problem. It is described in more detail in the file 
 `test/CMakeLists.txt`.
 
+\note Update (31/10/2018 Najib Alia): See the recently introduced section \ref 
+make_check_all at the end to learn about 
+
+	make checkall
 
 \subsection options_running_tests More options on running tests
 
@@ -224,6 +229,138 @@ MinSizeRel: ... \n
 RelWithDebInfo: increased compile time (high level of optimization at the compile time) &harr decreased run-time ; debug information available\n
 \n
 Note: In practice, a decreasing compile time typically correlates with an increasing run-time and vice versa.
+
+
+\section make_check_all Short and long tests, make check and make checkall
+\note Update (31/10/2018 by Najib Alia): This new section explains the newly 
+introduced target "make checkall".
+
+With the further developement of ParMooN and the increasing number of new features, 
+the list of tests has extended, as well as the duration of some tests. For example,
+ one system class (for example Navier--Stokes) is now tested with different finite 
+ elements (different orders, triangles, quads), different formulations (laplace 
+ type, nse_nonlinear_form, ns type...), different time discretizations 
+ (crank_nicholson, backward euler, and soon bdf2), and different solvers. 
+ This systematic testing is very important and encouraging. However, the duration 
+ of the tests has became too long and makes further development not practical.  
+
+In order to support systematic and extended tests and to make small developements 
+quickly "testable" without being penalized by the long testing time, a new target 
+called 
+
+	make checkall
+
+has been introduced.
+
+ - <b> 1) A few words on how it works: </b>
+ 
+ The short and long tests are differentiated by the name of the test: append
+ the suffixe "_all" to a test name will tell "make check" NOT to run this test. Indeed, you can see in the definition 
+ of the target (see CMakeLists.txt in your ParMooN directory):
+ \code{.cmake}
+  add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure -E all
+                  DEPENDS ${parmoon_tests})
+  \endcode
+  that "make check" will EXCLUDE all the tests containing the string "all", through
+  the arguments "-E all". 
+ 
+ On the contrary, there is no argument with "all" in the target "make checkall". 
+ Thus, "make checkall" will just run all the tests, including the "all" ones.
+ 
+ - <b> 2) How to append "all" to a test name? </b>
+ 
+ Read first section \ref creating_tests to create a test. Then just copy-paste
+ the command "add_test" and give the new name to the test. For example, using the
+ same example as section \ref creating_tests :
+ \code{.cmake}
+  add_test(matrix ParMooN_test_matrix)
+  add_test(matrix_all ParMooN_test_matrix)
+ \endcode
+  
+  - <b> 3) And now? </b>
+  
+  Appending "all" will of course not make your test longer. The idea is to
+  add an argument (a "flag") when calling the test program to tell him to 
+  run the long version.
+  First, it is important to notice that:
+ \code{.cmake}
+  add_test(matrix_all ParMooN_test_matrix)
+ \endcode
+ can equivalently be written as:
+ \code{.cmake}
+  add_test(NAME matrix_all COMMAND ParMooN_test_matrix)
+ \endcode
+
+Then, you can add an argument to the COMMAND, for example:
+ \code{.cmake}
+  add_test(NAME matrix_all COMMAND ParMooN_test_matrix testall)
+ \endcode
+
+The keyword "testall" can be read as a string in your test main program. You can add
+now the following lines at the very beginning of your test main program to read 
+the argument:
+\code
+  int main(int argc, char* argv[])
+  {
+   bool testall = false;
+   if (argv[1])
+    testall = (std::string(argv[1]).compare("testall") == 0);
+   ...
+  }
+\endcode
+
+Of course, you can use another word than "testall", you just have to make sure that
+your test program recognizes it. However, it is recommended to use the same 
+flag for all tests, i.e., testall. <b> Important note: sometimes the command
+has already some arguments (the solver name and/or an input file). In this case,
+pay attention to write the correct number in argv[your_number].</b>
+
+- <b> 4) Finally: </b>
+
+you just have to place one (or several) part(s) of your test in a if(testall)-
+condition to make it run only with "make checkall" and not with "make check":
+\code
+  if(testall)
+  {
+   // your long tests
+  }
+\endcode
+
+You are free to choose and define yourself what is a short and a long version of 
+your test. 
+
+Some (rule of thumb) guidelines:
+	- Avoid to make only a long version of your test. Try to have at least one 
+	short test to run with "make check". For example, take the coarsest grid 
+	 possible, reduce the number of time steps, test only a few combinations of 
+	 parameters instead of all combinations...etc
+	- A reasonable time for one short test is less than 3 seconds.
+	- Maximum should be between 5s and 10s. Only very exceptional cases can
+	be more than 10s.
+	- Long tests have no limits in time. They are supposed to test all possible
+	features and combinations of parameters. They are supposed to be 
+	used less often than "make check" to make sure nothing in the program is 
+	broken. For example, after a long series of commits, before pushing to the
+	central repo.
+
+<b> To conclude, here are some important remarks and notes to keep in mind: </b>
+
+\note 1) For some practical examples, see nse2d_test.c++ and tnse3d_test.c++.
+
+\note <b>2) Launching "make checkall" in Debug mode will be excessively long. It is 
+recommended to "make checkall" in Release mode (sometimes also called Opti).</b>
+
+\note 3) It is recommended to add complex tests, for example, tests with real
+applications, or with established and/or published results. Any benchmark problem 
+(i.e., flow around cylinder) is welcome now that long tests can be run without 
+being concerned by testing time. 
+
+
+
+\note 4) This "make checkall" is only one method among others to differentiate 
+between short and long tests. There are certainly other, more elegant, ways
+but this is a straightforward one to understand, to implement, and to use.
+
 
 
 */
