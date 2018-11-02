@@ -87,7 +87,7 @@ Time_CD2D::Time_CD2D(const TDomain& domain, const ParameterDatabase& param_db,
 
 /**************************************************************************** */
 Time_CD2D::Time_CD2D(const TDomain& domain, const ParameterDatabase& param_db,
-		const Example_TimeCD2D& ex, int reference_id)
+	 Example_TimeCD2D ex, int reference_id)
  : db(get_default_TCD2D_parameters()), solver(param_db), systems(), example(ex),
    errors(5, 0.0), timeDependentOutput(param_db)
 {

@@ -153,7 +153,7 @@ void NSE3D::output_problem_size_info() const
 }
 
 NSE3D::NSE3D(std::list<TCollection* > collections, const ParameterDatabase& param_db,
-             const Example_NSE3D& example
+              Example_NSE3D example
 #ifdef _MPI
              , int maxSubDomainPerDof
 #endif
@@ -475,11 +475,12 @@ void NSE3D::assemble_linear_terms()
       spaces[0]->get_boundary_condition(), spaces[0]->get_boundary_condition(),
       spaces[0]->get_boundary_condition(), spaces[1]->get_boundary_condition()};
       
+
     std::array<BoundValueFunct3D*, 4> boundValues;
-    boundValues[0]=example_.get_bd()[0];
-    boundValues[1]=example_.get_bd()[1];
-    boundValues[2]=example_.get_bd()[2];
-    boundValues[3]=example_.get_bd()[3];
+    boundValues[0] = example_.get_bd()[0];
+    boundValues[1] = example_.get_bd()[1];
+    boundValues[2] = example_.get_bd()[2];
+    boundValues[3] = example_.get_bd()[3];
 
     // finite element functions
     feFunction[0]=s.u_.GetComponent(0);
@@ -490,7 +491,7 @@ void NSE3D::assemble_linear_terms()
     // local assembling object    
     LocalAssembling3D la(this->db, LocalAssembling_type::NSE3D_Linear, 
                          feFunction.data(), example_.get_coeffs());
-    
+
     //HOTFIX: Check the documentation - this ensures that in Galerkin disc,
     // the convective term is not assembled at this point.
     assemble_nse = Hotfixglobal_AssembleNSE::WITHOUT_CONVECTION;
@@ -501,12 +502,10 @@ void NSE3D::assemble_linear_terms()
                nReMatrices, reMatrices.data(), 
                nRhs, rhsArray.data(), rhsSpaces,
                boundContion, boundValues.data(), la);
-    
-
 
     // assemble on the boundary if needed
       assemble_boundary_terms();
-      
+
     //delete the temorary feFunctions gained by GetComponent
     for(int i = 0; i<3; ++i)
       delete feFunction[i];

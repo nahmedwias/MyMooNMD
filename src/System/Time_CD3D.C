@@ -82,7 +82,7 @@ Time_CD3D::SystemPerGrid::SystemPerGrid(const Example_TimeCD3D& example,
 //==============================================================================
 Time_CD3D::Time_CD3D(std::list<TCollection* >collections,
                      const ParameterDatabase &param_db,
-                     const Example_TimeCD3D& _example
+                     Example_TimeCD3D _example
 #ifdef _MPI
                      , int maxSubDomainPerDof
 #endif
