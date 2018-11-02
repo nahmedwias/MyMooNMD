@@ -1,6 +1,6 @@
 #include "ParameterDatabase.h"
 #include "Example_NSE2D.h"
-#include "Example_CD2D.h"
+#include "Example_TimeCD2D.h"
 
 constexpr double surrounding_temperature = 150.;
 
@@ -98,7 +98,6 @@ Example_TimeCD2D get_gppo_temperature_example(const ParameterDatabase & db)
   std::vector <DoubleFunct2D*> ic(1, initial_condition_temperature);
   double nu = db["diffusion_coefficient"];
   using namespace std::placeholders;
-  CoeffFct2D coeffs = std::bind(pde_coefficients_temperature, _1, _2, _3, _4,
-                                _5, nu);
+  CoeffFct2D coeffs = std::bind(pde_coefficients_temperature, _1, _2, _3, _4, _5, nu);
   return Example_TimeCD2D(exact, bc, bd, coeffs, false, false, ic);
 }

@@ -33,7 +33,7 @@ int main(int argc, char* argv[])
   TDatabase Database;
   TFEDatabase3D FEDatabase; 
   ParameterDatabase db
-    = GeothermalPlantsPositionOptimization3D::default_GPPO_database();
+    = GeothermalPlantsPositionOptimization3D::default_3D_GPPO_database();
   if(argc < 2)
   {
     Output::print("Please provide an input file with parameters to run the "
@@ -63,11 +63,12 @@ int main(int argc, char* argv[])
   TDomain domain(db, argv[1]);
   refine_domain(domain, db["output_write_ps"]);
 
+  cout << "Started creating a gppo object."<< endl;
   GeothermalPlantsPositionOptimization3D gppo(domain, db);
-  
+  cout << "Finished creating a gppo object."<< endl;
   timer.restart_and_print("all preparations before optimization loop");
   parmoon_opt::print_nlopt_version();
   parmoon_opt::optimize(gppo, db);
-  timer.stop_and_print("optimization loop");
-  timer.print_total_time("entire boundary controlled optimization");
+  timer.stop_and_print("Finished optimization loop");
+  timer.print_total_time("Finished entire boundary controlled optimization");
 }

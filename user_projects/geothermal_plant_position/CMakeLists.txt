@@ -3,7 +3,7 @@ include_directories(${gppo_dir})
 
 # list of sources for boundary controlled optimization
 list(APPEND GTPSRC "${gppo_dir}/GeothermalPlantsPositionOptimization.cpp" )
-list(APPEND GTPSRC "${gppo_dir}/CD2D_Temperature.cpp" )
+list(APPEND GTPSRC "${gppo_dir}/TCD2D_Temperature.cpp" )
 list(APPEND GTPSRC "${gppo_dir}/NSE2D_GPPO.cpp" )
 
 list(APPEND GPPOSRC_3D "${gppo_dir}/GeothermalPlantsPositionOptimization3D.cpp" )

@@ -1,7 +1,6 @@
 #ifndef NSE2D_GPPO_H
 #define NSE2D_GPPO_H
 
-
 #include "NSE2D.h"
 #include "FEVectFunct2D.h"
 #include "Domain.h"
@@ -12,14 +11,9 @@
 #include <Hotfixglobal_AssembleNSE.h> // a temporary hotfix - check documentation!
 #include "LPS_scott_zhang.h"
 
-
-
+/** ************************************************************************ */
 class NSE2D_GPPO : public NSE2D
 {
-/*
-  // @brief standard destructor
-  ~NSE2D_GPPO();
-*/
 protected:
 
   std::shared_ptr<const TFESpace2D> coefficient_function_FEspace;
@@ -36,8 +30,6 @@ public:
   {
     return this->coefficient_function;
   }
-
 };
-
 
 #endif // NSE2D_GPPO_H

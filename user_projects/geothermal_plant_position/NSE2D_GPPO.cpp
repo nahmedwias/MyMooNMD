@@ -1,29 +1,30 @@
-
 #include "NSE2D_GPPO.hpp"
 #include "Multigrid.h"
 #include "LocalAssembling.h"
 #include "Assemble2D.h"
 
-
-
-NSE2D_GPPO::NSE2D_GPPO(const TDomain &domain, const ParameterDatabase& param_db, const Example_NSE2D& example)
-:NSE2D(domain, param_db, example), coefficient_function_FEspace(new TFESpace2D(this->get_pressure_space().GetCollection(), "coefficient_function_FEspace", "s",  BoundConditionNoBoundCondition, 1))
+/** ************************************************************************ */
+NSE2D_GPPO::NSE2D_GPPO(const TDomain &domain, 
+        const ParameterDatabase& param_db, 
+        const Example_NSE2D& example)
+:NSE2D(domain, param_db, example), 
+ coefficient_function_FEspace(new TFESpace2D(this->get_pressure_space().GetCollection(), 
+         "coefficient_function_FEspace", "s",  BoundConditionNoBoundCondition, 1))
 {
-  bool use_coeff_fct = false;
-  if (use_coeff_fct)
+  if (param_db["use_coeff_fct"])
   {
     cout <<" ***** coefficient_function_type 2 detected **** "<< endl;
     Output::print("It is assumed that a mesh and a fitting TFEFunction2D ReadSol() file are provided.");
 
     /// TCollection *coll = brinkman2d.get_pressure_space().GetCollection();
-  coefficient_function_vector = BlockVector(coefficient_function_FEspace->GetN_DegreesOfFreedom());
+    coefficient_function_vector = BlockVector(coefficient_function_FEspace->GetN_DegreesOfFreedom());
 
-  coefficient_function = TFEFunction2D(coefficient_function_FEspace.get(), "coefficient_function", "coefficient_function",
-                         &coefficient_function_vector.at(0), coefficient_function_FEspace->GetN_DegreesOfFreedom());
+    coefficient_function = TFEFunction2D(coefficient_function_FEspace.get(), "coefficient_function", "coefficient_function",
+            &coefficient_function_vector.at(0), coefficient_function_FEspace->GetN_DegreesOfFreedom());
 
-  coefficient_function.ReadSol(param_db["read_coefficient_function_directory"]);
-  // coefficient_function.WriteSol("/Users/blank/ParMooN/Tests/Geothermal_Plants_Position_Optimization", "fe_function_permeability_mod_out.txt");
-  /////// coefficient_function.Interpolate(&read_coefficient_function);
+    coefficient_function.ReadSol(param_db["read_coefficient_function_directory"]);
+    // coefficient_function.WriteSol("/Users/blank/ParMooN/Tests/Geothermal_Plants_Position_Optimization", "fe_function_permeability_mod_out.txt");
+    /////// coefficient_function.Interpolate(&read_coefficient_function);
   }
 }
 
@@ -32,9 +33,11 @@ NSE2D_GPPO::~NSE2D_GPPO()
 {
   //  delete coefficient_function_FEspace;
 }
-*/
-// ******************************// START READ IN PERMEABILITY // ******************************** //
+ */
 
+// ********************// START READ IN PERMEABILITY // ********************* //
+
+/** ************************************************************************ */
 void mapping_local_parameters_NSE(double *in, double *out)
 {
   // coordinates:  x at in[0], y at in[1]
@@ -76,8 +79,8 @@ void NSE2D_GPPO::assemble_with_coefficient_fct(TFEFunction2D* coefficient_functi
     const TFESpace2D *fesprhs[3] = {v_space, v_space, p_space};
 
     BoundCondFunct2D * boundary_conditions[3] = {
-      v_space->get_boundary_condition(), v_space->get_boundary_condition(),
-      p_space->get_boundary_condition() };
+            v_space->get_boundary_condition(), v_space->get_boundary_condition(),
+            p_space->get_boundary_condition() };
 
     std::array<BoundValueFunct2D*, 3> non_const_bound_values;
     non_const_bound_values[0] = example.get_bd()[0];
@@ -96,76 +99,76 @@ void NSE2D_GPPO::assemble_with_coefficient_fct(TFEFunction2D* coefficient_functi
     }
 
     LocalAssembling2D la(this->db, LocalAssembling_type::NSE3D_Linear,
-                         fe_functions, example.get_coeffs());
+            fe_functions, example.get_coeffs());
 
     if (coefficient_function)
- {
-   // modify la such that it includes the TFEFunction2D coefficient_function
-   la.setBeginParameter({0});
-   la.SetN_Parameters(1);
-   la.setN_ParamFct(1);
-   la.setParameterFct({mapping_local_parameters_NSE});
-   la.setN_FeValues(1);
-   la.setFeValueFctIndex({3});
-   la.setFeValueMultiIndex({D00});
- }
+    {
+      // modify la such that it includes the TFEFunction2D coefficient_function
+      la.setBeginParameter({0});
+      la.SetN_Parameters(1);
+      la.setN_ParamFct(1);
+      la.setParameterFct({mapping_local_parameters_NSE});
+      la.setN_FeValues(1);
+      la.setFeValueFctIndex({3});
+      la.setFeValueMultiIndex({D00});
+    }
 
     std::vector<std::shared_ptr<FEMatrix>> blocks =
-        s.matrix.get_blocks_uniquely();
+            s.matrix.get_blocks_uniquely();
 
     n_sq_mat = 5;
     n_rect_mat = 4;
     switch(TDatabase::ParamDB->NSTYPE)
     {// switch over known Block Matrix types, treat each one individually,
-      // using a priori knowledge about the structure and the way it fits
-      // to the LocalAssembling2D object
-      // TODO remove all reinterpret_casts as soon as Assembling process takes only FEMatrices
-      // we have to use reinterpret_casts because dynamic downcasting won't work here
-      // FIXME replace global switch by local checking of blockmatrix type!
-      case 1:
-        sq_matrices[0] =  reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
-        rect_matrices[0] = reinterpret_cast<TMatrix2D*>(blocks.at(1).get());
-        rect_matrices[1] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get());
-        break;
-      case 2:
-        sq_matrices[0] =  reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
-        rect_matrices[0] = reinterpret_cast<TMatrix2D*>(blocks.at(3).get()); //first the lying B blocks
-        rect_matrices[1] = reinterpret_cast<TMatrix2D*>(blocks.at(4).get());
-        rect_matrices[2] = reinterpret_cast<TMatrix2D*>(blocks.at(1).get()); //than the standing B blocks
-        rect_matrices[3] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get());
-        break;
-      case 3:
-        sq_matrices[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
-        sq_matrices[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
-        sq_matrices[2] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(3).get());
-        sq_matrices[3] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(4).get());
-        rect_matrices[0] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get());
-        rect_matrices[1] = reinterpret_cast<TMatrix2D*>(blocks.at(5).get());
-        break;
-      case 4:
-        sq_matrices[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
-        sq_matrices[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
-        sq_matrices[2] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(3).get());
-        sq_matrices[3] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(4).get());
-        rect_matrices[0] = reinterpret_cast<TMatrix2D*>(blocks.at(6).get()); //first the lying B blocks
-        rect_matrices[1] = reinterpret_cast<TMatrix2D*>(blocks.at(7).get());
-        rect_matrices[2] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get()); //than the standing B blocks
-        rect_matrices[3] = reinterpret_cast<TMatrix2D*>(blocks.at(5).get());
-        break;
-      case 14:
-        sq_matrices[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
-        sq_matrices[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
-        sq_matrices[2] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(3).get());
-        sq_matrices[3] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(4).get());
-        sq_matrices[4] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(8).get());
-        rect_matrices[0] = reinterpret_cast<TMatrix2D*>(blocks.at(6).get()); //first the lying B blocks
-        rect_matrices[1] = reinterpret_cast<TMatrix2D*>(blocks.at(7).get());
-        rect_matrices[2] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get()); //than the standing B blocks
-        rect_matrices[3] = reinterpret_cast<TMatrix2D*>(blocks.at(5).get());
-        break;
-      default:
-        ErrThrow("Sorry, the structure of that BlockMatrix is unknown to class NSE2D. "
-            "I don't know how to pass its blocks to Assemble2D.");
+    // using a priori knowledge about the structure and the way it fits
+    // to the LocalAssembling2D object
+    // TODO remove all reinterpret_casts as soon as Assembling process takes only FEMatrices
+    // we have to use reinterpret_casts because dynamic downcasting won't work here
+    // FIXME replace global switch by local checking of blockmatrix type!
+    case 1:
+      sq_matrices[0] =  reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
+      rect_matrices[0] = reinterpret_cast<TMatrix2D*>(blocks.at(1).get());
+      rect_matrices[1] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get());
+      break;
+    case 2:
+      sq_matrices[0] =  reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
+      rect_matrices[0] = reinterpret_cast<TMatrix2D*>(blocks.at(3).get()); //first the lying B blocks
+      rect_matrices[1] = reinterpret_cast<TMatrix2D*>(blocks.at(4).get());
+      rect_matrices[2] = reinterpret_cast<TMatrix2D*>(blocks.at(1).get()); //than the standing B blocks
+      rect_matrices[3] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get());
+      break;
+    case 3:
+      sq_matrices[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
+      sq_matrices[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
+      sq_matrices[2] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(3).get());
+      sq_matrices[3] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(4).get());
+      rect_matrices[0] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get());
+      rect_matrices[1] = reinterpret_cast<TMatrix2D*>(blocks.at(5).get());
+      break;
+    case 4:
+      sq_matrices[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
+      sq_matrices[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
+      sq_matrices[2] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(3).get());
+      sq_matrices[3] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(4).get());
+      rect_matrices[0] = reinterpret_cast<TMatrix2D*>(blocks.at(6).get()); //first the lying B blocks
+      rect_matrices[1] = reinterpret_cast<TMatrix2D*>(blocks.at(7).get());
+      rect_matrices[2] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get()); //than the standing B blocks
+      rect_matrices[3] = reinterpret_cast<TMatrix2D*>(blocks.at(5).get());
+      break;
+    case 14:
+      sq_matrices[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
+      sq_matrices[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
+      sq_matrices[2] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(3).get());
+      sq_matrices[3] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(4).get());
+      sq_matrices[4] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(8).get());
+      rect_matrices[0] = reinterpret_cast<TMatrix2D*>(blocks.at(6).get()); //first the lying B blocks
+      rect_matrices[1] = reinterpret_cast<TMatrix2D*>(blocks.at(7).get());
+      rect_matrices[2] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get()); //than the standing B blocks
+      rect_matrices[3] = reinterpret_cast<TMatrix2D*>(blocks.at(5).get());
+      break;
+    default:
+      ErrThrow("Sorry, the structure of that BlockMatrix is unknown to class NSE2D. "
+              "I don't know how to pass its blocks to Assemble2D.");
     }
 
     //HOTFIX: Check the documentation!
@@ -174,11 +177,11 @@ void NSE2D_GPPO::assemble_with_coefficient_fct(TFEFunction2D* coefficient_functi
 
     // call the assemble method with the information that has been patched together
     Assemble2D(N_FESpaces, fespmat, n_sq_mat, sq_matrices,
-               n_rect_mat, rect_matrices, N_Rhs, RHSs, fesprhs,
-               boundary_conditions, non_const_bound_values.data(), la);
+            n_rect_mat, rect_matrices, N_Rhs, RHSs, fesprhs,
+            boundary_conditions, non_const_bound_values.data(), la);
 
     // assemble on the boundary if needed
-      assemble_boundary_terms();
+    assemble_boundary_terms();
 
 
     // copy Dirichlet values from right hand side into solution
@@ -194,9 +197,9 @@ void NSE2D_GPPO::assemble_with_coefficient_fct(TFEFunction2D* coefficient_functi
     if(db["space_discretization_type"].is("local_projection"))
     {
       LPS_parameter_set lp{db["lps_coeff_type"], db["lps_delta0"],
-                           db["lps_delta1"]};
+        db["lps_delta1"]};
       auto C = LPS_for_pressure_Scott_Zhang(blocks.at(8), false,
-                                            this->example.get_nu(), lp);
+              this->example.get_nu(), lp);
       s.matrix.replace_blocks(*C, {{2,2}}, {false}); // creates a copy
     }
   }
