@@ -3,7 +3,7 @@
 
 #include "Domain.h"
 #include "ParameterDatabase.h"
-#include "NSE3D.h"
+//#include "NSE3D.h"
 #include "NSE3D_GPPO.hpp"
 #include "CD3D_Temperature.hpp"
 #include "LoopInfo.h"
@@ -24,10 +24,10 @@ class GeothermalPlantsPositionOptimization3D
     /// @brief return the dimension of the control space
     unsigned get_n_control() const { return n_control; }
     
-    static ParameterDatabase default_GPPO_database();
+    static ParameterDatabase default_3D_GPPO_database();
     
   protected:
-    /// @brief keep all parameters for this optimization in one database
+    /// @brief keep all parameters for this get_primal_flow_databaseoptimization in one database
     ParameterDatabase db;
     /// @brief the size (dimension) of the control space
     unsigned n_control;

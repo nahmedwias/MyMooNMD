@@ -4,18 +4,39 @@
 #include "Assemble3D.h"
 
 
-
-
 /* **************************************************************************** */
 
+CD3D_Temperature::CD3D_Temperature(TDomain& domain,
+                                   const ParameterDatabase& param_db,
+                                    Example_TimeCD3D example_
+#ifdef _MPI
+                                    ,int maxSubDomainPerDof
+#endif
+                                   )
+ : Time_CD3D(domain.refine_and_get_hierarchy_of_collections(param_db
+#ifdef _MPI
+                                    ,int maxSubDomainPerDof
+#endif
+                                    ), param_db, example_
+#ifdef _MPI
+                                    ,int maxSubDomainPerDof
+#endif
+)
+{
+  if(this->solver.is_using_multigrid())
+  {
+    ErrThrow("assembling with a finite element function as convection is not "
+             "implemented for multigrid");
+  }
+}
 
-
+/*
 #ifdef _MPI
 CD3D_Temperature::CD3D_Temperature(TDomain& domain,
                                    const ParameterDatabase& param_db,
-                                   const Example_TimeCD3D& example, 
+                                    Example_TimeCD3D example_, 
                                    int maxSubDomainPerDof)
- : Time_CD3D(domain.refine_and_get_hierarchy_of_collections(param_db, maxSubDomainPerDof), param_db, example, maxSubDomainPerDof)
+ : Time_CD3D(domain.refine_and_get_hierarchy_of_collections(param_db, maxSubDomainPerDof), param_db, example_, maxSubDomainPerDof)
 {
   if(this->solver.is_using_multigrid())
   {
@@ -26,7 +47,7 @@ CD3D_Temperature::CD3D_Temperature(TDomain& domain,
 #else
 CD3D_Temperature::CD3D_Temperature( TDomain& domain,
                                    const ParameterDatabase& param_db,
-                                   const Example_TimeCD3D& example)
+                                    Example_TimeCD3D example_)
 :Time_CD3D(domain.refine_and_get_hierarchy_of_collections(param_db), param_db, Example_TimeCD3D(param_db))
 {
   if(this->solver.is_using_multigrid())
@@ -36,8 +57,9 @@ CD3D_Temperature::CD3D_Temperature( TDomain& domain,
   }
 }
 #endif
+*/
 
-
+/*
 #ifdef _MPI
 CD3D_Temperature::CD3D_Temperature( TDomain &domain, const ParameterDatabase& param_db, int maxSubDomainPerDof) 
 :Time_CD3D(domain.refine_and_get_hierarchy_of_collections(param_db, maxSubDomainPerDof), param_db, Example_TimeCD3D(param_db), maxSubDomainPerDof)
@@ -48,7 +70,7 @@ CD3D_Temperature::CD3D_Temperature(TDomain &domain, const ParameterDatabase& par
 {
 }
 #endif
-
+*/
 
 
 /*
@@ -80,18 +102,20 @@ void temperature_coefficients(int n_points, double *x, double *y, double *z,
 {
   for(int i = 0; i < n_points; ++i)
   {
-    //another approx. for domain [0, 10] x [0, 6]
+    //another approx. for domain [0, 10] x [0, 6] x [,. 6]
     double a = 0.05;
     double T_in = 50;
-    std::array<double, 2> center_source = {{5.0 - distance/2., 3}};
+    std::array<double, 3> center_source = {{5.0 - distance/2., 3. , 3.}};
     double x_distance_to_source = std::pow(std::abs(x[i]-center_source[0]), 2);
     double y_distance_to_source = std::pow(std::abs(y[i]-center_source[1]), 2);
-    bool at_source = x_distance_to_source + y_distance_to_source < a*a;
+    double z_distance_to_source = std::pow(std::abs(z[i]-center_source[2]), 2);
+    bool at_source = x_distance_to_source + y_distance_to_source + z_distance_to_source < a*a;
     coeffs[i][0] = nu; // diffusion
     coeffs[i][1] = parameters[i][0]; // convection, x-direction
     coeffs[i][2] = parameters[i][1]; // convection, y-direction
-    coeffs[i][3] = 0.; // reaction
-    coeffs[i][4] = 0.; // right-hand side
+    coeffs[i][3] = parameters[i][1]; // convection, y-direction
+    coeffs[i][4] = 0.; // reaction
+    coeffs[i][5] = 0.; // right-hand side
     if(at_source)
     {
       //double magnitude = cos(Pi*x_distance_to_source/a) + 1;
@@ -100,15 +124,14 @@ void temperature_coefficients(int n_points, double *x, double *y, double *z,
       //coeffs[i][3] += magnitude; // reaction
       //coeffs[i][4] -= magnitude * T_in; // source
       double penalty_factor = 1000.;
-      coeffs[i][3] = 1 * penalty_factor; // reaction
-      coeffs[i][4] = T_in * penalty_factor; // right-hand side
+      coeffs[i][4] = 1 * penalty_factor; // reaction
+      coeffs[i][5] = T_in * penalty_factor; // right-hand side
     }
   }
 }
 
 
-void CD3D_Temperature::assemble(const TFEVectFunct3D& convection,
-                                const double * x, double nu)
+void CD3D_Temperature::assemble(TFEVectFunct3D& convection, const double * x, double nu)
 {
   if(db["space_discretization_type"].is("supg"))
   {
@@ -118,17 +141,17 @@ void CD3D_Temperature::assemble(const TFEVectFunct3D& convection,
   auto u1 = convection.GetComponent(0);
   auto u2 = convection.GetComponent(1);
   auto u3 = convection.GetComponent(2);  
+  
   std::array<TFEFunction3D*, 3> fe_functions_pointers{{u1, u2, u3}};
   SystemPerGrid& s = this->systems_.front();
   
-  LocalAssembling3D la(this->db, LocalAssembling_type::TCD3D,
+  LocalAssembling3D la(this->db, LocalAssembling_type::TCD3DStiffRhs,
                        fe_functions_pointers.data(),
-                       this->example_.get_coeffs(), 0);
+                       this->example_.get_coeffs(), 1); // db["discretization_type"]);
   
   using namespace std::placeholders;
-  la.ResetCoeffFct(std::bind(temperature_coefficients,_1, _2, _3, _4, _5, _6,
-                             distance, nu));
-  
+  la.ResetCoeffFct(std::bind(temperature_coefficients, _1, _2, _3, _4, _5, _6, distance, nu));
+
   la.setBeginParameter({0});
   la.SetN_Parameters(3);
   la.setN_ParamFct(1);
@@ -143,11 +166,12 @@ void CD3D_Temperature::assemble(const TFEVectFunct3D& convection,
   double * rhs_entries = s.rhs_.get_entries();
   auto * boundary_conditions = fe_space->get_boundary_condition();
   BoundValueFunct3D * non_const_bound_value[1] {example_.get_bd()[0]};
-  
   s.rhs_.reset();
   s.stiffMatrix_.reset();
+  
   Assemble3D(1, &fe_space, 1, &matrix, 0, nullptr, 1, &rhs_entries,
              &fe_space, &boundary_conditions, non_const_bound_value, la);
+  
   delete u1;
   delete u2;
   delete u3;

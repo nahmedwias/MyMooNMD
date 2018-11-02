@@ -7,9 +7,13 @@
 #include "Database.h"
 #include "TimeDiscRout.h"
 #include <algorithm>
+#include <ParMooN_repository_info.h>
 
+const std::string path = parmoon::source_directory;
+const std::string path_to_repo = path + "/user_projects/geothermal_plant_position/";
 
-ParameterDatabase GeothermalPlantsPositionOptimization3D::default_GPPO_database()
+/** ************************************************************************ */
+ParameterDatabase GeothermalPlantsPositionOptimization3D::default_3D_GPPO_database()
 {
   // is only needed for the adjoint problem, but there is only one global 
   // parameter for this.
@@ -29,22 +33,40 @@ ParameterDatabase GeothermalPlantsPositionOptimization3D::default_GPPO_database(
   return db;
 }
 
-ParameterDatabase get_primal_flow_database(ParameterDatabase param_db)
+/** ************************************************************************ */
+ParameterDatabase get_primal_flow_database_3D(ParameterDatabase param_db)
 {
   std::string basename = param_db["output_basename"];
   basename += std::string("flow");
   param_db["output_basename"].set(basename, false);
-  return param_db;
+  
+  ParameterDatabase NSE3D_GPPO_db = NSE3D::default_NSE_database(); 
+  
+  NSE3D_GPPO_db.add("use_coeff_fct", false,
+            "Switch between a few possible cost functionals via weights. The "
+            "order of the functionals is: L2_norm_of_curl, backward_facing_step, ",
+            {true, false});
+
+    NSE3D_GPPO_db.add("read_coefficient_function_directory", path_to_repo +
+            "default_coeff_fct.txt" ,
+            "This allows to use coefficient_function_type 2 and 3. "
+            "The File has to fit with the mesh (refinement level). A default file  is contained in input_files/ .");
+
+  NSE3D_GPPO_db.merge(param_db, false);
+  return NSE3D_GPPO_db;
 }
 
-ParameterDatabase get_primal_temperature_database(ParameterDatabase param_db)
+/** ************************************************************************ */
+ParameterDatabase get_primal_temperature_database_3D(ParameterDatabase param_db)
 {
   std::string basename = param_db["output_basename"];
   basename += std::string("temperature");
   param_db["output_basename"].set(basename, false);
+  
   return param_db;
 }
 
+/** ************************************************************************ */
 ParameterDatabase get_adjoint_database(const ParameterDatabase& param_db)
 {
   ParameterDatabase adjoint_db(ParameterDatabase::parmoon_default_database());
@@ -57,11 +79,12 @@ ParameterDatabase get_adjoint_database(const ParameterDatabase& param_db)
   return adjoint_db;
 }
 
+/** ************************************************************************ */
 GeothermalPlantsPositionOptimization3D::GeothermalPlantsPositionOptimization3D(
    TDomain& domain, const ParameterDatabase& param_db)
- : db(default_GPPO_database()), n_control(0), 
-   brinkman3d_primal(domain, get_primal_flow_database(param_db), get_gppo_flow_example(param_db)),
-   tcd3d_primal(domain, get_primal_temperature_database(param_db), get_gppo_temperature_example(param_db)),
+ : db(default_3D_GPPO_database()), n_control(0), 
+   brinkman3d_primal(domain, get_primal_flow_database_3D(param_db), get_3D_gppo_flow_example(param_db)),
+   tcd3d_primal(domain, get_primal_temperature_database_3D(param_db), get_3D_gppo_temperature_example(param_db)),
    optimization_info("optimization", true, true, 1), // 1 -> full verbosity
    current_J_hat(std::numeric_limits<double>::infinity()), 
    control_old(), n_calls(0),
@@ -69,14 +92,15 @@ GeothermalPlantsPositionOptimization3D::GeothermalPlantsPositionOptimization3D(
 {
   Output::print<5>("Creating the GeothermalPlantsPositionOptimization3D object");
   db.merge(param_db, false);
-  
+
   // assemble all terms in matrix and right hand side. This matrix is not
   // changed afterwards
   brinkman3d_primal.assemble_linear_terms(); //assemble();
+
   if(!(param_db["problem_type"].is(3)) && !(param_db["problem_type"].is(7)))
   {
- Output::print<1>("ERROR: NSE3D_GPPO::assemble() is not considering nonlinear terms but your chosen problem_type ", param_db["problem_type"] , " does! ");
- return;
+    Output::print<1>("ERROR: NSE3D_GPPO::assemble() is not considering nonlinear terms but your chosen problem_type ", param_db["problem_type"] , " does! ");
+    return;
   }
   
   n_control = 1;
@@ -85,7 +109,7 @@ GeothermalPlantsPositionOptimization3D::GeothermalPlantsPositionOptimization3D(
                    "n_control = ", n_control);
 }
 
-
+/** ************************************************************************ */
 double GeothermalPlantsPositionOptimization3D::compute_functional_and_derivative(
   unsigned int n, const double* x, double* grad)
 {
@@ -134,13 +158,14 @@ double GeothermalPlantsPositionOptimization3D::compute_functional_and_derivative
   return current_J_hat;
 }
 
+/** ************************************************************************ */
 void approximate_delta_functions(int n_points, double *x, double *y, double *z,
                                  double **parameters, double **coeffs,
                                  double distance)
 {
   for(int i = 0; i < n_points; ++i)
   {
-    //another approx. for domain [0, 10] x [0, 6]
+    //another approx. for domain [0, 10] x [0, 6] x[0, 6]
     double a = 0.05;
     double r_Wells = 5*0.001;
     double Q_in = 0.03 * Pi * r_Wells * r_Wells * 1000;
@@ -153,28 +178,34 @@ void approximate_delta_functions(int n_points, double *x, double *y, double *z,
     double y_distance_to_sink = std::pow(std::abs(y[i]-center_sink[1]), 2);
     double z_distance_to_sink = std::pow(std::abs(z[i]-center_sink[2]), 2);
     bool at_source = x_distance_to_source + y_distance_to_source + z_distance_to_source < a*a;
-    bool at_sink = x_distance_to_sink + y_distance_to_sink + z_distance_to_sink< a*a;
+    bool at_sink = x_distance_to_sink + y_distance_to_sink + z_distance_to_sink < a*a;
     coeffs[i][0] = 0.;
     coeffs[i][1] = 0.;
     coeffs[i][2] = 0.;
     coeffs[i][3] = 0.;
+    coeffs[i][4] = 0.;
+
     if(at_source)
     {
       double magnitude = cos(Pi*x_distance_to_source/a) + 1;
       magnitude *= cos(Pi*y_distance_to_source/a) + 1;
+      magnitude *= cos(Pi*z_distance_to_source/a) + 1;
       magnitude /= 4.*a*a;
-      coeffs[i][3] += magnitude * Q_in; // source
+      coeffs[i][4] += magnitude * Q_in; // source
     }
+
     if(at_sink)
     {
       double magnitude = cos(Pi*x_distance_to_sink/a) + 1;
       magnitude *= cos(Pi*y_distance_to_sink/a) + 1;
+      magnitude *= cos(Pi*z_distance_to_sink/a) + 1;
       magnitude /= 4.*a*a;
-      coeffs[i][3] -=  magnitude * Q_in; // sink
+      coeffs[i][4] -=  magnitude * Q_in; // sink
     }
   }
 }
 
+/** ************************************************************************ */
 void GeothermalPlantsPositionOptimization3D::apply_control_and_solve(const double* x)
 {
   Chrono time;
@@ -182,8 +213,7 @@ void GeothermalPlantsPositionOptimization3D::apply_control_and_solve(const doubl
   double distance = x[0];
   Output::print("current control: ", std::setprecision(14), distance);
   using namespace std::placeholders;
-  CoeffFct3D coeff = std::bind(approximate_delta_functions, _1, _2, _3, _4, _5, _6,
-                               distance);
+  CoeffFct3D coeff = std::bind(approximate_delta_functions, _1, _2, _3, _4, _5, _6, distance);
   std::string disc_type = this->db["space_discretization_type"];
   bool nonsymm_gls = (disc_type == std::string("nonsymm_gls"));
   int rhs_div_sign = 1;
@@ -191,38 +221,10 @@ void GeothermalPlantsPositionOptimization3D::apply_control_and_solve(const doubl
   {
     rhs_div_sign = -1;
   }
+  
   LocalAssembling<3> la(2, {D000, D000},  {0, 1},  {},  {},   {0, 0, 0, 1}, coeff, 
-          std::bind(NSRightHandSide<3>, _1, _2, _3, _4, _5, _6, _7, _8, rhs_div_sign), 
-          nullptr, 
-          0, 
-          4, 
-          0, 
-          {}, 
-          {}, 
-          0, 
-          nullptr,	
-          0, 
-          {}, 
-          {});
-
-  /*
-   LocalAssembling(int myN_Terms,
-                  MultiIndex_vector myDerivatives,
-                  std::vector<int> myFESpaceNumber,
-                  std::vector<int> myRowSpace,
-                  std::vector<int> myColumnSpace,
-                  std::vector<int> myRhsSpace,
-                  CoeffFct myCoeffs, 
-                  AssembleFctParam myAssembleParam,
-                  ManipulateFct* myManipulate,
-                  int myN_Matrices, int myN_Rhs,
-                  int myN_ParamFct, std::vector<ParamFct*> myParameterFct,
-                  std::vector<int> myBeginParameter, int myN_Parameters,
-                  FEFunction** myFEFunctions3D,  int myN_FEValues,
-                  std::vector<int> myFEValue_FctIndex, 
-                  MultiIndex_vector myFEValue_MultiIndex,
-                  int discretization_type = 1);
-  */
+          std::bind(NSRightHandSide<3>, _1, _2, _3, _4, _5, _6, _7, _8, rhs_div_sign), nullptr, 
+          0, 4, 0,  {},  {},   0,   nullptr,  0,  {}, {});
   
   
   auto& v_space = brinkman3d_primal.get_velocity_space();
@@ -240,7 +242,8 @@ void GeothermalPlantsPositionOptimization3D::apply_control_and_solve(const doubl
     non_const_bound_values[1] = example.get_bd()[1];
     non_const_bound_values[2] = example.get_bd()[2];
     non_const_bound_values[3] = example.get_bd()[3];
-  Assemble3D(2, fespaces.data()+1, 0, nullptr, 0, nullptr, 3, rhs_pointers,
+    
+  Assemble3D(2, fespaces.data()+2, 0, nullptr, 0, nullptr, 4, rhs_pointers,
              fespaces.data(), boundary_conditions,
              non_const_bound_values.data(), la);
   
@@ -256,35 +259,47 @@ void GeothermalPlantsPositionOptimization3D::apply_control_and_solve(const doubl
   time.restart_and_print("solving the stationary flow problem");
   Output::print<2>("primal solve: temperature");
   
+
+
+
   TDatabase::TimeDB->TIME_DISC = 2; // Crank-Nicolson
   TDatabase::TimeDB->CURRENTTIME = TDatabase::TimeDB->STARTTIME;
   double end_time = TDatabase::TimeDB->ENDTIME;
+  cout << "Before reset_for_output()"<<endl;
   tcd3d_primal.reset_for_output();
+
+  cout << "Before assemble TCD3D first time, assemble_initial_time()"<<endl;
+
   tcd3d_primal.assemble_initial_time();
+  cout << "After assemble_initial_time()"<<endl;
+  int step = 0, image = 0;
+
   while(TDatabase::TimeDB->CURRENTTIME < end_time - 1e-10)
   {
+    step++;
     TDatabase::TimeDB->INTERNAL_STARTTIME = TDatabase::TimeDB->CURRENTTIME;
     SetTimeDiscParameters(1);
     double tau = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
     TDatabase::TimeDB->CURRENTTIME += tau;
-      
+
     Output::print<1>("\nCURRENT TIME: ", TDatabase::TimeDB->CURRENTTIME);
-    
-    tcd3d_primal.assemble(brinkman3d_primal.get_velocity(), x,
-                         db["diffusion_coefficient"]);
+    cout << "Before assemble()"<<endl;
+
+    tcd3d_primal.assemble(brinkman3d_primal.get_velocity(), x, db["diffusion_coefficient"]);
+    cout << "Finished assemble() in current time step"<< endl;
     tcd3d_primal.solve();
+    cout << "Finished solve() in current time step"<<endl;
     tcd3d_primal.descale_stiffness();
-    
-//the output() of Time_CD3D needs some input --> Is it important for us?
-int m = 0;
-int image = 0;
-tcd3d_primal.output(m, image);
+    cout << "Finished descale_stiffness() in current time step"<<endl;
+
+    //the output() of Time_CD3D needs some input --> Is it important for us?
+    tcd3d_primal.output(step, image);
   }
-  time.stop_and_print("solving the instationary temperature problem");
+  time.stop_and_print("Finished with solving the instationary temperature problem");
   time.print_total_time("solving coupled forward problem");
 }
 
-
+/** ************************************************************************ */
 double GeothermalPlantsPositionOptimization3D::compute_functional(const double* x)
  const
 {
@@ -321,7 +336,7 @@ double GeothermalPlantsPositionOptimization3D::compute_functional(const double* 
   return functional_value;
 }
 
-
+/** ************************************************************************ */
 void GeothermalPlantsPositionOptimization3D::solve_adjoint_equation()
 {
   auto u = brinkman3d_primal.get_velocity();
@@ -337,6 +352,7 @@ void GeothermalPlantsPositionOptimization3D::solve_adjoint_equation()
 //   brinkman3d_primal.output(n_calls);
 }
 
+/** ************************************************************************ */
 void GeothermalPlantsPositionOptimization3D::compute_derivative(const double* x, 
                                                         double* grad) const
 {

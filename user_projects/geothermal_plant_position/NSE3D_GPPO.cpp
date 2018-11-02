@@ -3,18 +3,18 @@
 #include "LocalAssembling.h"
 #include "Assemble3D.h"
 
-
+/*
 #ifdef _MPI
 NSE3D_GPPO::NSE3D_GPPO( TDomain &domain, const ParameterDatabase& param_db, const Example_NSE3D& example)
 :NSE3D(domain.refine_and_get_hierarchy_of_collections(param_db, 0), param_db, example)
 {
 }
-#else
-NSE3D_GPPO::NSE3D_GPPO( TDomain &domain, const ParameterDatabase& param_db, const Example_NSE3D& example)
+#else*/
+NSE3D_GPPO::NSE3D_GPPO( TDomain &domain, const ParameterDatabase& param_db, Example_NSE3D example)
 :NSE3D(domain.refine_and_get_hierarchy_of_collections(param_db), param_db, example)
 {
 }
-#endif
+//#endif
 
 /*
 void read_coefficient_function(std::string read_coefficient_function_directory, TCollection *coll, TFEFunction3D *coefficient_function_ptr)

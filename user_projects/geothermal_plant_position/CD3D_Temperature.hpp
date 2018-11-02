@@ -6,30 +6,29 @@
 
 class CD3D_Temperature : public Time_CD3D
 {
-  public: 
-  
+public: 
+
 #ifdef _MPI
-CD3D_Temperature( TDomain& domain,
-                 const ParameterDatabase& param_db,
-                 const Example_TimeCD3D& example, 
-                 int maxSubDomainPerDof);
+  CD3D_Temperature( TDomain& domain,
+          const ParameterDatabase& param_db,
+          Example_TimeCD3D example_, 
+          int maxSubDomainPerDof);
 #else
-CD3D_Temperature( TDomain& domain,
-                 const ParameterDatabase& param_db,
-                 const Example_TimeCD3D& example);
+  CD3D_Temperature( TDomain& domain,
+          const ParameterDatabase& param_db,
+          Example_TimeCD3D example_);
 #endif
 
-
-  
+/*
 #ifdef _MPI
   CD3D_Temperature(TDomain &domain, const ParameterDatabase& param_db, int maxSubDomainPerDof);
 #else
   CD3D_Temperature(TDomain &domain, const ParameterDatabase& param_db);
 #endif
+*/ 
   
-  
-  void assemble(const TFEVectFunct3D& convection, const double * x, double nu);
-  
+  void assemble(TFEVectFunct3D& convection, const double * x, double nu);
+
   void reset_for_output();
 };
 
