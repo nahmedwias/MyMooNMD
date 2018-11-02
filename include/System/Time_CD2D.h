@@ -159,7 +159,7 @@ class Time_CD2D
      * should be used. The default implies all cells.
      */
     Time_CD2D(const TDomain& domain, const ParameterDatabase& param_db,
-    		const Example_TimeCD2D& ex, int reference_id = -4711);
+    		 Example_TimeCD2D ex, int reference_id = -4711);
     
     /** @brief Assemble all the matrices before the time iterations
      * 

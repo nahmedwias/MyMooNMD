@@ -119,7 +119,7 @@ class NSE3D
     std::deque<System_per_grid> systems_;
 
     /** @brief Definition of the used example. */
-    const Example_NSE3D& example_;
+    Example_NSE3D example_;
     
     /** @brief a local parameter database which controls this class
      * 
@@ -185,10 +185,10 @@ class NSE3D
      */
 #ifdef _MPI
     NSE3D(std::list<TCollection* > collections, const ParameterDatabase& param_db,
-          const Example_NSE3D& example, int maxSubDomainPerDof);
+           Example_NSE3D example, int maxSubDomainPerDof);
 #else
     NSE3D(std::list<TCollection* > collections, const ParameterDatabase& param_db,
-          const Example_NSE3D& example);
+           Example_NSE3D example);
 #endif
 
 

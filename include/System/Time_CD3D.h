@@ -192,10 +192,10 @@ class Time_CD3D
      */
 #ifdef _MPI
     Time_CD3D(std::list<TCollection* >collections, const ParameterDatabase &param_db,
-	      const Example_TimeCD3D& _example, int maxSubDomainPerDof);
+	      Example_TimeCD3D _example, int maxSubDomainPerDof);
 #else
     Time_CD3D(std::list<TCollection* >collections, const ParameterDatabase &param_db,
-	      const Example_TimeCD3D& _example);
+	      Example_TimeCD3D _example);
 #endif    
     /** @brief Assemble all the matrices before the time iterations
      * 
