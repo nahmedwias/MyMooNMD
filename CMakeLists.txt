@@ -363,9 +363,9 @@ add_subdirectory(test EXCLUDE_FROM_ALL)
 #   running all tests corresponding to the current #
 #   parallel type. Use it excessively!             #
 ####################################################
-add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure  -E all
+add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure --exclude-regex all
                   DEPENDS ${parmoon_tests})
-add_custom_target(checkall COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure 
+add_custom_target(check_all COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure 
 				  DEPENDS ${parmoon_tests})
 
 

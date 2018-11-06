@@ -1,5 +1,5 @@
 /**
-\page page_unit_testing Unit testing, make check, and make checkall
+\page page_unit_testing Unit testing, make check, and make check_all
 \author Ulrich Wilbrandt <Ulrich.Wilbrandt@wias-berlin.de>
 \author Laura Blank <Laura.Blank@wias-berlin.de>
 \date 2015/11/12
@@ -90,7 +90,7 @@ target which overcomes this problem. It is described in more detail in the file
 \note Update (31/10/2018 Najib Alia): See the recently introduced section \ref 
 make_check_all at the end to learn about 
 
-	make checkall
+	make check_all
 
 \subsection options_running_tests More options on running tests
 
@@ -231,9 +231,9 @@ RelWithDebInfo: increased compile time (high level of optimization at the compil
 Note: In practice, a decreasing compile time typically correlates with an increasing run-time and vice versa.
 
 
-\section make_check_all Short and long tests, make check and make checkall
+\section make_check_all Short and long tests, make check and make check_all
 \note Update (31/10/2018 by Najib Alia): This new section explains the newly 
-introduced target "make checkall".
+introduced target "make check_all".
 
 With the further developement of ParMooN and the increasing number of new features, 
 the list of tests has extended, as well as the duration of some tests. For example,
@@ -248,7 +248,7 @@ In order to support systematic and extended tests and to make small developement
 quickly "testable" without being penalized by the long testing time, a new target 
 called 
 
-	make checkall
+	make check_all
 
 has been introduced.
 
@@ -264,8 +264,8 @@ has been introduced.
   that "make check" will EXCLUDE all the tests containing the string "all", through
   the arguments "-E all". 
  
- On the contrary, there is no argument with "all" in the target "make checkall". 
- Thus, "make checkall" will just run all the tests, including the "all" ones.
+ On the contrary, there is no argument with "all" in the target "make check_all". 
+ Thus, "make check_all" will just run all the tests, including the "all" ones.
  
  - <b> 2) How to append "all" to a test name? </b>
  
@@ -318,7 +318,7 @@ pay attention to write the correct number in argv[your_number].</b>
 - <b> 4) Finally: </b>
 
 you just have to place one (or several) part(s) of your test in a if(testall)-
-condition to make it run only with "make checkall" and not with "make check":
+condition to make it run only with "make check_all" and not with "make check":
 \code
   if(testall)
   {
@@ -347,8 +347,8 @@ Some (rule of thumb) guidelines:
 
 \note 1) For some practical examples, see nse2d_test.c++ and tnse3d_test.c++.
 
-\note <b>2) Launching "make checkall" in Debug mode will be excessively long. It is 
-recommended to "make checkall" in Release mode (sometimes also called Opti).</b>
+\note <b>2) Launching "make check_all" in Debug mode will be excessively long. It is 
+recommended to "make check_all" in Release mode (sometimes also called Opti).</b>
 
 \note 3) It is recommended to add complex tests, for example, tests with real
 applications, or with established and/or published results. Any benchmark problem 
@@ -357,7 +357,7 @@ being concerned by testing time.
 
 
 
-\note 4) This "make checkall" is only one method among others to differentiate 
+\note 4) This "make check_all" is only one method among others to differentiate 
 between short and long tests. There are certainly other, more elegant, ways
 but this is a straightforward one to understand, to implement, and to use.
 
