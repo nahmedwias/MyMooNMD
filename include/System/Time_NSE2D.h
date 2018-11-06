@@ -313,6 +313,8 @@ public:
     { return this->systems.front().rhs; }
     BlockVector & get_rhs()
     { return this->systems.front().rhs; }
+    BlockVector & get_rhs_from_time_disc()
+    { return this->rhs_from_time_disc; }
 
     const TFEVectFunct2D & get_velocity() const
     { return this->systems.front().u; }
