@@ -147,7 +147,7 @@ class TBaseCell
 
 #ifdef __3D__
     /**  @brief return refinement descriptor of face i */
-    Refinements GetFaceRef(int i)
+    Refinements GetFaceRef(int i) const
     { return RefDesc->GetFaceRef(i); }
 
     /**  @brief set the pointer to edge E_i to E */
@@ -199,9 +199,9 @@ class TBaseCell
     #endif
 
     /**  @brief return the number of children of the cell */
-    virtual int GetN_Children() = 0;
+    virtual int GetN_Children() const = 0;
     /**  @brief return the number of parents of the cell */
-    virtual int GetN_Parents() = 0;
+    virtual int GetN_Parents() const = 0;
 
     /**  @brief return the child with the number C\_i */
     virtual TBaseCell *GetChild(int C_i) =  0;
