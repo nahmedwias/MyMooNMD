@@ -15,6 +15,7 @@
 #define __QUADAFFIN__
 
 #include <RefTrans2D.h>
+#include <Enumerations.h>
 
 /** reference transformations for triangle */
 class TQuadAffin : public TRefTrans2D

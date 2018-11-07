@@ -15,6 +15,7 @@
 #define __QUADISOPARAMETRIC__
 
 #include <RefTrans2D.h>
+#include <Enumerations.h>
 
 /** reference transformations for Quadrangle */
 class TQuadIsoparametric : public TRefTrans2D
