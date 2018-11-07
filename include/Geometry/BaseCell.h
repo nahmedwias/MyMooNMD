@@ -220,11 +220,6 @@ class TBaseCell
         refinement descriptor */
     virtual int Refine(int RefLevel) = 0;
 
-    #ifdef __MORTAR__
-      /**  @brief refine a mortar cell */
-      virtual int RefineMortar(int RefLevel) = 0;
-    #endif
-
     /**  @brief derefine the current cell, remove the children */
     virtual int Derefine() = 0;
 

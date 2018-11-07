@@ -21,7 +21,6 @@
 #include <Database.h>
 #include <Joint.h>
 #include <MacroCell.h>
-#include <MortarBaseJoint.h>
 #include <MooNMD_Io.h>
 #include <fstream>
 #include <string.h>
@@ -2858,107 +2857,6 @@ int TDomain::ReadMapFile(char *MapFile, TDatabase *Database)
     ((TMacroCell *) CellTree[i])->SetSubGridID(ID);
     dat.getline (line, 99);
   }
-
-#ifdef __MORTAR__
-
-  MortarRefDesc=new int[2 * N_MORTARDESC]; 
-
-  dat.getline (line, 99);
-  dat.getline (line, 99);
-
-  // get number of MortarBaseJoints
-  dat >> N_MortarFaces;
-  dat.getline (line, 99);
-
-  dat.getline (line, 99);
-  if (N_MortarFaces)
-  {
-    MortarFaces = new TMortarFace[N_MortarFaces];
-
-    for (i=0;i<N_MortarFaces;i++)
-    {
-      dat >> NMortarCell >> LocEdge;
-      dat.getline (line, 99);
-
-      CurrCell = CellTree[NMortarCell];
-      CurrJoint = CurrCell->GetJoint(LocEdge);
-      NeighbCell = CurrJoint->GetNeighbour(CurrCell);
-
-      N_ = NeighbCell->GetRefDesc()->GetN_OrigEdges();
-      for (j=0;j<N_;j++)
-        if (NeighbCell->GetJoint(j) == CurrJoint) break;
-
-      MortarFaces[i].Cell = CurrCell;
-      MortarFaces[i].LocFaceNumber[0] = LocEdge;
-      MortarFaces[i].LocFaceNumber[1] = j;
-    }
-  }
-
-  for (i=0;i<N_MortarFaces;i++)
-  {
-    j = MortarFaces[i].LocFaceNumber[0];
-    CurrCell = MortarFaces[i].Cell;
-    CurrJoint = CurrCell->GetJoint(j);
-    NeighbCell = CurrJoint->GetNeighbour(CurrCell);
-
-    delete CurrJoint;
-
-    CurrJoint = new TMortarBaseJoint(CurrCell, NeighbCell);
-    CurrCell->SetJoint(j, CurrJoint);
-    NeighbCell->SetJoint(MortarFaces[i].LocFaceNumber[1], CurrJoint);
-  }
-
-  dat.getline (line, 99);
-  dat.getline (line, 99);
-
-  // get number of mortar refinements
-  dat >> N_MortarRefs;
-  dat.getline (line, 99);
-
-  if (N_MortarRefs)
-  {
-    dat.getline (line, 99);
-    for (i=0;i<N_MortarRefs;i++)
-    {
-      dat >> CellID >> LocEdge >> N_Cells;
-      dat.getline (line, 99);
-
-      Exist = false;
-      for (j=0;j<N_MortarRefDesc;j++)
-        if (MortarRefDesc[2 * j] == LocEdge)
-          if (MortarRefDesc[2 * j + 1] == N_Cells)
-          {
-            Exist = true;
-            break;
-          }
-
-      if (!Exist)
-      {
-        if (N_MortarRefDesc == N_MORTARDESC)
-        {
-#ifdef _MPI
-          if(rank==0)
-#endif
-            cerr << "Error in ReadMapFile: not enough MortarRefDescs" << endl;
-          exit(-1);
-        }
-
-        if (LocEdge)
-          Database->AddMortar1(2 * N_MortarRefDesc, N_Cells);
-        else
-          Database->AddMortar0(2 * N_MortarRefDesc, N_Cells);
-
-        MortarRefDesc[2 * N_MortarRefDesc] = LocEdge;
-        MortarRefDesc[2 * N_MortarRefDesc++ + 1] = N_Cells;
-      }
-
-      CellTree[CellID]->SetRefDesc(TDatabase::RefDescDB[N_SHAPES +
-          Mortar + 2*j]);
-    }
-
-    Refine();
-  }
-#endif
 
   dat.close();
 

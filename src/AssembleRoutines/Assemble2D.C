@@ -9,8 +9,6 @@
 //
 // =======================================================================
 
-#include <DefineParams.h>
-
 #include <Assemble2D.h>
 #include <Enumerations.h>
 #include <Matrix2D.h>

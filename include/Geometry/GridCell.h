@@ -72,11 +72,6 @@ class TGridCell : public TBaseCell
     /**  @brief refine a cell */
     virtual int Refine(int RefLevel) override;
 
-    #ifdef __MORTAR__
-      /**  @brief refine a mortar cell */
-      virtual int RefineMortar(int RefLevel);
-    #endif
-
     /**  @brief generate a 2-regular grid */
     virtual int Gen1RegGrid() override;
     /**  @brief set refinement for the neighbour of your parent on joint LocJointNum */

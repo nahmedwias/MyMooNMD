@@ -7,8 +7,6 @@
 //
 // =======================================================================
 
-#include <DefineParams.h>
-
 #include <GridCell.h>
 #include <JointEqN.h>
 #include <Database.h>
@@ -46,14 +44,6 @@ int TGridCell::Refine(int reflevel)
   TVertex *CurrVert;
   
   if (!IsToRefine()) return 1;
-
-  #ifdef __MORTAR__
-    if (RefDesc->GetType() >= Mortar)
-    {
-      RefineMortar(reflevel);
-      return 0;
-    }
-  #endif
 
   N_1 = RefDesc->GetN_OrigEdges();
 

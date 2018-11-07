@@ -904,16 +904,7 @@ class TDatabase
     
     ~TDatabase();
 
-    // Methods
-#ifdef __MORTAR__
-    /** add descriptor for mortar refinement with base edge 0 */
-    void AddMortar0(int Mortar_Ni, int N);
-    /** add descriptor for mortar refinement with base edge 1 */
-    void AddMortar1(int Mortar_Ni, int N);
-#endif
-
     // set default parameters
-
     static void SetDefaultParameters();
 
     static void WriteParamDB(char *ExecutedFile);
