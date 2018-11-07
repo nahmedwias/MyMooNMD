@@ -345,7 +345,7 @@ class TRefDesc
     #endif
 
     /** return a bool, whether to refine or not */
-    virtual int IsToRefine()
+    virtual int IsToRefine() const
     { return true; }
     
     /** return shape descriptor */

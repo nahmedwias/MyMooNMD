@@ -98,16 +98,12 @@ int TGridCell::GetChildNumber(TBaseCell *Me)
   return -1;
 }
 
-// #define __GRIDCELL_WITH_NUMBERS__
-
 int TGridCell::PS(std::ofstream &dat, double scale, double StartX,
-                  double StartY)
+                  double StartY, bool gridcell_with_numbers) const
 {
   int i;
   double text_x1=0,text_x2=0,text_y1=0,text_y2=0;
-#ifdef __GRIDCELL_WITH_NUMBERS__
   double x, y;
-#endif
   dat<<"newpath"<<endl;
   dat << (30 + (Vertices[0]->GetX() - StartX) * scale + .5) << " " <<
          (30 + (Vertices[0]->GetY() - StartY) * scale + .5) <<
@@ -115,11 +111,9 @@ int TGridCell::PS(std::ofstream &dat, double scale, double StartX,
   text_x1 = Vertices[0]->GetX();
   text_y1 = Vertices[0]->GetY();
 
-#ifdef __GRIDCELL_WITH_NUMBERS__
   x = Vertices[0]->GetX();
   y = Vertices[0]->GetY();
-#endif
-//if(!IsHaloCell() && IsDependentCell())
+  //if(!IsHaloCell() && IsDependentCell())
 
   for (i=1;i<RefDesc->GetN_OrigVertices();i++)
   {
@@ -127,34 +121,31 @@ int TGridCell::PS(std::ofstream &dat, double scale, double StartX,
            (30 + (Vertices[i]->GetY() - StartY) * scale + .5) <<
            " L" << endl;
     if(Vertices[i]->GetX() != text_x1)
-	text_x2 = Vertices[i]->GetX();
+      text_x2 = Vertices[i]->GetX();
     if(Vertices[i]->GetY() != text_y1)
-	text_y2 = Vertices[i]->GetY();
+      text_y2 = Vertices[i]->GetY();
 
-#ifdef __GRIDCELL_WITH_NUMBERS__
     x += Vertices[i]->GetX();
     y += Vertices[i]->GetY(); 
-#endif
   }
 
-text_x1 = (text_x1 + text_x2)/2;
-text_y1 = (text_y1 + text_y2)/2;
+  text_x1 = (text_x1 + text_x2)/2;
+  text_y1 = (text_y1 + text_y2)/2;
 
-#ifdef __GRIDCELL_WITH_NUMBERS__
   x /= RefDesc->GetN_OrigVertices();
   y /= RefDesc->GetN_OrigVertices();
-#endif
 
   dat << (30 + (Vertices[0]->GetX() - StartX) * scale + .5) << " " <<
          (30 + (Vertices[0]->GetY() - StartY) * scale + .5) <<
          " L" << endl;
-dat<<"closepath"<<endl;
-#ifdef __GRIDCELL_WITH_NUMBERS__
-  dat << (30 + (x - StartX) * scale + .5) << " " <<
-         (30 + (y - StartY) * scale + .5);
-  dat << " moveto" << endl;
-  dat << "(" << ClipBoard << ") show" << endl;
-#endif
+  dat<<"closepath"<<endl;
+  if(gridcell_with_numbers)
+  {
+    dat << (30 + (x - StartX) * scale + .5) << " " <<
+           (30 + (y - StartY) * scale + .5);
+    dat << " moveto" << endl;
+    dat << "(" << ClipBoard << ") show" << endl;
+  }
   
 #ifdef _MPI
 if(IsHaloCell())
@@ -206,51 +197,6 @@ dat <<"("<<GetSubDomainNo()<<") show"<<endl;
   return 0;
 }
 
-
-int TGridCell::Draw(std::ofstream &dat, double scale, double StartX,
-                  double StartY)
-{
-  int i,j,n;
-
-  n=RefDesc->GetN_OrigVertices();
-  for (i=0;i<n;i++)
-  {
-    j=Joints[i]->GetType();
-    if(j == BoundaryEdge || j == InterfaceJoint || 
-       j == IsoBoundEdge || j == IsoInterfaceJoint)
-    {
-    dat << (int) (300 + (Vertices[i]->GetX() - StartX) * scale + .5) << " " <<
-           (int) (300 + (Vertices[i]->GetY() - StartY) * scale + .5) <<
-           " M" << endl;
-    j=(i+1) % n;
-    dat << (int) (300 + (Vertices[j]->GetX() - StartX) * scale + .5) << " " <<
-           (int) (300 + (Vertices[j]->GetY() - StartY) * scale + .5) <<
-           " L" << endl;
-    }
-  }
-
-  return 0;
-}
-
-int TGridCell::MD_raw(std::ofstream &dat)
-{
-  int i, N_;
-  float OutValues[8];
-
-  N_ = GetN_Vertices();
-  for (i=0;i<N_;i++)
-  {
-    OutValues[2*i] = Vertices[i]->GetX();
-    OutValues[2*i + 1] = Vertices[i]->GetY();
-  }
-
-#ifdef __COMPAQ__
-  SwapFloatArray(OutValues, 2*N_); 
-#endif
-  dat.write((const char *) OutValues, 2*N_*SizeOfFloat);
-  
-  return 0;
-}
 
 #ifdef __2D__
 int TGridCell::Gen1RegGrid()
@@ -907,7 +853,7 @@ int TGridCell::SetNoRefinement()
   return 0;
 }
 
-int TGridCell::IsToRefine()
+int TGridCell::IsToRefine() const
 {
   return RefDesc->IsToRefine() ? Children == nullptr ? true : false : false;
 }

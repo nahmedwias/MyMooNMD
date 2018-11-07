@@ -212,15 +212,10 @@ class TBaseCell
     /**  @brief return the child number of cell Me */
     virtual int GetChildNumber(TBaseCell *Me) =  0;
 
-    /**  @brief write boundary and interface joints to stream dat */
-    virtual int Draw(std::ofstream &dat, double scale, double StartX,
-                   double StartY) = 0;
     /**  @brief write the postscript cell data to stream dat */
     virtual int PS(std::ofstream &dat, double scale, double StartX,
-                   double StartY) = 0;
-    /**  @brief write cell data according to MD format in stream dat */
-    virtual int MD_raw(std::ofstream &dat) = 0;
-
+                   double StartY, bool gridcell_with_numbers) const = 0;
+    
     /**  @brief refine the current cell on level RefLevel according actual
         refinement descriptor */
     virtual int Refine(int RefLevel) = 0;
@@ -252,7 +247,7 @@ class TBaseCell
     /**  @brief set refinement descriptor to adaptive refinement */
     virtual int Set1Refine(int i)= 0;    
     /**  @brief is the cell to refine */
-    virtual int IsToRefine() = 0;
+    virtual int IsToRefine() const = 0;
     /**  @brief are there any children of this cell */
     virtual int ExistChildren() = 0;
     /**  @brief generate conforming closures */
@@ -494,10 +489,9 @@ class TBaseCell
      
 #endif
 
-
-#ifdef __3D__
     virtual void check() const = 0;
-
+    
+#ifdef __3D__
    /** @brief the vertices of a 3D cell have a specific order
     * (for tets the right hand rule holds; for hexas it holds using vert (0,1,2,4) )
     * check the sign of the triple product of three vectors - for the right hand rule it has to be positive*/

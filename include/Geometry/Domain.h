@@ -328,15 +328,11 @@ class TDomain
       // auxiliary vector of Joints
       std::vector<TJoint*> meshJoints;
 #endif
-    /** @brief write domain boundary  into a postscript file */
-    int Draw(char *name, Iterators iterator, int arg);
     /** @brief write mesh into a postscript file */
     int PS(const char *name, Iterators iterator, int arg);
     /** @brief write collection into a postscript file */
     int PS(const char *name, TCollection *Coll);
-    /** @brief write files for MD-Out format */
-    int MD_raw(const char *name, Iterators iterator, int arg);
-
+    
     /** @brief refine the grid according the cell refinement descriptors */
     int Refine();
     /** @brief refine all cells regular */
