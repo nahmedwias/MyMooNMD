@@ -23,7 +23,7 @@ class TRefNoRef : public TRefDesc
 
     // Methods
     /** return true because object is to refine */
-    virtual int IsToRefine()
+    virtual int IsToRefine() const override
     { return false; }
 
 };

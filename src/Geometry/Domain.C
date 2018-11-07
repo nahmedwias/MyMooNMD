@@ -1184,60 +1184,9 @@ void TDomain::InitFromMesh(std::string PRM, std::string MESHFILE)
 
 int TDomain::PS(const char *name, Iterators iterator, int arg)
 {
-  int BX, BY, info, i;
-  double scale;
-  std::ofstream dat(name);
-  TBaseCell *CurrCell;
-
-  if (!dat)
-  {
-    cerr << "cannot open '" << name << "' for output" << endl;
-    return -1;
-  }
-
-  cout << "Generating postscript file " << name << endl;
-  
-  // scale = 5350 / BoundX;
-  // if (7820 / BoundY < scale) scale = 7820 / BoundY;
-  scale = 535 / BoundX;
-  if (782 / BoundY < scale) scale = 782 / BoundY;
-
-  BX = (int) (BoundX * scale + .5);
-  BY = (int) (BoundY * scale + .5);
-
-  dat << "%!PS-Adobe-2.0" << endl;
-  dat << "%%Creator: MooN_MD (Volker Behns)" << endl;
-  dat << "%%DocumentFonts: Helvetica" << endl;
-  // dat << "%%BoundingBox: 300 300 " << 300+BX << " " << 300+BY << endl;
-  dat << "%%BoundingBox: 25 25 " << 35+BX << " " << 35+BY << endl;
-  dat << "%%Pages: 1" << endl;
-  dat << "%%EndComments" << endl;
-  dat << "%%EndProlog" << endl;
-  dat << "%%Page: 1 1" << endl;
-  dat << "/Helvetica findfont 14 scalefont setfont" << endl;
-  dat << "/Cshow { dup stringwidth pop 2 div neg 0 rmoveto show } def" << endl;
-  dat << "/M { moveto } def" << endl;
-  dat << "/L { lineto } def" << endl;
-  //dat << "0.10 0.10 scale" << endl;
-  //dat << "10.0 setlinewidth" << endl;
-  dat << "0.5 setlinewidth" << endl;
-
-  TDatabase::IteratorDB[iterator]->Init(arg);
-
-  // loop over all cells
-  i = 0;
-  while((CurrCell = TDatabase::IteratorDB[iterator]->Next(info)))
-  {
-    CurrCell->SetClipBoard(i);
-    CurrCell->PS(dat, scale, StartX, StartY);
-    i++;
-  }
-
-  dat << "stroke" << endl;
-  dat << "showpage" << endl;
-  dat << "%%Trailer" << endl;
-  dat << "%%Pages: 1" << endl;
-
+  TCollection * coll = this->GetCollection(iterator, arg);
+  this->PS(name, coll);
+  delete coll;
   return 0;
 }
 
@@ -1283,13 +1232,14 @@ int TDomain::PS(const char *name, TCollection *Coll)
   // dat << "0.10 0.10 scale" << endl;
   // dat << "10.0 setlinewidth" << endl;
   dat << "0.5 setlinewidth" << endl;
+  bool gridcell_with_numbers = false;
 
   // loop over all cells
   for(i=0;i<N_;i++)
   {
     CurrCell = Coll->GetCell(i);
     CurrCell->SetClipBoard(i);
-    CurrCell->PS(dat, scale, StartX, StartY);
+    CurrCell->PS(dat, scale, StartX, StartY, gridcell_with_numbers);
   }
 
   dat << "stroke" << endl;
@@ -1300,66 +1250,6 @@ int TDomain::PS(const char *name, TCollection *Coll)
   return 0;
 }
 
-int TDomain::MD_raw(const char *name, Iterators iterator, int arg)
-{
-  int N_Tri = 0, N_Quad = 0, info;
-  std::ofstream dat(name);
-  TBaseCell *CurrCell;
-  int OutValue[6];
-
-  if (!dat)
-  {
-    cerr << "cannot open '" << name << "' for output" << endl;
-    return -1;
-  }
-
-  TDatabase::IteratorDB[iterator]->Init(arg);
-
-  // loop over all cells
-  while ((CurrCell = TDatabase::IteratorDB[iterator]->Next(info)))
-    if (CurrCell->GetRefDesc()->GetShapeDesc()->GetType() == Triangle)
-      N_Tri++;
-    else
-      N_Quad++;
-
-  // write heads of files
-  OutValue[0] = 2;           // dimension
-  OutValue[1] = 2;           // number of object classes
-  OutValue[2] = Triangle;
-  OutValue[3] = N_Tri;
-  OutValue[4] = Quadrangle;
-  OutValue[5] = N_Quad;
-
-#ifdef __COMPAQ__
-  SwapIntArray(OutValue, 6);
-#endif
-  dat.write((const char *) OutValue, 6*SizeOfInt);
-
-  // fill data in files
-  if (N_Tri)
-  {
-    TDatabase::IteratorDB[iterator]->Init(arg);
-
-    // loop over all cells
-    while( (CurrCell = TDatabase::IteratorDB[iterator]->Next(info)))
-      if (CurrCell->GetRefDesc()->GetShapeDesc()->GetType() == Triangle)
-        CurrCell->MD_raw(dat);
-  }
-
-  if (N_Quad)
-  {
-    TDatabase::IteratorDB[iterator]->Init(arg);
-
-    // loop over all cells
-    while ((CurrCell = TDatabase::IteratorDB[iterator]->Next(info)))
-      if (CurrCell->GetRefDesc()->GetShapeDesc()->GetType() == Quadrangle)
-        CurrCell->MD_raw(dat);
-  }
-
-  dat.close();
-
-  return 0;
-}
 
 int TDomain::Refine()
 {
