@@ -110,11 +110,6 @@ class CD3D
     /** @brief Definition of the used example. */
     const Example_CD3D example_;
     
-    /** @brief A multigrid object which is set to nullptr in case it is not
-     *         needed.
-     */
-    std::shared_ptr<TMultiGrid3D> multigrid_;
-    
     /** @brief a local parameter database which controls this class
      * 
      * The database given to the constructor will be merged into this one. Only 
