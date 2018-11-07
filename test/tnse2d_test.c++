@@ -47,7 +47,7 @@ void compute(TDomain& domain, ParameterDatabase& db,
              int time_disc)
 {
   TDatabase::TimeDB->TIME_DISC=time_disc;
-  TDatabase::TimeDB->CURRENTTIME = TDatabase::TimeDB->STARTTIME;
+  TDatabase::TimeDB->CURRENTTIME = db["time_start"];
 
   Time_NSE2D tnse2d(domain, db);
 
@@ -55,9 +55,8 @@ void compute(TDomain& domain, ParameterDatabase& db,
   tnse2d.get_time_stepping_scheme().set_time_disc_parameters();
 
   tnse2d.assemble_initial_time();
-
-  while(TDatabase::TimeDB->CURRENTTIME <
-    TDatabase::TimeDB->ENDTIME-1e-10)
+  double end_time = db["time_end"];
+  while(TDatabase::TimeDB->CURRENTTIME < end_time-1e-10)
   {
     tnse2d.get_time_stepping_scheme().current_step_++;
     TDatabase::TimeDB->INTERNAL_STARTTIME
@@ -218,8 +217,7 @@ int main(int argc, char* argv[])
     set_solver_globals(std::string(argv[1]), db);
 
     TDatabase::ParamDB->FLOW_PROBLEM_TYPE = 5;
-    TDatabase::TimeDB->STARTTIME=0;
-    TDatabase::TimeDB->ENDTIME=1;
+    db["time_end"]=1;
     TDatabase::TimeDB->TIMESTEPLENGTH = 0.05;
 
     //  declaration of databases
@@ -235,7 +233,7 @@ int main(int argc, char* argv[])
     std::array<std::array<double, int(4)>, 4> errors;
     double tol = get_tolerance(std::string(argv[1]));
     // errors[0], errors[1] are at first two time steps
-    // and errors[2] at ENDTIME for comparison
+    // and errors[2] at end time for comparison
     //domain, velocity_order, pressure_order,  nstype=1,2,3,4, 
     // laplace_type=0, nonlinear_form, time_disc, 
     //errors)

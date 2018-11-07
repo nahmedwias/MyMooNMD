@@ -125,18 +125,16 @@ int main(int argc, char* argv[])
   
   tnse3d.assemble_initial_time();
 
-  double end_time = tss.get_end_time();
   int n_substeps = GetN_SubSteps();
-
   int image = 0;
-  
   LoopInfo loop_info_time("time loop");
   loop_info_time.print_time_every_step = true;
   loop_info_time.verbosity_threshold = 1; // full verbosity
   int linear_iterations = 0; 
 
   timer.restart_and_print("setting up spaces, matrices and initial assembling");
-  TDatabase::TimeDB->CURRENTTIME = 0.0;  
+  double end_time = tss.get_end_time();
+  TDatabase::TimeDB->CURRENTTIME = tss.get_start_time();  
   //======================================================================
   // time iteration
   //======================================================================

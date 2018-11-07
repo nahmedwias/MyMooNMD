@@ -17,6 +17,7 @@
 #include <FEDatabase3D.h>
 #include <Domain.h>
 #include <TimeDiscRout.h>
+#include <TimeDiscretizations.h>
 #include <Multigrid.h>
 
 #ifdef _MPI
@@ -47,10 +48,9 @@ void check(ParameterDatabase& db, int ansatz_order, int time_disc,
 {
   TDatabase::ParamDB->ANSATZ_ORDER = ansatz_order;
   TDatabase::TimeDB->TIME_DISC = time_disc;
-  TDatabase::TimeDB->STARTTIME=0;
   TDatabase::TimeDB->TIMESTEPLENGTH = 0.1;
-  TDatabase::TimeDB->ENDTIME = 1;
-  TDatabase::TimeDB->CURRENTTIME = TDatabase::TimeDB->STARTTIME;
+  db["time_end"] = 1.;
+  TDatabase::TimeDB->CURRENTTIME = db["time_start"];
   
 #ifdef _MPI
   int my_rank, size;
@@ -87,8 +87,8 @@ void check(ParameterDatabase& db, int ansatz_order, int time_disc,
   
   int step = 0;
   int imag=0;
-
-  while(TDatabase::TimeDB->CURRENTTIME < TDatabase::TimeDB->ENDTIME-1e-10)
+  double end_time = db["time_end"];
+  while(TDatabase::TimeDB->CURRENTTIME < end_time-1e-10)
   {
     step ++;
     TDatabase::TimeDB->INTERNAL_STARTTIME = TDatabase::TimeDB->CURRENTTIME;
@@ -213,6 +213,7 @@ int main(int argc, char* argv[])
   db.merge(Multigrid::default_multigrid_database());
   db.merge(Example3D::default_example_database());
   db.merge(LocalAssembling3D::default_local_assembling_database());
+  db.merge(TimeDiscretization::default_TimeDiscretization_database());
   db["problem_type"] = 1;
   db.add("refinement_n_initial_steps",(size_t) 2,"",(size_t) 0, (size_t) 2);
   db["multigrid_n_levels"] = 1;
@@ -225,7 +226,7 @@ int main(int argc, char* argv[])
   // db["output_write_vtk"] = false;
 
   db["space_discretization_type"] = "galerkin"; //Galerkin discretization, nothing else implemented
-
+  
   TDatabase::ParamDB->Par_P0 = 0; // process responsible for the output
   TDatabase::ParamDB->Par_P3 = 1; // use mesh partitioning with halo cells
   
