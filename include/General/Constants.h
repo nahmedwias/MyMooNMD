@@ -45,8 +45,7 @@ enum BoundCond { DIRICHLET, NEUMANN, ROBIN, SLIP, FREESURF,
                  SLIP_FRICTION_PENETRATION_RESISTANCE, 
                  INTERFACE, SUBDOMAIN_INTERFACE, SUBDOMAIN_HALOBOUND, DIRICHLET_WEAK};
 
-enum JointType {Joint, JointEqN, MortarBaseJoint, MortarJoint,
-                BoundaryPoint, BoundaryEdge, BoundaryFace,
+enum JointType {Joint, JointEqN, BoundaryPoint, BoundaryEdge, BoundaryFace,
                 InterfaceJoint, PeriodicJoint, IsoInterfaceJoint,
                 IsoJointEqN, IsoBoundEdge, IsoBoundFace,
                 Joint_2to1,

@@ -16,7 +16,6 @@
 #  include "mpi.h"
 #endif
 
-#include <DefineParams.h>
 #include <Constants.h>
 #include <FESpace2D.h>
 #include <Joint.h>
@@ -1580,20 +1579,11 @@ void TFESpace2D::ConstructSpace(BoundCondFunct2D *BoundaryCondition)
       {
         // no boundary joint
         neigh = joint->GetNeighbour(cell);
-        if (!neigh || joint->GetType() == MortarJoint ||
-            joint->GetType() == MortarBaseJoint)
+        if (!neigh)
         {
           // there is no neighbour
-          // => either mortar joint
-          //    or finer cell in 1 regular grid
+          // => finer cell in 1 regular grid
           //    will be handle from coarser cell
-          if(joint->GetType() == MortarJoint ||
-             joint->GetType() == MortarBaseJoint)
-          {
-            // do mortar mapping
-            mapper=TFEDatabase2D::GetFE2DMapper(FEDesc0, FEDesc0);
-            mapper->MapBound(GlobalNumbers, I_K0, Indices0, Counter);
-          }
         } // !neigh
         else
         {

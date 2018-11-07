@@ -33,7 +33,6 @@ int TJoint::SetNeighbour(TBaseCell *Neighb)
     switch (this->GetType())
     {
         case JointEqN:
-        case MortarBaseJoint:
         case InterfaceJoint:
         case IsoInterfaceJoint:
 #ifdef __3D__
@@ -74,7 +73,6 @@ int TJoint::SetNeighbour(int i, TBaseCell *Neighb)
   switch (this->GetType())
   {
     case JointEqN:
-    case MortarBaseJoint:
     case InterfaceJoint:
     case IsoInterfaceJoint:
 #ifdef __3D__

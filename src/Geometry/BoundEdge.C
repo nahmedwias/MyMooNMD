@@ -52,17 +52,6 @@ void TBoundEdge::UpdateParameters(TVertex *Begin, TVertex *End)
 }
 #endif
 
-#ifdef __MORTAR__
-
-int TBoundEdge::CheckMatchingRef(TBaseCell *Me, int J_i,
-                  StoreGeomMortar &Tmp)
-{
-  Tmp.Filled = false;
-  return 0;
-}
-
-#endif
-
 // create a new instance of this class
 TJoint *TBoundEdge::NewInst(double newT_0, double newT_1, TBaseCell *Me)
 {

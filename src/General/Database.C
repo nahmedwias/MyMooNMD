@@ -60,13 +60,6 @@
 #include <MooNMD_Io.h>
 #include <string.h>
 
-#ifdef __MORTAR__
-  #include <It_Mortar.h>
-  #include <RefMortar0Desc.h>
-  #include <RefMortar1Desc.h>
-  #include <RefMortarLineDesc.h>
-#endif
-
 #ifdef __3D__
   #include <Tetrahedron.h>
   #include <Hexahedron.h>
@@ -121,7 +114,7 @@ TDatabase::TDatabase()
 {
   // allocate databases
   ShapeDB = new TShapeDesc*[N_SHAPES];
-  RefDescDB = new TRefDesc*[N_SHAPES + N_REFDESC + 2*N_MORTARDESC];
+  RefDescDB = new TRefDesc*[N_SHAPES + N_REFDESC];
   MapperDB = new TMapper*[N_MAPPER];
   IteratorDB = new TIterator*[N_ITERATORS];
   ParamDB = new TParamDB;
@@ -288,10 +281,6 @@ TDatabase::TDatabase()
   IteratorDB[It_Between] = new TIt_Between();
   IteratorDB[It_OCAF] = new TIt_OCAF();
 
-  #ifdef __MORTAR__
-    IteratorDB[It_Mortar1] = new TIt_Mortar();
-    IteratorDB[It_Mortar2] = new TIt_Mortar();
-  #endif  
   // Initialization of the default parameters
   SetDefaultParameters();
 }
@@ -304,26 +293,6 @@ TParamDB   *TDatabase::ParamDB = nullptr;
 TTimeDB    *TDatabase::TimeDB = nullptr;
 
 // Methods
-
-#ifdef __MORTAR__
-
-void TDatabase::AddMortar0(int Mortar_Ni, int N)
-{
-  RefDescDB[N_SHAPES + Mortar + Mortar_Ni] = new
-               TRefMortar0Desc(ShapeDB[Quadrangle], Mortar_Ni, N);
-  RefDescDB[N_SHAPES + MortarLine + Mortar_Ni] = new
-               TRefMortarLineDesc(ShapeDB[S_Line], N);
-}
-
-void TDatabase::AddMortar1(int Mortar_Ni, int N)
-{
-  RefDescDB[N_SHAPES + Mortar + Mortar_Ni] = new
-               TRefMortar1Desc(ShapeDB[Quadrangle], Mortar_Ni, N);
-  RefDescDB[N_SHAPES + MortarLine + Mortar_Ni] = new
-               TRefMortarLineDesc(ShapeDB[S_Line], N);
-}
-#endif
-
 void TDatabase::SetDefaultParameters()
 {
   char *tmp;
@@ -1577,11 +1546,6 @@ TDatabase::~TDatabase()
   delete IteratorDB[It_LELevel];
   delete IteratorDB[It_Between];
   delete IteratorDB[It_OCAF];
-
-  #ifdef __MORTAR__
-    delete IteratorDB[It_Mortar1];
-    delete IteratorDB[It_Mortar2];
-  #endif
   delete [] IteratorDB;
 }
 

@@ -14,7 +14,6 @@
 #  include "mpi.h"
 #endif
 
-#include <DefineParams.h>
 #include <MooNMD_Io.h>
 #include <Assemble3D.h>
 #include <Enumerations.h>

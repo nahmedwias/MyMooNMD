@@ -10,8 +10,6 @@
 //
 // =======================================================================
 
-#include <DefineParams.h>
-
 #include <Constants.h>
 #include <FESpace3D.h>
 #include <Joint.h>
@@ -1086,21 +1084,11 @@ void TFESpace3D::ConstructSpace(BoundCondFunct3D *BoundaryCondition)
       {
         // no boundary joint
          neigh = joint->GetNeighbour(cell);
-        if (!neigh || joint->GetType() == MortarJoint ||
-            joint->GetType() == MortarBaseJoint)
+        if (!neigh)
         {
           // there is no neighbour
-          // => either mortar joint
-          //    or finer cell in 1 regular grid
+          // => finer cell in 1 regular grid
           //    will be handle from coarser cell
-          if(joint->GetType() == MortarJoint ||
-             joint->GetType() == MortarBaseJoint)
-          {
-            // do mortar mapping
-            mapper=TFEDatabase3D::GetFE3DMapper(FEDesc0, FEDesc0);
-            mapper->MapBound(GlobalNumbers, I_K0, Indices0, Counter,
-                             VHN, HNNumbers);
-          }
         } // !neigh
         else
         {

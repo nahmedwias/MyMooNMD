@@ -75,7 +75,6 @@ TBaseCell::~TBaseCell()
     switch (CurrJoint->GetType())
     {
       case JointEqN:
-      case MortarBaseJoint:
       case InterfaceJoint:
       case IsoInterfaceJoint:
       case InnerInterfaceJoint:
