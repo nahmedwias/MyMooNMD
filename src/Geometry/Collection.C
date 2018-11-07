@@ -164,7 +164,7 @@ int TCollection::MarkBoundaryVertices()
   const int *TmpEdVer;  
   TBaseCell *cell;
   TVertex *vertex0, *vertex1;
-  TRefDesc *refdesc;
+  const TRefDesc *refdesc;
   TBoundEdge *boundedge;
   TJoint *joint;
 

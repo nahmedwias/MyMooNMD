@@ -721,7 +721,7 @@ void TTetraIsoparametric::SetCell(const TBaseCell *cell)
   int i, j, k, N_AuxVertices=0, N_IsoFaces=0;
   const TJoint *joint;
   JointType type;
-  TShapeDesc *ShapeDesc;
+  const TShapeDesc *ShapeDesc;
   const int *TmpFaceVertex, *TmpLen;
   int MaxLen;
   int *JointDOF, LocIsoDOF[4];

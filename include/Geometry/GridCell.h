@@ -102,11 +102,11 @@ class TGridCell : public TBaseCell
     virtual int LineMidT(int J_i, int SJ_j, double &T_0, double &T_1) override;
 #else
     /**  @brief return whether a point is inside a cell */
-    virtual bool PointInCell(double X, double Y, double Z) override;
+    virtual bool PointInCell(double X, double Y, double Z) const override;
 #endif
 
     /**  @brief return whether a point is inside a cell */
-    virtual bool PointInCell(double X, double Y) override;
+    virtual bool PointInCell(double X, double Y) const override;
 
     /**  @brief get diameter of a cell */
     virtual double GetDiameter()  override

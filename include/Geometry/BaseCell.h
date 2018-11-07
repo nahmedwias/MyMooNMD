@@ -132,10 +132,10 @@ class TBaseCell
     }
 
     /**  @brief return refinement descriptor */
-    TRefDesc *GetRefDesc() const
+    const TRefDesc *GetRefDesc() const
     { return RefDesc; }
     /**  @brief return shape descriptor of refinement descriptor */
-    TShapeDesc *GetShapeDesc() const
+    const TShapeDesc *GetShapeDesc() const
     { return RefDesc->GetShapeDesc(); }
     /**  @brief return shape type of refinement descriptor */
     Shapes GetType() const
@@ -290,10 +290,10 @@ class TBaseCell
     double Get_hK(int cell_measure);
 
     /**  @brief return whether a point is inside a cell */
-    virtual bool PointInCell(double X, double Y) = 0;
+    virtual bool PointInCell(double X, double Y) const = 0;
 
 #ifdef __3D__
-    virtual bool PointInCell(double X, double Y, double Z) = 0;
+    virtual bool PointInCell(double X, double Y, double Z) const = 0;
 
      // added 25.04.2010 for fixing refinement problem
      void CorrectBoundaryVertices(TVertex **NewVertices, TJoint **NewJoints);

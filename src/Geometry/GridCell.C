@@ -204,7 +204,7 @@ int TGridCell::Gen1RegGrid()
   int i, N_, ChildNumber, LocJointNum;
   const int *TmpCE, *TmpnEoE;
   int MaxLen;
-  TRefDesc *ParentRefDesc = Parent->GetRefDesc();
+  const TRefDesc *ParentRefDesc = Parent->GetRefDesc();
   TBaseCell *RefCell;
 
   ParentRefDesc->GetChildEdge(TmpCE, MaxLen);
@@ -319,7 +319,7 @@ int TGridCell::Ref1Reg(int LocJointNum, TBaseCell *&RefCell)
   TBaseCell *LocCell;
   const int *TmpCE, *TmpnEoE;
   int MaxLen;
-  TRefDesc *ParentRefDesc = Parent->GetRefDesc();
+  const TRefDesc *ParentRefDesc = Parent->GetRefDesc();
 
   ParentRefDesc->GetChildEdge(TmpCE, MaxLen);
   ParentRefDesc->GetNewEdgeOldEdge(TmpnEoE);
@@ -352,7 +352,7 @@ int TGridCell::Ref1Reg(int LocJointNum, TBaseCell *&RefCell)
   TBaseCell *LocCell;
   const int *TmpCF, *TmpnFoF;
   int MaxLen;
-  TRefDesc *ParentRefDesc = Parent->GetRefDesc();
+  const TRefDesc *ParentRefDesc = Parent->GetRefDesc();
 
   ParentRefDesc->GetChildFace(TmpCF, MaxLen);
   ParentRefDesc->GetNewFaceOldFace(TmpnFoF);
@@ -953,7 +953,7 @@ int TGridCell::LineMidT(int J_i, int SJ_j, double &T_0, double &T_1)
 }
 #endif
 
-bool TGridCell::PointInCell(double X, double Y)
+bool TGridCell::PointInCell(double X, double Y) const
 {
   int i, j, N_ = RefDesc->GetN_OrigEdges();
   bool test = true;
@@ -995,7 +995,7 @@ bool TGridCell::PointInCell(double X, double Y)
 }
 
 #ifdef __3D__
-bool TGridCell::PointInCell(double X, double Y, double Z)
+bool TGridCell::PointInCell(double X, double Y, double Z) const
 {
   double xmin = 1e+8,  ymin = 1e+8, zmin = 1e+8;
   double xmax = -1e+8,  ymax = -1e+8, zmax = -1e+8;

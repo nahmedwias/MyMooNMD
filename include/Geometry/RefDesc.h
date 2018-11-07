@@ -349,11 +349,11 @@ class TRefDesc
     { return true; }
     
     /** return shape descriptor */
-    TShapeDesc *GetShapeDesc()
+    const TShapeDesc *GetShapeDesc() const
     { return Shape; }
     /** return refinement type of edge J\_i */
-    Refinements GetEdgeRef(int J_i)
-    { return EdgeType[J_i]; } const
+    Refinements GetEdgeRef(int J_i) const
+    { return EdgeType[J_i]; }
     /** return type of child number C\_i */
     Shapes GetChildType(int C_i) const
     { return ChildType[C_i]; }

@@ -796,7 +796,7 @@ double *sold_param)
   TCollection *coll;
   FE2D CurrentElement;
   TJoint *joint;
-  TRefDesc *refdesc;
+  const TRefDesc *refdesc;
   TVertex *ver0,*ver1;
   const int *TmpEdVer;
 

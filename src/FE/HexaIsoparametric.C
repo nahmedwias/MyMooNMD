@@ -680,7 +680,7 @@ void THexaIsoparametric::SetCell(const TBaseCell *cell)
   const TJoint *joint;
   JointType type;
 
-  TShapeDesc *ShapeDesc;
+  const TShapeDesc *ShapeDesc;
   const int *TmpFaceVertex, *TmpLen;
   int MaxLen;
   int *JointDOF;

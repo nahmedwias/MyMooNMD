@@ -610,7 +610,7 @@ void  TCD2DErrorEstimator::EstimateCellError_new(TFESpace2D *fespace,
   TBoundEdge *boundedge;
   const TBoundComp2D *BoundComp;
   BoundCond Cond0;
-  TRefDesc *refdesc,*refdesc_child;
+  const TRefDesc *refdesc,*refdesc_child;
   TBaseCell *neigh, *child, *parent;
   TVertex *ver0,*ver1, *ver2,*ver3;
   FE2D CurrEleNeigh;
@@ -2053,7 +2053,7 @@ void  TCD2DErrorEstimator::EstimateCellError(TFESpace2D *fespace,
   TBoundEdge *boundedge;
   const TBoundComp *BoundComp;
   BoundCond Cond0;
-  TRefDesc *refdesc,*refdesc_child;
+  const TRefDesc *refdesc,*refdesc_child;
   TBaseCell *neigh, *child, *parent;
   TVertex *ver0,*ver1, *ver2,*ver3;
   FE2D CurrEleNeigh;

@@ -76,7 +76,7 @@ void UpwindForNavierStokes3D(TSquareMatrix3D *sqmatrix, TFEFunction3D *u1,
   int *ColInd, *RowPtr;
   double *Entries;
   int ActiveBound, DirichletBound, end;
-  TShapeDesc *desc;
+  const TShapeDesc *desc;
   FE3D CurrentElement;
   const int *TmpEV, *TmpEF;
   int MaxLen;
@@ -329,7 +329,7 @@ void UpwindForConvDiff(TSquareMatrix3D *sqmatrix, double *RHS,
   int  UPW_APPL = TDatabase::ParamDB->UPWIND_APPLICATION;
   TBaseCell *cell;
   TCollection *coll;
-  TShapeDesc *desc;
+  const TShapeDesc *desc;
   int i,j,k,l,m,n, N_Edges, N_Cells, N_Vertices, N_Faces;
 //  int n_mat, m_mat;
   int *GlobalNumbers, *BeginIndex, *DOF;
