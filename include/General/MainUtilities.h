@@ -249,7 +249,6 @@ void LInfU(int N_Points, double **Coeffs, double **Params,
 
 void ExactNull(double x, double y, double z, double *values);
 void ExactNull(double x, double y, double *values);
-int ComputeNewTimeStep(double err); 
 void BoundConditionNoBoundCondition(int BdComp, double t, BoundCond &cond);
 void BoundConditionNoBoundCondition(double x, double y, double z, BoundCond &cond);
 void BoundaryValueNoBoundaryValue(int BdComp, double Param, double &value);

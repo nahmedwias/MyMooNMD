@@ -2083,34 +2083,6 @@ void ExactNull(double x, double y, double *values)
   //values[0] = x*(1-x)*y*(1-y);
 }
 
-int ComputeNewTimeStep(double err)
-{
-  double old_step,new_step;
-
-
-  // compute new time step length
-  old_step=TDatabase::TimeDB->TIMESTEPLENGTH;
-  new_step = TDatabase::TimeDB->TIMESTEPLENGTH_TOL  * old_step *old_step /sqrt(err);
-  new_step = sqrt(new_step); 
-  OutPut(" new timestep " << new_step);
-
-  cout << new_step << endl;
-  // check if new time step length is too small or too large
-  if (new_step<TDatabase::TimeDB->MIN_TIMESTEPLENGTH)
-    new_step=TDatabase::TimeDB->MIN_TIMESTEPLENGTH;
-  if (new_step>TDatabase::TimeDB->MAX_TIMESTEPLENGTH)
-    new_step=TDatabase::TimeDB->MAX_TIMESTEPLENGTH;
-  if(TDatabase::TimeDB->CURRENTTIME+new_step > TDatabase::TimeDB->ENDTIME)
-    new_step = TDatabase::TimeDB->ENDTIME - TDatabase::TimeDB->CURRENTTIME;
-
-  // set new time step length
-  TDatabase::TimeDB->TIMESTEPLENGTH = new_step;
-
-  OutPut(" accepted  " << new_step << endl);
-
-  return 0;
-
-}
 void BoundConditionVMM(int BdComp, double t, BoundCond &cond)
 {
    cond = NEUMANN;

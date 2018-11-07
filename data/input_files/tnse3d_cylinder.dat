@@ -56,9 +56,8 @@ example: 7
 ----------------------------------------------------------------------
 ## parameter for time discretization
 time_discretization: crank_nicolson { backward_euler, crank_nicolson, bdf_two, fractional_step }
-time_start: 0
-ENDTIME: 0.5
-#time_end: 2.0
+time_start: 0.
+time_end: 0.5
 time_step_length: 0.01
 imex_scheme_: false
 ----------------------------------------------------------------------

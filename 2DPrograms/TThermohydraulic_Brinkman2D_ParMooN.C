@@ -25,6 +25,7 @@
 #include <Time_CD2D.h>
 #include <Example_TimeCD2D.h>
 #include <TimeDiscRout.h>
+#include <TimeDiscretizations.h>
 
 using namespace std;
 
@@ -181,6 +182,7 @@ int main(int argc, char* argv[])
 	TFEDatabase2D FEDatabase;
 
 	ParameterDatabase parmoon_db_brinkman = ParameterDatabase::parmoon_default_database();
+	parmoon_db_brinkman.merge(TimeDiscretization::default_TimeDiscretization_database());
 	std::ifstream fs(argv[1]); // the .dat file is transformed into a stream
 	parmoon_db_brinkman.read(fs); // all parameters identified (according to read()) in the
 	// stream(.dat-file) are saved in parmoon_db
@@ -484,7 +486,7 @@ TFEDatabase2D FEDatabase;*/
 	Example_TimeCD2D example_tcd2d( parmoon_db_tcd2d ); //New LB 04.09.18 TCD2D
 	Time_CD2D tcd2d(domain, parmoon_db_tcd2d, example_tcd2d); //New LB 04.09.18 TCD2D
 
-	double end_time = TDatabase::TimeDB->ENDTIME;  //New LB 04.09.18 TCD2D
+	double end_time = parmoon_db_brinkman["time_end"];  //New LB 04.09.18 TCD2D
 	int step = 0;  //New LB 04.09.18 TCD2D
 	int n_substeps = GetN_SubSteps();  //New LB 04.09.18 TCD2D
 

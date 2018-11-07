@@ -9,6 +9,7 @@
 #include <Time_CD3D.h>
 #include <TimeDiscRout.h>
 #include <Chrono.h>
+#include <TimeDiscretizations.h>
 
 #include <sys/stat.h>
 
@@ -31,6 +32,7 @@ int main(int argc, char *argv[])
   // Construct the ParMooN Databases.
   TDatabase Database;
   ParameterDatabase parmoon_db = ParameterDatabase::parmoon_default_database();
+  parmoon_db.merge(TimeDiscretization::default_TimeDiscretization_database());
   parmoon_db.read(argv[1]);
   
   bool i_am_root = true;
@@ -99,7 +101,10 @@ int main(int argc, char *argv[])
   Chrono timer_solve;
   timer_solve.stop();
   
-  while(TDatabase::TimeDB->CURRENTTIME < TDatabase::TimeDB->ENDTIME - 1e-10)
+  double start_time = parmoon_db["time_start"];
+  double end_time = parmoon_db["time_end"];
+  TDatabase::TimeDB->CURRENTTIME = start_time;
+  while(TDatabase::TimeDB->CURRENTTIME < end_time - 1e-10)
   {
     step++;
     TDatabase::TimeDB->INTERNAL_STARTTIME = TDatabase::TimeDB->CURRENTTIME;

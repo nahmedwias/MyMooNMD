@@ -17,6 +17,7 @@
 #include <sys/types.h>
 
 #include <TimeDiscRout.h>
+#include <TimeDiscretizations.h>
 
 
 using namespace std;
@@ -28,6 +29,7 @@ int main(int argc, char* argv[])
   TFEDatabase2D FEDatabase;
   
   ParameterDatabase parmoon_db = ParameterDatabase::parmoon_default_database();
+  parmoon_db.merge(TimeDiscretization::default_TimeDiscretization_database());
   parmoon_db.read(argv[1]);
   
   Output::set_outfile(parmoon_db["outfile"], parmoon_db["script_mode"]);
@@ -59,7 +61,9 @@ int main(int argc, char* argv[])
   tcd.assemble_initial_time();
   // ======================================================================
   
-  double end_time = TDatabase::TimeDB->ENDTIME; 
+  double start_time = parmoon_db["time_start"];
+  double end_time   = parmoon_db["time_end"];
+  TDatabase::TimeDB->CURRENTTIME = start_time;
   int step = 0;
   int n_substeps = GetN_SubSteps();
     
