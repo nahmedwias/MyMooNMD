@@ -252,10 +252,9 @@ space_discretization_type: galerkin
 ----------------------------------------------------------------------
 # parameter for time discretization
 time_discretization: crank_nicolson
-time_start: 0
-#time_end: 0.15
+time_start: 0.
+time_end: 0.03
 time_step_length: 0.01
-ENDTIME: 0.03
 imex_scheme_: false
 
 

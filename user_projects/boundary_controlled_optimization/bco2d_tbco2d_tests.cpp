@@ -113,6 +113,7 @@ int main(int argc, char* argv[])
   TDatabase Database;
   TFEDatabase2D FEDatabase;
   ParameterDatabase parmoon_db = ParameterDatabase::parmoon_default_database();
+  parmoon_db.merge(TimeDiscretization::default_TimeDiscretization_database());
   parmoon_db.read(argv[1]);
 
   /** Hard-code for path to geometries **/
@@ -182,10 +183,9 @@ int main(int argc, char* argv[])
 
   /* If you want to add time-dependent tests, do not forget to
    * re-initialize these global parameters    */
-  TDatabase::TimeDB->STARTTIME=0;
   TDatabase::TimeDB->TIMESTEPLENGTH=parmoon_db["time_step_length"];
-  TDatabase::TimeDB->ENDTIME=0.03;
-  TDatabase::TimeDB->CURRENTTIME=  TDatabase::TimeDB->STARTTIME;
+  parmoon_db["time_end"]=0.03;
+  TDatabase::TimeDB->CURRENTTIME=  parmoon_db["time_start"];
 
 
   {

@@ -6,6 +6,7 @@
 #include "LoopInfo.h"
 #include "Database.h"
 #include "TimeDiscRout.h"
+#include "TimeDiscretizations.h"
 #include <algorithm>
 
 
@@ -18,6 +19,7 @@ ParameterDatabase GeothermalPlantsPositionOptimization::default_GPPO_database()
   db.merge(TDomain::default_domain_parameters());
   db.merge(Example2D::default_example_database());
   db.merge(LocalAssembling<2>::default_local_assembling_database());
+  db.merge(TimeDiscretization::default_TimeDiscretization_database());
   
   db.add("alpha_cost", 1., 
          "The scalar alpha in the functional J_hat, which is multiplied with "
@@ -212,8 +214,8 @@ void GeothermalPlantsPositionOptimization::apply_control_and_solve(const double*
   Output::print<2>("primal solve: temperature");
   
   TDatabase::TimeDB->TIME_DISC = 2; // Crank-Nicolson
-  TDatabase::TimeDB->CURRENTTIME = TDatabase::TimeDB->STARTTIME;
-  double end_time = TDatabase::TimeDB->ENDTIME;
+  TDatabase::TimeDB->CURRENTTIME = 0;
+  double end_time = this->db["time_end"];
   cd2d_primal.reset_for_output();
   cd2d_primal.assemble_initial_time();
   while(TDatabase::TimeDB->CURRENTTIME < end_time - 1e-10)

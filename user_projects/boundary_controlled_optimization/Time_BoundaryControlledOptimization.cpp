@@ -162,8 +162,9 @@ Time_BoundaryControlledOptimization::Time_BoundaryControlledOptimization(
     ErrThrow("Inconsistent input parameters!");
   
   // Set the number of time steps from database of tnse_primal member
-  /* TODO: this step can be done much more nicely if the global parameter
-   * ENDTIME is deleted and replaced by the local "end_time" stored in tnse_primal.
+  /* TODO: DONE! (N.A. 07/11/2018, needs to be checked before removing this todo) 
+   * this step can be done much more nicely if the global parameter
+   * is deleted and replaced by the local "end_time" stored in tnse_primal.
    * Unfortunately, the latter one is not used it. Once it is the case,
    * n_time_steps_ can be directly set in the initialization of the members,
    * just above (tnse_primal.get_time_stepping_scheme().get_end_time() instead
@@ -171,7 +172,7 @@ Time_BoundaryControlledOptimization::Time_BoundaryControlledOptimization(
    *
    */
   double dt = this->tnse_primal.get_time_stepping_scheme().get_step_length();
-  n_time_steps_ = (TDatabase::TimeDB->ENDTIME/ dt) + 1 ;
+  n_time_steps_ = (this->tnse_primal.get_time_stepping_scheme().get_end_time()/ dt) + 1 ;
 
   // assemble linear (Stokes) parts
   // TODO: REMOVE THIS STOKES SOLUTION?
@@ -387,7 +388,7 @@ void Time_BoundaryControlledOptimization::apply_control_and_solve(const double* 
 
   tnse_primal.assemble_initial_time();
   tnse_primal.output(tss.current_step_);
-  double end_time = TDatabase::TimeDB->ENDTIME;
+  double end_time = tnse_primal.get_time_stepping_scheme().get_end_time();
   LoopInfo loop_info_time("time loop");
   loop_info_time.print_time_every_step = true;
   loop_info_time.verbosity_threshold = 1;
