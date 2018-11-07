@@ -44,9 +44,9 @@ class TGridCell : public TBaseCell
     { return Vertices; }
 
     /**  @brief return number of children */
-    virtual int GetN_Children() override;
+    virtual int GetN_Children() const override;
     /**  @brief return number of parents */
-    virtual int GetN_Parents() override;
+    virtual int GetN_Parents() const override;
 
     /**  @brief return pointer to child cell with number C\_i */
     virtual TBaseCell *GetChild(int C_i) override;

@@ -57,12 +57,12 @@ const TVertex *TGridCell::GetVertex(int Vert_i) const
    return Vertices[Vert_i];
 }
 
-int TGridCell::GetN_Children()
+int TGridCell::GetN_Children() const
 {
   return Children ? RefDesc->GetN_Children() : 0;
 }
 
-int TGridCell::GetN_Parents()
+int TGridCell::GetN_Parents() const
 {
   if ( Parent == nullptr)
     return 0;

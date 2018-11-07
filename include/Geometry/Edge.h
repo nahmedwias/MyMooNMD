@@ -70,14 +70,14 @@ class TEdge
 
  // methods
     /** return type */
-    JointType GetType()
+    JointType GetType() const
     { return EdgeID; }
 
     /** set value in ClipBoard */
     void SetClipBoard(int value)
     { ClipBoard=value; }
     /** get value from ClipBoard */
-    int GetClipBoard()
+    int GetClipBoard() const
     { return ClipBoard; }
 
 #ifdef  _MPI
