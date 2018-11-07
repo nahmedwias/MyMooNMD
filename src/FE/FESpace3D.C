@@ -505,7 +505,7 @@ void TFESpace3D::ConstructSpace(BoundCondFunct3D *BoundaryCondition)
   const int *TmpoFnF, *TmpLen1, *TmpFC, *TmpLen2, *TmpoFnlF;
   const int *TmpCTI;
   int MaxLen1, MaxLen2;
-  TRefDesc *refdesc;
+  const TRefDesc *refdesc;
 
   int SumLocDOF;
   int count, *BoundaryUpperBound, DirichletUpperBound;

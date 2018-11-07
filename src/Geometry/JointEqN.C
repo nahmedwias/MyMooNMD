@@ -48,7 +48,7 @@ int TJointEqN::CheckMatchingRef(TBaseCell *Me, int J_i, struct StoreGeom &Tmp)
   TBaseCell *Neighb, *Parent = nullptr;
   int i, J_j, N_, MaxLen1, MaxLen2, auxi, aux;
   const int *TmpValues1, *TmpValues2;
-  TRefDesc *NeighbRefDesc, *ParRefDesc;
+  const TRefDesc *NeighbRefDesc, *ParRefDesc;
   TJoint *ParJoint;
 #ifdef __2D__
   Refinements NeibEdgeRef, MyEdgeRef;
@@ -276,7 +276,7 @@ int TJointEqN::CheckMatchingRef(TBaseCell *Me, int J_i, StoreGeomMortar &Tmp)
   int i, J_j, N_, MaxLen1, MaxLen2, auxi, aux;
   const int *TmpValue;
   const int *TmpoEnE, *TmpEC,  *TmpECI, *TmpoEnV, *TmpVC, *TmpVCI;
-  TRefDesc *NeighbRefDesc;
+  const TRefDesc *NeighbRefDesc;
   Refinements NeibEdgeRef, MyEdgeRef;
 
   Tmp.Filled = false;

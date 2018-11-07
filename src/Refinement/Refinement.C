@@ -325,8 +325,8 @@ int TGridCell::Refine(int reflevel)
   const double *TmpPos;
   bool Inside;
   Refinements FaceRefDescID;
-  TRefDesc *FaceRefDesc;
-  TShapeDesc *ChildDesc;
+  const TRefDesc *FaceRefDesc;
+  const TShapeDesc *ChildDesc;
   TVertex *CurrVert;
   TBaseCell *CurrCell, *StopCell;
   TJoint *CurrJoint;
@@ -1168,7 +1168,7 @@ int TGridCell::Gen1RegMarks()
   const int *TmpEC, *TmpLen2;
   int MaxLen, LocJointNum;
   int MaxLen1, MaxLen2;
-  TRefDesc *RefDesc_tmp;
+  const TRefDesc *RefDesc_tmp;
   int N_ = GetN_Edges();
   TJoint *CurrJoint;
 

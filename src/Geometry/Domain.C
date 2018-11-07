@@ -3207,7 +3207,7 @@ int TDomain::GenerateEdgeInfo()
   TBaseCell **cells, *CurrCell, *NeibCell, **NeibCells;
   Iterators it=It_Finest;
   TVertex **Vertices_All, *Last, *Current;
-  TShapeDesc *ShapeDesc, *NeibShapeDesc;
+  const TShapeDesc *ShapeDesc, *NeibShapeDesc;
   TEdge *edge, *Neibedge;
   TJoint *joint;
 
@@ -3969,7 +3969,7 @@ void TDomain::distributeJoints(Mesh& m)
     const int *TmpFV, *TmpLen;
     int MaxLen;
     
-    TShapeDesc *ShapeDesc = CellTree[i]->GetShapeDesc();
+    const TShapeDesc *ShapeDesc = CellTree[i]->GetShapeDesc();
     ShapeDesc->GetFaceVertex(TmpFV, TmpLen, MaxLen);
 
     for(int j=0;j<4;++j)
@@ -4268,7 +4268,7 @@ void TDomain::distributeJoints(TTetGenMeshLoader& tgml)
     const int *TmpFV, *TmpLen;
     int MaxLen;
     
-    TShapeDesc *ShapeDesc = CellTree[i]->GetShapeDesc();
+    const TShapeDesc *ShapeDesc = CellTree[i]->GetShapeDesc();
     ShapeDesc->GetFaceVertex(TmpFV, TmpLen, MaxLen);
 
     for(int j=0;j<4;++j)

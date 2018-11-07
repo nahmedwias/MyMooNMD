@@ -1288,7 +1288,7 @@ void TFESpace2D::ConstructSpace(BoundCondFunct2D *BoundaryCondition)
   TFE2DMapper1Reg *mapper1reg;
   const int* TmpoEnE, *TmpLen1, *TmpEC, *TmpLen2, *TmpoEnlE;
   int MaxLen1, MaxLen2;
-  TRefDesc *refdesc;
+  const TRefDesc *refdesc;
   FE2D FEType2;
   TFE2D *FE2;
   TFEDesc2D *FEDesc2_Obj;

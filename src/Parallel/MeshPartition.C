@@ -163,7 +163,7 @@ int Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
  TBaseCell **CellDel;
  TJoint *Joint, *NewJoint;
  TEdge *edge, **EdgeDel;
- TShapeDesc *ShapeDesc;
+ const TShapeDesc *ShapeDesc;
  TVertex *CurrVert, *NeibCurrVert;
  
  MPI_Status status;
@@ -1142,7 +1142,7 @@ void Domain_Crop(MPI_Comm comm, TDomain *Domain)
  TBaseCell **CellDel;
  TJoint *Joint, *NewJoint;
  TEdge *edge, **EdgeDel;
- TShapeDesc *ShapeDesc;
+ const TShapeDesc *ShapeDesc;
  TVertex *CurrVert, *NeibCurrVert;
 
   MPI_Comm_rank(comm, &rank);
