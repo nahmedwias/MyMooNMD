@@ -14,7 +14,7 @@
 #include <TimeDiscRout.h>
 #include <MainUtilities.h>
 #include <AuxParam2D.h>
-
+#include <TimeDiscretizations.h>
 
 void testCN(Time_CD2D &tcd, int m)
 {
@@ -85,16 +85,15 @@ void testCN(Time_CD2D &tcd, int m)
 void time_integration(int td, Time_CD2D& tcd)
 {
   TDatabase::TimeDB->TIME_DISC = td;
-
-  TDatabase::TimeDB->CURRENTTIME = TDatabase::TimeDB->STARTTIME;
+  TDatabase::TimeDB->CURRENTTIME = tcd.get_db()["time_start"];
 
   tcd.assemble_initial_time();
 
   int step=0;
   testCN(tcd, step);
 
-  while(TDatabase::TimeDB->CURRENTTIME <
-    TDatabase::TimeDB->ENDTIME-1e-10)
+  double end_time = tcd.get_db()["time_end"];
+  while(TDatabase::TimeDB->CURRENTTIME < end_time -1e-10)
   {
     step ++;
     TDatabase::TimeDB->INTERNAL_STARTTIME
@@ -125,6 +124,7 @@ int main(int argc, char* argv[])
     ParameterDatabase db = ParameterDatabase::parmoon_default_database();
     db.merge(Example2D::default_example_database());
     db.merge(LocalAssembling2D::default_local_assembling_database());
+    db.merge(TimeDiscretization::default_TimeDiscretization_database());
     db["example"] = 3;
     db["reynolds_number"] = 1e-20;
 
@@ -134,8 +134,7 @@ int main(int argc, char* argv[])
     db["space_discretization_type"] = "galerkin";
     TDatabase::ParamDB->ANSATZ_ORDER=1;
 
-    TDatabase::TimeDB->STARTTIME=0;
-    TDatabase::TimeDB->ENDTIME=0.02;
+    db["time_end"] = 0.02;
     TDatabase::TimeDB->TIMESTEPLENGTH = 0.001;
 
     db.add("boundary_file", "Default_UnitSquare", "");

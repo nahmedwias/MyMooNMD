@@ -37,10 +37,6 @@ ParameterDatabase get_default_TNSE3D_parameters()
   // a default output database - needed here as long as there's no class handling the output
   ParameterDatabase out_db = ParameterDatabase::default_output_database();
   db.merge(out_db, true);
-
-  // a default time database
-//   ParameterDatabase time_db = ParameterDatabase::default_time_database();
-//   db.merge(time_db,true);
  
   // a default solution in out database
   ParameterDatabase in_out_db = ParameterDatabase::default_solution_in_out_database();

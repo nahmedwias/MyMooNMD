@@ -40,7 +40,6 @@ int main(int argc, char* argv[])
     Domain.PS("Domain.ps", It_Finest, 0);
 
   // set some parameters for time stepping
-  //TDatabase::TimeDB->CURRENTTIME = TDatabase::TimeDB->STARTTIME;
   SetTimeDiscParameters(0);
 
   Example_TimeNSE2D example( parmoon_db );
@@ -58,13 +57,14 @@ int main(int argc, char* argv[])
 
   tnse2d.output(tss.current_step_);
 
-  double end_time = TDatabase::TimeDB->ENDTIME;
   
   LoopInfo loop_info_time("time loop");
   loop_info_time.print_time_every_step = true;
   loop_info_time.verbosity_threshold = 1;
   int linear_iteration=0;
   
+  double end_time = tss.get_end_time();
+  TDatabase::TimeDB->CURRENTTIME = tss.get_start_time();
   while(TDatabase::TimeDB->CURRENTTIME < end_time - 1e-10)
   {
     tss.current_step_++;

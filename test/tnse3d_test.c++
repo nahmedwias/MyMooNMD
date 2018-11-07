@@ -94,10 +94,9 @@ void compute(std::list<TCollection* > grid_collections, ParameterDatabase& db,
 #endif
 
   // set some parameters for time stepping
-  TDatabase::TimeDB->STARTTIME=0;
   TDatabase::TimeDB->TIMESTEPLENGTH=0.05;
-  TDatabase::TimeDB->ENDTIME=1;
-  TDatabase::TimeDB->CURRENTTIME=  TDatabase::TimeDB->STARTTIME;
+  db["time_end"]=1.;
+  TDatabase::TimeDB->CURRENTTIME=  db["time_start"];
   SetTimeDiscParameters(0);
 
   // Construct example object
@@ -118,7 +117,7 @@ void compute(std::list<TCollection* > grid_collections, ParameterDatabase& db,
   //======================================================================
   // time iteration
   //======================================================================
-  while(TDatabase::TimeDB->CURRENTTIME < TDatabase::TimeDB->ENDTIME-1e-10)
+  while(TDatabase::TimeDB->CURRENTTIME < tnse3d.get_time_stepping_scheme().get_end_time()-1e-10)
   {
     tnse3d.get_time_stepping_scheme().current_step_++;
     TDatabase::TimeDB->INTERNAL_STARTTIME = TDatabase::TimeDB->CURRENTTIME;

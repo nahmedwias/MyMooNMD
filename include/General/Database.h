@@ -774,7 +774,6 @@ struct TTimDB
   double TIMESTEPLENGTH_PARA_RTOL;
   int FIRST_SSC_STEP;
   int RESET_CURRENTTIME;
-  double RESET_CURRENTTIME_STARTTIME;
   double STEADY_STATE_TOL;
   double SCALE_DIVERGENCE_CONSTRAINT;
 
@@ -795,9 +794,7 @@ struct TTimDB
   int TIME_DISC;
   int TIME_DISC2;
 
-  // start and end time
-  double STARTTIME;
-  double ENDTIME;
+  // extrapolate
   double EXTRAPOLATE_WEIGHT;
   double EXTRAPOLATE_STEPS;
   int    EXTRAPOLATE_PRESSURE;

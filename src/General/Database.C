@@ -635,7 +635,6 @@ void TDatabase::SetDefaultParameters()
   TimeDB->TIMESTEPLENGTH_PARA_ATOL = 0.001;
   TimeDB->TIMESTEPLENGTH_PARA_RTOL = 0.001;
   TimeDB->RESET_CURRENTTIME = 0;
-  TimeDB->RESET_CURRENTTIME_STARTTIME = 0.0;
   TimeDB->STEADY_STATE_TOL = 1e-3;
   TimeDB->SCALE_DIVERGENCE_CONSTRAINT = -1.0;
 
@@ -655,8 +654,6 @@ void TDatabase::SetDefaultParameters()
   TimeDB->TIME_DISC = 2;
   TimeDB->TIME_DISC2 = -1;
 
-  TimeDB->STARTTIME = 0;
-  TimeDB->ENDTIME = 1;
   TimeDB->EXTRAPOLATE_WEIGHT = 1;
   TimeDB->EXTRAPOLATE_STEPS = 0;
   TimeDB->EXTRAPOLATE_PRESSURE = 0;
@@ -1379,7 +1376,6 @@ void TDatabase::WriteTimeDB()
   printToFile("TIMESTEPLENGTH_PARA_ATOL: ",  TimeDB->TIMESTEPLENGTH_PARA_ATOL);
   printToFile("TIMESTEPLENGTH_PARA_RTOL: ",  TimeDB->TIMESTEPLENGTH_PARA_RTOL);
   printToFile("RESET_CURRENTTIME: ", TimeDB->RESET_CURRENTTIME);
-  printToFile("RESET_CURRENTTIME_STARTTIME: ", TimeDB->RESET_CURRENTTIME_STARTTIME);
   printToFile("STEADY_STATE_TOL: ", TimeDB->STEADY_STATE_TOL);
   printToFile("SCALE_DIVERGENCE_CONSTRAINT: ", TimeDB->SCALE_DIVERGENCE_CONSTRAINT);
 
@@ -1398,9 +1394,6 @@ void TDatabase::WriteTimeDB()
 
   printToFile("TIME_DISC: ", TimeDB->TIME_DISC);
   printToFile("TIME_DISC2: ", TimeDB->TIME_DISC2);
-
-  printToFile("STARTTIME: ", TimeDB->STARTTIME);
-  printToFile("ENDTIME: ", TimeDB->ENDTIME);
 
   printToFile("T0: ", TimeDB->T0);
   printToFile("T1: ", TimeDB->T1);

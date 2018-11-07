@@ -6,6 +6,7 @@
 #include <Assemble2D.h>
 #include <LocalProjection.h>
 #include <AuxParam2D.h>
+#include <TimeDiscretizations.h>
 
 
 /**************************************************************************** */
@@ -31,6 +32,8 @@ ParameterDatabase get_default_TCD2D_parameters()
   
   // a default local assembling database
   db.merge(LocalAssembling2D::default_local_assembling_database(), true);
+  
+  db.merge(TimeDiscretization::default_TimeDiscretization_database(), true);
 
   return db;
 }
