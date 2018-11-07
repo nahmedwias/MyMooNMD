@@ -15,6 +15,7 @@
 #define __QUADBilinear__
 
 #include <RefTrans2D.h>
+#include <Enumerations.h>
 
 /** reference transformations for triangle */
 class TQuadBilinear : public TRefTrans2D

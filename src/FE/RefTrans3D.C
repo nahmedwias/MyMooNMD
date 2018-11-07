@@ -11,8 +11,11 @@
 // 
 // =======================================================================
 
-#include <RefTrans3D.h>
+#include "RefTrans3D.h"
+#include "MooNMD_Io.h"
 
-TRefTrans3D::TRefTrans3D()
-{
-}
+void TRefTrans3D::PiolaMapOrigFromRef(int N_Functs, double *refD00, 
+                                      double *origD00)
+{ 
+  ErrThrow("Piola Map not defined for this element");
+};

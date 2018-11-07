@@ -15,6 +15,7 @@
 #define __TRIAISOPARAMETRIC__
 
 #include <RefTrans2D.h>
+#include <Enumerations.h>
 
 /** reference transformations for triangle */
 class TTriaIsoparametric : public TRefTrans2D
