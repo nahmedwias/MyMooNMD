@@ -6,6 +6,7 @@
 #include <AlgebraicFluxCorrection.h>
 
 #include <MainUtilities.h>
+#include <TimeDiscretizations.h>
 
 #include <cstring>
 #include <sys/stat.h>
@@ -35,6 +36,8 @@ ParameterDatabase get_default_TCD3D_parameters()
   
   // a default local assembling database
   parmoon_db.merge(LocalAssembling3D::default_local_assembling_database());
+  
+  parmoon_db.merge(TimeDiscretization::default_TimeDiscretization_database(), true);
 
   return parmoon_db;  
 }

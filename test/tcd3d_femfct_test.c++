@@ -12,6 +12,7 @@
 #include <Database.h>
 #include <FEDatabase3D.h>
 #include <TimeDiscRout.h>
+#include <TimeDiscretizations.h>
 #include <MainUtilities.h>
 
 #ifdef _MPI
@@ -129,6 +130,7 @@ int main(int argc, char* argv[])
     db.merge(Example3D::default_example_database());
     db.merge(ParameterDatabase::default_output_database());
     db.merge(LocalAssembling3D::default_local_assembling_database());
+    db.merge(TimeDiscretization::default_TimeDiscretization_database());
     db["problem_type"] = 1;
     db["example"] = 0;
     db["diffusion_coefficient"] = 1e-6;
@@ -139,8 +141,7 @@ int main(int argc, char* argv[])
     db["space_discretization_type"] = "galerkin";
     TDatabase::ParamDB->ANSATZ_ORDER=1;
 
-    TDatabase::TimeDB->STARTTIME = 0;
-    TDatabase::TimeDB->ENDTIME = 1;
+    db["time_end"] = 1;
     TDatabase::TimeDB->TIMESTEPLENGTH = 0.01;
     SetTimeDiscParameters(0);
 
@@ -180,9 +181,8 @@ int main(int argc, char* argv[])
 
     int step = 0;
     //int imag = 0;
-
-    while(TDatabase::TimeDB->CURRENTTIME <
-      TDatabase::TimeDB->ENDTIME-1e-10)
+    double end_time = db["time_end"];
+    while(TDatabase::TimeDB->CURRENTTIME < end_time-1e-10)
     {
       step ++;
       TDatabase::TimeDB->INTERNAL_STARTTIME

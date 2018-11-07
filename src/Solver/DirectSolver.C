@@ -383,6 +383,8 @@ void DirectSolver::numeric_factorize()
                                        Control, Info);
         handle_error_umfpack(error);
       }
+      Output::print<4>("umfpack: Peak memory ", Info[UMFPACK_PEAK_MEMORY],
+                       ", estimated condition number ", 1./Info[UMFPACK_RCOND]);
       break;
     }
     case DirectSolverTypes::pardiso:

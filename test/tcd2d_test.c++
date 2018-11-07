@@ -6,6 +6,7 @@
 #include <FEDatabase2D.h>
 #include <Time_CD2D.h>
 #include <TimeDiscRout.h>
+#include <TimeDiscretizations.h>
 #include <MainUtilities.h>
 #include <AuxParam2D.h>
 #include <list>
@@ -83,16 +84,14 @@ void testCN(Time_CD2D &tcd, int m)
 void time_integration(int td, Time_CD2D& tcd)
 {
   TDatabase::TimeDB->TIME_DISC = td;
-  
-  TDatabase::TimeDB->CURRENTTIME = TDatabase::TimeDB->STARTTIME;
-  
+    
   tcd.assemble_initial_time();
   
   int step=0;
   testCN(tcd, step);
-  
-  while(TDatabase::TimeDB->CURRENTTIME < 
-    TDatabase::TimeDB->ENDTIME-1e-10)
+
+  double end_time = tcd.get_db()["time_end"];
+  while(TDatabase::TimeDB->CURRENTTIME < end_time-1e-10)
   {
     step ++;
     TDatabase::TimeDB->INTERNAL_STARTTIME 
@@ -124,14 +123,14 @@ int main(int argc, char* argv[])
     ParameterDatabase db = ParameterDatabase::parmoon_default_database();
     db.merge(Example2D::default_example_database());
     db.merge(LocalAssembling2D::default_local_assembling_database());
+    db.merge(TimeDiscretization::default_TimeDiscretization_database());
     db["example"] = 0;
     db["reynolds_number"] = 1;
 
     db["space_discretization_type"] = "galerkin";
     TDatabase::ParamDB->ANSATZ_ORDER=1;
     
-    TDatabase::TimeDB->STARTTIME=0;
-    TDatabase::TimeDB->ENDTIME=1;
+    db["time_end"]=1.;
     TDatabase::TimeDB->TIMESTEPLENGTH = 0.05;
     //  declaration of databases
     db.add("boundary_file", "Default_UnitSquare", "");
@@ -144,6 +143,7 @@ int main(int argc, char* argv[])
     domain.RegRefineAll();
     
     db.add("solver_type", "direct", "", {"direct", "petsc"});
+    TDatabase::TimeDB->CURRENTTIME = db["time_start"];
     Time_CD2D tcd(domain, db);
     time_integration(2, tcd);
     
@@ -155,6 +155,7 @@ int main(int argc, char* argv[])
     
     Output::print("\n\nTesting PETSc\n");
     db["solver_type"] = "petsc";
+    TDatabase::TimeDB->CURRENTTIME = db["time_start"];
     Time_CD2D tcd_petsc(domain, db);
     time_integration(2, tcd_petsc);
   }

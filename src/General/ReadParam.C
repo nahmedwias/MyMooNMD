@@ -1334,24 +1334,10 @@ int TDomain::ReadParam(const char *ParamFile)
       N_Param++;
     }
 
-    if (!strcmp(line, "STARTTIME:"))
-    {
-      dat >> TDatabase::TimeDB->STARTTIME;
-      N_Param++;
-    }
-    if (!strcmp(line, "ENDTIME:"))
-    {
-      dat >> TDatabase::TimeDB->ENDTIME;
-      N_Param++;
-    }
+    
     if (!strcmp(line, "RESET_CURRENTTIME:"))
     {
       dat >> TDatabase::TimeDB->RESET_CURRENTTIME;
-      N_Param++;
-    }
-    if (!strcmp(line, "RESET_CURRENTTIME_STARTTIME:"))
-    {
-      dat >> TDatabase::TimeDB->RESET_CURRENTTIME_STARTTIME;
       N_Param++;
     }
     if (!strcmp(line, "STEADY_STATE_TOL:"))

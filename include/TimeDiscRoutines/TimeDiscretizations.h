@@ -37,6 +37,9 @@ class TimeDiscretization
     /// @brief time step legth 
     double current_time_step_length;
     
+    /// @brief start time 
+    double start_time;
+    
     /// @brief end time 
     double end_time;
 
@@ -138,6 +141,10 @@ public:
     double get_step_length()
     {
       return current_time_step_length;
+    }
+    double get_start_time()
+    {
+      return start_time;
     }
     double get_end_time()
     {
