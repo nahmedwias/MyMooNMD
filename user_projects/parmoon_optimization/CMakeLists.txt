@@ -1,0 +1,37 @@
+
+set(parmoon_opt_dir "${PROJECT_SOURCE_DIR}/user_projects/parmoon_optimization")
+
+# include 'nlopt' as an external library, 
+# see https://nlopt.readthedocs.io/en/latest/
+set(NLOPT_DIR CACHE STRING "The path to the directory to find nlopt in.")
+message(STATUS "NLOPT_DIR ${NLOPT_DIR}")
+if(NLOPT_DIR STREQUAL "")
+  message(WARNING "Please provide a path to where 'nlopt' is installed")
+  message("integrating nlopt into ParMooN:")
+  message("Clone the nlopt repository somewhere on your system")
+  
+  message("    git clone https://github.com/stevengj/nlopt.git nlopt")
+  message("Build nlopt (adjust path accordingly):")
+  message("    cd nlopt")
+  message("    mkdir build")
+  message("    cd build")
+  message("    cmake -DCMAKE_INSTALL_PREFIX=/Home/guests/wilbrand/software/nlopt/install_dir -DNLOPT_CXX=ON ..")
+  message("    make -j10")
+  message("    make install")
+  message("This created a directory 'install_dir' at the specified path. In ")
+  message("your ParMooN build directory, set the variable 'NLOPT_DIR' to")
+  message("    /Home/guests/wilbrand/software/nlopt/install_dir")
+  message("This should be it.")
+  message(FATAL_ERROR "Missing NLOPT_DIR")
+endif(NLOPT_DIR STREQUAL "")
+if(EXISTS "${NLOPT_DIR}/lib/cmake/nlopt/NLoptConfig.cmake")
+  include("${NLOPT_DIR}/lib/cmake/nlopt/NLoptConfig.cmake")
+elseif(EXISTS "${NLOPT_DIR}/lib64/cmake/nlopt/NLoptConfig.cmake")
+  include("${NLOPT_DIR}/lib64/cmake/nlopt/NLoptConfig.cmake")
+else()
+  message("Note: You can set 'INSTALL_LIB_DIR' when building nlopt.")
+  message(FATAL_ERROR "Could not find file NLoptConfig.cmake")
+endif()
+
+include_directories(${NLOPT_INCLUDE_DIRS})
+include_directories(${parmoon_opt_dir})
