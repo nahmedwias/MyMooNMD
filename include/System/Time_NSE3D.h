@@ -315,7 +315,7 @@ class Time_NSE3D
     /** @brief Measure errors and draw a nice VTK picture,
      * if requested to do so.
      */
-    void output(int m, int &image);
+    void output(int m);
 
     /** @brief Construct the extrapolated solution.
      * At the moment, only IMEX is implemented. */

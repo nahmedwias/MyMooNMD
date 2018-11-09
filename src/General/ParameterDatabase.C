@@ -1350,7 +1350,15 @@ ParameterDatabase ParameterDatabase::default_output_database()
 	  db.add("steps_per_output", (size_t)1,
 	         "This integer specifies how many (time) steps are performed "
 		 "before writing the results ");
-
+	  
+	  db.add("continue_output_after_restart", false,
+		"This parameter, when true, allows the output numbering "
+		"to continue after a simulation restart, which is often a "
+		"desirable behavior. Otherwise, it behaves as if the "
+		"initial time was 0, and starts the numbering at 0, leading "
+		"sometimes to overwritting existing files.", 
+		 {true,false});
+	  
 	  return db;
 }
 

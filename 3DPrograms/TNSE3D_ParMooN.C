@@ -124,9 +124,10 @@ int main(int argc, char* argv[])
   tss.set_time_disc_parameters();
   
   tnse3d.assemble_initial_time();
+  tnse3d.output(tnse3d.current_step_);
 
   int n_substeps = GetN_SubSteps();
-  int image = 0;
+
   LoopInfo loop_info_time("time loop");
   loop_info_time.print_time_every_step = true;
   loop_info_time.verbosity_threshold = 1; // full verbosity
@@ -220,7 +221,7 @@ int main(int argc, char* argv[])
         "solving the time iteration " +
         std::to_string(TDatabase::TimeDB->CURRENTTIME));
 
-      tnse3d.output(tnse3d.current_step_,image);
+      tnse3d.output(tnse3d.current_step_);
       timer_timeit.print_total_time(
         "time step " + std::to_string(TDatabase::TimeDB->CURRENTTIME));
     } // end of subtime loop
