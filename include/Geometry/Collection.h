@@ -67,21 +67,14 @@ class TCollection
     TBaseCell *GetCell(int i) const
     { return Cells[i]; }
 
-    /** @brief return Cell array */
-    TBaseCell **GetCells() const
-    {  return Cells; }
-
     /** @brief destructor: delete arrays */
     ~TCollection();
 
     /** @brief get maximal and minimal diameter */
-    int GetHminHmax(double *hmin, double *hmax);
+    int GetHminHmax(double *hmin, double *hmax) const;
 
     /** @brief return Index of cell in Cells-array */
     int GetIndex(TBaseCell *cell);
-
-    /** @brief mark the vertices that are on the boundary */
-    int MarkBoundaryVertices();
 
     /** @brief return Index of joints in Cells-array */
     TJointCollection  *GetJointCollection();
@@ -96,10 +89,10 @@ class TCollection
     void SetN_OwnCells(int n_OwnCells)
      { N_OwnCells = n_OwnCells; }
 
-    int GetN_OwnCells()
+    int GetN_OwnCells() const
      { return N_OwnCells; }
 
-    int GetN_HaloCells()
+    int GetN_HaloCells() const
      { return (N_Cells - N_OwnCells); }
 
     int *GetGlobalIndex()
@@ -122,12 +115,6 @@ class TCollection
     int find_process_of_point(double x, double y, double z) const;
 #endif
 
-    void Replace_Coll(int n_cells, TBaseCell **cells)
-     {
-      N_Cells = n_cells;
-      Cells = cells;
-     }
-   
    int getIndexInCollection(TBaseCell *cell);
 
    ///@brief write the geometry in .mesh format

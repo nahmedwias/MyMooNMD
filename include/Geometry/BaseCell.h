@@ -212,9 +212,12 @@ class TBaseCell
     /**  @brief return the child number of cell Me */
     virtual int GetChildNumber(TBaseCell *Me) =  0;
 
-    /**  @brief write the postscript cell data to stream dat */
-    virtual int PS(std::ofstream &dat, double scale, double StartX,
-                   double StartY, bool gridcell_with_numbers) const = 0;
+    /**  @brief write the postscript cell data to stream dat.
+     * A positive cell_index is written to the postscript file, negative values
+     * are ignored.
+     */
+    virtual void PS(std::ofstream &dat, double scale, double StartX,
+                    double StartY, int cell_index = -1) const = 0;
     
     /**  @brief refine the current cell on level RefLevel according actual
         refinement descriptor */
@@ -244,7 +247,7 @@ class TBaseCell
     /**  @brief is the cell to refine */
     virtual int IsToRefine() const = 0;
     /**  @brief are there any children of this cell */
-    virtual int ExistChildren() = 0;
+    virtual int ExistChildren() const = 0;
     /**  @brief generate conforming closures */
     virtual int MakeConfClosure() = 0;
 
@@ -264,16 +267,16 @@ class TBaseCell
     { return ClipBoard; }
 
     /**  @brief get diameter of a cell */
-    virtual double GetDiameter() = 0;
+    virtual double GetDiameter() const = 0;
 
     /**  @brief return shortest edge of a cell */
-    virtual double GetShortestEdge() = 0;
+    virtual double GetShortestEdge() const = 0;
 
     /**  @brief return the length of the cell defined with the reference map */
-    virtual double GetLengthWithReferenceMap() = 0;
+    virtual double GetLengthWithReferenceMap() const = 0;
 
      /**  @brief get measure of a cell */
-    virtual double GetMeasure() = 0;
+    virtual double GetMeasure() const = 0;
     
     /** @brief get the value of hK 
      * 
@@ -282,7 +285,7 @@ class TBaseCell
      * 
      * Typically you should set cell_measure = TDatabase::ParamDB->CELL_MEASURE.
      */
-    double Get_hK(int cell_measure);
+    double Get_hK(int cell_measure) const;
 
     /**  @brief return whether a point is inside a cell */
     virtual bool PointInCell(double X, double Y) const = 0;
@@ -298,7 +301,7 @@ class TBaseCell
     virtual int GetGeoLevel() = 0;
 
     /**  @brief get subgrid ID */
-    virtual int GetSubGridID() = 0;
+    virtual int GetSubGridID() const = 0;
 
     /** @brief set reference number to this cell   */
     void SetReference_ID(int val)

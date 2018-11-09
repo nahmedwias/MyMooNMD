@@ -97,7 +97,7 @@ TBaseCell::~TBaseCell()
   delete[] Joints;
 }
 
-double TBaseCell::Get_hK(int cell_measure)
+double TBaseCell::Get_hK(int cell_measure) const
 {
   switch (cell_measure)
   {
