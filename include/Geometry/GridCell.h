@@ -58,8 +58,8 @@ class TGridCell : public TBaseCell
     virtual int GetChildNumber(TBaseCell *Me) override;
 
     /**  @brief put out postscript data to a file */
-    virtual int PS(std::ofstream &dat, double scale, double StartX,
-                   double StartY, bool gridcell_with_numbers) const override;
+    virtual void PS(std::ofstream &dat, double scale, double StartX,
+                    double StartY, int cell_index = -1) const override;
     
     /**  @brief derefine the cell */
     virtual int Derefine() override;
@@ -87,7 +87,7 @@ class TGridCell : public TBaseCell
     /**  @brief check whether a cell should be refined */
     virtual int IsToRefine() const override;
     /**  @brief check whether exist some children */
-    virtual int ExistChildren() override
+    virtual int ExistChildren() const override
     { return Children == nullptr ? false : true; }
 
 #ifdef __2D__
@@ -104,35 +104,29 @@ class TGridCell : public TBaseCell
     virtual bool PointInCell(double X, double Y) const override;
 
     /**  @brief get diameter of a cell */
-    virtual double GetDiameter()  override
+    virtual double GetDiameter() const override
     { return RefDesc->GetShapeDesc()->GetDiameter(Vertices); }
 
     /**  @brief get shortest edge of a cell */
-    virtual double GetShortestEdge() override
+    virtual double GetShortestEdge() const override
     { return RefDesc->GetShapeDesc()->GetShortestEdge(Vertices); }
 
     /**  @brief return the length of the cell defined with the reference map */
-    virtual double GetLengthWithReferenceMap() override
+    virtual double GetLengthWithReferenceMap() const override
     { return RefDesc->GetShapeDesc()->GetLengthWithReferenceMap(Vertices); }
 
      /**  @brief get measure of a cell */
-    virtual double GetMeasure() override
+    virtual double GetMeasure() const override
     { return RefDesc->GetShapeDesc()->GetMeasure(Vertices); }
 
     /**  @brief get geometry level */
     virtual int GetGeoLevel() override;
 
     /**  @brief return subgrid ID */
-    virtual int GetSubGridID() override;
+    virtual int GetSubGridID() const override;
 
     /**  @brief compute number of edges at the boundary */
-    virtual int GetN_BoundaryEdges();
-#ifdef __3D__
-    /**  @brief compute number of faces at the boundary */
-    virtual int GetN_BoundaryFaces();    
-#endif 
-    /**  @brief compute number of vertices at the boundary */
-    virtual int GetN_BoundaryVertices();
+    virtual int get_n_boundary_joints() const;
     
     virtual void check() const override;
 };

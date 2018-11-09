@@ -329,9 +329,9 @@ class TDomain
       std::vector<TJoint*> meshJoints;
 #endif
     /** @brief write mesh into a postscript file */
-    int PS(const char *name, Iterators iterator, int arg);
+    void PS(const char *name, Iterators iterator, int arg);
     /** @brief write collection into a postscript file */
-    int PS(const char *name, TCollection *Coll);
+    void PS(const char *name, TCollection *Coll);
     
     /** @brief refine the grid according the cell refinement descriptors */
     int Refine();

@@ -98,9 +98,10 @@ int TGridCell::GetChildNumber(TBaseCell *Me)
   return -1;
 }
 
-int TGridCell::PS(std::ofstream &dat, double scale, double StartX,
-                  double StartY, bool gridcell_with_numbers) const
+void TGridCell::PS(std::ofstream& dat, double scale, double StartX,
+                   double StartY, int cell_index) const
 {
+  bool gridcell_with_numbers = cell_index >=0;
   int i;
   double text_x1=0,text_x2=0,text_y1=0,text_y2=0;
   double x, y;
@@ -144,7 +145,7 @@ int TGridCell::PS(std::ofstream &dat, double scale, double StartX,
     dat << (30 + (x - StartX) * scale + .5) << " " <<
            (30 + (y - StartY) * scale + .5);
     dat << " moveto" << endl;
-    dat << "(" << ClipBoard << ") show" << endl;
+    dat << "(" << cell_index << ") show" << endl;
   }
   
 #ifdef _MPI
@@ -194,7 +195,6 @@ dat << (30 + (text_x1 - StartX) * scale + .5) << " " <<
 //dat <<"("<<CellIndex<<") show"<<endl;
 dat <<"("<<GetSubDomainNo()<<") show"<<endl;
 #endif
-  return 0;
 }
 
 
@@ -1058,74 +1058,29 @@ int TGridCell::GetGeoLevel()
   return i;
 }
 
-int TGridCell::GetSubGridID()
+int TGridCell::GetSubGridID() const
 {
   if (Parent)
     return Parent->GetSubGridID();
   else
     return -1;
 }
-/** compute number of edges at the boundary */
-/** call: ((TGridCell *)cell)->GetN_BoundaryEdges(); */
-int TGridCell::GetN_BoundaryEdges()
-{
-  int bdry_edges = 0, i, N_;
-    
-  N_ = GetN_Edges();
 
-  for (i=0;i<N_;i++)
+int TGridCell::get_n_boundary_joints() const
+{
+  int bdry_joints = 0;
+  int n_joints = GetN_Joints();
+  for(int i = 0; i < n_joints; i++)
   {
     if (Joints[i]->GetType() == BoundaryEdge ||
-        Joints[i]->GetType() == IsoBoundEdge)
-    {
-	bdry_edges++;
-    }
-  }
-   
-  return bdry_edges;    
-}
-#ifdef __3D__
-/** compute number of faces at the boundary */
-int TGridCell::GetN_BoundaryFaces()
-{
-  int bdry_faces = 0, i, N_;
-    
-  N_ = GetN_Faces();
-
-  for (i=0;i<N_;i++)
-  {
-    if (Joints[i]->GetType() ==  BoundaryFace  ||
+        Joints[i]->GetType() == IsoBoundEdge ||
+        Joints[i]->GetType() == BoundaryFace ||
         Joints[i]->GetType() == IsoBoundFace)
     {
-	bdry_faces++;
+      bdry_joints++;
     }
   }
-   
-  return bdry_faces;    
-}
-#endif 
-
-/** compute number of vertices at the boundary */
-/** BEFORE THIS ROUTINE CAN BE CALLED */
-/**    collection->MarkBoundaryVertices(); */
-/** has to be called */
-/** call: ((TGridCell *)cell)->GetN_BoundaryVertices(); */
-int TGridCell::GetN_BoundaryVertices()
-{
-  int bdry_vertices = 0, i, N_;
-  TVertex *vertex;
-    
-  N_ = GetN_Vertices();
-
-  // loop over the edges
-  for (i=0;i<N_;i++)
-  {
-      vertex = GetVertex(i);
-      if (vertex->GetClipBoard())
-	  bdry_vertices++;
-  }
-   
-  return bdry_vertices;    
+  return bdry_joints;
 }
 
 void TGridCell::check() const
