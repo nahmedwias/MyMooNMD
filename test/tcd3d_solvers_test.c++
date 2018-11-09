@@ -86,7 +86,7 @@ void check(ParameterDatabase& db, int ansatz_order, int time_disc,
   tcd3d.assemble_initial_time();
   
   int step = 0;
-  int imag=0;
+  tcd3d.output(step);
   double end_time = db["time_end"];
   while(TDatabase::TimeDB->CURRENTTIME < end_time-1e-10)
   {
@@ -102,7 +102,7 @@ void check(ParameterDatabase& db, int ansatz_order, int time_disc,
     tcd3d.solve();
     tcd3d.descale_stiffness();
     
-    tcd3d.output(step,imag);
+    tcd3d.output(step);
     
     compare(tcd3d, errors, tol);
   }

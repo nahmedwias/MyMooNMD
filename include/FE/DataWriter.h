@@ -93,6 +93,29 @@ class DataWriter
   */
   std::vector<double> timeValues;
 
+  ///@brief a boolean to manage output when restarting a simulation
+  bool continue_output_after_restart;
+  ///@brief the restart time (=initial time of the restarted sim)
+  double restart_time;
+  /**
+     @brief the time step length of the old simulation
+     it is needed to get the initial index correctly
+     and write the CASE file correctly (re-construct
+     the vector of time values from 0 to restart_time)
+     TODO: for the moment, it is just equal to time_step_length,
+     i.e., we assume that it has not been changed between the first
+     and the restarted simulations
+   */
+  double time_steplength_before_restart;
+  /**
+   * @brief initial index for output
+      initial_index shifts the output numbering
+      so that it starts at time_start (main purpose=avoids re-writing on
+      existing outputs when restarting a simulation)
+   */
+  int output_initial_index;
+  
+  
   // -------------------------------------------------------------------------
 
   /** @brief writes the coordinates of the vertices (used in Case and VTK)

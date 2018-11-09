@@ -96,7 +96,8 @@ int main(int argc, char *argv[])
   
   // assemble the matrices and right hand side at the start time
   tcd3d.assemble_initial_time();
-  int step = 0, image=0;
+  int step = 0;
+  tcd3d.output(step);
   timer.restart_and_print("initial assembling");
   Chrono timer_solve;
   timer_solve.stop();
@@ -123,7 +124,7 @@ int main(int argc, char *argv[])
     timer_solve.stop();
     tcd3d.descale_stiffness();
     
-    tcd3d.output(step,image);
+    tcd3d.output(step);
     timer.restart_and_print(
       "time step (t=" + std::to_string(TDatabase::TimeDB->CURRENTTIME)+ ")");
   }

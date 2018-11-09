@@ -55,6 +55,7 @@ void compute(TDomain& domain, ParameterDatabase& db,
   tnse2d.get_time_stepping_scheme().set_time_disc_parameters();
 
   tnse2d.assemble_initial_time();
+  tnse2d.output(tnse2d.get_time_stepping_scheme().current_step_);
   double end_time = db["time_end"];
   while(TDatabase::TimeDB->CURRENTTIME < end_time-1e-10)
   {
