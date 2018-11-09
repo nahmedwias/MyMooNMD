@@ -437,7 +437,7 @@ void Time_CD3D::solve()
 }
 
 //==============================================================================
-void Time_CD3D::output(int m, int& image)
+void Time_CD3D::output(int m)
 {
   bool i_am_root = true;
 #ifdef _MPI
@@ -460,7 +460,7 @@ void Time_CD3D::output(int m, int& image)
   
   //write solution for visualization 
   outputWriter.add_fe_function(&s.feFunction_);
-  outputWriter.write(image);
+  outputWriter.write(TDatabase::TimeDB->CURRENTTIME);
   
   
   // compute errors 

@@ -167,7 +167,7 @@ TDiscreteForm2D::~TDiscreteForm2D()
   delete Description;
 }
 
-void TDiscreteForm2D::GetLocalForms(int N_Points, double *weights, 
+void TDiscreteForm2D::GetLocalForms(int N_Points, const double *weights, 
                                     double *AbsDetjk, double hK, 
                                     double *X, double *Y,
                                     int *N_BaseFuncts, BaseFunct2D *BaseFuncts, 
@@ -248,7 +248,7 @@ void TDiscreteForm2D::GetLocalForms(int N_Points, double *weights,
   } // endfor i
 }
 
-void TDiscreteForm2D::GetLocalForms(int N_Points, double *weights, 
+void TDiscreteForm2D::GetLocalForms(int N_Points, const double *weights, 
                         double *AbsDetjk, double hK, 
                         double *X, double *Y,
                         int *N_BaseFuncts, BaseFunct2D *BaseFuncts, 

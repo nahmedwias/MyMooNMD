@@ -104,9 +104,9 @@ TAuxParam3D::TAuxParam3D(std::string name, TFEFunction3D **fefunctions3d)
 
 /** return all parameters at all quadrature points */
 void TAuxParam3D::GetParameters(int N_Points, TBaseCell *cell, int cellnum,
-                              double *Xi, double *Eta, double *Zeta,
-                              double *X, double *Y, double *Z,
-                              double **Parameters)
+                                const double *Xi, const double *Eta,
+                                const double *Zeta, double *X, double *Y,
+                                double *Z, double **Parameters)
 {
   int i, j, k, l, n;
   double *param, *currparam, s;
@@ -186,7 +186,7 @@ TAuxParam3D::~TAuxParam3D()
 }
 
 
-void Velocity_Fct(double *inputList, double *outputValues)
+void Velocity_Fct(const double *inputList, double *outputValues)
 {
   outputValues[0] = inputList[3];                // u1old
   outputValues[1] = inputList[4];                // u2old

@@ -45,11 +45,11 @@ TJointEqN::~TJointEqN()
 
 int TJointEqN::CheckMatchingRef(TBaseCell *Me, int J_i, struct StoreGeom &Tmp)
 {
-  TBaseCell *Neighb, *Parent = nullptr;
+  const TBaseCell *Neighb, *Parent = nullptr;
   int i, J_j, N_, MaxLen1, MaxLen2, auxi, aux;
   const int *TmpValues1, *TmpValues2;
   const TRefDesc *NeighbRefDesc, *ParRefDesc;
-  TJoint *ParJoint;
+  const TJoint *ParJoint;
 #ifdef __2D__
   Refinements NeibEdgeRef, MyEdgeRef;
   const int *TmpoEnE, *TmpEC, *TmpECI, *TmpoEnV, *TmpVC, *TmpVCI;

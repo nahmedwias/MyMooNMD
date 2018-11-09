@@ -18,7 +18,7 @@
 const std::string path = parmoon::source_directory;
 const std::string path_to_repo = path + "/data/input_files/";
 
- void Coefficient_Function(double *in, double *out) 
+ void Coefficient_Function(const double *in, double *out) 
   {
   // coordinates:  x at in[0], y at in[1]
   // value of conductivity at in[2]

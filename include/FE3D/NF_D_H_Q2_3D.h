@@ -274,7 +274,7 @@ static double *NF_D_H_Q2_3D_T = nullptr;
 static double *NF_D_H_Q2_3D_S = nullptr;
 
 void NF_D_H_Q2_3D_EvalAll(TCollection *Coll, TBaseCell *Cell,
-                          double *PointValues, double *Functionals)
+                          const double *PointValues, double *Functionals)
 {
   int i;
   double s;
@@ -416,7 +416,7 @@ void NF_D_H_Q2_3D_EvalAll(TCollection *Coll, TBaseCell *Cell,
 }
 
 void NF_D_H_Q2_3D_EvalFace(TCollection *Coll, TBaseCell *Cell, int Joint,
-                           double *PointValues, double *Functionals)
+                           const double *PointValues, double *Functionals)
 {
   ErrMsg("EvalFace not implemented for discontinuous Q2-elements on hexahedra");
   exit(0);

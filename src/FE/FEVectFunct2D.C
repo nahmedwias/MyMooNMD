@@ -28,6 +28,7 @@
 #include <TriaIsoparametric.h>
 #include <Database.h>
 #include <AuxParam2D.h>
+#include <GridCell.h>
 
 #include <Joint.h>
 #include <BoundEdge.h>
@@ -83,7 +84,7 @@ void TFEVectFunct2D::GridToData()
   int N_LocalDOFs;
   int *BeginIndex, *GlobalNumbers;
   int N_Points;
-  double *xi, *eta;
+  const double *xi, *eta;
   int *DOF;
   RefTrans2D F_K;
   TRefTrans2D *rt;
@@ -261,7 +262,7 @@ void TFEVectFunct2D::GetDeformationTensorErrors(
   BaseFunct2D BaseFunct, *BaseFuncts;
   TCollection *Coll;
   TBaseCell *cell;
-  double *weights, *xi, *eta;
+  const double *weights, *xi, *eta;
   double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D];
   double AbsDetjk[MaxN_QuadPoints_2D];
   double *Param[MaxN_QuadPoints_2D], *aux, *aux1, *aux2, *aux3;
@@ -443,7 +444,7 @@ const
   int *N_BaseFunct;
   bool SecondDer[1] = { false };
   int N_Points;
-  double *xi, *eta, *weights;
+  const double *xi, *eta, *weights;
   double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D];
   double AbsDetJK[MaxN_QuadPoints_2D];
   double FEValues0[MaxN_BaseFunctions2D];
@@ -674,7 +675,7 @@ double TFEVectFunct2D::GetL2NormDivergenceError(DoubleFunct2D *Exact_u1,DoubleFu
     UsedElements[0] = FEid;
 
     // compute transformation to reference cell
-    double *xi, *eta, *weights;
+    const double *xi, *eta, *weights;
     int N_Points;
     TFEDatabase2D::GetOrig(N_UsedElements, UsedElements, 
         Coll, cell, SecondDer,
@@ -839,7 +840,7 @@ void TFEVectFunct2D::Interpolate(TFEVectFunct2D *OldVectFunct)
  int *BeginIndex, *GlobalNumbers, *DOF;
  int PolynomialDegree, ApproxOrder;
 
- double *xi, *eta;
+ const double *xi, *eta;
  double X[MaxN_PointsForNodal2D], Y[MaxN_PointsForNodal2D];
  double AbsDetjk[MaxN_PointsForNodal2D];
  double PointValues1[MaxN_PointsForNodal2D];

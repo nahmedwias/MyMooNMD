@@ -76,6 +76,13 @@ output_write_ps: false   { true, false }
 ## norms, e.g. the L^2-norm of the solution. 
 output_compute_errors: true   { true, false }
 
+## This parameter, when true, allows the output numbering 
+## to continue after a simulation restart, which is often a 
+## desirable behavior. Otherwise, it behaves as if the 
+## initial time was 0, and starts the numbering at 0, leading 
+## sometimes to overwritting existing files.
+continue_output_after_restart: false { true, false }
+
 ## Parameters for time discretization 
 time_discretization: crank_nicolson { backward_euler, crank_nicolson, bdf_two, fractional_step }
 time_start: 0.

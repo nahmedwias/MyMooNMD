@@ -162,7 +162,7 @@ void get_cdrag_clift(TFEFunction3D *u1fct, TFEFunction3D *u2fct,
 {
   int i,j,k,l, N_;
   int N_Points,N_Faces,comp;
-  double *weights, *xi, *eta, *zeta;
+  const double *weights, *xi, *eta, *zeta;
   double X[MaxN_QuadPoints_3D];
   double Y[MaxN_QuadPoints_3D];
   double Z[MaxN_QuadPoints_3D];
@@ -492,8 +492,8 @@ void compute_drag_lift_pdiff(NSE3D& nse3d)
   delete u2;
   delete u3;
 
-  std::array<double,3> point_A = {0.45,0.2,0.205};
-  std::array<double,3> point_B = {0.55, 0.2, 0.205};
+  std::array<double,3> point_A = {{0.45,0.2,0.205}};
+  std::array<double,3> point_B = {{0.55, 0.2, 0.205}};
 
   double pdiff = get_p_diff(point_A, point_B, p);
 

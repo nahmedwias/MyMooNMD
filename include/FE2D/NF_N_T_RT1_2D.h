@@ -45,7 +45,7 @@ static const double NF_N_T_RT1_2D_iw[7] =
 
 
 void NF_N_T_RT1_2D_EvalAll(TCollection *Coll, TBaseCell *Cell,
-                           double *PointValues, double *Functionals)
+                           const double *PointValues, double *Functionals)
 {
   // short names
   const double * p = NF_N_T_RT1_2D_T;
@@ -155,7 +155,7 @@ void NF_N_T_RT1_2D_EvalAll(TCollection *Coll, TBaseCell *Cell,
 }
 
 void NF_N_T_RT1_2D_EvalEdge(TCollection *Coll, TBaseCell *Cell, int Joint,
-                            double *PointValues, double *Functionals)
+                            const double *PointValues, double *Functionals)
 {
   // this is needed for setting boundary conditions
   #ifdef __2D__

@@ -205,6 +205,20 @@ Time_NSE2D::Time_NSE2D(const TDomain& domain,
   // initial solution on finest grid - read-in or interpolation
   if(db["read_initial_solution"].is(true))
   {//initial solution is given
+    if(!this->time_stepping_scheme.get_start_time())
+    {
+      Output::warn<1>("Initial Solution","Restarting from existing solution but "
+		      "initial time is 0! This is probably not what you want! "
+		      "If for example your BC or RHS are time-dependent, you will "
+		      "apply initial BC or RHS to an already developed flow, instead "
+		      "of continuing your simulation! Set your time_start to the time "
+		      "of the binary file you are re-starting from (and don't forget "
+		      "to set continue_output_after_restart to true, and also "
+		      "read_metis parameters if needed). Or ignore this warning "
+		      "if you know what you are doing and are aware of the "
+		      "consequences (rhs and bc reset to t = 0, output restart "
+		      "from 0 and probably overwrites outputs from old simulation).");
+    }
     std::string file = db["initial_solution_file"];
     Output::info("Initial Solution", "Reading initial solution from file ", file);
     systems.front().solution.read_from_file(file);

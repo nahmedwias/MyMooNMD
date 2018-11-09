@@ -15,6 +15,7 @@
 #include <BoundFace.h>
 #include <IsoBoundFace.h>
 #include <FEDatabase3D.h>
+#include <GridCell.h>
 #include <LinAlg.h>
 #include <string.h>
 #include <stdlib.h>
@@ -96,7 +97,9 @@ void TTetraIsoparametric::GetOrigBoundFromRef(int Joint, double xi, double eta,
 }
 
 /** transfer a set of points from reference face to original element face */
-void TTetraIsoparametric::GetOrigBoundFromRef(int Joint, int N_Points, double *xi, double *eta,
+void TTetraIsoparametric::GetOrigBoundFromRef(int Joint, int N_Points,
+                                              const double *xi,
+                                              const double *eta,
                                               double *X, double *Y, double *Z)
 {
   int i, k, l;
@@ -200,9 +203,10 @@ void TTetraIsoparametric::GetOrigFromRef(double xi, double eta, double zeta,
 }
 
 /** transfer a set of point from reference to original element */
-void TTetraIsoparametric::GetOrigFromRef(int N_Points,
-                double *xi, double *eta, double *zeta,
-                double *X, double *Y, double *Z, double *absdetjk)
+void TTetraIsoparametric::GetOrigFromRef(int N_Points, const double *xi,
+                                         const double *eta, const double *zeta,
+                                         double *X, double *Y, double *Z,
+                                         double *absdetjk)
 {
   int i, j, k;
   double Xi, Eta, Zeta;
@@ -283,7 +287,7 @@ void TTetraIsoparametric::GetOrigFromRef(int N_Points,
 }
 
 /** transfer from reference element to original element */
-void TTetraIsoparametric::GetOrigFromRef(double *ref, double *orig)
+void TTetraIsoparametric::GetOrigFromRef(const double *ref, double *orig)
 {
   GetOrigFromRef(ref[0], ref[1], ref[2], orig[0], orig[1], orig[2]);
 }
@@ -312,16 +316,17 @@ void TTetraIsoparametric::GetRefFromOrig(double X, double Y, double Z, double &x
 }
 
 /** transfer from original element to reference element */
-void TTetraIsoparametric::GetRefFromOrig(double *orig, double *ref)
+void TTetraIsoparametric::GetRefFromOrig(const double *orig, double *ref)
 {
   OutPut("TTetraIsoparametric::GetRefFromOrig is not implemented" << endl);
 }
 
 /** calculate functions and derivatives from reference element
     to original element */
-void TTetraIsoparametric::GetOrigValues(BaseFunct3D BaseFunct,
-                               int N_Points, double *xi, double *eta, double *zeta,
-                               int N_Functs, QuadFormula3D quadformula)
+void TTetraIsoparametric::GetOrigValues(BaseFunct3D BaseFunct, int N_Points,
+                                        const double *xi, const double *eta,
+                                        const double *zeta, int N_Functs,
+                                        QuadFormula3D quadformula)
 {
   OutPut("TTetraIsoparametric::GetOrigValues is not implemented yet" << endl);
 }
@@ -329,9 +334,9 @@ void TTetraIsoparametric::GetOrigValues(BaseFunct3D BaseFunct,
 /** calculate functions and derivatives from reference element
     to original element, for all given elements */
 void TTetraIsoparametric::GetOrigValues(int N_Sets, BaseFunct3D *BaseFuncts,
-                               int N_Points, double *xi, double *eta,
-                               double *zeta, QuadFormula3D quadformula,
-                               bool *Needs2ndDer)
+                               int N_Points, const double *xi,
+                               const double *eta, const double *zeta,
+                               QuadFormula3D quadformula, bool *Needs2ndDer)
 {
   int i,j,k;
   double **refvaluesD000, **origvaluesD000;
@@ -528,9 +533,12 @@ void TTetraIsoparametric::GetOrigValues(int N_Sets, BaseFunct3D *BaseFuncts,
 /** calculate functions and derivatives from reference element
     to original element */
 void TTetraIsoparametric::GetOrigValues(double xi, double eta, double zeta,
-                               int N_BaseFunct,
-                               double *uref, double *uxiref, double *uetaref, double *uzetaref,
-                               double *uorig, double *uxorig, double *uyorig, double *uzorig)
+                                        int N_BaseFunct, const double *uref,
+                                        const double *uxiref,
+                                        const double *uetaref,
+                                        const double *uzetaref,
+                                        double *uorig, double *uxorig,
+                                        double *uyorig, double *uzorig)
 {
   int i,j,k;
   double dx1, dx2, dx3;
@@ -611,9 +619,13 @@ void TTetraIsoparametric::GetOrigValues(double xi, double eta, double zeta,
 
 
 void TTetraIsoparametric::GetOrigValues(int JointNr, double p1, double p2,
-          int N_BaseFunct,
-          double *uref, double *uxiref, double *uetaref, double *uzetaref,
-          double *uorig, double *uxorig, double *uyorig, double *uzorig)
+                                        int N_BaseFunct,
+                                        const double *uref,
+                                        const double *uxiref,
+                                        const double *uetaref,
+                                        const double *uzetaref,
+                                        double *uorig, double *uxorig,
+                                        double *uyorig, double *uzorig)
 {
 
   int j, k;
@@ -728,7 +740,8 @@ void TTetraIsoparametric::SetCell(const TBaseCell *cell)
   TFEDesc3D *fedesc;
   TBaseFunct3D *bf=nullptr;
   double xm, ym, zm, xp, yp, zp;
-  TVertex **Vertices, **AuxVertices;
+  const TVertex * const * Vertices;
+  const TVertex * const * AuxVertices;
   double x[3], y[3], z[3], factor;
   double LinComb[3][3];
   
@@ -1062,6 +1075,7 @@ void TTetraIsoparametric::SetCell(const TBaseCell *cell)
 /** return outer normal unit vector */
 void TTetraIsoparametric::GetOuterNormal(int j, double s, double t,
                                          double &n1, double &n2, double &n3)
+  const
 {
   double a1, a2, a3, b1, b2, b3;
 
@@ -1077,7 +1091,7 @@ void TTetraIsoparametric::GetOuterNormal(int j, double s, double t,
 /** return two tangent vectors */
 void TTetraIsoparametric::GetTangentVectors(int j, double p1, double p2,
     double &t11, double &t12, double &t13,
-    double &t21, double &t22, double &t23)
+    double &t21, double &t22, double &t23) const
 {
 
   double Xi, Eta, Zeta;
@@ -1214,4 +1228,12 @@ void TTetraIsoparametric::GetTangentVectors(int j, double p1, double p2,
       return;
   }
 
+}
+
+void TTetraIsoparametric::PiolaMapOrigFromRef(double xi, double eta,
+                                              double zeta, int N_Functs,
+                                              const double *refD00,
+                                              double *origD00)
+{
+  ErrThrow("TTetraIsoparametric::PiolaMapOrigFromRef not implemented");
 }

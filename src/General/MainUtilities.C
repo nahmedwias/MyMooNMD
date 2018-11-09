@@ -522,7 +522,8 @@ void ComputeVorticityDivergence(const TFESpace2D *velo, TFEFunction2D *u1,
   TFE2D *Element;
   TNodalFunctional2D *nf;
   RefTrans2D RefTrans;
-  double *xi_ref, *eta_ref, AbsDetjkVort[MaxN_QuadPoints_2D];
+  const double *xi_ref, *eta_ref;
+  double AbsDetjkVort[MaxN_QuadPoints_2D];
   double X_orig[MaxN_PointsForNodal2D], Y_orig[MaxN_PointsForNodal2D];
   double val[3];
 
@@ -626,7 +627,7 @@ void ComputeVorticityDivergence(const TFESpace2D *velo, TFEFunction2D *u1,
 
 // determine L2 and H1 error, 2D
 void L2H1Errors(int N_Points, double *X, double *Y, double *AbsDetjk, 
-                double *Weights, double hK, 
+                const double *Weights, double hK, 
                 double **Der, double **Exact,
                 double **coeffs, double *LocError)
 {
@@ -654,7 +655,7 @@ void L2H1Errors(int N_Points, double *X, double *Y, double *AbsDetjk,
 
 // determine L2-error, divergence error and H1 error, 2D
 void L2DivH1Errors(int N_Points, double *X, double *Y, double *AbsDetjk, 
-                  double *Weights, double hK, 
+                  const double *Weights, double hK, 
                   double **Der, double **Exact,
                   double **coeffs, double *LocError)
 {
@@ -702,7 +703,7 @@ void L2DivH1Errors(int N_Points, double *X, double *Y, double *AbsDetjk,
 double Mesh_size_in_convection_direction(double hK, double b1, double b2);
 
 void SDFEMErrors(int N_Points, double *X, double *Y, double *AbsDetjk, 
-                 double *Weights, double hK, double **Der, double **Exact,
+                 const double *Weights, double hK, double **Der, double **Exact,
                  double **coeffs, double *LocError)
 {
   int i;
@@ -772,7 +773,7 @@ void SDFEMErrors(int N_Points, double *X, double *Y, double *AbsDetjk,
 
 // determine L2, H1 and SDFEM error, in (0,P6)^2
 void SDFEMErrorsSmooth(int N_Points, double *X, double *Y, double *AbsDetjk, 
-                 double *Weights, double hK, double **Der, double **Exact,
+                 const double *Weights, double hK, double **Der, double **Exact,
                  double **coeffs, double *LocError)
 {
   int i, sd_type = TDatabase::ParamDB->SDFEM_TYPE;
@@ -849,7 +850,7 @@ void SDFEMErrorsSmooth(int N_Points, double *X, double *Y, double *AbsDetjk,
 // example JohnMaubachTobiska1997 (x-0.5)^2+(y-0.5)^2 > r^2 
 void SDFEMErrorsSmooth_JohnMaubachTobiska1997
 (int N_Points, double *X, double *Y, double *AbsDetjk, 
- double *Weights, double hK, double **Der, double **Exact,
+ const double *Weights, double hK, double **Der, double **Exact,
  double **coeffs, double *LocError)
 {
     int i, sd_type = TDatabase::ParamDB->SDFEM_TYPE;
@@ -960,7 +961,7 @@ void SDFEMErrorsSmooth_JohnMaubachTobiska1997
 // determine errors to interpolant
 // paper with Julia Novo
 void SDFEMErrorsInterpolant(int N_Points, double *X, double *Y, double *AbsDetjk, 
-                 double *Weights, double hK, double **Der, double **Exact,
+                 const double *Weights, double hK, double **Der, double **Exact,
                  double **coeffs, double *LocError)
 {
   int i;
@@ -1044,7 +1045,7 @@ void SDFEMErrorsInterpolant(int N_Points, double *X, double *Y, double *AbsDetjk
 
 // determine L2, H1 and SDFEM error for Oseen
 void SPGErrorsOseen(int N_Points, double *X, double *Y, double *AbsDetjk, 
-                 double *Weights, double hK, double **Der, double **Exact,
+                 const double *Weights, double hK, double **Der, double **Exact,
                  double **coeffs, double *LocError)
 {
   int i;
@@ -1102,7 +1103,7 @@ void SPGErrorsOseen(int N_Points, double *X, double *Y, double *AbsDetjk,
 
 // determine L2, H1 and pressure part of SUPG error for Oseen
 void SPGErrorsOseenPressure(int N_Points, double *X, double *Y, double *AbsDetjk, 
-                 double *Weights, double hK, double **Der, double **Exact,
+                 const double *Weights, double hK, double **Der, double **Exact,
                  double **coeffs, double *LocError)
 {
   int i;
@@ -1158,7 +1159,7 @@ void SPGErrorsOseenPressure(int N_Points, double *X, double *Y, double *AbsDetjk
 
 // determine L1 error, 2D
 void L1Error(int N_Points, double *X, double *Y, double *AbsDetjk, 
-             double *Weights, double hK, 
+             const double *Weights, double hK, 
              double **Der, double **Exact,
              double **coeffs, double *LocError)
 {
@@ -1266,7 +1267,7 @@ void L1Error(int N_Points, double *X, double *Y, double *AbsDetjk,
 
 // determine deformation tensor error
 void DeformationTensorError(int N_Points, double *X, double *Y,
-                double *AbsDetjk, double *Weights, double hK, 
+                double *AbsDetjk, const double *Weights, double hK, 
                 double **Der, double **Exact,
                 double **coeffs, double *LocError)
 {
@@ -1304,7 +1305,7 @@ void DeformationTensorError(int N_Points, double *X, double *Y,
 
 // determine L2 and H1 error, 2D
 void H1Norm(int N_Points, double *X, double *Y, double *AbsDetjk, 
-            double *Weights, double hK, 
+            const double *Weights, double hK, 
             double **Der, double **Exact,
             double **coeffs, double *LocError)
 {
@@ -1333,7 +1334,7 @@ void H1Norm(int N_Points, double *X, double *Y, double *AbsDetjk,
 }
 // compute the error in the divergence
 void DivergenceError(int N_Points, double *X, double *Y,
-		     double *AbsDetjk, double *Weights, double hK, 
+		     double *AbsDetjk, const double *Weights, double hK, 
 		     double **Der, double **Exact,
 		     double **coeffs, double *LocError)
 {
@@ -1363,7 +1364,7 @@ void DivergenceError(int N_Points, double *X, double *Y,
 
 // compute the error in the grad-div term for Oseen
 void DivergenceErrorGradDivOseen(int N_Points, double *X, double *Y,
-         double *AbsDetjk, double *Weights, double hK, 
+         double *AbsDetjk, const double *Weights, double hK, 
          double **Der, double **Exact,
          double **coeffs, double *LocError)
 {
@@ -1399,7 +1400,7 @@ void DivergenceErrorGradDivOseen(int N_Points, double *X, double *Y,
 
 // mesh cell parameters for shock capturing scheme DC_CD
 void Parameters_DC_CD(int N_Points, double *X, double *Y, double *AbsDetjk, 
-           double *Weights, double hK, 
+           const double *Weights, double hK, 
            double **Der, double **Exact,
            double **coeffs, double *LocError)
 {
@@ -1444,7 +1445,7 @@ void Parameters_DC_CD(int N_Points, double *X, double *Y, double *AbsDetjk,
 
 // mesh cell values for gradient and residual 
 void Parameters_Gradient_Residual(int N_Points, double *X, double *Y, double *AbsDetjk,
-           double *Weights, double hK,
+           const double *Weights, double hK,
            double **Der, double **Exact,
            double **coeffs, double *LocError)
 {
@@ -1499,7 +1500,7 @@ void ComputeVorticityDivergence(TFESpace3D *velo, TFEFunction3D *u1,
   TFE3D *Element;
   TNodalFunctional3D *nf;
   RefTrans3D RefTrans;
-  double *xi_ref, *eta_ref, *zeta_ref;  //values[4];
+  const double *xi_ref, *eta_ref, *zeta_ref;  //values[4];
   double AbsDetjkVort[MaxN_QuadPoints_3D];
   double X_orig[MaxN_PointsForNodal3D], Y_orig[MaxN_PointsForNodal3D];
   double Z_orig[MaxN_PointsForNodal3D];
@@ -1600,7 +1601,7 @@ void ComputeVorticityDivergence(TFESpace3D *velo, TFEFunction3D *u1,
 // determine L2 and H1 error, 3D
 void L2H1Errors(int N_Points, double *X, double *Y, double *Z, 
                 double *AbsDetjk, 
-                double *Weights, double hK, 
+                const double *Weights, double hK, 
                 double **Der, double **Exact,
                 double **coeffs, double *LocError)
 {
@@ -1632,7 +1633,7 @@ void L2H1Errors(int N_Points, double *X, double *Y, double *Z,
 }
 void L2H1ErrorsSmooth(int N_Points, double *X, double *Y, double *Z, 
                 double *AbsDetjk, 
-                double *Weights, double hK, 
+                const double *Weights, double hK, 
                 double **Der, double **Exact,
                 double **coeffs, double *LocError)
 {
@@ -1668,8 +1669,9 @@ void L2H1ErrorsSmooth(int N_Points, double *X, double *Y, double *Z,
 }
 
 void L2DivH1Errors(int N_Points, double *X, double *Y, double *Z, 
-                   double *AbsDetjk, double *Weights, double hK, double **Der,
-                   double **Exact, double **coeffs, double *LocError)
+                   double *AbsDetjk, const double *Weights, double hK,
+                   double **Der, double **Exact, double **coeffs,
+                   double *LocError)
 {
   LocError[0] = 0.0;
   LocError[1] = 0.0;
@@ -1716,11 +1718,9 @@ void L2DivH1Errors(int N_Points, double *X, double *Y, double *Z,
 }
 
 // determine L1 error, 3D
-void L1Error(int N_Points, double *X, double *Y, double *Z, 
-                double *AbsDetjk, 
-                double *Weights, double hK, 
-                double **Der, double **Exact,
-                double **coeffs, double *LocError)
+void L1Error(int N_Points, double *X, double *Y, double *Z,  double *AbsDetjk,
+             const double *Weights, double hK, double **Der, double **Exact,
+             double **coeffs, double *LocError)
 {
     OutPut("computation of L1-error not implemented !!!" <<endl);
     LocError[0] = 0;
@@ -1728,7 +1728,7 @@ void L1Error(int N_Points, double *X, double *Y, double *Z,
 
 // determine deformation tensor error
 void DeformationTensorError(int N_Points, double *X, double *Y, double *Z,
-                double *AbsDetjk, double *Weights, double hK, 
+                double *AbsDetjk, const double *Weights, double hK, 
                 double **Der, double **Exact,
                 double **coeffs, double *LocError)
 {
@@ -1777,7 +1777,7 @@ void DeformationTensorError(int N_Points, double *X, double *Y, double *Z,
 
 // compute the error in the divergence
 void DivergenceError(int N_Points, double *X, double *Y, double *Z,
-		     double *AbsDetjk, double *Weights, double hK, 
+		     double *AbsDetjk, const double *Weights, double hK, 
 		     double **Der, double **Exact,
 		     double **coeffs, double *LocError)
 {
@@ -1809,7 +1809,7 @@ void DivergenceError(int N_Points, double *X, double *Y, double *Z,
 // mesh cell parameters for shock capturing scheme DC_CD
 void Parameters_DC_CD(int N_Points, double *X, double *Y, double *Z,
                       double *AbsDetjk, 
-                      double *Weights, double hK, 
+                      const double *Weights, double hK, 
                       double **Der, double **Exact,
                       double **coeffs, double *LocError)
 {

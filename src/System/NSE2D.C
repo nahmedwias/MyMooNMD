@@ -705,9 +705,9 @@ void NSE2D::solve()
 // TFEFunction2D::GetErrors method
 double delta0 = 0.;
 void natural_error_norm_infsup_stabilizations(
-  int N_Points, double *X, double *Y, double *AbsDetjk, double *Weights,
+  int N_Points, double *X, double *Y, double *AbsDetjk, const double *Weights,
   double hK, double **Der, double **Exact, double **coeffs, double *LocError);
-void parameter_function_for_errors(double *in, double *out)
+void parameter_function_for_errors(const double *in, double *out)
 {
   out[0] = in[2]; // u1 (for conformity within the coefficient function)
   out[1] = in[3]; // u2 (for conformity within the coefficient function)
@@ -900,7 +900,7 @@ void NSE2D::reset_residuals()
 
 void natural_error_norm_infsup_stabilizations(int N_Points, double *X,
                                               double *Y, double *AbsDetjk,
-                                              double *Weights, double hK,
+                                              const double *Weights, double hK,
                                               double **Der, double **Exact,
                                               double **coeffs, double *LocError)
 {

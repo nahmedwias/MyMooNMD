@@ -194,6 +194,20 @@ Time_NSE3D::Time_NSE3D(std::list< TCollection* > collections_, const ParameterDa
   // initial solution on finest grid - read-in or interpolation
   if(db_["read_initial_solution"].is(true))
   {//initial solution is given
+    if(!this->time_stepping_scheme.get_start_time())
+    {
+      Output::warn<1>("Initial Solution","Restarting from existing solution but "
+		      "initial time is 0! This is probably not what you want! "
+		      "If for example your BC or RHS are time-dependent, you will "
+		      "apply initial BC or RHS to an already developed flow, instead "
+		      "of continuing your simulation! Set your time_start to the time "
+		      "of the binary file you are re-starting from (and don't forget "
+		      "to set continue_output_after_restart to true, and also "
+		      "read_metis parameters if needed). Or ignore this warning "
+		      "if you know what you are doing and are aware of the "
+		      "consequences (rhs and bc reset to t = 0, output restart "
+		      "from 0 and probably overwrites outputs from old simulation).");
+    }
     std::string file = db_["initial_solution_file"];
     Output::root_info("Initial Solution", "Reading initial solution from file ", file);
 #ifdef _MPI
@@ -617,7 +631,7 @@ bool Time_NSE3D::stop_it(unsigned int iteration_counter)
    *  scheme is solved just once, as a linear system. ) */
   double epsilon    = db_["nonlinloop_epsilon"];
   size_t max_It     = db_["nonlinloop_maxit"];
-  double conv_speed = db_["nonlinloop_slowfactor"];
+  //double conv_speed = db_["nonlinloop_slowfactor"];
   bool slow_conv    = false;
   
   if ( db_["nonlinloop_scale_epsilon_with_size"] )
@@ -696,7 +710,7 @@ void Time_NSE3D::compute_residuals()
 
   // This is the calculation of the residual, given the defect.
   BlockVector defect_impuls({number_u_Dof,number_u_Dof,number_u_Dof});
-  BlockVector defect_mass({number_p_Dof});
+  BlockVector defect_mass(std::vector<unsigned int>(1, number_p_Dof));
   //copy the entries (BlockVector offers no functionality to do this more nicely)
   for(size_t i = 0; i<3*number_u_Dof ;++i)
     defect_impuls.get_entries()[i] = defect_.get_entries()[i];
@@ -765,7 +779,7 @@ void Time_NSE3D::solve()
 }
 
 /**************************************************************************** */
-void Time_NSE3D::output(int m, int &image)
+void Time_NSE3D::output(int m)
 {
 #ifdef _MPI
     int my_rank;
@@ -799,7 +813,7 @@ void Time_NSE3D::output(int m, int &image)
   // write solution to a vtk file
   outputWriter.add_fe_function(&s.p_);
   outputWriter.add_fe_vector_function(&s.u_);
-  outputWriter.write(image);
+  outputWriter.write(TDatabase::TimeDB->CURRENTTIME);
 
   // Measure errors to known solution
   // if an exact solution is not known, it is usually set to be zero, so that
@@ -895,10 +909,11 @@ void Time_NSE3D::output(int m, int &image)
    delete u1;
    delete u2;
    delete u3;
-
-   // do post-processing step depending on what the example implements, if needed
-   example_.do_post_processing(*this);
    
+   // do post-processing step depending on what the example implements, if needed
+   if(m>0)
+    example_.do_post_processing(*this);
+
    if(db_["write_solution_binary"].is(true))
    { size_t interval = db_["write_solution_binary_all_n_steps"];
     if(m % interval == 0)
@@ -1067,7 +1082,7 @@ void Time_NSE3D::call_assembling_routine(Time_NSE3D::System_per_grid& s,
     Output::print(" ** START ASSEMBLE PRESSURE BC ON RHS **");
 
     const TFESpace3D *v_space = &s.velocitySpace_;
-    const TFESpace3D *p_space = &s.pressureSpace_;
+    //const TFESpace3D *p_space = &s.pressureSpace_;
     // get all cells: this is at the moment needed for the boundary assembling
     /// @todo get only the (relevant) boundary cells
     /// e.g., bdCells = coll->get_cells_on_component(i)

@@ -22,6 +22,7 @@
 #include <DataWriter.h>
 #include <Solver.h>
 #include "LocalAssembling.h"
+#include "TimeDiscretizations.h"
 
 #include <vector>
 #include <deque>
@@ -46,27 +47,20 @@ class Time_CD2D
       BlockVector rhs;
       /** @brief solution vector */
       BlockVector solution;
-      /** Stores stiffness_matrix * solution of last time step -
-       *  this is needed in (partly) explicit time stepping schemes.*/
-      BlockVector old_Au;
       /** @brief Finite element function */
       TFEFunction2D fe_function;
+      /** @brief
+       * old solution for the computation of the residual
+       * that passes as an FEFunction to the local assembling
+       * routines
+       */
+      BlockVector solution_m1;
+      TFEFunction2D u_m1;
+      BlockVector solution_m2;
+      TFEFunction2D u_m2;
 
       /** @brief constructor*/
       System_per_grid(const Example_TimeCD2D& example, TCollection& coll);
-
-      /**
-       * Reset the stiffness matrix A to its 'pure' state before the
-       * modifications due to a one-step/fractional-step theta scheme.
-       * Sets A = 1/(tau*theta_1)*(A - mass)
-       * This is for the case we want to reuse A in the next time step.
-       *
-       * @param tau The current time step length.
-       * @param theta_1 The impliciteness parameter for the transport (e.g. 1 for bw Euler).
-       */
-      void descale_stiff_matrix(double tau, double theta_1);
-
-      void update_old_Au();
 
       /**
        * Special member functions mostly deleted,
@@ -141,6 +135,11 @@ class Time_CD2D
     /// @brief class for handling (time dependent) output 
     DataWriter2D timeDependentOutput;
     
+    /// @brief time stepping scheme object to access everything
+    TimeDiscretization time_stepping_scheme;
+    /// @brief system right hand side which passes to the solver
+    BlockVector rhs_from_time_disc;
+    
   public:
     /** @brief constructor
      * This constructor calls the other constructor creating an Example_CD2D
@@ -175,25 +174,6 @@ class Time_CD2D
      */
      void assemble();
 
-    /**
-     * Descales the stiffness matrices from the modifications due to time
-     * discretization (one step/fractional step theta).
-     * This should be called after all solve() of the current time step
-     * have been performed and the stiffness should be reused.
-     *
-     * Sets A := 1/(theta_1 * tau) * (A - M), where A is stiffness matrix and
-     * M mass matrix, on all grids.
-     *
-     * As a side effect, it updates the "old_Au" value which will be needed
-     * for the next time step.
-     *
-     *
-     * @param[in] tau The current timestep length.
-     * @param[in] theta_1 The impliciteness parameter for the transport
-     * (e.g. 1 for bw Euler).
-     */
-    void descale_stiffness(double tau, double theta_1);
-
     /** @brief solve the system
      */
     void solve();
@@ -220,6 +200,11 @@ class Time_CD2D
     const ParameterDatabase & get_db() const
     { return db; }
     
+    TimeDiscretization& get_time_stepping_scheme()
+    {return time_stepping_scheme;}
+    const TimeDiscretization& get_time_stepping_scheme() const
+    {return time_stepping_scheme;}
+    
     /**
     * @brief return the computed errors at each discre time point
     * 
@@ -245,19 +230,14 @@ class Time_CD2D
      * to avoid code duping. Is really not written very sophisticated,
      * use it with care.
      * @param block_mat should be one system's stiffness or mass matrix.
-     * @param la_stiff A fittingly constructed LocalAssemble2D object which
+     * @param la A fittingly constructed LocalAssemble2D object which
      * is responsible for the assembling of the stiffness matrix and right hand
      * side.
-     * @param la_masse A fittingly constructed LocalAssemble2D object which
-     * is responsible for the assembling of the mass matrix. The mass matrix
-     * will not be assembled and la_mass will be ignored, when assemble_both
-     * is 'false'.
      * @param assemble_both If true, both stiffness (+rhs) and mass matrix are
      * assembled, if false only stiffness matrix and rhs.
      */
     void call_assembling_routine(Time_CD2D::System_per_grid& system,
-                                 LocalAssembling2D& la_stiff, LocalAssembling2D& la_mass,
-                                 bool assemble_both);
+                                 LocalAssembling2D& la, bool assemble_both);
 };
 
 #endif

@@ -180,7 +180,7 @@ int main(int argc, char* argv[])
     tcd.assemble_initial_time();
 
     int step = 0;
-    //int imag = 0;
+    //tcd.output(step);
     double end_time = db["time_end"];
     while(TDatabase::TimeDB->CURRENTTIME < end_time-1e-10)
     {
@@ -196,7 +196,7 @@ int main(int argc, char* argv[])
       tcd.assemble();
       tcd.solve();
 
-      //tcd.output(step,imag);
+      //tcd.output(step);
       check_solution_norms(tcd, step);
     }
 

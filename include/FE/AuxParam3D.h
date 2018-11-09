@@ -101,7 +101,7 @@ class TAuxParam3D
 
     /** return all parameters at all quadrature points */
     void GetParameters(int n_points, TBaseCell *cell, int cellnum,
-                       double *xi, double *eta, double *zeta,
+                       const double *xi, const double *eta, const double *zeta,
                        double *x, double *y, double *z,
                        double **Parameters);
 
@@ -211,6 +211,6 @@ class TAuxParam3D
 };
 
 // standard function to use for Navier-Stokes
-void Velocity_Fct(double *inputList, double *outputValues);
+void Velocity_Fct(const double *inputList, double *outputValues);
 
 #endif // __AUXPARAM3D__

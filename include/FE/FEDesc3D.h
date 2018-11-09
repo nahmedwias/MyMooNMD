@@ -61,14 +61,10 @@ class TFEDesc3D
 #endif
 
   public:
-    /** constructor, setting all data */
-    TFEDesc3D(char *description, int n_dof, int n_jointdof,
-              int **jointdof, int n_innerdof, int *innerdof);
-      
     /** constructor, setting all data with dof on cell boundary */
     TFEDesc3D(char *description, int n_dof, int n_jointdof,
               int **jointdof, int n_innerdof, int *innerdof,
-              int n_outerdof, int *outerdof);
+              int n_outerdof = 0, int *outerdof = nullptr);
 
 #ifdef _MPI 
     /** constructor, setting all data including edge and vertices data*/
