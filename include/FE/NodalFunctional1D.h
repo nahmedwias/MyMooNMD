@@ -63,23 +63,26 @@ class TNodalFunctional1D
                        DoubleFunctVect *evaledge);
 
     /** return information for points for all functionals */
-    void GetPointsForAll(int &n_points, double* &xi, double* &eta)
+    void GetPointsForAll(int &n_points, const double* &xi, const double* &eta)
+      const
     { n_points = N_PointsAll; xi = Xi; eta = Eta; }
 
     /** return information for points for edge functionals */
-    void GetPointsForEdge(int &n_points, double* &t)
+    void GetPointsForEdge(int &n_points, const double* &t) const
     { n_points = N_PointsEdge; t = T; }
 
     /** return values for all nodal functionals */
-    void GetAllFunctionals(double *PointValues, double *Functionals)
+    void GetAllFunctionals(const double *PointValues, double *Functionals)
+      const
     { EvalAll(PointValues, Functionals); }
 
     /** return values for edge nodal functional */
-    void GetEdgeFunctionals(double *PointValues, double *Functionals)
+    void GetEdgeFunctionals(const double *PointValues, double *Functionals)
+      const
     { EvalEdge(PointValues, Functionals); }
 
     /** return ID for this set */
-    NodalFunctional1D GetID()
+    NodalFunctional1D GetID() const
     { return ID; }
 
 };

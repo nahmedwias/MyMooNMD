@@ -99,7 +99,8 @@ ParameterDatabase TDomain::default_domain_parameters()
    db.add("read_metis", false , "This Boolean will state if you read a file "
           "which contains the partition of the cells on the processors.");
 
-   db.add("read_metis_file", std::string("mesh_partitioning_file.txt"), "The Mesh-file will be read here.");
+   db.add("read_metis_file", std::string("mesh_partitioning_file.txt"),
+          "The Mesh-file will be read here.");
 
    db.add("write_metis", false , "This Boolean will state if you write out "
           "which cell belongs to which processor into a file (see parameter"
@@ -1182,39 +1183,30 @@ void TDomain::InitFromMesh(std::string PRM, std::string MESHFILE)
 #endif
 }
 
-int TDomain::PS(const char *name, Iterators iterator, int arg)
+void TDomain::PS(const char *name, Iterators iterator, int arg)
 {
   TCollection * coll = this->GetCollection(iterator, arg);
   this->PS(name, coll);
   delete coll;
-  return 0;
 }
 
-int TDomain::PS(const char *name, TCollection *Coll)
+void TDomain::PS(const char *name, TCollection *Coll)
 {
-  int BX, BY;
-  double scale;
   std::ofstream dat(name);
-  TBaseCell *CurrCell;
-  int i, N_;
-
   if (!dat)
   {
-    cerr << "cannot open '" << name << "' for output" << endl;
-    return -1;
+    Output::warn("TDomain::PS", "unable to open ", name, " for output");
+    return;
   }
-
   Output::info("PS","Generating postscript file ", name);
-
-  N_ = Coll->GetN_Cells();
   
   // scale = 5350 / BoundX;
   // if (7820 / BoundY < scale) scale = 7820 / BoundY;
-  scale = 535 / BoundX;
+  double scale = 535 / BoundX;
   if (782 / BoundY < scale) scale = 782 / BoundY;
 
-  BX = (int) (BoundX * scale + .5);
-  BY = (int) (BoundY * scale + .5);
+  int BX = (int) (BoundX * scale + .5);
+  int BY = (int) (BoundY * scale + .5);
 
   dat << "%!PS-Adobe-2.0" << endl;
   dat << "%%Creator: MooN_MD (Volker Behns)" << endl;
@@ -1232,22 +1224,19 @@ int TDomain::PS(const char *name, TCollection *Coll)
   // dat << "0.10 0.10 scale" << endl;
   // dat << "10.0 setlinewidth" << endl;
   dat << "0.5 setlinewidth" << endl;
-  bool gridcell_with_numbers = false;
 
   // loop over all cells
-  for(i=0;i<N_;i++)
+  int n_cells = Coll->GetN_Cells();
+  for(int i = 0; i < n_cells; i++)
   {
-    CurrCell = Coll->GetCell(i);
-    CurrCell->SetClipBoard(i);
-    CurrCell->PS(dat, scale, StartX, StartY, gridcell_with_numbers);
+    Coll->GetCell(i)->PS(dat, scale, StartX, StartY); // no cell indices
+    //Coll->GetCell(i)->PS(dat, scale, StartX, StartY, i); // with cell indices
   }
 
   dat << "stroke" << endl;
   dat << "showpage" << endl;
   dat << "%%Trailer" << endl;
   dat << "%%Pages: 1" << endl;
-
-  return 0;
 }
 
 
@@ -2974,7 +2963,7 @@ void TDomain::CorrectParametersAndShapes()
 {
   int MaxLevel, CurrLevel;
   int info, j, N_Edges;
-  TVertex **Vertices;
+  const TVertex * const * Vertices;
   TJoint *joint;
   TGridCell *ActiveCell;
 

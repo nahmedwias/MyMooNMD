@@ -88,6 +88,13 @@ output_vtk_directory: vtk_files
 ## Especially this includes vtk-files 
 output_basename: cylinder
 
+## This parameter, when true, allows the output numbering 
+## to continue after a simulation restart, which is often a 
+## desirable behavior. Otherwise, it behaves as if the 
+## initial time was 0, and starts the numbering at 0, leading 
+## sometimes to overwritting existing files.
+continue_output_after_restart: false { true, false }
+
 ## The maximum number of iterations to perform in a non-linear loop. 
 nonlinloop_maxit: 1   [ 0, 1000 ]
 
@@ -205,6 +212,22 @@ multigrid_coarse_max_n_iterations: 10   [ 1, 100 ]
 ## damping), a value of 0.8 is often a good start. 
 multigrid_vanka_damp_factor: 1   [ 0, 1 ]
 
+
+## This Boolean will state if you read a file 
+## which contains the partition of the cells on the processors.
+read_metis: false   { true, false }
+
+## The Mesh-file will be read here.
+read_metis_file: mesh_partitioning_file.txt 
+
+## This Boolean will state if you write out
+## which cell belongs to which processor into a file (see parameter
+## 'write_metis_file'.
+write_metis: false   { true, false }
+
+## The partitioning of the mesh will be written here.
+write_metis_file: mesh_partitioning_file.txt
+
 ----------------------------------------------------------------------
 # order of ansatz space (=k)
 #   i.e. P_k/P_{k-1} on triangles,  Q_k/Q_{k-1} on quadrangles
@@ -265,4 +288,6 @@ petsc_arguments: -ksp_type fgmres -pc_type hypre -pc_hypre_type boomeramg
 ##petsc_arguments: -ksp_type fgmres -pc_type ml
 ##petsc_arguments: -ksp_type fgmres -pc_type gamg -pc_gamg_type classical
 ##petsc_arguments: -ksp_type fgmres -pc_sor_its 2 -pc_type sor
+
+
 

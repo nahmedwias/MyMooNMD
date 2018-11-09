@@ -1831,9 +1831,9 @@ void Superconvergence_Q1Q2_3D(TFEFunction3D *q1_function,
   double *q1_values, *q2_values;
 //  int q1_ndof, q2_ndof;
   TCollection *q1_coll, *q2_coll;
-  TBaseCell *coarse_cell,*child_cell0,*child_cell1;
-  TBaseCell *child_cell2,*child_cell3,*child_cell4;
-  TBaseCell *child_cell5,*child_cell6,*child_cell7;
+  const TBaseCell *coarse_cell,*child_cell0,*child_cell1;
+  const TBaseCell *child_cell2,*child_cell3,*child_cell4;
+  const TBaseCell *child_cell5,*child_cell6,*child_cell7;
 
  
   double coarse_values[27];
@@ -1958,9 +1958,9 @@ void Superconvergence_Q2Q3_3D(TFEFunction3D *q2_function,
 //  int q2_ndof,q3_ndof;   // set but unused
   
   TCollection *q3_coll, *q2_coll;
-  TBaseCell *coarse_cell,*child_cell0,*child_cell1;
-  TBaseCell *child_cell2,*child_cell3,*child_cell4;
-  TBaseCell *child_cell5,*child_cell6,*child_cell7;
+  const TBaseCell *coarse_cell,*child_cell0,*child_cell1;
+  const TBaseCell *child_cell2,*child_cell3,*child_cell4;
+  const TBaseCell *child_cell5,*child_cell6,*child_cell7;
 
 
   double coarse_values[64];
@@ -2105,9 +2105,9 @@ void Superconvergence_Q2Q4_3D(TFEFunction3D *q2_function,
 //  int q2_ndof,q4_ndof;  // set but unused
   
   TCollection *q4_coll, *q2_coll;
-  TBaseCell *coarse_cell,*child_cell0,*child_cell1;
-  TBaseCell *child_cell2,*child_cell3,*child_cell4;
-  TBaseCell *child_cell5,*child_cell6,*child_cell7;
+  const TBaseCell *coarse_cell,*child_cell0,*child_cell1;
+  const TBaseCell *child_cell2,*child_cell3,*child_cell4;
+  const TBaseCell *child_cell5,*child_cell6,*child_cell7;
 
 
   double coarse_values[125];
@@ -2254,9 +2254,9 @@ void Superconvergence_P1P2_3D(int version, TFEFunction3D *p1_function,
   double *p1_values, *p2_values;
 //  int p1_ndof, p2_ndof;   // set but unused
   TCollection *p1_coll, *p2_coll;
-  TBaseCell *coarse_cell,*child_cell0,*child_cell1;
-  TBaseCell *child_cell2,*child_cell3,*child_cell4;
-  TBaseCell *child_cell5,*child_cell6,*child_cell7;
+  const TBaseCell *coarse_cell,*child_cell0,*child_cell1;
+  const TBaseCell *child_cell2,*child_cell3,*child_cell4;
+  const TBaseCell *child_cell5,*child_cell6,*child_cell7;
   double coarse_values[10];
   double fine_values[32];
   int *coarse_GlobalNumbers,*fine_GlobalNumbers;

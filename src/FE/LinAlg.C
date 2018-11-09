@@ -611,7 +611,7 @@ void FindEigenValues(double *ap, int N_Eqn, char &COMPZ, double *d, double *z)
 // determine L2 and H1 error
 void L1Int3D(int N_Points, double *X, double *Y, double *Z,
              double *AbsDetjk,
-             double *Weights, double hK,
+             const double *Weights, double hK,
              double **Der, double **Exact,
              double **coeffs, double *Loc)
 {
@@ -722,7 +722,7 @@ void IntoL20FEFunction3D(double *v, int Length, TFESpace3D *FESpace)
   TCollection *Coll;
   TBaseCell *cell;
 //  TFE3D *ele;
-  double *weights, *xi, *eta, *zeta;
+  const double *weights, *xi, *eta, *zeta;
   double X[MaxN_QuadPoints_3D], Y[MaxN_QuadPoints_3D];
   double Z[MaxN_QuadPoints_3D];
   double AbsDetjk[MaxN_QuadPoints_3D];
@@ -862,7 +862,7 @@ void IntoL20FEFunction3D(double *v, int Length, TFESpace3D *FESpace,
   TCollection *Coll;
   TBaseCell *cell;
 //  TFE3D *ele;
-  double *weights, *xi, *eta, *zeta;
+  const double *weights, *xi, *eta, *zeta;
   double X[MaxN_QuadPoints_3D], Y[MaxN_QuadPoints_3D], Z[MaxN_QuadPoints_3D];
   double AbsDetjk[MaxN_QuadPoints_3D];
 //  RefTrans3D RefTrans;
@@ -1003,9 +1003,8 @@ void IntoL20FEFunction3D(double *v, int Length, TFESpace3D *FESpace,
 #ifdef __2D__
 // determine L2 and H1 error
 void L1Int(int N_Points, double *X, double *Y, double *AbsDetjk,
-                double *Weights, double hK,
-                double **Der, double **Exact,
-                double **coeffs, double *Loc)
+           const double *Weights, double hK, double **Der, double **Exact,
+           double **coeffs, double *Loc)
 {
   int i;
   double *deriv, w, t;
@@ -1116,7 +1115,7 @@ void IntoL20FEFunction_OLD(double *v, int Length, TFESpace2D *FESpace,
   BaseFunct2D BaseFunct, *BaseFuncts;
   TCollection *Coll;
   TBaseCell *cell;
-  double *weights, *xi, *eta;
+  const double *weights, *xi, *eta;
   double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D];
   double AbsDetjk[MaxN_QuadPoints_2D];
   double *Derivatives[MaxN_QuadPoints_2D], der[MaxN_QuadPoints_2D];
@@ -1347,7 +1346,7 @@ void IntoL20FEFunction(double *v, int Length, const TFESpace2D *FESpace,
   BaseFunct2D BaseFunct, *BaseFuncts;
   TCollection *Coll;
   TBaseCell *cell;
-  double *weights, *xi, *eta;
+  const double *weights, *xi, *eta;
   double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D];
   double AbsDetjk[MaxN_QuadPoints_2D];
   double *Derivatives[MaxN_QuadPoints_2D], der[MaxN_QuadPoints_2D];

@@ -48,7 +48,7 @@ std::shared_ptr<FEMatrix> LPS_for_pressure_Scott_Zhang(
   LPS_parameter_set lps_ps)
 {
   int N_Points;
-  double *weights, *xi, *eta;
+  const double *weights, *xi, *eta;
   double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D], x[4], y[4];
   double AbsDetjk[MaxN_QuadPoints_2D];
   double val[6];

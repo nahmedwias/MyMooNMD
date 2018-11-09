@@ -26,6 +26,11 @@ class TGridCell : public TBaseCell
     /**  @brief grid level on with this cell was generated */
     int RefLevel;
 
+    virtual TBaseCell *GetChild(int C_i) override;
+    virtual TBaseCell *GetParent() override;
+    
+    friend class TDomain;
+    
   public:
     // Constructor
     TGridCell(TRefDesc *refdesc, int reflevel);
@@ -40,7 +45,7 @@ class TGridCell : public TBaseCell
     virtual TVertex *GetVertex(int Vert_i) override;
     virtual const TVertex *GetVertex(int Vert_i) const override;
     /**  @brief return field of pointers to all vertices */
-    TVertex **GetVertices() const
+    const TVertex * const *GetVertices() const
     { return Vertices; }
 
     /**  @brief return number of children */
@@ -49,17 +54,17 @@ class TGridCell : public TBaseCell
     virtual int GetN_Parents() const override;
 
     /**  @brief return pointer to child cell with number C\_i */
-    virtual TBaseCell *GetChild(int C_i) override;
+    virtual const TBaseCell *GetChild(int C_i) const override;
     /**  @brief return pointer to parent cell */
-    virtual TBaseCell *GetParent() override;
+    virtual const TBaseCell *GetParent() const override;
     /**  @brief set parent */
     virtual int SetParent(TBaseCell *parent) override;
     /**  @brief return local number of child Me */
-    virtual int GetChildNumber(TBaseCell *Me) override;
+    virtual int GetChildNumber(TBaseCell *Me) const override;
 
     /**  @brief put out postscript data to a file */
-    virtual int PS(std::ofstream &dat, double scale, double StartX,
-                   double StartY, bool gridcell_with_numbers) const override;
+    virtual void PS(std::ofstream &dat, double scale, double StartX,
+                    double StartY, int cell_index = -1) const override;
     
     /**  @brief derefine the cell */
     virtual int Derefine() override;
@@ -87,7 +92,7 @@ class TGridCell : public TBaseCell
     /**  @brief check whether a cell should be refined */
     virtual int IsToRefine() const override;
     /**  @brief check whether exist some children */
-    virtual int ExistChildren() override
+    virtual int ExistChildren() const override
     { return Children == nullptr ? false : true; }
 
 #ifdef __2D__
@@ -104,35 +109,29 @@ class TGridCell : public TBaseCell
     virtual bool PointInCell(double X, double Y) const override;
 
     /**  @brief get diameter of a cell */
-    virtual double GetDiameter()  override
+    virtual double GetDiameter() const override
     { return RefDesc->GetShapeDesc()->GetDiameter(Vertices); }
 
     /**  @brief get shortest edge of a cell */
-    virtual double GetShortestEdge() override
+    virtual double GetShortestEdge() const override
     { return RefDesc->GetShapeDesc()->GetShortestEdge(Vertices); }
 
     /**  @brief return the length of the cell defined with the reference map */
-    virtual double GetLengthWithReferenceMap() override
+    virtual double GetLengthWithReferenceMap() const override
     { return RefDesc->GetShapeDesc()->GetLengthWithReferenceMap(Vertices); }
 
      /**  @brief get measure of a cell */
-    virtual double GetMeasure() override
+    virtual double GetMeasure() const override
     { return RefDesc->GetShapeDesc()->GetMeasure(Vertices); }
 
     /**  @brief get geometry level */
     virtual int GetGeoLevel() override;
 
     /**  @brief return subgrid ID */
-    virtual int GetSubGridID() override;
+    virtual int GetSubGridID() const override;
 
     /**  @brief compute number of edges at the boundary */
-    virtual int GetN_BoundaryEdges();
-#ifdef __3D__
-    /**  @brief compute number of faces at the boundary */
-    virtual int GetN_BoundaryFaces();    
-#endif 
-    /**  @brief compute number of vertices at the boundary */
-    virtual int GetN_BoundaryVertices();
+    virtual int get_n_boundary_joints() const;
     
     virtual void check() const override;
 };

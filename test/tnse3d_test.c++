@@ -111,9 +111,8 @@ void compute(std::list<TCollection* > grid_collections, ParameterDatabase& db,
   tnse3d.get_time_stepping_scheme().current_step_ =0;
   tnse3d.get_time_stepping_scheme().set_time_disc_parameters();
 
-  int image = 0;
-
   tnse3d.assemble_initial_time();
+  tnse3d.output(tnse3d.get_time_stepping_scheme().current_step_);
   //======================================================================
   // time iteration
   //======================================================================
@@ -143,7 +142,7 @@ void compute(std::list<TCollection* > grid_collections, ParameterDatabase& db,
     }  // end of nonlinear loop
     cout<<" current step : " << tnse3d.get_time_stepping_scheme().current_step_<<endl;
     
-    tnse3d.output(tnse3d.get_time_stepping_scheme().current_step_,image);
+    tnse3d.output(tnse3d.get_time_stepping_scheme().current_step_);
     cout<<" current step : " << tnse3d.get_time_stepping_scheme().current_step_<<endl;
     // check the errors
     if(tnse3d.get_time_stepping_scheme().current_step_==1)

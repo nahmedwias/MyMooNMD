@@ -14,29 +14,6 @@
 
 /** constructor, setting all data */
 TFEDesc3D::TFEDesc3D(char *description, int n_dof, int n_jointdof,
-                     int **jointdof, int n_innerdof, int *innerdof)
-{
-  Description = strdup(description);
-  N_DOF = n_dof;
-  N_JointDOF = n_jointdof;
-  JointDOF = jointdof;
-  N_InnerDOF = n_innerdof;
-  InnerDOF = innerdof;
-  N_OuterDOF = 0;
-  OuterDOF = nullptr;
-  
-#ifdef _MPI    
-  N_EdgeDOF = 0;
-  EdgeDOF = nullptr;
-  N_VertDOF = 0;
-  VertDOF = nullptr;
-  EdgeVertData_Filled = 0;  
-#endif
-
-}
-
-/** constructor, setting all data */
-TFEDesc3D::TFEDesc3D(char *description, int n_dof, int n_jointdof,
                      int **jointdof, int n_innerdof, int *innerdof,
                      int n_outerdof, int *outerdof)
 {
@@ -64,21 +41,9 @@ TFEDesc3D::TFEDesc3D(char *description, int n_dof, int n_jointdof,
 TFEDesc3D::TFEDesc3D(char *description, int n_dof, int n_jointdof,
                      int **jointdof, int n_innerdof, int *innerdof,
                      int n_edgeDOF, int **edgeDOF, int n_vertDOF, int *vertDOF )
+ : TFEDesc3D(description, n_dof, n_jointdof, jointdof, n_innerdof, innerdof,
+             0, nullptr, n_edgeDOF, edgeDOF, n_vertDOF, vertDOF)
 {
-  Description = strdup(description);
-  N_DOF = n_dof;
-  N_JointDOF = n_jointdof;
-  JointDOF = jointdof;
-  N_InnerDOF = n_innerdof;
-  InnerDOF = innerdof;
-  N_OuterDOF = 0;
-  OuterDOF = nullptr;
-
-  N_EdgeDOF = n_edgeDOF;
-  EdgeDOF = edgeDOF;
-  N_VertDOF = n_vertDOF;
-  VertDOF = vertDOF; 
-  EdgeVertData_Filled = 1;
 }
 
 

@@ -50,12 +50,11 @@ class TBdSphere : public TBoundComp3D
 
     virtual void get_normal_vector(double x, double y, double z,
 				   double& nx, double& ny, double &nz) const override{
-      Output::print(" ** ERROR: get_normal_vector() not yet implemented for BdSphere ");
-      exit(1);
+      ErrThrow(" ** ERROR: get_normal_vector() not yet implemented for BdSphere ");
     };
 
     /** read parameter from input file */
-    virtual int ReadIn(std::istream &dat);
+    virtual int ReadIn(std::istream &dat) override;
 };
 
 #endif

@@ -229,7 +229,7 @@ class Time_CD3D
     /** @brief measure errors and write solution
      * 
      */
-    void output(int m, int& image);
+    void output(int m);
     
     /**
      * @brief Check whether the program will be working with the

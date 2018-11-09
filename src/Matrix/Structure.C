@@ -1941,9 +1941,9 @@ TStructure::TStructure(const TFESpace2D * testspace, int test_level,
                        const TFESpace2D * ansatzspace, int ansatz_level)
 {
   TCollection *coll_coarse, *coll_fine;
-  TBaseCell *cell_coarse, *cell_fine;
-  TBaseCell *cell_child_1, *cell_child_2, *cell_child_3, *cell_child_4, *cell_child_5;
-  TBaseCell *cell_parent, *cell_tmp, *cell_child_6;
+  const TBaseCell *cell_coarse, *cell_fine;
+  const TBaseCell *cell_child_1, *cell_child_2, *cell_child_3, *cell_child_4, *cell_child_5;
+  const TBaseCell *cell_parent, *cell_tmp, *cell_child_6;
   int i,j,k,l,m,n, N_, n1, n2, index, oldindex;
   int TestN_BoundNodeTypes, AnsatzN_BoundNodeTypes;
   int *TestN_BoundNodes, *AnsatzN_BoundNodes;

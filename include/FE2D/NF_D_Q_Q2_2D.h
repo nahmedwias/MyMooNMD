@@ -55,8 +55,8 @@ static double NF_D_Q_Q2_2D_Weight8[9] = {
 
 static double *NF_D_Q_Q2_2D_t = nullptr;
 
-void NF_D_Q_Q2_2D_EvalAll(TCollection *Coll, TBaseCell *Cell, double *PointValues,
-                          double *Functionals)
+void NF_D_Q_Q2_2D_EvalAll(TCollection *Coll, TBaseCell *Cell,
+                          const double *PointValues, double *Functionals)
 {
   Functionals[0] =  NF_D_Q_Q2_2D_Weight0[0]*PointValues[0]
                    +NF_D_Q_Q2_2D_Weight0[1]*PointValues[1]
@@ -149,8 +149,8 @@ void NF_D_Q_Q2_2D_EvalAll(TCollection *Coll, TBaseCell *Cell, double *PointValue
                    +NF_D_Q_Q2_2D_Weight8[8]*PointValues[8];
 }
 
-void NF_D_Q_Q2_2D_EvalEdge(TCollection *Coll, TBaseCell *Cell, int Joint, double *PointValues,
-                           double *Functionals)
+void NF_D_Q_Q2_2D_EvalEdge(TCollection *Coll, TBaseCell *Cell, int Joint,
+                           const double *PointValues, double *Functionals)
 {
 }
 

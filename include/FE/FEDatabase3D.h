@@ -500,18 +500,20 @@ class TFEDatabase3D
      }
 
      /** calculate points on original element */
-     static void GetOrigFromRef(RefTrans3D RefTrans, int n_points, 
-                        double *xi, double *eta, double *zeta,
-                        double *X, double *Y, double *Z, double *absdetjk);
+     static void GetOrigFromRef(RefTrans3D RefTrans, int n_points,
+                                const double *xi, const double *eta,
+                                const double *zeta,
+                                double *X, double *Y, double *Z,
+                                double *absdetjk);
 
      /** calculate base functions with derivatives and coordinates
          from reference to original element */
      static RefTrans3D GetOrig(int N_LocalUsedElements, FE3D *LocalUsedElements,
                          TCollection *Coll, TBaseCell *cell,
                          bool *Needs2ndDer,
-                         int &N_Points, double* &xi, double* &eta, double* &zeta, 
-                         double* &weights, double* X, double* Y, double* Z,
-                         double* absdetjk);
+                         int &N_Points, const double* &xi, const double* &eta,
+                         const double* &zeta, const double* &weights,
+                         double* X, double* Y, double* Z, double* absdetjk);
 
      /** calculate points on reference element */
      static void GetRefFromOrig(RefTrans3D RefTrans,
