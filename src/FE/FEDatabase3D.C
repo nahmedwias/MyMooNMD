@@ -15,6 +15,7 @@
 #include <AllRefTrans3D.h>
 #include <Database.h>
 #include <string.h>
+#include <GridCell.h>
 
 #include <BoundFace.h>
 #include <IsoInterfaceJoint3D.h>

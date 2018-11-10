@@ -1,38 +1,7 @@
-// =======================================================================
-// @(#)BaseFunct1D.C        1.1 10/30/98
-//
-// Class:      TBaseFunct1D
-//
-// Purpose:    represents the set of base functions for a finite element
-//             in one dimensions
-//
-// Author:     Gunar Matthies
-//
-// History:    08.10.97 start implementation
-// 
-// =======================================================================
-
 #include <Constants.h>
 #include <BaseFunct1D.h>
 #include <FEDatabase2D.h>
 #include <stdlib.h>
-
-/** constructor, fill in all information */
-TBaseFunct1D::TBaseFunct1D(int dimension, BaseFunct1D basefunct,
-                           DoubleFunct1D* functions, 
-                           DoubleFunct1D* derivativesxi,
-                           DoubleFunct1D* derivativesxixi)
-{
-  Dimension=dimension;
-
-  BaseFunct = basefunct;
-
-  Functions[D0]=functions;
-  Functions[D1]=derivativesxi;
-  Functions[D2]=derivativesxixi;
-
-  changable = false;
-}
 
 /** constructor, fill in all information */
 TBaseFunct1D::TBaseFunct1D(int dimension, BaseFunct1D basefunct,
@@ -43,32 +12,18 @@ TBaseFunct1D::TBaseFunct1D(int dimension, BaseFunct1D basefunct,
                            int accuracy)
 {
   Dimension=dimension;
-
   BaseFunct = basefunct;
-
   Functions[D0]=functions;
   Functions[D1]=derivativesxi;
   Functions[D2]=derivativesxixi;
-
-  changable = false;
-
   PolynomialDegree = polynomialdegree;
   Accuracy = accuracy;
-}
-
-
-/** constructor without filling data structure */
-TBaseFunct1D::TBaseFunct1D(int dimension)
-{
-  Dimension = dimension;
-
-  changable = false;
 }
 
 /** return the values for derivative MultiIndex at all
     quadrature points */
 void TBaseFunct1D::GetDerivatives(MultiIndex1D MultiIndex, 
-                        TQuadFormula1D *formula, double **values)
+                        TQuadFormula1D *formula, double **values) const
 {
   int i, N_;
   double *w, *xi;
@@ -80,16 +35,8 @@ void TBaseFunct1D::GetDerivatives(MultiIndex1D MultiIndex,
 
 }
 
-/** set function for derivative MultiIndex */
-void TBaseFunct1D::SetFunction(MultiIndex1D MultiIndex, 
-                               DoubleFunct1D* function)
-{
-  if(changable)
-    Functions[MultiIndex] = function;
-}
-
 /** make data on reference element */
-void TBaseFunct1D::MakeRefElementData(QuadFormula1D QuadFormula)
+void TBaseFunct1D::MakeRefElementData(QuadFormula1D QuadFormula) const
 {
   int j;
   double **Values, *AllValues;

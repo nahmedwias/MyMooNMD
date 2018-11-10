@@ -1,173 +1,57 @@
-// =======================================================================
-// @(#)BaseFunct2D.C        1.8 02/08/00
-//
-// Class:      TBaseFunct2D
-//
-// Purpose:    represents the set of base functions for a finite element
-//             in two dimensions
-//
-// Author:     Gunar Matthies
-//
-// History:    26.11.97 start implementation
-// 
-//       :     10.06.2010 methods for vector basis functions (Sashikumaar Ganesan)
-// =======================================================================
-
 #include <Constants.h>
 #include <BaseFunct2D.h>
+#include <GridCell.h>
 #include <FEDatabase2D.h>
 #include <Database.h>
 #include <JointEqN.h>
 #include <stdlib.h>
-/** constructor, fill in all information */
-TBaseFunct2D::TBaseFunct2D(int dimension, BaseFunct2D basefunct,
-                           BF2DRefElements refelement, 
-                           DoubleFunct2D* functions, 
-                           DoubleFunct2D* derivativesxi,
-                           DoubleFunct2D* derivativeseta,
-                           DoubleFunct2D* derivativesxixi,
-                           DoubleFunct2D* derivativesxieta,
-                           DoubleFunct2D* derivativesetaeta,
-                           int polynomialdegree,
-                           int accuracy,
-                           int n_bf2change,
-                           int const * const * bf2change)
-{
-  Dimension=dimension;
-
-  RefElement = refelement;
-
-  BaseFunct = basefunct;
-
-  Functions[D00]=functions;
-  Functions[D10]=derivativesxi;
-  Functions[D01]=derivativeseta;
-  Functions[D20]=derivativesxixi;
-  Functions[D11]=derivativesxieta;
-  Functions[D02]=derivativesetaeta;
-
-  changable = false;
-
-  PolynomialDegree = polynomialdegree;
-  Accuracy = accuracy;
-
-  N_BF2Change = n_bf2change;
-  BF2Change = bf2change;
-  
-  //default is a scalar basis function
-  BaseVectDim = 1;
-  SpaceDeptBasis = false;
-  
-}
 
 /** constructor, fill in all information with scalar basis function dimension*/
 TBaseFunct2D::TBaseFunct2D(int dimension, BaseFunct2D basefunct,
                            BF2DRefElements refelement, 
-                           DoubleFunct2D* functions, 
+                           DoubleFunct2D* functions,
                            DoubleFunct2D* derivativesxi,
                            DoubleFunct2D* derivativeseta,
                            DoubleFunct2D* derivativesxixi,
                            DoubleFunct2D* derivativesxieta,
                            DoubleFunct2D* derivativesetaeta,
-                           int polynomialdegree,
-                           int accuracy,
-                           int n_bf2change,
-                           int const * const * bf2change, int baseVectDim)
+                           int polynomialdegree, int accuracy,
+                           int n_bf2change, int const * const * bf2change,
+                           int baseVectDim, bool spaceDeptBasis)
 {
   Dimension=dimension;
-
   RefElement = refelement;
-
   BaseFunct = basefunct;
-
   Functions[D00]=functions;
   Functions[D10]=derivativesxi;
   Functions[D01]=derivativeseta;
   Functions[D20]=derivativesxixi;
   Functions[D11]=derivativesxieta;
   Functions[D02]=derivativesetaeta;
-
-  changable = false;
-
   PolynomialDegree = polynomialdegree;
   Accuracy = accuracy;
-
   N_BF2Change = n_bf2change;
   BF2Change = bf2change;
-  
   BaseVectDim = baseVectDim;
-  SpaceDeptBasis = false;
-}
-
-/** constructor, fill in all information with space dept. basis functions*/
-TBaseFunct2D::TBaseFunct2D(int dimension, BaseFunct2D basefunct,
-                 BF2DRefElements refelement,
-                 DoubleFunct2D* functions, 
-                 DoubleFunct2D* derivativesxi,
-                 DoubleFunct2D* derivativeseta,
-                 DoubleFunct2D* derivativesxixi,
-                 DoubleFunct2D* derivativesxieta,
-                 DoubleFunct2D* derivativesetaeta,
-                 int polynomialdegree,
-                 int accuracy,
-                 int n_bf2change,
-                 int const * const * bf2change,
-                 bool spaceDeptBasis
-                )
-{
-  Dimension=dimension;
-
-  RefElement = refelement;
-
-  BaseFunct = basefunct;
-
-  Functions[D00]=functions;
-  Functions[D10]=derivativesxi;
-  Functions[D01]=derivativeseta;
-  Functions[D20]=derivativesxixi;
-  Functions[D11]=derivativesxieta;
-  Functions[D02]=derivativesetaeta;
-
-  changable = false;
-
-  PolynomialDegree = polynomialdegree;
-  Accuracy = accuracy;
-
-  N_BF2Change = n_bf2change;
-  BF2Change = bf2change;
-  
-  //default is a scalar basis function
-  BaseVectDim = 1;
-  SpaceDeptBasis = spaceDeptBasis;  
-}
-
-
-/** constructor without filling data structure */
-TBaseFunct2D::TBaseFunct2D(int dimension)
-{
-  Dimension = dimension;
-
-  changable = true;
-  SpaceDeptBasis = false;
+  SpaceDeptBasis = spaceDeptBasis;
 }
 
 /** return the values for derivative MultiIndex at all
     quadrature points */
 void TBaseFunct2D::GetDerivatives(MultiIndex2D MultiIndex, 
-                        TQuadFormula2D *formula, double **values)
+                                  TQuadFormula2D *formula, double **values)
+  const
 {
-  int i, N_;
+  int N_;
   double *w, *xi, *eta;
-
   formula->GetFormulaData(N_, w, xi, eta);
-
-  for(i=0;i<N_;i++)
+  for(int i = 0; i < N_; i++)
     GetDerivatives(MultiIndex, xi[i], eta[i], values[i]);
 }
 
 /** return values on joint */
 void TBaseFunct2D::GetValues(int N_Points, double *zeta, 
-                             int joint, double **Values)
+                             int joint, double **Values) const
 {
   int i;
   double xi[N_Points], eta[N_Points];
@@ -244,6 +128,7 @@ void TBaseFunct2D::GetValues(int N_Points, double *zeta,
 /** return derivatives on joint */
 void TBaseFunct2D::GetDerivatives(MultiIndex2D MultiIndex, int N_Points,
                                   double *zeta, int joint, double **Values)
+  const
 {
   int i;
   double xi[N_Points], eta[N_Points];
@@ -320,7 +205,7 @@ void TBaseFunct2D::GetDerivatives(MultiIndex2D MultiIndex, int N_Points,
 /** return values of derivative index on joint */
 void TBaseFunct2D::GetValues(int N_Points, double *zeta, 
                              int joint, MultiIndex2D index, 
-                             double **Values)
+                             double **Values) const
 {
   int i;
   double xi[N_Points], eta[N_Points];
@@ -394,17 +279,9 @@ void TBaseFunct2D::GetValues(int N_Points, double *zeta,
   }
 }
 
-/** set function for derivative MultiIndex */
-void TBaseFunct2D::SetFunction(MultiIndex2D MultiIndex, 
-                               DoubleFunct2D* function)
-{
-  if(changable)
-    Functions[MultiIndex] = function;
-}
-
 /** make data on reference element */
 /** added methods for vector basis function */
-void TBaseFunct2D::MakeRefElementData(QuadFormula1D LineQuadFormula)
+void TBaseFunct2D::MakeRefElementData(QuadFormula1D LineQuadFormula) const
 {
   int i, j, N_Joints;
   double **Values, *AllValues;
@@ -521,7 +398,7 @@ void TBaseFunct2D::MakeRefElementData(QuadFormula1D LineQuadFormula)
 }
 
 /** make data on reference element */
-void TBaseFunct2D::MakeRefElementData(QuadFormula2D QuadFormula)
+void TBaseFunct2D::MakeRefElementData(QuadFormula2D QuadFormula) const
 {
   int j;
   double **Values, *AllValues;
@@ -610,7 +487,7 @@ void TBaseFunct2D::MakeRefElementData(QuadFormula2D QuadFormula)
 
 }
 
-TGridCell *TBaseFunct2D::GenerateRefElement()
+TGridCell *TBaseFunct2D::GenerateRefElement() const
 {
   TGridCell *Cell = nullptr;
   TVertex *v[4];
@@ -672,7 +549,7 @@ TGridCell *TBaseFunct2D::GenerateRefElement()
 
 /** change basis functions on cell if needed */
 void TBaseFunct2D::ChangeBF(TCollection *Coll, const TBaseCell *Cell,
-                            double *Values)
+                            double *Values) const
 {
   const int *JointArray;
   int i, j;
@@ -768,7 +645,7 @@ void TBaseFunct2D::ChangeBF(TCollection *Coll, const TBaseCell *Cell,
 
 /** change basis functions on cell in all points if needed */
 void TBaseFunct2D::ChangeBF(TCollection *Coll, const TBaseCell *Cell,
-                            int N_Points, double **Values)
+                            int N_Points, double **Values) const
 {
   const int *JointArray;
   int i, j, k;

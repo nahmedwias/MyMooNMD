@@ -23,6 +23,7 @@
 #include <MainUtilities.h>
 #include <MooNMD_Io.h>
 #include <AuxParam2D.h>
+#include <GridCell.h>
 
 #include <InterfaceJoint.h>
 #include <IsoBoundEdge.h>
@@ -31,8 +32,6 @@
 
 #include <fstream>
 #include <sstream>
-#include <MooNMD_Io.h>
-// #include <malloc.h>
 #include <dirent.h> 
 #include <unistd.h>
 #include <sys/stat.h>

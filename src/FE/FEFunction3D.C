@@ -19,6 +19,7 @@
 #include <FEFunction3D.h>
 #include <AllRefTrans3D.h>
 // #include <NodalFunctional3D.h>
+#include <GridCell.h>
 
 #include <stdlib.h>
 #include <InterfaceJoint.h>

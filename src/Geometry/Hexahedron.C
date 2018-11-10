@@ -202,7 +202,7 @@ double THexahedron::GetMeasure(TVertex **Verts) const
 	 x2*(y4*z5-y5*z4)-x4*(y2*z5-y5*z2)+x5*(y2*z4-y4*z2))/6.;
 }
 
-Shapes THexahedron::CheckHexa(TVertex **Vertices) const
+Shapes THexahedron::CheckHexa(const TVertex * const * Vertices) const
 {
   double xt1, xt2, xt3, xt4;
   double yt1, yt2, yt3, yt4;

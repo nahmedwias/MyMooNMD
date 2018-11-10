@@ -17,6 +17,8 @@
 #include <FE2DMapper1Reg.h>
 #include <HNDesc.h>
 #include <RefTrans2D.h>
+#include <ShapeDesc.h>
+#include <RefDesc.h>
 
 #include <QuadFormulaQuad.h>
 #include <QuadFormulaTria.h>
