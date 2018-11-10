@@ -26,6 +26,11 @@ class TGridCell : public TBaseCell
     /**  @brief grid level on with this cell was generated */
     int RefLevel;
 
+    virtual TBaseCell *GetChild(int C_i) override;
+    virtual TBaseCell *GetParent() override;
+    
+    friend class TDomain;
+    
   public:
     // Constructor
     TGridCell(TRefDesc *refdesc, int reflevel);
@@ -49,13 +54,13 @@ class TGridCell : public TBaseCell
     virtual int GetN_Parents() const override;
 
     /**  @brief return pointer to child cell with number C\_i */
-    virtual TBaseCell *GetChild(int C_i) override;
+    virtual const TBaseCell *GetChild(int C_i) const override;
     /**  @brief return pointer to parent cell */
-    virtual TBaseCell *GetParent() override;
+    virtual const TBaseCell *GetParent() const override;
     /**  @brief set parent */
     virtual int SetParent(TBaseCell *parent) override;
     /**  @brief return local number of child Me */
-    virtual int GetChildNumber(TBaseCell *Me) override;
+    virtual int GetChildNumber(TBaseCell *Me) const override;
 
     /**  @brief put out postscript data to a file */
     virtual void PS(std::ofstream &dat, double scale, double StartX,

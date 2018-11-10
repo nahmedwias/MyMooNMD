@@ -74,8 +74,16 @@ TBaseCell *TGridCell::GetChild(int C_i)
 {
   return Children[C_i];
 }
+const TBaseCell *TGridCell::GetChild(int C_i) const
+{
+  return Children[C_i];
+}
 
 TBaseCell *TGridCell::GetParent()
+{
+  return Parent;
+}
+const TBaseCell *TGridCell::GetParent() const
 {
   return Parent;
 }
@@ -86,16 +94,13 @@ int TGridCell::SetParent(TBaseCell *parent)
   return 0;
 }
 
-int TGridCell::GetChildNumber(TBaseCell *Me)
+int TGridCell::GetChildNumber(TBaseCell *Me) const
 {
-  int i, N_ = GetN_Children();
-  
-  for (i=0;i<N_;i++)
+  int N_ = GetN_Children();
+  for(int i = 0; i < N_; i++)
     if (Children[i] == Me)
       return i;
-
-  cerr << "Error: could not find child" << endl;
-  return -1;
+  ErrThrow("Error: could not find child");
 }
 
 void TGridCell::PS(std::ofstream& dat, double scale, double StartX,
@@ -248,12 +253,13 @@ int TGridCell::Gen1RegGrid()
 //  int MaxLen;
 //  TRefDesc *ParentRefDesc = Parent->GetRefDesc(), *GrandParentRefDesc;
 //  TBaseCell *RefCell;
-  TBaseCell* Grandfather, *CurrCell;
-  TJoint* LastJoint, *Joint;
+  const TBaseCell* Grandfather;
+  TBaseCell *CurrCell;
+  const TJoint* LastJoint, *Joint;
   const int *TmpEF, *TmpEF2;
   int TmpEFMaxLen, TmpEF2MaxLen;
 
-  if(RefLevel > 1 && (Grandfather = Parent->GetParent()))
+  if(RefLevel > 1 && (Grandfather = ((const TBaseCell*)Parent)->GetParent()))
   {
 //    GrandParentRefDesc = Grandfather->GetRefDesc();
     Grandfather->GetShapeDesc()->GetEdgeFace(TmpEF, TmpEFMaxLen);
@@ -286,7 +292,7 @@ int TGridCell::Gen1RegGrid()
             if(RefLevel>2)
             {
               for(int k=0; k<CurrCell->GetN_Children(); ++k)
-                CurrCell->GetChild(k)->Gen1RegGrid();
+                static_cast<TGridCell*>(CurrCell)->GetChild(k)->Gen1RegGrid();
             }
           }
           
@@ -1050,7 +1056,7 @@ bool TGridCell::PointInCell(double X, double Y, double Z) const
 int TGridCell::GetGeoLevel()
 {
   int i = 0;
-  TBaseCell *parent = this;
+  const TBaseCell *parent = this;
 
   while ((parent = parent->GetParent()))
     i++;

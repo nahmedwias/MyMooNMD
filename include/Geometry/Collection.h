@@ -74,7 +74,7 @@ class TCollection
     int GetHminHmax(double *hmin, double *hmax) const;
 
     /** @brief return Index of cell in Cells-array */
-    int GetIndex(TBaseCell *cell);
+    int GetIndex(const TBaseCell *cell);
 
     /** @brief return Index of joints in Cells-array */
     TJointCollection  *GetJointCollection();
@@ -152,7 +152,7 @@ class TCollection
     void GenerateSortedArrays();
 
     /** @brief return Index of cell in SortedCells-array */
-    int GetSortedIndex(TBaseCell *cell);
+    int GetSortedIndex(const TBaseCell *cell);
 
 };
 

@@ -571,7 +571,7 @@ double *estimated_global_error)
 /*******************************************************************************/
 
 void  TCD2DErrorEstimator::EstimateCellError_new(TFESpace2D *fespace,
-					     TBaseCell *cell,
+					     const TBaseCell *cell,
 					     int N_Points,
 					     double *X,
 					     double *Y,
@@ -606,13 +606,13 @@ void  TCD2DErrorEstimator::EstimateCellError_new(TFESpace2D *fespace,
   double delta_K=0;
   const int *TmpoEnE, *TmpLen1, *TmpEC, *TmpLen2, *TmpLen3;
   const int  *TmpoEnlE, *TmpEdVer, *TmpECI, *TmpCE, *TmpEdVerParent, *TmpEdVerNeigh;
-  TJoint *joint,*parent_joint;
+  const TJoint *joint,*parent_joint;
   TBoundEdge *boundedge;
   const TBoundComp2D *BoundComp;
   BoundCond Cond0;
   const TRefDesc *refdesc,*refdesc_child;
-  TBaseCell *neigh, *child, *parent;
-  TVertex *ver0,*ver1, *ver2,*ver3;
+  const TBaseCell *neigh, *child, *parent;
+  const TVertex *ver0,*ver1, *ver2,*ver3;
   FE2D CurrEleNeigh;
   BaseFunct2D BaseFunctNeigh;
   TBaseFunct2D *bfNeigh;
@@ -2016,7 +2016,7 @@ void  TCD2DErrorEstimator::EstimateCellError_new(TFESpace2D *fespace,
 }
 
 void  TCD2DErrorEstimator::EstimateCellError(TFESpace2D *fespace,
-                                           TBaseCell *cell,
+                                           const TBaseCell *cell,
                                            int N_Points, 
                                            double *X, 
                                            double *Y, 
@@ -2049,13 +2049,13 @@ void  TCD2DErrorEstimator::EstimateCellError(TFESpace2D *fespace,
   double *X1DNeigh,*Y1DNeigh,*X1DCell,*Y1DCell;
   const int *TmpoEnE, *TmpLen1, *TmpEC, *TmpLen2, *TmpLen3; 
   const int  *TmpoEnlE, *TmpEdVer, *TmpECI, *TmpCE, *TmpEdVerParent, *TmpEdVerNeigh;
-  TJoint *joint,*parent_joint;
+  const TJoint *joint,*parent_joint;
   TBoundEdge *boundedge;
   const TBoundComp *BoundComp;
   BoundCond Cond0;
   const TRefDesc *refdesc,*refdesc_child;
-  TBaseCell *neigh, *child, *parent;
-  TVertex *ver0,*ver1, *ver2,*ver3;
+  const TBaseCell *neigh, *child, *parent;
+  const TVertex *ver0,*ver1, *ver2,*ver3;
   FE2D CurrEleNeigh;
   BaseFunct2D BaseFunctNeigh;
   TBaseFunct2D *bfNeigh;

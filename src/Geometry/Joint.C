@@ -163,7 +163,7 @@ void TJoint::SetMapType()
   }
 }
 
-void TJoint::GetMapperRef(const int *&MapVerts, const int *&MapFaces)
+void TJoint::GetMapperRef(const int *&MapVerts, const int *&MapFaces) const
 {
   if (MapType != -1)
     switch (Neighb0->GetType())
@@ -181,12 +181,11 @@ void TJoint::GetMapperRef(const int *&MapVerts, const int *&MapFaces)
     }
   else
   {
-    cerr << "Error in GetMapperRef: wrong MapType " << MapType << endl;
-    exit (-1);
+    ErrThrow("Error in GetMapperRef: wrong MapType ", MapType);
   }
 }
 
-void TJoint::GetMapperOrig(const int *&MapVerts, const int *&MapEdges)
+void TJoint::GetMapperOrig(const int *&MapVerts, const int *&MapEdges) const
 {
   if (MapType != -1)
     switch (Neighb0->GetType())
@@ -204,16 +203,15 @@ void TJoint::GetMapperOrig(const int *&MapVerts, const int *&MapEdges)
     }
   else
   {
-    cerr << "Error in GetMapperOrig: wrong MapType " << MapType << endl;
-    exit (-1);
+    ErrThrow("Error in GetMapperOrig: wrong MapType ", MapType);
   }
 }
-int TJoint::GetNeighbourEdgeIndex(TBaseCell* me, int LocEdge)
+int TJoint::GetNeighbourEdgeIndex(const TBaseCell* me, int LocEdge) const
 {
   int N_Edges; //MaxLen;
   const int *TmpEV;
-  TVertex *Vert0, *Vert1;
-  TBaseCell* neigh;
+  const TVertex *Vert0, *Vert1;
+  const TBaseCell* neigh;
 
   // Set neigh as the neighbour of me
   if(me == Neighb0) neigh=Neighb1;

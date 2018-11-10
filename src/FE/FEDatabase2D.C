@@ -2279,7 +2279,8 @@ double *TFEDatabase2D::GetProlongationMatrix2D (FE2D parent,
   TRefDesc *RefDesc;
   TBaseFunct2D *BaseFunctions;
   BaseFunct2D Coarse, Fine;
-  TGridCell *RefCell, *cell;
+  TGridCell *RefCell;
+  const TGridCell *cell;
   TNodalFunctional2D *nf;
   BF2DRefElements RefElement;
   RefTrans2D F_K = TriaAffin; //avoid uninit warning
@@ -2368,7 +2369,7 @@ double *TFEDatabase2D::GetProlongationMatrix2D (FE2D parent,
       {
         ret = new double[MaxN_BaseFunctions2D*MaxN_BaseFunctions2D];
   
-        cell = (TGridCell *)RefCell->GetChild(j);
+        cell = (const TGridCell *)((const TGridCell *)RefCell)->GetChild(j);
         FineElement = TFEDatabase2D::GetFE2D(child);
         Fine = FineElement->GetBaseFunct2D_ID();
         //int N_Fine = FineElement->GetBaseFunct2D()->GetDimension();
@@ -2421,7 +2422,7 @@ double *TFEDatabase2D::GetProlongationMatrix2D (FE2D parent,
     ret = ProlongationMatrix2D[Coarse][refine][Fine][childnumber]; 
 
     RefCell->Derefine();
-    delete (TGridCell *)RefCell;
+    delete (const TGridCell *)RefCell;
     delete [] ret2;
   }
 
@@ -2576,19 +2577,20 @@ double *TFEDatabase2D::GetRestrictionMatrix2D (FE2D parent,
   
         F_K = FineElement->GetRefTransID();
   
+        const TBaseCell* child_cell = ((const TGridCell *)RefCell)->GetChild(j);
         switch(F_K)
         {
           case QuadAffin:
           case QuadBilinear:
           case QuadIsoparametric:
             rt = TFEDatabase2D::GetRefTrans2D(QuadAffin);
-            ((TQuadAffin *)rt)->SetCell(RefCell->GetChild(j));
+            ((TQuadAffin *)rt)->SetCell(child_cell);
             F_K = QuadAffin;
             break;
           case TriaAffin:
           case TriaIsoparametric:
             rt = TFEDatabase2D::GetRefTrans2D(TriaAffin);
-            ((TTriaAffin *)rt)->SetCell(RefCell->GetChild(j));
+            ((TTriaAffin *)rt)->SetCell(child_cell);
             break;
         }
         TFEDatabase2D::GetOrigFromRef(F_K ,N_QuadPoints, xi, eta,

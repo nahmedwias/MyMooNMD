@@ -87,7 +87,7 @@ int TCollection::GetHminHmax(double *hmin, double *hmax) const
 }
 
 /** return Index of cell in SortedCells-array */
-int TCollection::GetSortedIndex(TBaseCell *cell)
+int TCollection::GetSortedIndex(const TBaseCell *cell)
 {
   int Left = 0;
   int Mid;
@@ -117,7 +117,7 @@ int TCollection::GetSortedIndex(TBaseCell *cell)
 }
 
 /** return Index of cell in SortedCells-array */
-int TCollection::GetIndex(TBaseCell *cell)
+int TCollection::GetIndex(const TBaseCell *cell)
 {
   int ret, gsi;
 
