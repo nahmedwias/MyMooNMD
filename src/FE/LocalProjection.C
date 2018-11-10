@@ -3345,7 +3345,7 @@ void LocalProjectionCoarseGridQ0(TFEFunction2D *uh,
   };
   TCollection *Coll;
   const TFESpace2D *fespace_fine;
-  TBaseCell *cell, *parent_cell, *child_cell;
+  const TBaseCell *cell, *parent_cell, *child_cell;
 
   OutPut("compute local projection to Q0 on coarse grid"<<endl);
   coeffs = new double[20];
@@ -3503,7 +3503,7 @@ void LocalProjectionCrossWindCoarseGridQ0(TDomain *Domain, int mg_level,
     0.57735026918962576450914878050195746
   };
   TCollection *coll_coarse, *coll;
-  TBaseCell *cell, *child_cell;
+  const TBaseCell *cell, *child_cell;
   const TFESpace2D *fespace;
  
    OutPut("update rhs of crosswind local projection to Q0 on coarse grid"<<endl);

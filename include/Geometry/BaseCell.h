@@ -17,6 +17,7 @@
 #define __BASECELL__
 
 class TBaseCell;
+class TDomain;
 
 #include <vector>
 #include <Edge.h>
@@ -33,8 +34,8 @@ class TBaseCell
     /**  @brief array of all joints */
     TJoint **Joints;
 
-    /**  @brief an integer for storing clipboard information*/
-    int ClipBoard;
+    /**  @brief an integer for storing clipboard information. Bad style!*/
+    mutable int ClipBoard;
 
     /** @brief an integer for storing physical reference of cell (e.g. material properties) **/
     int Reference_ID;
@@ -66,8 +67,11 @@ class TBaseCell
 #endif
 
 #ifdef  _MPI
-  /**  @brief an integer for storing clipboard information in parallel FEspace mapping*/ 
-  int  ClipBoard_Par; 
+  /**  @brief an integer for storing clipboard information in parallel FEspace 
+   * mapping.
+   * Bad style!
+   */
+  mutable int ClipBoard_Par;
     
   /**  @brief an integer for storing which subdomain contains this cell **/
     int SubDomainNumber;
@@ -103,6 +107,11 @@ class TBaseCell
 
   /**  @brief an integer for storing the local cell number (2Phase flows) **/
     int LocalCellNo;   
+    
+    virtual TBaseCell *GetChild(int C_i) = 0;
+    virtual TBaseCell *GetParent() = 0;
+    
+    friend class TDomain;
     
   public:
     // Constructor
@@ -160,6 +169,8 @@ class TBaseCell
     /**  @brief return the pointer to edge with number E_i */
     TEdge *GetEdge(int E_i)
     { return Edges[E_i]; }
+    const TEdge *GetEdge(int E_i) const
+    { return Edges[E_i]; }
 
 #endif
 
@@ -204,13 +215,13 @@ class TBaseCell
     virtual int GetN_Parents() const = 0;
 
     /**  @brief return the child with the number C\_i */
-    virtual TBaseCell *GetChild(int C_i) =  0;
+    virtual const TBaseCell *GetChild(int C_i) const = 0;
     /**  @brief return the parent cell */
-    virtual TBaseCell *GetParent() =  0;
+    virtual const TBaseCell *GetParent() const = 0;
     /**  @brief set the parent to parent */
-    virtual int SetParent(TBaseCell *parent) =  0;
+    virtual int SetParent(TBaseCell *parent) = 0;
     /**  @brief return the child number of cell Me */
-    virtual int GetChildNumber(TBaseCell *Me) =  0;
+    virtual int GetChildNumber(TBaseCell *Me) const =  0;
 
     /**  @brief write the postscript cell data to stream dat.
      * A positive cell_index is written to the postscript file, negative values
@@ -259,8 +270,8 @@ class TBaseCell
     #else
     #endif
 
-    /**  @brief set value in ClipBoard */
-    void SetClipBoard(int value)
+    /**  @brief set value in ClipBoard. Don't rely on this! */
+    void SetClipBoard(int value) const
     { ClipBoard=value; }
     /**  @brief get value from ClipBoard */
     int GetClipBoard() const
@@ -419,11 +430,11 @@ class TBaseCell
 #ifdef  _MPI
 
     /**  @brief set value in ClipBoard */
-    void SetClipBoard_Par(int value)
+    void SetClipBoard_Par(int value) const
     { ClipBoard_Par=value; }
     
     /**  @brief get value from ClipBoard */
-    int GetClipBoard_Par()
+    int GetClipBoard_Par() const
     { return ClipBoard_Par; }
     
     /**  @brief set subdomain number to this cell   */

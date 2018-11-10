@@ -671,12 +671,13 @@ TGridCell *TBaseFunct2D::GenerateRefElement()
 }
 
 /** change basis functions on cell if needed */
-void TBaseFunct2D::ChangeBF(TCollection *Coll, TBaseCell *Cell, double *Values)
+void TBaseFunct2D::ChangeBF(TCollection *Coll, const TBaseCell *Cell,
+                            double *Values)
 {
   const int *JointArray;
   int i, j;
-  TJoint *joint;
-  TBaseCell *neigh;
+  const TJoint *joint;
+  const TBaseCell *neigh;
   int OwnNum, NeighNum;
   int N_Joints;
 
@@ -766,13 +767,14 @@ void TBaseFunct2D::ChangeBF(TCollection *Coll, TBaseCell *Cell, double *Values)
 }
 
 /** change basis functions on cell in all points if needed */
-void TBaseFunct2D::ChangeBF(TCollection *Coll, TBaseCell *Cell, int N_Points, double **Values)
+void TBaseFunct2D::ChangeBF(TCollection *Coll, const TBaseCell *Cell,
+                            int N_Points, double **Values)
 {
   const int *JointArray;
   int i, j, k;
   double *Array;
-  TJoint *joint;
-  TBaseCell *neigh;
+  const TJoint *joint;
+  const TBaseCell *neigh;
   int OwnNum, NeighNum;
   int N_Joints;
   // Hdiv elements are vector valued, in this case the array Values is longer

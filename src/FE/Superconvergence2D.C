@@ -311,8 +311,8 @@ void Superconvergence_Q1Q2_2D(TFEFunction2D *q1_function,
   double *q1_values, *q2_values;
 //  int q1_ndof, q2_ndof;   // set but unused variables
   TCollection *q1_coll, *q2_coll;
-  TBaseCell *coarse_cell,*child_cell0,*child_cell1;
-  TBaseCell *child_cell2,*child_cell3;
+  const TBaseCell *coarse_cell,*child_cell0,*child_cell1;
+  const TBaseCell *child_cell2,*child_cell3;
   double coarse_values[9];
 //  double fine_values[9];
   int *coarse_GlobalNumbers,*fine_GlobalNumbers;
@@ -400,8 +400,8 @@ void Superconvergence_Q2Q3_2D(TFEFunction2D *q2_function,
 //  int q2_ndof,q3_ndof;   // set but unused variables
   
   TCollection *q3_coll, *q2_coll;
-  TBaseCell *coarse_cell,*child_cell0,*child_cell1;
-  TBaseCell *child_cell2,*child_cell3;
+  const TBaseCell *coarse_cell,*child_cell0,*child_cell1;
+  const TBaseCell *child_cell2,*child_cell3;
   double coarse_values[16];
   double fine_values[25];
   int *coarse_GlobalNumbers,*fine_GlobalNumbers;
@@ -488,8 +488,8 @@ void Superconvergence_Q2Q4_2D(TFEFunction2D *q2_function,
 //  int q2_ndof,q4_ndof;   // set but unused
   
   TCollection *q4_coll, *q2_coll;
-  TBaseCell *coarse_cell;
-  TBaseCell *child_cell0,*child_cell1,*child_cell2,*child_cell3;
+  const TBaseCell *coarse_cell;
+  const TBaseCell *child_cell0,*child_cell1,*child_cell2,*child_cell3;
   double coarse_values[25];
   double fine_values[25];
   int *coarse_GlobalNumbers,*fine_GlobalNumbers;
@@ -573,8 +573,8 @@ void Superconvergence_P1P2_2D(int version, TFEFunction2D *p1_function,
   double *p1_values, *p2_values;
 //  int p1_ndof, p2_ndof;   // set but unused
   TCollection *p1_coll, *p2_coll;
-  TBaseCell *coarse_cell,*child_cell0,*child_cell1;
-  TBaseCell *child_cell2,*child_cell3;
+  const TBaseCell *coarse_cell,*child_cell0,*child_cell1;
+  const TBaseCell *child_cell2,*child_cell3;
   double coarse_values[6];
   double fine_values[12];
   int *coarse_GlobalNumbers,*fine_GlobalNumbers;
@@ -663,8 +663,8 @@ void Superconvergence_NQ1P2_2D(TFEFunction2D *q1n_function,
 //  int q1n_ndof,p2_ndof;   // set but unused
   
   TCollection *p2_coll, *q1n_coll;
-  TBaseCell *coarse_cell,*child_cell0,*child_cell1;
-  TBaseCell *child_cell2,*child_cell3;
+  const TBaseCell *coarse_cell,*child_cell0,*child_cell1;
+  const TBaseCell *child_cell2,*child_cell3;
   double coarse_values[6];
   double fine_values[16];
   int *coarse_GlobalNumbers,*fine_GlobalNumbers;

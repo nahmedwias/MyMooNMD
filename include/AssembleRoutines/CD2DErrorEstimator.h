@@ -84,7 +84,7 @@ public:
 
     /** elementwise estimator */
     void  EstimateCellError_new(TFESpace2D *fespace,
-                            TBaseCell *cell,
+                            const TBaseCell *cell,
                             int N_Points,
                             double *X,
                             double *Y,
@@ -110,7 +110,7 @@ public:
                             double *local_error);
 
     void  EstimateCellError(TFESpace2D *fespace,
-                            TBaseCell *cell,
+                            const TBaseCell *cell,
                             int N_Points,
                             double *X,
                             double *Y,
