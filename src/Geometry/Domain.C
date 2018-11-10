@@ -2963,7 +2963,7 @@ void TDomain::CorrectParametersAndShapes()
 {
   int MaxLevel, CurrLevel;
   int info, j, N_Edges;
-  TVertex **Vertices;
+  const TVertex * const * Vertices;
   TJoint *joint;
   TGridCell *ActiveCell;
 

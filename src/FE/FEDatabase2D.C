@@ -21,6 +21,7 @@
 #include <LinAlg.h>
 #include <BoundEdge.h>
 #include <InterfaceJoint.h>
+#include <GridCell.h>
 
 #include <AllFEDescs1D.h>
 #include <AllBaseFunctions1D.h>

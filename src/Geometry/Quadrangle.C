@@ -124,7 +124,7 @@ double TQuadrangle::GetMeasure(TVertex **Verts) const
     0.5*fabs(x4*y3-x3*y4-x1*y3+x3*y1+x1*y4-x4*y1);
 }
 
-Shapes TQuadrangle::CheckQuad(TVertex **Vertices) const
+Shapes TQuadrangle::CheckQuad(const TVertex * const * Vertices) const
 {
   double test1, test2;
 

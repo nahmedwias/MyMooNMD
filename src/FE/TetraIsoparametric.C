@@ -15,6 +15,7 @@
 #include <BoundFace.h>
 #include <IsoBoundFace.h>
 #include <FEDatabase3D.h>
+#include <GridCell.h>
 #include <LinAlg.h>
 #include <string.h>
 #include <stdlib.h>
@@ -728,7 +729,8 @@ void TTetraIsoparametric::SetCell(const TBaseCell *cell)
   TFEDesc3D *fedesc;
   TBaseFunct3D *bf=nullptr;
   double xm, ym, zm, xp, yp, zp;
-  TVertex **Vertices, **AuxVertices;
+  const TVertex * const * Vertices;
+  const TVertex * const * AuxVertices;
   double x[3], y[3], z[3], factor;
   double LinComb[3][3];
   

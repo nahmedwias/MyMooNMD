@@ -22,10 +22,10 @@ class TIsoBoundFace : public TBoundFace
     int N_Vertices;
 
     /** array of all additional vertices */
-    TVertex **Vertices;
+    const TVertex * const * Vertices;
 
     /** array of all additional refvertices */
-    TVertex **RefVertices;
+    const TVertex * const * RefVertices;
 
     /** array of all additional vertices */
     double *IsoParam1;
@@ -54,13 +54,13 @@ class TIsoBoundFace : public TBoundFace
     int GetN_Vertices()
     { return N_Vertices; }
 
-    TVertex **GetVertices()
+    const TVertex * const * GetVertices()
     { return Vertices; }
 
-    TVertex **GetRefVertices()
+    const TVertex * const * GetRefVertices()
     { return RefVertices; }
 
-    void SetVertices(int n_vertices, TVertex **vertices);
+    void SetVertices(int n_vertices, const TVertex * const * vertices);
 
     void GenVert(int N_NewVert,const int N_V, double **LinComb,
                             double *X, double *Y, double *Z );

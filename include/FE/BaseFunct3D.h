@@ -1,26 +1,11 @@
-// =======================================================================
-// %W% %G%
-//
-// Class:      TBaseFunct3D
-//
-// Purpose:    represents the set of base functions for a finite element
-//             in three dimensions
-//
-// Author:     Gunar Matthies
-//
-// History:    start of implementation 19.11.99
-// 
-// =======================================================================
-
 #ifndef __BASEFUNCT3D__
 #define __BASEFUNCT3D__
 
 #include <QuadFormula2D.h>
 #include <QuadFormula3D.h>
-#include <Constants.h>
-#include <GridCell.h>
 
-#include <Enumerations.h>
+class TBaseCell;
+class TGridCell;
 
 /** set of all base function on the reference element for a finite 
     element in two dimensions */
@@ -35,9 +20,6 @@ class TBaseFunct3D
 
     /** array for all functions and derivatives */
     DoubleFunct3D *Functions[N_MultiIndices3D];
-
-    /** status of changability of entries */
-    bool changable;
 
     /** reference element used for this set of base functions */
     BF3DRefElements RefElement;
@@ -89,37 +71,30 @@ class TBaseFunct3D
     
     /** return the values for derivative MultiIndex at (xi,eta) */
     void GetDerivatives(MultiIndex3D MultiIndex, double xi,
-                        double eta, double zeta, double *values)
+                        double eta, double zeta, double *values) const
     { Functions[MultiIndex](xi, eta, zeta, values); };
 
     /** return the values for derivative MultiIndex at all
         quadrature points */
     void GetDerivatives(MultiIndex3D MultiIndex, 
-                        TQuadFormula3D *formula, double **values);
+                        TQuadFormula3D *formula, double **values) const;
 
     /** return values on joint i */
     void GetValues(int N_Points, double *t, double *s, 
-                   int i, double **Values);
+                   int i, double **Values) const;
 
    /** return values of derivative index on joint */
    void GetValues(int N_Points, double *t, double *s, int i, 
-                  MultiIndex3D index, double **Values);
-
-    /** set status to unchangable */
-    void SetUnchangable()
-      { changable = false; };
-
-    /** set function for derivative MultiIndex */
-    void SetFunction(MultiIndex3D MultiIndex, DoubleFunct3D* function);
+                  MultiIndex3D index, double **Values) const;
 
     /** make date on reference element */
-    void MakeRefElementData(QuadFormula2D QuadFormula);
+    void MakeRefElementData(QuadFormula2D QuadFormula) const;
 
     /** make date on reference element */
-    void MakeRefElementData(QuadFormula3D QuadFormula);
+    void MakeRefElementData(QuadFormula3D QuadFormula) const;
 
     /** generate reference element */
-    TGridCell *GenerateRefElement();
+    TGridCell *GenerateRefElement() const;
 
     /** return reference element */
     BF3DRefElements GetRefElement() const
@@ -142,11 +117,12 @@ class TBaseFunct3D
       { return BF2Change; }
 
     /** change basis functions on cell if needed */
-    void ChangeBF(TCollection *Coll, const TBaseCell *Cell, double *Values);
+    void ChangeBF(TCollection *Coll, const TBaseCell *Cell, double *Values)
+      const;
 
     /** change basis functions on cell in all points if needed */
     void ChangeBF(TCollection *Coll, const TBaseCell *Cell, int N_Points,
-                  double **Values);
+                  double **Values) const;
 
     /** return BaseFunct_ID */
     BaseFunct3D GetID() const
@@ -155,7 +131,6 @@ class TBaseFunct3D
     /** return the dimension of the vector basis function */
     int GetBaseVectDim() const
     { return BaseVectDim; }
-    
 };
 
 #endif

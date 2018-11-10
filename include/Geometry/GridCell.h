@@ -45,7 +45,7 @@ class TGridCell : public TBaseCell
     virtual TVertex *GetVertex(int Vert_i) override;
     virtual const TVertex *GetVertex(int Vert_i) const override;
     /**  @brief return field of pointers to all vertices */
-    TVertex **GetVertices() const
+    const TVertex * const *GetVertices() const
     { return Vertices; }
 
     /**  @brief return number of children */

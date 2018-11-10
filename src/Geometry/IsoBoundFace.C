@@ -56,7 +56,8 @@ TJoint *TIsoBoundFace::NewInst()
   return new TIsoBoundFace(BoundComp);
 }
 
-void TIsoBoundFace::SetVertices(int n_vertices, TVertex **vertices)
+void TIsoBoundFace::SetVertices(int n_vertices,
+                                const TVertex * const * vertices)
 {
   if(Vertices)
     delete Vertices;

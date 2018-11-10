@@ -20,6 +20,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <MooNMD_Io.h>
+#include <GridCell.h>
 
 BaseFunct3D THexaIsoparametric::BaseFunctFromOrder[] = { 
                 BF_C_H_Q0_3D, BF_C_H_Q1_3D, BF_C_H_Q2_3D, BF_C_H_Q3_3D,
@@ -690,8 +691,8 @@ void THexaIsoparametric::SetCell(const TBaseCell *cell)
   TBaseFunct3D *bf = nullptr;
   double dt, ds;
   double T, S, xm, ym, zm, xp, yp, zp;
-  TVertex **Vertices;
-  TVertex **AuxVertices=nullptr;
+  const TVertex * const * Vertices;
+  const TVertex * const * AuxVertices=nullptr;
   double x[4], y[4], z[4], factor;
   double LinComb[4];
   int CurvedJoint = 0;
