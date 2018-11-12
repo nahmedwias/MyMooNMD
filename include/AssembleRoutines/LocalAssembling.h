@@ -316,7 +316,7 @@ class LocalAssembling
     static ParameterDatabase default_local_assembling_database();
     
     /** return local stiffness matrix */
-    void GetLocalForms(int N_Points, double *weights, double *AbsDetjk,
+    void GetLocalForms(int N_Points, const double *weights, double *AbsDetjk,
                        std::array<double*, d> coordinates,
                        int *N_BaseFuncts, BaseFunct *BaseFuncts, 
                        TBaseCell *Cell, int cell_num, int N_Matrices, int N_Rhs,

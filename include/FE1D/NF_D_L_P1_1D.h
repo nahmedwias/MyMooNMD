@@ -3,7 +3,7 @@ static double NF_D_L_P1_1D_Xi[] = { -0.577350269189625764520, 0.5773502691896257
 static double NF_D_L_P1_1D_Eta[]= { 0,  0 };
 static double *NF_D_L_P1_1D_T = nullptr;
 
-void NF_D_L_P1_1D_EvalAll(double *PointValues, double *Functionals)
+void NF_D_L_P1_1D_EvalAll(const double *PointValues, double *Functionals)
 {
   Functionals[0] = 0.5*( PointValues[0] + PointValues[1] );
 
@@ -11,7 +11,7 @@ void NF_D_L_P1_1D_EvalAll(double *PointValues, double *Functionals)
                          + 0.077350269189625764520*PointValues[1] );
 }
 
-void NF_D_L_P1_1D_EvalEdge( double *PointValues, double *Functionals)
+void NF_D_L_P1_1D_EvalEdge(const double *PointValues, double *Functionals)
 {
 
 }

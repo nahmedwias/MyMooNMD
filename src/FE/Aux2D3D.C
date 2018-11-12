@@ -38,8 +38,8 @@ TAux2D3D::TAux2D3D(int *cellnumbers, int *jointnumbers,
 
 /** calculate gradient for local coordinates (xi,eta) on face
     JointNumbers[num] of cell CellNumbers[num] */
-void TAux2D3D::GetGradient(int num, int N_Points, double *t1, double *t2,
-                           double **Param)
+void TAux2D3D::GetGradient(int num, int N_Points, const double *t1,
+                           const double *t2, double **Param)
 {
   int i,j;
   int CellNumber, JointNumber;

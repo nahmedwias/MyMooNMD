@@ -26,7 +26,7 @@ void TBaseFunct1D::GetDerivatives(MultiIndex1D MultiIndex,
                         TQuadFormula1D *formula, double **values) const
 {
   int i, N_;
-  double *w, *xi;
+  const double *w, *xi;
 
   formula->GetFormulaData(N_, w, xi);
 

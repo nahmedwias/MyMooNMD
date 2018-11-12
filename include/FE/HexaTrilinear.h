@@ -50,55 +50,60 @@ class THexaTrilinear : public TRefTrans3D
     THexaTrilinear();
 
     /** transfer from reference element to original element */
-    void GetOrigFromRef(double eta, double xi, double zeta, double &x, double &y, double &z);
+    void GetOrigFromRef(double eta, double xi, double zeta, double &x,
+                        double &y, double &z) override;
 
     /** transfer a set of points form reference to original element */
-    void GetOrigFromRef(int N_Points, double *eta, double *xi, double *zeta, 
-                        double *x, double *y, double *z, double *absdetjk);
+    void GetOrigFromRef(int N_Points, const double *eta, const double *xi,
+                        const double *zeta,  double *x, double *y, double *z,
+                        double *absdetjk) override;
 
     /** transfer form reference element to original element */
-    void GetOrigFromRef(double *ref, double *orig);
+    void GetOrigFromRef(const double *ref, double *orig) override;
 
     /** transfer from original element to reference element */
-    void GetRefFromOrig(double x, double y, double z, double &eta, double &xi, double &zeta);
+    void GetRefFromOrig(double x, double y, double z, double &eta, double &xi,
+                        double &zeta) override;
 
     /** transfer from original element to reference element */
-    void GetRefFromOrig(double *orig, double *ref);
+    void GetRefFromOrig(const double *orig, double *ref) override;
 
     /** calculate functions and derivatives from reference element
         to original element */
-    void GetOrigValues(BaseFunct3D BaseFunct,
-                       int N_Points, double *xi, double *eta, double *zeta,
+    void GetOrigValues(BaseFunct3D BaseFunct, int N_Points, const double *xi,
+                       const double *eta, const double *zeta,
                        int N_Functs, QuadFormula3D HexaFormula);
 
     /** calculate functions and derivatives from reference element
         to original element, for all given elements */
     void GetOrigValues(int N_Sets, BaseFunct3D *BaseFunct,
-                       int N_Points, double *xi, double *eta, double *zeta,
-                       QuadFormula3D HexaFormula,
+                       int N_Points, const double *xi, const double *eta,
+                       const double *zeta, QuadFormula3D HexaFormula,
                        bool *Needs2ndDer);
 
     /** calculate functions and derivatives from reference element
         to original element */
     void GetOrigValues(double xi, double eta, double zeta, int N_BaseFunct,
-                double *uref, double *uxiref, double *uetaref, double *uzetaref,
-                double *uorig, double *uxorig, double *uyorig, double *uzorig,
-                int _BaseVectDim = 1);
+                const double *uref, const double *uxiref, const double *uetaref,
+                const double *uzetaref, double *uorig, double *uxorig,
+                double *uyorig, double *uzorig, int _BaseVectDim = 1);
 
     /** set element to cell */
-    void SetCell(const TBaseCell * cell);
+    void SetCell(const TBaseCell * cell) override;
 
     /** return outer normal unit vector */
     void GetOuterNormal(int j, double s, double t,
-                        double &n1, double &n2, double &n3);
+                        double &n1, double &n2, double &n3) const override;
 
     /** return two tangent vectors */
     void GetTangentVectors(int j, double p1, double p2,
         double &t11, double &t12, double &t13,
-        double &t21, double &t22, double &t23);
+        double &t21, double &t22, double &t23) const override;
     
     /** @brief Piola transformation for vector valued basis functions **/
-    void PiolaMapOrigFromRef(int N_Functs, double *refD000, double *origD000);
+    void PiolaMapOrigFromRef(double xi, double eta, double zeta,
+                             int N_Functs, const double *refD000,
+                             double *origD000) override;
 };
 
 #endif

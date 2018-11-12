@@ -80,11 +80,11 @@ class TBaseFunct3D
                         TQuadFormula3D *formula, double **values) const;
 
     /** return values on joint i */
-    void GetValues(int N_Points, double *t, double *s, 
+    void GetValues(int N_Points, const double *t, const double *s, 
                    int i, double **Values) const;
 
    /** return values of derivative index on joint */
-   void GetValues(int N_Points, double *t, double *s, int i, 
+   void GetValues(int N_Points, const double *t, const double *s, int i, 
                   MultiIndex3D index, double **Values) const;
 
     /** make date on reference element */

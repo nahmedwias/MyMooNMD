@@ -17,7 +17,7 @@
 const std::string path = parmoon::source_directory;
 const std::string path_to_repo = path + "/data/input_files/";
 
-void Coefficient_Function_CD2D(double *in, double *out)
+void Coefficient_Function_CD2D(const double *in, double *out)
 {
 	// coordinates:  x at in[0], y at in[1]
 	out[0] = in[2];

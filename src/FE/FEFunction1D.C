@@ -41,7 +41,7 @@ void TFEFunction1D::Interpolate(DoubleFunct2D *Exact)
   int N_Points;
   int *DOF;
 
-  double *xi, *eta;
+  const double *xi, *eta;
   double X[MaxN_PointsForNodal1D], Y[MaxN_PointsForNodal1D];
   double AbsDetjk[MaxN_PointsForNodal1D];
   double PointValues[MaxN_PointsForNodal1D];
@@ -118,7 +118,7 @@ void TFEFunction1D::Interpolate(int ConstCoord, double x, DoubleFunct2D *Exact)
   int N_Points;
   int *DOF;
 
-  double *xi, *eta;
+  const double *xi, *eta;
   double Y[MaxN_PointsForNodal1D];
   double AbsDetjk[MaxN_PointsForNodal1D];
   double PointValues[MaxN_PointsForNodal1D];
@@ -195,7 +195,7 @@ void TFEFunction1D::Interpolate(double x, double y, DoubleFunct3D *Exact)
   int N_Points;
   int *DOF;
 
-  double *xi, *eta;
+  const double *xi, *eta;
   double Z[MaxN_PointsForNodal1D];
   double AbsDetjk[MaxN_PointsForNodal1D];
   double PointValues[MaxN_PointsForNodal1D];
@@ -262,7 +262,7 @@ void TFEFunction1D::InterpolateNodalPts(int N_Coord, double *Coords, DoubleFunct
   int N_Points, disp, N_GlobNodalPts;
   int *IndexArray, *NodalPtIndex;
 
-  double *xi, *eta;
+  const double *xi, *eta;
   double Z[MaxN_PointsForNodal1D];
   double AbsDetjk[MaxN_PointsForNodal1D];
 //  double PointValues[MaxN_PointsForNodal1D];
@@ -353,7 +353,7 @@ void TFEFunction1D::GridToData()
   int N_Points;
   int *DOF;
 
-  double *xi, *eta;
+  const double *xi, *eta;
   double Y[MaxN_PointsForNodal1D];
   double AbsDetjk[MaxN_PointsForNodal1D];
   double PointValues[MaxN_PointsForNodal1D];

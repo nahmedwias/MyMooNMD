@@ -15,14 +15,14 @@ static double NF_C_Q_UL3SE_2D_Eta[] = {
 
 static double NF_C_Q_UL3SE_2D_T[] = { -1.0, -1.0/3.0, 1.0/3.0, 1.0 };
 
-void NF_C_Q_UL3SE_2D_EvalAll(TCollection *Coll, TBaseCell *Cell, double *PointValues,
-                          double *Functionals)
+void NF_C_Q_UL3SE_2D_EvalAll(TCollection *Coll, TBaseCell *Cell,
+                             const double *PointValues, double *Functionals)
 {
   memcpy(Functionals, PointValues, 13*SizeOfDouble);
 }
 
-void NF_C_Q_UL3SE_2D_EvalEdge(TCollection *Coll, TBaseCell *Cell, int Joint, double *PointValues,
-                           double *Functionals)
+void NF_C_Q_UL3SE_2D_EvalEdge(TCollection *Coll, TBaseCell *Cell, int Joint,
+                              const double *PointValues, double *Functionals)
 {
   memcpy(Functionals, PointValues, 4*SizeOfDouble);
 }

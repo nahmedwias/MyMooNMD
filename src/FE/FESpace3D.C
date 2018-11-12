@@ -2102,7 +2102,7 @@ void TFESpace3D::GetDOFPosition(double *x, double *y, double *z) const
   FE3D FEid;
   int *DOF;
   TNodalFunctional3D *nf;
-  double *xi, *eta, *zeta;
+  const double *xi, *eta, *zeta;
   int N_Points;
   RefTrans3D RefTrans, *RefTransArray;
   int IsIsoparametric;
@@ -2229,7 +2229,7 @@ void TFESpace3D::GetDOFPosition(int dof, double &x, double &y, double &z) const
   FE3D FEid;
   int *DOF;
   TNodalFunctional3D *nf;
-  double *xi, *eta, *zeta;
+  const double *xi, *eta, *zeta;
   int N_Points;
   RefTrans3D RefTrans, *RefTransArray;
   int IsIsoparametric;
@@ -2428,8 +2428,8 @@ void TFESpace3D::getFaceQuadratureData(TBaseCell *cell, int m,
   }
   
   int N_Points;
-  double* faceWeights;
-  double *t,*s;
+  const double* faceWeights;
+  const double *t,*s;
   // get a quadrature formula good enough for the velocity FE space
   TQuadFormula2D *qf2 = TFEDatabase3D::GetQuadFormula2D(FaceQuadFormula);
   qf2->GetFormulaData(N_Points, faceWeights, t, s);

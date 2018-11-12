@@ -17,8 +17,8 @@ static double NF_D_T_P1_2D_T_P[] =
    weighting functions: 2, 24*xi-8, 24*eta-8
 */
 
-void NF_D_T_P1_2D_EvalAll(TCollection *Coll, TBaseCell *Cell, double *PointValues,
-                          double *Functionals)
+void NF_D_T_P1_2D_EvalAll(TCollection *Coll, TBaseCell *Cell,
+                          const double *PointValues, double *Functionals)
 {
   Functionals[0] = 2*(PointValues[0]+PointValues[1]+PointValues[2])/6;
   Functionals[1] = ( 4*PointValues[0]
@@ -29,8 +29,8 @@ void NF_D_T_P1_2D_EvalAll(TCollection *Coll, TBaseCell *Cell, double *PointValue
                     +4*PointValues[2])/6;
 }
 
-void NF_D_T_P1_2D_EvalEdge(TCollection *Coll, TBaseCell *Cell, int Joint, double *PointValues,
-                           double *Functionals)
+void NF_D_T_P1_2D_EvalEdge(TCollection *Coll, TBaseCell *Cell, int Joint,
+                           const double *PointValues, double *Functionals)
 {
 }
 

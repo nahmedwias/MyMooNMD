@@ -50,14 +50,14 @@ void TBaseFunct3D::GetDerivatives(MultiIndex3D MultiIndex,
                         TQuadFormula3D *formula, double **values) const
 {
   int i, N_;
-  double *w, *xi, *eta, *zeta;
+  const double *w, *xi, *eta, *zeta;
   formula->GetFormulaData(N_, w, xi, eta, zeta);
   for(i=0;i<N_;i++)
     GetDerivatives(MultiIndex, xi[i], eta[i], zeta[i], values[i]);
 }
 
 /** return values on joint */
-void TBaseFunct3D::GetValues(int N_Points, double *t, double *s, 
+void TBaseFunct3D::GetValues(int N_Points, const double *t, const double *s, 
                              int joint, double **Values) const
 {
   int i;
@@ -162,8 +162,9 @@ void TBaseFunct3D::GetValues(int N_Points, double *t, double *s,
 }
 
 /** return values of derivative index on joint */
-void TBaseFunct3D::GetValues(int N_Points, double *t, double *s, int joint, 
-                             MultiIndex3D index, double **Values) const
+void TBaseFunct3D::GetValues(int N_Points, const double *t, const double *s,
+                             int joint, MultiIndex3D index, double **Values) 
+  const
 {
   int i;
   double xi[MaxN_QuadPoints_2D], eta[MaxN_QuadPoints_2D];
@@ -273,7 +274,7 @@ void TBaseFunct3D::MakeRefElementData(QuadFormula2D FaceQF) const
   int i, j, N_Joints;
   double **Values, *AllValues;
   TQuadFormula2D *qf2;
-  double *w, *t, *s;
+  const double *w, *t, *s;
   int N_Points;
 
   qf2 = TFEDatabase3D::GetQuadFormula2D(FaceQF);
