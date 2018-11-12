@@ -41,31 +41,31 @@ class TFEDesc1D
               int **jointdof, int n_innerdof, int *innerdof);
 
     /** return description */
-    char *GetDescription()
+    char *GetDescription() const
       { return Description; }
 
     /** return number of degrees of freedom */
-    int GetN_DOF()
+    int GetN_DOF() const
       { return N_DOF; }
 
     /** return number of degrees of freedom per closure of each joint */
-    int GetN_JointDOF()
+    int GetN_JointDOF() const
       { return N_JointDOF; }
 
     /** return number of inner degrees of freedom */
-    int GetN_InnerDOF()
+    int GetN_InnerDOF() const
       { return N_InnerDOF; }
 
     /** return local numbers of inner degrees of freedom */
-    int *GetInnerDOF()
+    int *GetInnerDOF() const
       { return InnerDOF; }
 
     /** return local numbers of degrees of freedom on each joint */
-    int **GetJointDOF()
+    int **GetJointDOF() const
       { return JointDOF; }
 
     /** return local numbers of degrees of freedom on joint i */
-    int *GetJointDOF(int i)
+    int *GetJointDOF(int i) const
       { return JointDOF[i]; }
 
 };

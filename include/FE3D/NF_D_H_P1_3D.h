@@ -84,7 +84,7 @@ static double *NF_D_H_P1_3D_T = nullptr;
 static double *NF_D_H_P1_3D_S = nullptr;
 
 void NF_D_H_P1_3D_EvalAll(TCollection *Coll, TBaseCell *Cell,
-                          double *PointValues, double *Functionals)
+                          const double *PointValues, double *Functionals)
 {
   Functionals[0] = ( PointValues[0]+PointValues[1]
                     +PointValues[2]+PointValues[3]
@@ -117,7 +117,7 @@ void NF_D_H_P1_3D_EvalAll(TCollection *Coll, TBaseCell *Cell,
 }
 
 void NF_D_H_P1_3D_EvalFace(TCollection *Coll, TBaseCell *Cell, int Joint, 
-                           double *PointValues, double *Functionals)
+                           const double *PointValues, double *Functionals)
 {
 }
 

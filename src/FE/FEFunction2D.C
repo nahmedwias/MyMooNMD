@@ -287,7 +287,7 @@ void TFEFunction2D::GetErrors(DoubleFunct2D *Exact, int N_Derivatives,
 
     TQuadFormula2D *quad_formula = TFEDatabase2D::GetQuadFormula2D(qf_id);
     int N_QuadPoints;
-    double *weights, *xi, *eta;
+    const double *weights, *xi, *eta;
     quad_formula->GetFormulaData(N_QuadPoints, weights, xi, eta);
 
     // get quadrature coordinates on original cell (also AbsDetjk is filled)
@@ -522,7 +522,7 @@ double TFEFunction2D::get_L2_norm() const
     auto basis_functions = fe.GetBaseFunct2D();
     auto n_local_basis_functions = basis_functions->GetDimension();
     int N_QuadPoints;
-    double *weights, *xi, *eta;
+    const double *weights, *xi, *eta;
     // get quadrature coordinates on original cell (also AbsDetjk is filled)
     double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D];
     double AbsDetjk[MaxN_QuadPoints_2D];
@@ -909,7 +909,7 @@ void TFEFunction2D::Interpolate(DoubleFunct2D *Exact)
   int N_DOFs, N_LocalDOFs;
   int *BeginIndex, *GlobalNumbers;
   int N_Points;
-  double *xi, *eta;
+  const double *xi, *eta;
   int *DOF;
   TRefTrans2D *rt;
   double X[MaxN_PointsForNodal2D], Y[MaxN_PointsForNodal2D];
@@ -1073,7 +1073,8 @@ void TFEFunction2D::GetMeshCellParams(DoubleFunct2D* Exact, int N_Derivatives,
   BaseFunct2D BaseFunct, *BaseFuncts;
   TCollection *Coll;
   TBaseCell *cell;
-  double *weights, *xi, *eta;
+  const double *weights;
+  const double *xi, *eta;
   double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D];
   double AbsDetjk[MaxN_QuadPoints_2D];
   double *Param[MaxN_QuadPoints_2D], *aux;
@@ -1227,7 +1228,7 @@ void TFEFunction2D::InterpolateSuper(DoubleFunct2D *Exact)
   int N_DOFs, N_LocalDOFs;
   int *BeginIndex, *GlobalNumbers;
   int N_Points;
-  double *xi, *eta;
+  const double *xi, *eta;
   int *DOF;
   RefTrans2D F_K = TriaAffin; //avoid uninit warning
   TRefTrans2D *rt;
@@ -1423,8 +1424,8 @@ void TFEFunction2D::GetErrorsForVectorValuedFunction(
 
     TQuadFormula2D *qf = TFEDatabase2D::GetQuadFormula2D(quad_formula_id);
     int n_points; // number of quadrature points in one cell
-    double *xi,*eta; // coordinates of quadrature points in reference cell
-    double *weights; // quadrature weights
+    const double *xi,*eta; // coordinates of quadrature points in reference cell
+    const double *weights; // quadrature weights
     qf->GetFormulaData(n_points, weights, xi, eta);
     // modulus of determinant of reference transformation for each quadrature
     // point
@@ -1631,7 +1632,7 @@ void TFEFunction2D::Interpolate(TFEFunction2D *OldFeFunction)
   int N_Points, *DOF;
   int *IntIndex;
 
-  double *xi, *eta;
+  const double *xi, *eta;
   double X[MaxN_PointsForNodal2D], Y[MaxN_PointsForNodal2D];
   double AbsDetjk[MaxN_PointsForNodal2D];
   double PointValues[MaxN_PointsForNodal2D];
@@ -1769,7 +1770,7 @@ void TFEFunction2D::Interpolate(TFEFunction2D *OldFeFunction)
 void TFEFunction2D::add(AnalyticFunction f)
 {
   int N_Points;
-  double *xi, *eta;
+  const double *xi, *eta;
   // begin code
 
   TCollection *Coll = FESpace2D->GetCollection();
@@ -1878,8 +1879,9 @@ void TFEFunction2D::compute_integral_and_measure(double& integral,
 
     // calculate values on original element (i.e. prepare reference 
     // transformation)
-    bool SecondDer = false; // defined in include/General/Constants.h
-    double *weights, *xi, *eta;//quadrature weights and points in reference cell
+    bool SecondDer = false;
+    // quadrature weights and points in reference cell
+    const double *weights, *xi, *eta;
     // ugly, we need to change GetOrig!!
     double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D]; // quadrature points
     double AbsDetjk[MaxN_QuadPoints_2D]; // determinant of transformation
@@ -1954,7 +1956,7 @@ void TFEFunction2D::project_into_L20(double a)
     int * DOF = FESpace2D->GetGlobalDOF(i);
     TNodalFunctional2D *nf = TFEDatabase2D::GetNodalFunctional2DFromFE2D(feID);
     int n_points; // number of evaluation points to compute nodal functionals
-    double *xi, *eta; // coordinates of evaluation points in reference cell
+    const double *xi, *eta; //coordinates of evaluation points in reference cell
     nf->GetPointsForAll(n_points, xi, eta);
     double *point_values = new double[n_points];
     for(int j = 0; j < n_points; j++)
@@ -2083,7 +2085,7 @@ void TFEFunction2D::SetDirichletBC(BoundCondFunct2D *BoundaryCondition,
   int *BeginIndex, *GlobalNumbers;
   int *DOF;
   int *EdgeDOF, N_EdgePoints;
-  double *EdgePoints;
+  const double *EdgePoints;
   double eps=1e-4;
 
   BeginIndex = FESpace2D->GetBeginIndex();
@@ -2236,7 +2238,7 @@ void  TFEFunction2D::GetMassAndMean(double *OutVal)
   int *BeginIndex, *GlobalNumbers, *DOF, N_BF;
 
   double Mult, r_axial, val, mass, volume;
-  double *weights, *xi, *eta;
+  const double *weights, *xi, *eta;
   double values[MaxN_QuadPoints_2D][MaxN_BaseFunctions2D];
   double AbsDetjk[MaxN_QuadPoints_2D], X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D];
 

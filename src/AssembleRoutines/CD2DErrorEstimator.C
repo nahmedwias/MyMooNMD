@@ -77,7 +77,7 @@ double *estimated_global_error)
   TCollection *Coll;
   TBaseCell *cell, *neigh;
   BF2DRefElements bf2Drefelements;
-  double *weights, *xi, *eta,*weights1D, *zeta;
+  const double *weights, *xi, *eta,*weights1D, *zeta;
   double xi1D[N_BaseFuncts2D_loc][4][MaxN_QuadPoints_1D_loc];
   double eta1D[N_BaseFuncts2D_loc][4][MaxN_QuadPoints_1D_loc];
   double *xietaval_ref1D[N_BaseFuncts2D_loc][4][MaxN_QuadPoints_1D_loc];
@@ -576,16 +576,16 @@ void  TCD2DErrorEstimator::EstimateCellError_new(TFESpace2D *fespace,
 					     double *X,
 					     double *Y,
 					     double *AbsDetjk,
-					     double *weights,
+					     const double *weights,
 					     double **Derivatives,
 					     double **coeffs,
 					     BoundCondFunct2D **BoundaryConds,
 					     BoundValueFunct2D **BoundaryValues,
 					     int N_Points1D,
-					     double *zeta,
+					     const double *zeta,
 					     double *X1D[4],
 					     double *Y1D[4],
-					     double *weights1D,
+					     const double *weights1D,
 					     double *xyval_1D[4],
 					     double *xderiv_1D[4],
 					     double *yderiv_1D[4],

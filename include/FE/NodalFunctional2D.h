@@ -63,25 +63,27 @@ class TNodalFunctional2D
                        EvalJointNF *evaledge);
 
     /** return information for points for all functionals */
-    void GetPointsForAll(int &n_points, double* &xi, double* &eta)
+    void GetPointsForAll(int &n_points, const double* &xi, const double* &eta)
     { n_points = N_PointsAll; xi = Xi; eta = Eta; }
 
     /** return information for points for edge functionals */
-    void GetPointsForEdge(int &n_points, double* &t)
+    void GetPointsForEdge(int &n_points, const double* &t) const
     { n_points = N_PointsEdge; t = T; }
 
     /** return values for all nodal functionals */
-    void GetAllFunctionals(TCollection *Coll, TBaseCell *Cell, double *PointValues,
-                           double *Functionals)
+    void GetAllFunctionals(TCollection *Coll, TBaseCell *Cell,
+                           const double *PointValues, double *Functionals)
+      const
     { EvalAll(Coll, Cell, PointValues, Functionals); }
 
     /** return values for edge nodal functional */
-    void GetEdgeFunctionals(TCollection *Coll, TBaseCell *Cell, int Joint, double *PointValues,
-                            double *Functionals)
+    void GetEdgeFunctionals(TCollection *Coll, TBaseCell *Cell, int Joint,
+                            const double *PointValues, double *Functionals)
+      const
     { EvalEdge(Coll, Cell, Joint, PointValues, Functionals); }
 
     /** return ID for this set */
-    NodalFunctional2D GetID()
+    NodalFunctional2D GetID() const
     { return ID; }
 
 };

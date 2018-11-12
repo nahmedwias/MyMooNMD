@@ -82,14 +82,15 @@ class TBaseFunct2D
                         TQuadFormula2D *formula, double **values) const;
 
     /** return values on joint i */
-    void GetValues(int N_Points, double *zeta, int i, double **Values) const;
+    void GetValues(int N_Points, const double *zeta, int i, double **Values)
+      const;
 
     /** return derivatives on joint i */
     void GetDerivatives(MultiIndex2D MultiIndex, int N_Points,
-                        double *zeta, int i, double **Values) const;
+                        const double *zeta, int i, double **Values) const;
 
    /** return values of derivative index on joint */
-   void GetValues(int N_Points, double *zeta, int i, 
+   void GetValues(int N_Points, const double *zeta, int i, 
                   MultiIndex2D index, double **Values) const;
 
     /** make date on reference element */

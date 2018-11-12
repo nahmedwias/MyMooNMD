@@ -807,7 +807,7 @@ ParameterDatabase LocalAssembling<d>::default_local_assembling_database()
 
 //========================================================================
 template<int d>
-void LocalAssembling<d>::GetLocalForms(int N_Points, double *weights,
+void LocalAssembling<d>::GetLocalForms(int N_Points, const double *weights,
                                        double *AbsDetjk,
                                        std::array<double*, d> coordinates,
                                        int *N_BaseFuncts, BaseFunct *BaseFuncts,

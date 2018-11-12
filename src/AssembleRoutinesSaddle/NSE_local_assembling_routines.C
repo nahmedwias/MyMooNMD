@@ -915,7 +915,7 @@ void NS_BrezziPitkaeranta(double Mult, double *coeff, double *param, double hK,
 }
 
 template <int d>
-void NSParamsVelocity(double *in, double *out)
+void NSParamsVelocity(const double *in, double *out)
 {
   out[0] = in[d]; // u1old
   out[1] = in[d+1]; // u2old
@@ -1000,7 +1000,7 @@ template void NS_BrezziPitkaeranta<2>(
 // template void NSCoriolis<2>(
 //   double Mult, double *coeff, double *param, double hK, double **OrigValues,
 //   int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
-template void NSParamsVelocity<2>(double *in, double *out);
+template void NSParamsVelocity<2>(const double *in, double *out);
 #endif // 2D
 #ifdef __3D__
 template void NSResistanceMassMatrixSingle<3>(
@@ -1050,7 +1050,7 @@ template void NSNonlinearTerm_emac<3>(
 template void NSCoriolis<3>(
   double Mult, double *coeff, double *param, double hK, double **OrigValues,
   int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
-template void NSParamsVelocity<3>(double *in, double *out);
+template void NSParamsVelocity<3>(const double *in, double *out);
 template void NSGradDiv<3>(
   double Mult, double *coeff, double *param, double hK, double **OrigValues,
   int *N_BaseFuncts, double ***LocMatrices, double **LocRhs, double delta0);

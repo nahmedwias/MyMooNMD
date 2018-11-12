@@ -2105,7 +2105,7 @@ void TFESpace2D::GetDOFPosition(double *x, double *y)
   FE2D FEid;
   int *DOF;
   TNodalFunctional2D *nf;
-  double *xi, *eta;
+  const double *xi, *eta;
   int N_Points;
   RefTrans2D RefTrans, *RefTransArray;
   int IsIsoparametric;
@@ -2226,7 +2226,7 @@ void TFESpace2D::GetDOFPosition(int dof, double &x, double &y) const
   FE2D FEid;
   int *DOF;
   TNodalFunctional2D *nf;
-  double *xi, *eta;
+  const double *xi, *eta;
   int N_Points;
   RefTrans2D RefTrans, *RefTransArray;
   int IsIsoparametric;

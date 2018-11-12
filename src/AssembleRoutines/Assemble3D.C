@@ -65,8 +65,8 @@ void Assemble3D(int n_fespaces, const TFESpace3D** fespaces, int n_sqmatrices,
 	  //  TIsoBoundEdge *isoboundedge;
 	  TFE3D *ele;
 	  TFEDesc3D *FEDesc_Obj;
-	  double *weights, *xi, *eta, *zeta;
-	  double *t, *s;
+	  const double *weights, *xi, *eta, *zeta;
+	  const double *t, *s;
 	  double xf, yf, zf;
 	  double X[MaxN_QuadPoints_3D], Y[MaxN_QuadPoints_3D];
 	  double Z[MaxN_QuadPoints_3D];
@@ -100,7 +100,7 @@ void Assemble3D(int n_fespaces, const TFESpace3D** fespaces, int n_sqmatrices,
 	  double PointValues[MaxN_PointsForNodal3D];
 	  double FunctionalValues[MaxN_BaseFunctions3D];
 	  int *EdgeDOF, N_EdgeDOF;
-	  double *FaceWeights;
+	  const double *FaceWeights;
 	  double **JointValues, *JointValue;
 	  // static bool *SecondDer = nullptr;
 	  bool *SecondDer = nullptr;
@@ -1169,8 +1169,8 @@ void Assemble3DSlipBC(int n_fespaces, const TFESpace3D **fespaces,
   int **TestGlobalNumbers=nullptr, **TestBeginIndex=nullptr;
   int **AnsatzGlobalNumbers=nullptr, **AnsatzBeginIndex=nullptr;
   TFE3D *ele;
-  double *weights, *xi, *eta, *zeta;
-  double *t, *s;
+  const double *weights, *xi, *eta, *zeta;
+  const double *t, *s;
   double xf, yf, zf;
   double X[MaxN_QuadPoints_3D], Y[MaxN_QuadPoints_3D];
   double Z[MaxN_QuadPoints_3D];
@@ -1187,7 +1187,7 @@ void Assemble3DSlipBC(int n_fespaces, const TFESpace3D **fespaces,
   BoundCondFunct3D *BoundaryCondition;
   TNodalFunctional3D *nf;
   int N_EdgePoints;
-  double *FaceWeights;
+  const double *FaceWeights;
   double **JointValues, *JointValue;
   bool *SecondDer;
   double hE;
@@ -1196,7 +1196,7 @@ void Assemble3DSlipBC(int n_fespaces, const TFESpace3D **fespaces,
   int MaxLen;
   double nn, nx, ny, nz, t11, t12, t13, t21, t22, t23;
   double x10, y10, z10, x20, y20, z20;
-  double *EdgePoints1, *EdgePoints2;
+  const double *EdgePoints1, *EdgePoints2;
   double *Entries1=nullptr,*Entries2=nullptr,*Entries3=nullptr;
   const int *ColInd1=nullptr, *RowPtr1=nullptr,*ColInd2=nullptr, *RowPtr2=nullptr, *ColInd3=nullptr, *RowPtr3=nullptr;
   double penetration_penalty, friction_parameter;
@@ -2364,8 +2364,8 @@ BoundValueFunct3D **BoundaryValues)
   int **TestGlobalNumbers =nullptr, **TestBeginIndex =nullptr;
   int **AnsatzGlobalNumbers =nullptr, **AnsatzBeginIndex =nullptr;
   TFE3D *ele;
-  double *weights, *xi, *eta, *zeta;
-  double *t, *s;
+  const double *weights, *xi, *eta, *zeta;
+  const double *t, *s;
   double xf, yf, zf;
   double X[MaxN_QuadPoints_3D], Y[MaxN_QuadPoints_3D];
   double Z[MaxN_QuadPoints_3D];
@@ -2392,7 +2392,7 @@ BoundValueFunct3D **BoundaryValues)
   double PointValues[MaxN_PointsForNodal3D];
   double FunctionalValues[MaxN_BaseFunctions3D];
   int *EdgeDOF, N_EdgeDOF;
-  double *FaceWeights;
+  const double *FaceWeights;
   double **JointValues, *JointValue;
 
   // static bool *SecondDer = nullptr;

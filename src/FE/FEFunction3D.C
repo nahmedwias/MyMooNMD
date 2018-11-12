@@ -91,7 +91,7 @@ void TFEFunction3D::GetErrors(DoubleFunct3D *Exact, int N_Derivatives,
   BaseFunct3D BaseFunct, *BaseFuncts;
   TCollection *Coll;
   TBaseCell *cell;
-  double *weights, *xi, *eta, *zeta;
+  const double *weights, *xi, *eta, *zeta;
   double X[MaxN_QuadPoints_3D], Y[MaxN_QuadPoints_3D];
   double Z[MaxN_QuadPoints_3D];
   double AbsDetjk[MaxN_QuadPoints_3D];
@@ -313,8 +313,8 @@ void TFEFunction3D::GetErrorsForVectorValuedFunction(
     // quadrature formula
     TQuadFormula3D *qf = TFEDatabase3D::GetQuadFormula3D(qf_id);
     int N_Points; // number of quadrature points in one cell
-    double *xi, *eta, *zeta; // quadrature points in reference cell
-    double *weights; // quadrature weights
+    const double *xi, *eta, *zeta; // quadrature points in reference cell
+    const double *weights; // quadrature weights
     qf->GetFormulaData(N_Points, weights, xi, eta, zeta);
     TFEDatabase3D::GetBaseFunct3D(BaseFunct)->MakeRefElementData(qf_id);
     
@@ -463,7 +463,7 @@ void TFEFunction3D::GetMeshCellParams(DoubleFunct3D *Exact, int N_Derivatives,
   BaseFunct3D BaseFunct, *BaseFuncts;
   TCollection *Coll;
   TBaseCell *cell;
-  double *weights, *xi, *eta, *zeta;
+  const double *weights, *xi, *eta, *zeta;
   double X[MaxN_QuadPoints_3D], Y[MaxN_QuadPoints_3D];
   double Z[MaxN_QuadPoints_3D];
   double AbsDetjk[MaxN_QuadPoints_3D];
@@ -924,7 +924,7 @@ void TFEFunction3D::Interpolate(DoubleFunct3D *Exact)
   int N_DOFs, N_LocalDOFs;
   int *BeginIndex, *GlobalNumbers;
   int N_Points;
-  double *xi, *eta, *zeta;
+  const double *xi, *eta, *zeta;
   int *DOF;
   RefTrans3D F_K = TetraAffin; //avoid uninit warning
   TRefTrans3D *rt;
@@ -1105,7 +1105,7 @@ void TFEFunction3D::Interpolate_vector_valued_function(
     int N_Points = nf->n_points();
     // coordinates of points on reference element to evaluate nodal
     // functionals
-    double *xi, *eta, *zeta;
+    const double *xi, *eta, *zeta;
     nf->GetPointsForAll(N_Points, xi, eta, zeta);
     int N_LocalDOFs = Element->GetN_DOF();
 
@@ -1180,7 +1180,7 @@ void TFEFunction3D::InterpolateSuper(DoubleFunct3D *Exact)
   int N_DOFs, N_LocalDOFs;
   int *BeginIndex, *GlobalNumbers;
   int N_Points;
-  double *xi, *eta, *zeta;
+  const double *xi, *eta, *zeta;
   int *DOF;
   RefTrans3D F_K = TetraAffin;
   TRefTrans3D *rt;
@@ -1351,7 +1351,7 @@ void TFEFunction3D::Interpolate(int N_Coord, double *Coords, int N_AuxFeFcts,  T
   int N_DOFs, N_LocalDOFs;
   int *BeginIndex, *GlobalNumbers;
   int N_Points;
-  double *xi, *eta, *zeta;
+  const double *xi, *eta, *zeta;
   int *DOF;
   RefTrans3D F_K = TetraAffin; //to avoid uninit warning
   TRefTrans3D *rt;
@@ -1560,7 +1560,7 @@ void TFEFunction3D::compute_integral_and_measure(double& integral,
     // calculate values on original element (i.e. prepare reference
     // transformation)
     bool SecondDer = false; // defined in include/General/Constants.h
-    double *weights, *xi, *eta, *zeta;//quadrature weights and points in reference cell
+    const double *weights, *xi, *eta, *zeta;//quadrature weights and points in reference cell
     // ugly, we need to change GetOrig!!
     double X[MaxN_QuadPoints_3D], Y[MaxN_QuadPoints_3D], Z[MaxN_QuadPoints_3D]; // quadrature points
     double AbsDetjk[MaxN_QuadPoints_3D]; // determinant of transformation
@@ -1634,7 +1634,7 @@ void TFEFunction3D::project_into_L20(double a)
     int * DOF = FESpace3D->GetGlobalDOF(i);
     TNodalFunctional3D *nf = TFEDatabase3D::GetNodalFunctional3DFromFE3D(feID);
     int n_points; // number of evaluation points to compute nodal functionals
-    double *xi, *eta, *zeta; // coordinates of evaluation points in reference cell
+    const double *xi, *eta, *zeta; // coordinates of evaluation points in reference cell
     nf->GetPointsForAll(n_points, xi, eta, zeta);
     double *point_values = new double[n_points];
     for(int j = 0; j < n_points; j++)
@@ -1669,7 +1669,7 @@ void TFEFunction3D::SetDirichletBC(BoundCondFunct3D *BoundaryCondition,
   TNodalFunctional3D *nf;  
   int *BeginIndex, *GlobalNumbers;
   int N_Cells, N_Points;
-  double *xi, *eta, *zeta;
+  const double *xi, *eta, *zeta;
   int *DOF;
   RefTrans3D F_K = TetraAffin;
   TRefTrans3D *rt;
@@ -1693,7 +1693,7 @@ void TFEFunction3D::SetDirichletBC(BoundCondFunct3D *BoundaryCondition,
   const int *TmpFV, *TmpLen;
   int MaxLen;
   double t0, xf, yf, zf;
-  double *t, *s;
+  const double *t, *s;
   double LinComb[4] = {0,0,0,0};
   int *EdgeDOF;
   

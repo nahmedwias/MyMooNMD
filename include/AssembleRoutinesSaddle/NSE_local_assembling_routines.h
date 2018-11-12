@@ -138,7 +138,7 @@ void NS_BrezziPitkaeranta(double Mult, double *coeff, double *param, double hK,
 // routines
 
 template <int d>
-void NSParamsVelocity(double *in, double *out);
+void NSParamsVelocity(const double *in, double *out);
 
 
 #endif // INCLUDE_ASSEMBLEROUTINESSADDLE_NSE_LOCAL_ASSEMBLING_ROUTINES_H

@@ -57,7 +57,7 @@ typedef void DoubleFunct1D(double, double *);
 typedef void DoubleFunct2D(double, double, double *);
 typedef void DoubleFunct3D(double, double, double, double *);
 typedef void DoubleFunctND(int, double *, double *);
-typedef void DoubleFunctVect(double *, double *);
+typedef void DoubleFunctVect(const double *, double *);
 typedef int IntFunct2D(double, double);
 typedef double DoubleFunct2Param(double, double);
 
@@ -67,12 +67,12 @@ typedef void BoundCondFunct2D(int, double, BoundCond &);
 typedef void BoundValueFunct2D(int, double, double &);
 
 typedef void ErrorMethod2D(int, double *, double *, 
-                           double *, double *, double,
+                           double *, const double *, double,
                            double **, double **,
                            double **, double *);
 
 typedef void ErrorMethod3D(int, double *, double *, double *,
-                           double *, double *, double,
+                           double *, const double *, double,
                            double **, double **,
                            double **, double *);
 
@@ -99,8 +99,8 @@ typedef void ManipulateFct2D(int, double **, double **, TBaseCell *);
 typedef void ManipulateFct3D(int, double **, double **, TBaseCell *);
 
 class TCollection;
-typedef void EvalAllNF(TCollection *, TBaseCell *, double *, double *);
-typedef void EvalJointNF(TCollection *, TBaseCell *, int, double *, double *);
+typedef void EvalAllNF(TCollection *, TBaseCell *, const double *, double *);
+typedef void EvalJointNF(TCollection *, TBaseCell *, int, const double *, double *);
 
 class TFESpace2D;
 typedef void CheckWrongNeumannNodesFunct2D(TCollection *, TFESpace2D *,

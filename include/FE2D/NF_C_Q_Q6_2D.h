@@ -121,14 +121,14 @@ static double NF_C_Q_Q6_2D_T[] = {
          1.000000000000000e+00
 };
 
-void NF_C_Q_Q6_2D_EvalAll(TCollection *Coll, TBaseCell *Cell, double *PointValues,
-                          double *Functionals)
+void NF_C_Q_Q6_2D_EvalAll(TCollection *Coll, TBaseCell *Cell,
+                          const double *PointValues, double *Functionals)
 {
   memcpy(Functionals, PointValues, 49*SizeOfDouble);
 };
 
-void NF_C_Q_Q6_2D_EvalEdge(TCollection *Coll, TBaseCell *Cell, int Joint, double *PointValues,
-                           double *Functionals)
+void NF_C_Q_Q6_2D_EvalEdge(TCollection *Coll, TBaseCell *Cell, int Joint,
+                           const double *PointValues, double *Functionals)
 {
   memcpy(Functionals, PointValues, 7*SizeOfDouble);
 };

@@ -52,7 +52,7 @@ double *TQuadFormula1D::GetCoords(int i)
 }
 
 void TQuadFormula1D::
-  GetFormulaData(int &n_points, double* &weights, double* &xi)
+  GetFormulaData(int &n_points, const double* &weights, const double* &xi)
 {
   n_points=N_QuadPoints;
   weights=Weights;

@@ -36,7 +36,7 @@ void TLineAffin::GetOrigFromRef(double xi, double &X
 }
 
 /** transfer a set of points from reference to original element */
-void TLineAffin::GetOrigFromRef(int N_Points, double *xi, double *X, 
+void TLineAffin::GetOrigFromRef(int N_Points, const double *xi, double *X, 
                                 double *Y,  double *absdetjk)
 {
   int i;
@@ -56,7 +56,7 @@ void TLineAffin::GetOrigFromRef(int N_Points, double *xi, double *X,
 }
 
 /** transfer a set of points from reference to original element */
-void TLineAffin::GetOrigFromRef(int N_Points, double *xi, double *X, double *absdetjk)
+void TLineAffin::GetOrigFromRef(int N_Points, const double *xi, double *X, double *absdetjk)
 {
   int i;
   double Xi;

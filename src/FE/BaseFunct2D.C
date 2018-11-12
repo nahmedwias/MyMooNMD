@@ -43,14 +43,14 @@ void TBaseFunct2D::GetDerivatives(MultiIndex2D MultiIndex,
   const
 {
   int N_;
-  double *w, *xi, *eta;
+  const double *w, *xi, *eta;
   formula->GetFormulaData(N_, w, xi, eta);
   for(int i = 0; i < N_; i++)
     GetDerivatives(MultiIndex, xi[i], eta[i], values[i]);
 }
 
 /** return values on joint */
-void TBaseFunct2D::GetValues(int N_Points, double *zeta, 
+void TBaseFunct2D::GetValues(int N_Points, const double *zeta,
                              int joint, double **Values) const
 {
   int i;
@@ -127,7 +127,8 @@ void TBaseFunct2D::GetValues(int N_Points, double *zeta,
 
 /** return derivatives on joint */
 void TBaseFunct2D::GetDerivatives(MultiIndex2D MultiIndex, int N_Points,
-                                  double *zeta, int joint, double **Values)
+                                  const double *zeta, int joint,
+                                  double **Values)
   const
 {
   int i;
@@ -203,7 +204,7 @@ void TBaseFunct2D::GetDerivatives(MultiIndex2D MultiIndex, int N_Points,
 }
 
 /** return values of derivative index on joint */
-void TBaseFunct2D::GetValues(int N_Points, double *zeta, 
+void TBaseFunct2D::GetValues(int N_Points, const double *zeta, 
                              int joint, MultiIndex2D index, 
                              double **Values) const
 {
@@ -286,7 +287,7 @@ void TBaseFunct2D::MakeRefElementData(QuadFormula1D LineQuadFormula) const
   int i, j, N_Joints;
   double **Values, *AllValues;
   TQuadFormula1D *qf1;
-  double *w, *zeta;
+  const double *w, *zeta;
   int N_Points;
 
   qf1 = TFEDatabase2D::GetQuadFormula1D(LineQuadFormula);

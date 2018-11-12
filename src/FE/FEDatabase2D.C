@@ -1719,8 +1719,8 @@ RefTrans2D TFEDatabase2D::GetOrig(int N_LocalUsedElements,
                           FE2D *LocalUsedElements,
                           TCollection *Coll,
                           TBaseCell *cell, bool *Needs2ndDer,
-                          int &N_Points, double* &xi, double* &eta, 
-                          double* &weights, double* X, double* Y,
+                          int &N_Points, const double* &xi, const double* &eta, 
+                          const double* &weights, double* X, double* Y,
                           double* absdetjk)
 {
   BaseFunct2D BaseFuncts[N_FEs2D];
@@ -2168,9 +2168,9 @@ void TFEDatabase2D::GetOrigValues(RefTrans2D RefTrans,
     }                                               // endswitch
 }
 
-void TFEDatabase2D::GetOrigFromRef(RefTrans2D RefTrans, int n_points, 
-                        double *xi, double *eta,
-                        double *X, double *Y, double *absdetjk)
+void TFEDatabase2D::GetOrigFromRef(RefTrans2D RefTrans, int n_points,
+                                   const double *xi, const double *eta,
+                                   double *X, double *Y, double *absdetjk)
 {
   TRefTrans2D *rt;
 
@@ -2271,7 +2271,7 @@ double *TFEDatabase2D::GetProlongationMatrix2D (FE2D parent,
   double *ret, *ret2;
   int j,k,l;
   int N_Coarse, N_Points, N_Children;
-  double *xi, *eta;
+  const double *xi, *eta;
   double X[MaxN_PointsForNodal2D], Y[MaxN_PointsForNodal2D];
   double AbsDetjk[MaxN_PointsForNodal2D];
   double AllPointValues[MaxN_PointsForNodal2D][MaxN_BaseFunctions2D];
@@ -2454,7 +2454,7 @@ double *TFEDatabase2D::GetRestrictionMatrix2D (FE2D parent,
   double **CoarseBFData, **FineBFData, *PointData;
   double *FinePointData;
   int N_QuadPoints;
-  double *xi, *eta, *weights, w;
+  const double *xi, *eta, *weights;
   double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D];
   double AbsDetjk[MaxN_QuadPoints_2D];
   int LDA=MaxN_BaseFunctions2D;
@@ -2487,7 +2487,7 @@ double *TFEDatabase2D::GetRestrictionMatrix2D (FE2D parent,
     for(k=0;k<N_QuadPoints;k++)
     {
       PointData = CoarseBFData[k];
-      w = weights[k];
+      double w = weights[k];
       for(i=0;i<N_Coarse;i++)
       {
         for(j=0;j<N_Coarse;j++)
@@ -2523,7 +2523,7 @@ double *TFEDatabase2D::GetRestrictionMatrix2D (FE2D parent,
       {
         FinePointData = FineBFData[k];
         PointData = CoarseBFData[k];
-        w = weights[k];
+        double w = weights[k];
         for(l1=0;l1<N_Coarse;l1++)
         {
           for(l2=0;l2<N_Fine;l2++)
@@ -2604,7 +2604,7 @@ double *TFEDatabase2D::GetRestrictionMatrix2D (FE2D parent,
         {
           FinePointData = FineBFData[k];
           PointData = AllPointValues[k];
-          w = weights[k]*AbsDetjk[k];
+          double w = weights[k]*AbsDetjk[k];
           for(l1=0;l1<N_Coarse;l1++)
           {
             for(l2=0;l2<N_Fine;l2++)
