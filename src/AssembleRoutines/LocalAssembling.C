@@ -983,7 +983,7 @@ void LocalAssembling<d>::GetParameters(int n_points,
 template<int d>
 void LocalAssembling<d>::set_parameters_for_nse( LocalAssembling_type type)
 {
-  bool with_coriolis = db["with_coriolis_force"];
+  //bool with_coriolis = db["with_coriolis_force"];
   //bool laplace_type_deformation = (TDatabase::ParamDB->LAPLACETYPE == 1);
   bool laplace_type_deformation = this->db["laplace_type_deformation"];
   std::string disc_type = this->db["space_discretization_type"];
