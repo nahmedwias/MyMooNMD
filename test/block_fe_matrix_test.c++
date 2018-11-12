@@ -265,7 +265,9 @@ int main(int argc, char* argv[])
 
     //move constructor
     //BlockFEMatrix moveConstructedMatrix(BlockFEMatrix::NSE2D_Type14(first_fe_space, second_fe_space));
-    BlockFEMatrix moveConstructedMatrix(std::move(BlockFEMatrix({&first_fe_space, &second_fe_space})));
+    BlockFEMatrix moveConstructedMatrix(
+      std::move(BlockFEMatrix(
+        std::vector<const TFESpace2D*>({{&first_fe_space, &second_fe_space}}))));
     moveConstructedMatrix.check_pointer_types();
     moveConstructedMatrix.check_coloring();
 

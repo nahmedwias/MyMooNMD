@@ -342,7 +342,7 @@ void TFEVectFunct3D::compute_flux(int surface_id, double& flux) const
 	      int global_dof_from_local = DOF[k];
 	      for(size_t icoor=0; icoor<3; icoor++) {
 		double *u_icoor_values = this->GetComponent(icoor)->GetValues();
-		double u_icoor_on_x_k = u_icoor_values[ DOF[k] ];
+		double u_icoor_on_x_k = u_icoor_values[ global_dof_from_local ];
 		u_n += JointValues[l][k]* (u_icoor_on_x_k*normal[icoor]) ;
 	      }
 	    }

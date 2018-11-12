@@ -492,8 +492,8 @@ void compute_drag_lift_pdiff(NSE3D& nse3d)
   delete u2;
   delete u3;
 
-  std::array<double,3> point_A = {0.45,0.2,0.205};
-  std::array<double,3> point_B = {0.55, 0.2, 0.205};
+  std::array<double,3> point_A = {{0.45,0.2,0.205}};
+  std::array<double,3> point_B = {{0.55, 0.2, 0.205}};
 
   double pdiff = get_p_diff(point_A, point_B, p);
 
