@@ -110,7 +110,7 @@ int main(int argc, char* argv[])
     testall = (std::string(argv[2]).compare("testall") == 0);
 
   //  declaration of database, you need this in every program
-  TDatabase Database;
+  TDatabase Database(argv[1]);
   TFEDatabase2D FEDatabase;
   ParameterDatabase parmoon_db = ParameterDatabase::parmoon_default_database();
   parmoon_db.merge(TimeDiscretization::default_TimeDiscretization_database());
@@ -125,7 +125,7 @@ int main(int argc, char* argv[])
   check_parameters_consistency_NSE(parmoon_db);
 
    // set variables' value in TDatabase using argv[1] (*.dat file)
-  TDomain domain(parmoon_db, argv[1]);
+  TDomain domain(parmoon_db);
   refine_domain(domain, false);
   // Expected solution - if the results is equal to this given solution
   // then the test is passed
