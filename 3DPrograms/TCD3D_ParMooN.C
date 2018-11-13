@@ -94,38 +94,41 @@ int main(int argc, char *argv[])
 #endif
   timer.restart_and_print("constructing Time_CD3D object");
   
+  TimeDiscretization& tss = tcd3d.get_time_stepping_scheme();
+  tss.current_step_ = 0;
+  tss.current_time_ = parmoon_db["time_start"];
+  
   // assemble the matrices and right hand side at the start time
   tcd3d.assemble_initial_time();
-  int step = 0, image=0;
+  int image=0;
   timer.restart_and_print("initial assembling");
   Chrono timer_solve;
   timer_solve.stop();
   
   double start_time = parmoon_db["time_start"];
-  double end_time = parmoon_db["time_end"];
   TDatabase::TimeDB->CURRENTTIME = start_time;
-  while(TDatabase::TimeDB->CURRENTTIME < end_time - 1e-10)
+  while(tss.current_time_ < tss.get_end_time() - 1e-10)
   {
-    step++;
-    TDatabase::TimeDB->INTERNAL_STARTTIME = TDatabase::TimeDB->CURRENTTIME;
+    tss.current_step_++;
+    TDatabase::TimeDB->INTERNAL_STARTTIME = tss.current_time_;
+    tss.set_time_disc_parameters();
     SetTimeDiscParameters(1);
-
-    double tau = TDatabase::TimeDB->TIMESTEPLENGTH;
-    TDatabase::TimeDB->CURRENTTIME += tau;
+    tss.current_time_ += tss.get_step_length();
+    // this is used at several places, e.g., in the example file etc.
+    TDatabase::TimeDB->CURRENTTIME += tss.get_step_length();
     
     if(i_am_root)
-      Output::print<1>("\nCURRENT TIME: ", TDatabase::TimeDB->CURRENTTIME);
+      Output::print<1>("\nCURRENT TIME: ", tss.current_time_);
     tcd3d.assemble();
     timer_solve.start();
     tcd3d.solve();
     timer_solve.restart_and_print("solving in step t=" 
-                               +std::to_string(TDatabase::TimeDB->CURRENTTIME));
+                               +std::to_string(tss.current_time_));
     timer_solve.stop();
-    tcd3d.descale_stiffness();
     
-    tcd3d.output(step,image);
+    tcd3d.output(tss.current_step_,image);
     timer.restart_and_print(
-      "time step (t=" + std::to_string(TDatabase::TimeDB->CURRENTTIME)+ ")");
+      "time step (t=" + std::to_string(tss.current_time_)+ ")");
   }
   
   timer_solve.print_total_time("accumulated solver time");

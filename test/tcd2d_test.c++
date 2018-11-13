@@ -91,26 +91,24 @@ void time_integration(int td, Time_CD2D& tcd, TimeDiscretization& tss)
     
   tcd.assemble_initial_time();
   
-  int step=0;
-  testCN(tcd, step);
+  tss.current_step_=0;
+  testCN(tcd, tss.current_step_);
 
-  double end_time = tcd.get_db()["time_end"];
-  while(TDatabase::TimeDB->CURRENTTIME < end_time-1e-10)
+  while(tss.current_time_ < tss.get_end_time()-1e-10)
   {
-    step ++;
+    tss.current_step_++;
     TDatabase::TimeDB->INTERNAL_STARTTIME 
-       = TDatabase::TimeDB->CURRENTTIME;
+       = tss.current_time_;
     tss.set_time_disc_parameters();
     SetTimeDiscParameters(1);
     
-    double tau = TDatabase::TimeDB->TIMESTEPLENGTH;
-    TDatabase::TimeDB->CURRENTTIME += tau;
+    tss.current_time_ += tss.get_step_length();;
+    TDatabase::TimeDB->CURRENTTIME += tss.get_step_length();
     
-    Output::print<1>("\nCURRENT TIME: ", 
-		     TDatabase::TimeDB->CURRENTTIME);
+    Output::print<1>("\nCURRENT TIME: ", tss.current_time_);
     tcd.assemble();
     tcd.solve();
-    testCN(tcd, step);
+    testCN(tcd, tss.current_step_);
   }
   
 }
@@ -152,6 +150,7 @@ int main(int argc, char* argv[])
     Time_CD2D tcd(domain, db);
     TimeDiscretization& tss = tcd.get_time_stepping_scheme();
     tss.current_step_ = 0;
+    tss.current_time_ = db["time_start"];
     
     time_integration(2, tcd, tss);
     
@@ -164,6 +163,7 @@ int main(int argc, char* argv[])
     Output::print("\n\nTesting PETSc\n");
     db["solver_type"] = "petsc";
     TDatabase::TimeDB->CURRENTTIME = db["time_start"];
+    tss.current_time_ = db["time_start"];
     Time_CD2D tcd_petsc(domain, db);
     //TimeDiscretization& tss = tcd.get_time_stepping_scheme();
     tss.current_step_ = 0;

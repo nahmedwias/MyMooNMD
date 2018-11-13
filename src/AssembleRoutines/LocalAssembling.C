@@ -21,7 +21,6 @@
 #include <DarcyMixed.h>
 
 #include <Brinkman3D_Mixed.h>
-#include <TCD3D.h> // local routines for time convection-diffusion-reaction
 #include <TNSE3D_FixPo.h>
 #include <TNSE3D_ParamRout.h>
 #include <TNSE3DSmagorinsky.h>
@@ -48,8 +47,6 @@ std::ostream& operator<<(std::ostream& out, const LocalAssembling_type value)
     PROCESS_VAL(Brinkman2D_GradDivStabilization);
     PROCESS_VAL(ConvDiff);
     PROCESS_VAL( Darcy );
-    PROCESS_VAL(TCD3D);
-    PROCESS_VAL(TCD3DStiffRhs);
     PROCESS_VAL(TCDStiffMassRhs);
     PROCESS_VAL(NSE3D_Linear);
     PROCESS_VAL(NSE3D_NonLinear);
@@ -401,120 +398,7 @@ LocalAssembling<d>::LocalAssembling(ParameterDatabase param_db,
     case LocalAssembling_type::TCDStiffMassRhs:
     case LocalAssembling_type::TCDStiffRhs:
       this->set_parameters_for_tcd(type);
-      /*{
-        this->N_Matrices = 2;
-        this->RowSpace = { 0, 0 };
-        this->ColumnSpace = { 0, 0 };
-        this->N_Rhs = 1;
-        this->RhsSpace = { 0 };
-        this->N_Terms = d+1;
-        //this->Derivatives = { D000, D100, D010, D001 }; // or {D00, D10, D01}
-        this->Derivatives = indices_up_to_order<d>(1);
-        this->Needs2ndDerivatives = new bool[1];
-        this->Needs2ndDerivatives[0] = false;
-        this->FESpaceNumber = std::vector<int>(d+1, 0);
-        this->local_assemblings_routines.push_back(BilinearAssembleGalerkin<d>);
-        // this->local_assemblings_routines.push_back(LocalMatrixM);
-        this->Manipulate = nullptr;
-        if(disc_type.is("supg") )
-        {
-          this->Derivatives = indices_up_to_order<d>(2);
-          this->N_Terms = this->Derivatives.size();
-          this->Needs2ndDerivatives[0] = true;
-          this->FESpaceNumber = std::vector<int>(d+d+1, 0);          
-        }
-        else if(!disc_type.is("galerkin"))
-        {
-          ErrThrow("currently the discretization type ", disc_type,
-                   " is not supported by the class CD3D");
-        }
-      }
-      */break;
-    
-    ///////////////////////////////////////////////////////////////////////////
-    // TCD3D: nonstationary convection-diffusion-reaction problems
-    case LocalAssembling_type::TCD3D:
-    {
-      switch(this->discretization_type)
-      {
-        case GALERKIN:
-          this->N_Terms = 4;
-          //this->Derivatives = { D100, D010, D001, D000 };
-          this->Derivatives = indices_up_to_order<d>(1);
-          this->Derivatives.erase(this->Derivatives.begin());
-          this->Derivatives.push_back(indices_up_to_order<d>(0)[0]);
-          this->Needs2ndDerivatives = new bool[1];
-          this->Needs2ndDerivatives[0] = false;
-          this->FESpaceNumber = { 0, 0, 0, 0};
-          this->N_Matrices = 2; // Mass and Stiffness Matrices
-          this->RowSpace = { 0, 0 };
-          this->ColumnSpace = { 0, 0 };
-          this->N_Rhs = 1;
-          this->RhsSpace = { 0 };
-          this->local_assemblings_routines.push_back(MatrixMARhsAssemble);
-          this->Manipulate = nullptr;
-          break;
-        case SUPG:
-          this->N_Terms = 4;
-          //this->Derivatives = { D100, D010, D001, D000 };
-          this->Derivatives = indices_up_to_order<d>(1);
-          this->Derivatives.erase(this->Derivatives.begin());
-          this->Derivatives.push_back(indices_up_to_order<d>(0)[0]);
-          this->Needs2ndDerivatives = new bool[1];
-          this->Needs2ndDerivatives[0] = false;
-          this->FESpaceNumber = { 0, 0, 0, 0};
-          this->N_Matrices = 2; // Mass and Stiffness matrices, NOTE: M = (u, v + delta * bgradv)
-          this->RowSpace = { 0, 0 };
-          this->ColumnSpace = { 0, 0 };
-          this->N_Rhs = 1;
-          this->RhsSpace = { 0 };
-          this->local_assemblings_routines.push_back(MatricesMARhsAssemble_SUPG);
-          this->Manipulate = nullptr;
-          break;
-      }
-      break;
-    }
-    case LocalAssembling_type::TCD3DStiffRhs:      
-    {
-      switch(this->discretization_type)
-      {
-        case GALERKIN:
-          this->N_Terms = 4;
-          //this->Derivatives = { D100, D010, D001, D000 };
-          this->Derivatives = indices_up_to_order<d>(1);
-          this->Derivatives.erase(this->Derivatives.begin());
-          this->Derivatives.push_back(indices_up_to_order<d>(0)[0]);
-          this->Needs2ndDerivatives = new bool[1];
-          this->Needs2ndDerivatives[0] = false;
-          this->FESpaceNumber = { 0, 0, 0, 0 };
-          this->N_Matrices = 1;
-          this->RowSpace = { 0 };
-          this->ColumnSpace = { 0 };
-          this->N_Rhs = 1;
-          this->RhsSpace = { 0 };
-          this->Manipulate = nullptr;
-          this->local_assemblings_routines.push_back(MatrixARhsAssemble);
-          break;
-        case SUPG:
-          this->N_Terms = 4;
-          //this->Derivatives = { D100, D010, D001, D000 };
-          this->Derivatives = indices_up_to_order<d>(1);
-          this->Derivatives.erase(this->Derivatives.begin());
-          this->Derivatives.push_back(indices_up_to_order<d>(0)[0]);
-          this->Needs2ndDerivatives = new bool[1];
-          this->Needs2ndDerivatives[0] = false;
-          this->FESpaceNumber = { 0, 0, 0, 0 };
-          this->N_Matrices = 2;
-          this->RowSpace = { 0, 0 };
-          this->ColumnSpace = { 0, 0 };
-          this->N_Rhs = 1;
-          this->RhsSpace = { 0 };
-          this->Manipulate = nullptr;
-          this->local_assemblings_routines.push_back(MatricesMARhsAssemble_SUPG);
-          break;
-      }
-      break;
-    } 
+     break;    
     ///////////////////////////////////////////////////////////////////////////
     case LocalAssembling_type::Darcy:
     {
@@ -970,6 +854,25 @@ void LocalAssembling<d>::set_parameters_for_tcd(LocalAssembling_type type)
       this->local_assemblings_routines.push_back(TCDMass<d>);
       // rhs 
       this->local_assemblings_routines.push_back(TCDRhs<d>);
+      if(disc_type.is("supg"))
+      {
+        this->Derivatives = indices_up_to_order<d>(2);
+        this->N_Terms = this->Derivatives.size();
+        this->Needs2ndDerivatives[0] = true;
+        this->Needs2ndDerivatives[1] = true;
+        this->FESpaceNumber = std::vector<int>(N_Terms, 0);
+        // stiffness matrix and rhs 
+        this->local_assemblings_routines.push_back(TCDStiffSUPG<d>);
+        // mass matrix 
+        this->local_assemblings_routines.push_back(TCDMassSUPG<d>);
+        // rhs 
+        this->local_assemblings_routines.push_back(TCDRhsSUPG<d>);
+      }
+      else if(!disc_type.is("galerkin"))
+      {
+        ErrThrow("currently the discretization type ", disc_type,
+                 " is not supported by the class Time_CD2D");
+      }
       break;
     case LocalAssembling_type::TCDStiffRhs:
       // stiff matrix, rhs 
