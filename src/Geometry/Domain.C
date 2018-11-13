@@ -152,15 +152,9 @@ bool ends_with (std::string const &fullString, std::string const &ending) {
     }
 }
 
-TDomain::TDomain(const ParameterDatabase& param_db, const char* ParamFile) :
-  Interfaces(nullptr), RefLevel(0), db(default_domain_parameters())
+TDomain::TDomain(const ParameterDatabase& param_db)
+  : Interfaces(nullptr), RefLevel(0), db(default_domain_parameters())
 {
-  if(ParamFile)
-  {//read the param file and fil the old database
-	  Output::info<4>("READ-IN","Constructing old database from file ", ParamFile);
-	  ReadParam(ParamFile);
-  }
-
   // get the relevant parameters from the new database
   db.merge(param_db, false);
   

@@ -24,7 +24,7 @@ using namespace std;
 int main(int argc, char* argv[])
 {
   double t_start = GetTime();
-  TDatabase Database;
+  TDatabase Database(argv[1]);
   TFEDatabase2D FEDatabase;
   
   ParameterDatabase parmoon_db = ParameterDatabase::parmoon_default_database();
@@ -36,8 +36,7 @@ int main(int argc, char* argv[])
   // ======================================================================
   // set the database values and generate mesh
   // ======================================================================
-  /** set variables' value in TDatabase using argv[1] (*.dat file), and generate the MESH based */
-  TDomain Domain(parmoon_db, argv[1]);
+  TDomain Domain(parmoon_db);
   
   parmoon_db.write(Output::get_outfile());
   Database.WriteParamDB(argv[0]);
@@ -63,7 +62,9 @@ int main(int argc, char* argv[])
   tcd.assemble_initial_time();
   // ======================================================================
   
-  double end_time = TDatabase::TimeDB->ENDTIME; 
+  double start_time = parmoon_db["time_start"];
+  double end_time   = parmoon_db["time_end"];
+  TDatabase::TimeDB->CURRENTTIME = start_time;
   tcd.output();
   // ======================================================================
   // time iteration

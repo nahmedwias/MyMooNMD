@@ -24,7 +24,7 @@ int main(int argc, char* argv[])
 {
     
   //  declaration of database, you need this in every program
-  TDatabase Database;
+  TDatabase Database(argv[1]);
   TFEDatabase3D FEDatabase;
 
   // read input file 
@@ -38,7 +38,7 @@ int main(int argc, char* argv[])
   Output::set_outfile(parmoon_db["outfile"]);
   Output::setVerbosity(parmoon_db["verbosity"]);
 
-  TDomain domain(parmoon_db, argv[1]);
+  TDomain domain(parmoon_db);
 
   //Output::print(" ... writing 3d mesh ... ");
   //TCollection *coll = domain.GetCollection(It_Finest, 0);

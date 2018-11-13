@@ -49,7 +49,7 @@ int main(int argc, char* argv[])
         
         
         // Declaration of database, this is needed in every program
-        TDatabase Database;
+        TDatabase Database(argv[1]);
         TFEDatabase3D FEDatabase;
         
         ParameterDatabase parmoon_db = ParameterDatabase::parmoon_default_database();
@@ -62,8 +62,7 @@ int main(int argc, char* argv[])
         TDatabase::ParamDB->Comm = comm;
 #endif
         
-        // Construct domain, thereby read in controls from the input file (argv[1]).
-        TDomain domain(parmoon_db, argv[1]);
+        TDomain domain(parmoon_db);
         
         
         // Produce an outfile "... .out", this is where all output is written to (addionally to console)

@@ -49,7 +49,7 @@ int main(int argc, char* argv[])
   Chrono timer;
 
   // Construct the ParMooN Databases.
-  TDatabase Database;
+  TDatabase Database(argv[1]);
   ParameterDatabase parmoon_db = ParameterDatabase::parmoon_default_database();
   parmoon_db.read(argv[1]);
   
@@ -66,8 +66,7 @@ int main(int argc, char* argv[])
 
   TFEDatabase3D feDatabase;
 
-  // Construct domain, thereby read in controls from the input file.
-  TDomain domain(parmoon_db, argv[1]);
+  TDomain domain(parmoon_db);
 
   if(my_rank==0) //Only one process should do that.
   {
