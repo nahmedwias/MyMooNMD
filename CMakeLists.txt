@@ -164,6 +164,7 @@ target_compile_definitions(parmoon_3d_${PARMOON_PARALLEL_TYPE} PUBLIC -D__3D__)
 # Start adding executable targets.
 ##############################################################
 
+if(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL OR ${PARMOON_PARALLEL_TYPE} STREQUAL OMPONLY)
 ### Standard 2D Programs ###
 
 ### CD2D ###
@@ -205,16 +206,6 @@ target_compile_definitions(brinkman2d PUBLIC -D__2D__)
 # Link in the required libraries.
 target_link_libraries(brinkman2d parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
 list(APPEND parmoon_main_programs brinkman2d)
-
-### Brinkman3D ###
-# Standard executable target.
-add_executable(brinkman3d ${PROJECT_SOURCE_DIR}/3DPrograms/Brinkman3D_ParMooN.C)
-set_target_properties(brinkman3d PROPERTIES OUTPUT_NAME parMooN_brinkman3d_${PARMOON_PARALLEL_TYPE})
-# Add the correct geometry flag to the target.
-target_compile_definitions(brinkman3d PUBLIC -D__3D__)
-# Link in the required libraries.
-target_link_libraries(brinkman3d parmoon_3d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES}) 
-list(APPEND parmoon_main_programs brinkman3d)
 
 ### TCD2D ###
 # Standard executable target.
@@ -274,6 +265,8 @@ target_compile_definitions(geo2mesh2d PUBLIC -D__2D__)
 target_link_libraries(geo2mesh2d parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
 list(APPEND parmoon_main_programs geo2mesh2d)
 
+endif(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL OR ${PARMOON_PARALLEL_TYPE} STREQUAL OMPONLY)
+
 ### Standard 3D Programs ###
 
 ### CD3D ###
@@ -294,6 +287,16 @@ target_compile_definitions(darcy3d PUBLIC -D__3D__)
 # Link in the required libraries.
 target_link_libraries(darcy3d parmoon_3d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
 list(APPEND parmoon_main_programs darcy3d)
+
+### Brinkman3D ###
+# Standard executable target.
+add_executable(brinkman3d ${PROJECT_SOURCE_DIR}/3DPrograms/Brinkman3D_ParMooN.C)
+set_target_properties(brinkman3d PROPERTIES OUTPUT_NAME parMooN_brinkman3d_${PARMOON_PARALLEL_TYPE})
+# Add the correct geometry flag to the target.
+target_compile_definitions(brinkman3d PUBLIC -D__3D__)
+# Link in the required libraries.
+target_link_libraries(brinkman3d parmoon_3d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES}) 
+list(APPEND parmoon_main_programs brinkman3d)
 
 ### TCD3D ###
 add_executable(tcd3d ${PROJECT_SOURCE_DIR}/3DPrograms/TCD3D_ParMooN.C)
