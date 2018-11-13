@@ -42,7 +42,7 @@ void TQuadFormula1D::InitObject(int n, double* w, double* xi, int acc)
   Accuracy = acc;
 }
 
-double *TQuadFormula1D::GetCoords(int i)
+const double *TQuadFormula1D::GetCoords(int i) const
 {
   double *ret=nullptr;
   if(i==0) 

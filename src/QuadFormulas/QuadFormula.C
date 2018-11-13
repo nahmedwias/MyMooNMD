@@ -21,7 +21,7 @@ TQuadFormula::TQuadFormula()
   Accuracy = -1;
 }
 
-const double *TQuadFormula::GetCoords(int i)
+const double *TQuadFormula::GetCoords(int i) const
 {
   return nullptr;
 }

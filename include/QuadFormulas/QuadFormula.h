@@ -42,7 +42,7 @@ class TQuadFormula
     const double *GetWeights() const
     { return Weights; }
     /** return coordinates of the formula */
-    virtual const double *GetCoords(int i);
+    virtual const double *GetCoords(int i) const;
 
     /** print information on this formula */
     friend std::ostream & operator << (std::ostream &s, const TQuadFormula *qf);

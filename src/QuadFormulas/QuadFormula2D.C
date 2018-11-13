@@ -51,7 +51,7 @@ void TQuadFormula2D::InitObject(int n, double* w, double* xi,
   Accuracy = acc;
 }
 
-double *TQuadFormula2D::GetCoords(int i)
+const double *TQuadFormula2D::GetCoords(int i) const
 {
   double *ret=nullptr;
   if(i==0) 
