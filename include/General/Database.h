@@ -31,7 +31,8 @@ class TDatabase;
 // forward declaration
 class ParameterDatabase;
 
-struct TParaDB
+// typedef struct Foo { ... } Foo; --> see https://stackoverflow.com/a/612350
+typedef struct TParamDB
 {
   int VERSION;
 
@@ -745,15 +746,13 @@ bool SOURCE_SINK_FUNCTION;
   MPI_Comm Comm;
  #endif
   
-  TParaDB() = default;
-  ~TParaDB();
+  TParamDB() = default;
+  ~TParamDB();
   
   void read_parameters(const char *ParamFile);
-};
+} TParamDB;
 
-typedef struct TParaDB TParamDB;
-
-struct TTimDB
+typedef struct TTimeDB
 {
   double CURRENTTIME;
   double CURRENTTIMESTEPLENGTH;
@@ -875,9 +874,7 @@ struct TTimDB
   int RK_ord_e;   // Ordnung des eingebetteten RK-Verfahrens  mlh
   
   void read_parameters(const char *ParamFile);
-};
-
-typedef struct TTimDB TTimeDB;
+} TTimeDB;
 
 /** database of needed refinement, mapping and
     shape descriptors as well as iterators */

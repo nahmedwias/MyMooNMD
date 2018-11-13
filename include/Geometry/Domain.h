@@ -105,13 +105,7 @@ class TDomain
   public:
     /**
      * @brief Constructor.
-     * Eventually reads in data of the old database - this feature is messy,
-     * it is a trait from heritage MooNMD, and should be removed soon.
-     *
-     * @param param_db A database to be merged into the domain's own.
-     * @param ParamFile Path to a ParMooN parameter input textfile, if
-     * given, it is used to fill the old Database.
-     *
+     * @param db A database to be merged into the domain's own.
      */
      TDomain(const ParameterDatabase& db);
      
