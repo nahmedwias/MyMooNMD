@@ -75,7 +75,7 @@ void TFEVectFunct3D::GridToData()
   int N_LocalDOFs;
   int *BeginIndex, *GlobalNumbers;
   int N_Points;
-  double *xi, *eta, *zeta;
+  const double *xi, *eta, *zeta;
   int *DOF;
   RefTrans3D F_K;
   TRefTrans3D *rt;
@@ -292,8 +292,8 @@ void TFEVectFunct3D::compute_flux(int surface_id, double& flux) const
 	    break;
 	  }
 	  int N_Points;
-	  double* faceWeights;
-	  double *t,*s;
+	  const double* faceWeights;
+	  const double *t,*s;
 	  // get a quadrature formula good enough for the velocity FE space
 	  TQuadFormula2D *qf2 = TFEDatabase3D::GetQuadFormula2D(FaceQuadFormula);
 	  qf2->GetFormulaData(N_Points, faceWeights, t, s);
@@ -342,7 +342,7 @@ void TFEVectFunct3D::compute_flux(int surface_id, double& flux) const
 	      int global_dof_from_local = DOF[k];
 	      for(size_t icoor=0; icoor<3; icoor++) {
 		double *u_icoor_values = this->GetComponent(icoor)->GetValues();
-		double u_icoor_on_x_k = u_icoor_values[ DOF[k] ];
+		double u_icoor_on_x_k = u_icoor_values[ global_dof_from_local ];
 		u_n += JointValues[l][k]* (u_icoor_on_x_k*normal[icoor]) ;
 	      }
 	    }
@@ -380,7 +380,7 @@ void TFEVectFunct3D::GetDeformationTensorErrors(
   BaseFunct3D BaseFunct, *BaseFuncts;
   TCollection *Coll;
   TBaseCell *cell;
-  double *weights, *xi, *eta, *zeta;
+  const double *weights, *xi, *eta, *zeta;
   double X[MaxN_QuadPoints_3D], Y[MaxN_QuadPoints_3D], Z[MaxN_QuadPoints_3D];
   double AbsDetjk[MaxN_QuadPoints_3D];
   double *Param[MaxN_QuadPoints_3D], *aux, *aux1, *aux2, *aux3;
@@ -572,7 +572,7 @@ double TFEVectFunct3D::GetL2NormDivergenceError(DoubleFunct3D* Exact_u1,
     fe->GetBaseFunct3D_ID();
 
     // compute transformation to reference cell
-    double *xi, *eta, *zeta, *weights;
+    const double *xi, *eta, *zeta, *weights;
     int N_Points;
     TFEDatabase3D::GetOrig(1, &FEid, Coll, cell, &SecondDer,
         N_Points, xi, eta, zeta, weights, X, Y, Z, AbsDetJK);

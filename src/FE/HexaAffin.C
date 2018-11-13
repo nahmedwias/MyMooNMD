@@ -24,7 +24,8 @@ THexaAffin::THexaAffin()
 }
 
 /** transfer from reference element to original element */
-void THexaAffin::GetOrigFromRef(double xi, double eta, double zeta, double &X, double &Y, double &Z)
+void THexaAffin::GetOrigFromRef(double xi, double eta, double zeta, double &X,
+                                double &Y, double &Z)
 {
   X = xc0 + xc1*xi + xc2*eta + xc3*zeta;
   Y = yc0 + yc1*xi + yc2*eta + yc3*zeta;
@@ -32,8 +33,10 @@ void THexaAffin::GetOrigFromRef(double xi, double eta, double zeta, double &X, d
 }
 
 /** transfer a set of point from reference to original element */
-void THexaAffin::GetOrigFromRef(int N_Points, double *xi, double *eta, double *zeta,
-                                double *X, double *Y, double *Z, double *absdetjk)
+void THexaAffin::GetOrigFromRef(int N_Points, const double *xi,
+                                const double *eta, const double *zeta,
+                                double *X, double *Y, double *Z,
+                                double *absdetjk)
 {
   int i;
   double Xi, Eta, Zeta;
@@ -52,7 +55,7 @@ void THexaAffin::GetOrigFromRef(int N_Points, double *xi, double *eta, double *z
 }
 
 /** transfer from reference element to original element */
-void THexaAffin::GetOrigFromRef(double *ref, double *orig)
+void THexaAffin::GetOrigFromRef(const double *ref, double *orig)
 {
   orig[0]=xc0 + xc1*ref[0] + xc2*ref[1] + xc3*ref[2];
   orig[1]=yc0 + yc1*ref[0] + yc2*ref[1] + yc3*ref[2];
@@ -60,7 +63,8 @@ void THexaAffin::GetOrigFromRef(double *ref, double *orig)
 }
 
 /** transfer from original element to reference element */
-void THexaAffin::GetRefFromOrig(double X, double Y, double Z, double &xi, double &eta, double &zeta)
+void THexaAffin::GetRefFromOrig(double X, double Y, double Z, double &xi,
+                                double &eta, double &zeta)
 {
   double xt=(X - xc0)/detjk;
   double yt=(Y - yc0)/detjk;
@@ -76,7 +80,7 @@ void THexaAffin::GetRefFromOrig(double X, double Y, double Z, double &xi, double
 }
 
 /** transfer from original element to reference element */
-void THexaAffin::GetRefFromOrig(double *orig, double *ref)
+void THexaAffin::GetRefFromOrig(const double *orig, double *ref)
 {
   double xt=(orig[0] - xc0)/detjk;
   double yt=(orig[1] - yc0)/detjk;
@@ -94,7 +98,8 @@ void THexaAffin::GetRefFromOrig(double *orig, double *ref)
 /** calculate functions and derivatives from reference element
     to original element */
 void THexaAffin::GetOrigValues(BaseFunct3D BaseFunct,
-                               int N_Points, double *xi, double *eta, double *zeta,
+                               int N_Points, const double *xi,
+                               const double *eta, const double *zeta,
                                int N_Functs, QuadFormula3D QuadFormula)
 {
   int i,j;
@@ -348,7 +353,8 @@ void THexaAffin::GetOrigValues(BaseFunct3D BaseFunct,
 /** calculate functions and derivatives from reference element
     to original element, for all given elements */
 void THexaAffin::GetOrigValues(int N_Sets, BaseFunct3D *BaseFuncts,
-                               int N_Points, double *xi, double *eta, double *zeta, 
+                               int N_Points, const double *xi,
+                               const double *eta, const double *zeta, 
                                QuadFormula3D QuadFormula,
                                bool *Needs2ndDer)
 {
@@ -411,7 +417,8 @@ void THexaAffin::GetOrigValues(int N_Sets, BaseFunct3D *BaseFuncts,
       else
       {
         // do Piola transformation
-        PiolaMapOrigFromRef(N_Functs, refD000, origD000);
+        PiolaMapOrigFromRef(xi[j], eta[j], zeta[j], N_Functs, refD000,
+                            origD000);
       }
     } // endfor j
       
@@ -807,7 +814,8 @@ void THexaAffin::GetOrigValues(int N_Sets, BaseFunct3D *BaseFuncts,
     to original element */
 void THexaAffin::GetOrigValues(double xi, double eta, double zeta,
                                int N_BaseFunct,
-                               double *uref, double *uxiref, double *uetaref, double *uzetaref,
+                               const double *uref, const double *uxiref,
+                               const double *uetaref,const  double *uzetaref,
                                double *uorig, double *uxorig, double *uyorig, double *uzorig,
                                int _BaseVectDim)
 {
@@ -835,7 +843,7 @@ void THexaAffin::GetOrigValues(double xi, double eta, double zeta,
   else if(_BaseVectDim == 3)
   {
     // D000
-    PiolaMapOrigFromRef(N_BaseFunct, uref, uorig);
+    PiolaMapOrigFromRef(xi, eta, zeta, N_BaseFunct, uref, uorig);
     
     // D100, D010, D001
     // not yet implemented
@@ -882,7 +890,7 @@ void THexaAffin::SetCell(const TBaseCell *cell)
 
 /** return outer normal unit vector */
 void THexaAffin::GetOuterNormal(int j, double s, double t,
-                                double &n1, double &n2, double &n3)
+                                double &n1, double &n2, double &n3) const
 {
 //   double len;
  
@@ -940,7 +948,7 @@ void THexaAffin::GetOuterNormal(int j, double s, double t,
 /** return two tangent vectors */
 void THexaAffin::GetTangentVectors(int j, double p1, double p2,
         double &t11, double &t12, double &t13,
-        double &t21, double &t22, double &t23)
+        double &t21, double &t22, double &t23) const
 {
   switch(j)
   {
@@ -982,8 +990,9 @@ void THexaAffin::GetTangentVectors(int j, double p1, double p2,
 
 
 /** Piola transformation for vectorial basis functions */
-void THexaAffin::PiolaMapOrigFromRef(int N_Functs, double *refD000, 
-                                     double *origD000 )
+void THexaAffin::PiolaMapOrigFromRef(double xi, double eta, double zeta,
+                                     int N_Functs, const double *refD000, 
+                                     double *origD000)
 {
   double a11 = xc1 * rec_detjk;
   double a12 = xc2 * rec_detjk;

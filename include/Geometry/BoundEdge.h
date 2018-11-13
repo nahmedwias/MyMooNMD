@@ -98,7 +98,7 @@ class TBoundEdge : public TJoint
 
 #ifdef __2D__
     /** update parameters according to the new vertex positions */
-    void UpdateParameters(TVertex *Begin, TVertex *End);
+    void UpdateParameters(const TVertex *Begin, const TVertex *End);
 #endif
 
     /** @brief return the coordinates {X,Y} of parameter value T */

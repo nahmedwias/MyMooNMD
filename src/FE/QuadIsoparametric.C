@@ -53,9 +53,9 @@ void TQuadIsoparametric::GetOrigFromRef(double xi, double eta,
 }
 
 /** transfer a set of points from reference to original element */
-void TQuadIsoparametric::GetOrigFromRef(int N_Points, 
-                                double *xi, double *eta,
-                                double *X, double *Y, double *absdetjk)
+void TQuadIsoparametric::GetOrigFromRef(int N_Points, const double *xi,
+                                        const double *eta,
+                                        double *X, double *Y, double *absdetjk)
 {
   int i, j, k;
   double Xi, Eta;
@@ -104,7 +104,7 @@ void TQuadIsoparametric::GetOrigFromRef(int N_Points,
 }
 
 /** transfer from reference element to original element */
-void TQuadIsoparametric::GetOrigFromRef(double *ref, double *orig)
+void TQuadIsoparametric::GetOrigFromRef(const double *ref, double *orig)
 {
   int i, j;
   double X, Y, xi, eta;
@@ -151,7 +151,7 @@ void TQuadIsoparametric::GetRefFromOrig(double X, double Y,
 }
 
 /** transfer from original element to reference element */
-void TQuadIsoparametric::GetRefFromOrig(double *orig, double *ref)
+void TQuadIsoparametric::GetRefFromOrig(const double *orig, double *ref)
 {
   cout << "not implemented yet" << endl;
   ref[0] = 0.0;
@@ -160,9 +160,9 @@ void TQuadIsoparametric::GetRefFromOrig(double *orig, double *ref)
 
 /** calculate functions and derivatives from reference element
     to original element */
-void TQuadIsoparametric::GetOrigValues(BaseFunct2D BaseFunct,
-                               int N_Points, double *xi, double *eta,
-                               int N_Functs, QuadFormula2D formula)
+void TQuadIsoparametric::GetOrigValues(BaseFunct2D BaseFunct, int N_Points,
+                                       const double *xi,const  double *eta,
+                                       int N_Functs, QuadFormula2D formula)
 {
   cout << "not implemented yet" << endl;
 }
@@ -170,9 +170,10 @@ void TQuadIsoparametric::GetOrigValues(BaseFunct2D BaseFunct,
 /** calculate functions and derivatives from reference element
     to original element, for all given elements */
 void TQuadIsoparametric::GetOrigValues(int N_Sets, BaseFunct2D *BaseFuncts,
-                               int N_Points, double *xi, double *eta,
-                               QuadFormula2D formula,
-                               bool *Needs2ndDer)
+                                       int N_Points, const double *xi,
+                                       const double *eta,
+                                       QuadFormula2D formula,
+                                       bool *Needs2ndDer)
 {
   int i,j,k; // int N_, start, end;
   double **refvaluesD00, **origvaluesD00;
@@ -345,10 +346,12 @@ void TQuadIsoparametric::GetOrigValues(int N_Sets, BaseFunct2D *BaseFuncts,
 
 /** calculate functions and derivatives from reference element
     to original element */
-void TQuadIsoparametric::GetOrigValues(double xi, double eta, 
-                int N_BaseFunct,
-                double *uref, double *uxiref, double *uetaref,
-                double *uorig, double *uxorig, double *uyorig)
+void TQuadIsoparametric::GetOrigValues(double xi, double eta, int N_BaseFunct,
+                                       const double *uref,
+                                       const double *uxiref,
+                                       const double *uetaref,
+                                       double *uorig, double *uxorig,
+                                       double *uyorig)
 {
   int i, j, k;
   double dx1, dx2;
@@ -396,10 +399,11 @@ void TQuadIsoparametric::GetOrigValues(double xi, double eta,
 
 /** calculate functions and derivatives from reference element
     to original element */
-void TQuadIsoparametric::GetOrigValues(int joint, double zeta,
-            int N_BaseFunct,
-            double *uref, double *uxiref, double *uetaref,
-            double *uorig, double *uxorig, double *uyorig)
+void TQuadIsoparametric::GetOrigValues(int joint, double zeta, int N_BaseFunct,
+                                       const double *uref,const double *uxiref,
+                                       const double *uetaref,
+                                       double *uorig, double *uxorig,
+                                       double *uyorig)
 {
   int i, k;
   double a11, a12, a21, a22, rec_detjk;
@@ -1101,8 +1105,8 @@ void TQuadIsoparametric::SetCell(const TBaseCell *cell)
 } // TQuadIsoparametric::SetCell
 
 /** return outer normal vector */
-void TQuadIsoparametric::GetOuterNormal(int j, double zeta,
-                                        double &n1, double &n2)
+void TQuadIsoparametric::GetOuterNormal(int j, double zeta, double &n1,
+                                        double &n2) const
 {
   double len;
   double t1, t2;
@@ -1115,8 +1119,8 @@ void TQuadIsoparametric::GetOuterNormal(int j, double zeta,
 } // end GetOuterNormal
 
 /** return tangent */
-void TQuadIsoparametric::GetTangent(int j, double zeta,
-                                        double &t1, double &t2)
+void TQuadIsoparametric::GetTangent(int j, double zeta, double &t1,
+                                    double &t2) const
 {
   double valx[MaxN_BaseFunctions2D];
   double valy[MaxN_BaseFunctions2D];
@@ -1181,7 +1185,7 @@ void TQuadIsoparametric::GetTangent(int j, double zeta,
 } // end GetTangent
 
 /** return volume of cell according to isoparametric boundary */
-double TQuadIsoparametric::GetVolume()
+double TQuadIsoparametric::GetVolume() const
 {
   double locvol;
 
@@ -1271,6 +1275,20 @@ void TQuadIsoparametric::GetOrigBoundFromRef( int joint, int N_Points,
 
 }
 
-
-
-
+void TQuadIsoparametric::PiolaMapOrigFromRef(double xi, double eta,
+                                             int N_Functs,
+                                             const double *refD00,
+                                             double *origD00)
+{
+  ErrThrow("TQuadIsoparametric::PiolaMapOrigFromRef not implemented");
+}
+    
+void TQuadIsoparametric::PiolaMapOrigFromRef(double xi, double eta,
+                                             int N_Functs,
+                                             const double *refD00,
+                                             const double *refD10,
+                                             const double *refD01,
+                                             double *origD10, double *origD01)
+{
+  ErrThrow("TQuadIsoparametric::PiolaMapOrigFromRef not implemented");
+}

@@ -490,8 +490,8 @@ void TFESpace3D::ConstructSpace(BoundCondFunct3D *BoundaryCondition)
 {
   int i, j, k, l, m, n, N_Faces, NFaces;
   int *v;
-  TBaseCell *cell, *neigh, *child1, *child2, *child3, *child4;
-  TJoint *joint;
+  const TBaseCell *cell, *neigh, *child1, *child2, *child3, *child4;
+  const TJoint *joint;
   TBoundComp3D *BoundComp;
   TBoundFace *BoundFace;
   double t0;
@@ -539,9 +539,9 @@ void TFESpace3D::ConstructSpace(BoundCondFunct3D *BoundaryCondition)
   int N_Edges, N_EdgeNeibs, N_EdgeDOF, *EdgeDof, *NeibEdgeDof;
   int N_VertDof, N_VertInCell, N_VertNeibs;
   int neibdof, maptype, w, w0, w1, v0, v1, e;
-  TEdge *edge;
-  TBaseCell **EdgeNeibs, **VertNeibs;
-  TVertex *Vert;
+  const TEdge *edge;
+  const TBaseCell * const *EdgeNeibs, * const *VertNeibs;
+  const TVertex *Vert;
   const int *EdgeVertex, *NeibEdgeVertex;
 #endif
 
@@ -2095,14 +2095,14 @@ TFESpace3D::~TFESpace3D()
 void TFESpace3D::GetDOFPosition(double *x, double *y, double *z) const 
 {
   int i,j,k;
-  TBaseCell *cell;
+  const TBaseCell *cell;
   int N_Joints;
-  TJoint *joint;
+  const TJoint *joint;
   JointType jointtype;
   FE3D FEid;
   int *DOF;
   TNodalFunctional3D *nf;
-  double *xi, *eta, *zeta;
+  const double *xi, *eta, *zeta;
   int N_Points;
   RefTrans3D RefTrans, *RefTransArray;
   int IsIsoparametric;
@@ -2222,14 +2222,14 @@ void TFESpace3D::GetDOFPosition(double *x, double *y, double *z) const
 void TFESpace3D::GetDOFPosition(int dof, double &x, double &y, double &z) const
 {
   int i,j,k;
-  TBaseCell *cell;
+  const TBaseCell *cell;
   int N_Joints;
-  TJoint *joint;
+  const TJoint *joint;
   JointType jointtype;
   FE3D FEid;
   int *DOF;
   TNodalFunctional3D *nf;
-  double *xi, *eta, *zeta;
+  const double *xi, *eta, *zeta;
   int N_Points;
   RefTrans3D RefTrans, *RefTransArray;
   int IsIsoparametric;
@@ -2363,7 +2363,7 @@ void TFESpace3D::GetDOFPosition(int dof, double &x, double &y, double &z) const
 bool TFESpace3D::CheckMesh() const
 {
   int N_DOF, *DOF=nullptr, found;
-  TBaseCell *Cell;
+  const TBaseCell *Cell;
   FE3D feid;
   TFE3D *fe=nullptr;
 
@@ -2428,8 +2428,8 @@ void TFESpace3D::getFaceQuadratureData(TBaseCell *cell, int m,
   }
   
   int N_Points;
-  double* faceWeights;
-  double *t,*s;
+  const double* faceWeights;
+  const double *t,*s;
   // get a quadrature formula good enough for the velocity FE space
   TQuadFormula2D *qf2 = TFEDatabase3D::GetQuadFormula2D(FaceQuadFormula);
   qf2->GetFormulaData(N_Points, faceWeights, t, s);

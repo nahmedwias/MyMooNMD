@@ -771,7 +771,7 @@ ParameterDatabase LocalAssembling<d>::default_local_assembling_database()
 
 //========================================================================
 template<int d>
-void LocalAssembling<d>::GetLocalForms(int N_Points, double *weights,
+void LocalAssembling<d>::GetLocalForms(int N_Points, const double *weights,
                                        double *AbsDetjk,
                                        std::array<double*, d> coordinates,
                                        int *N_BaseFuncts, BaseFunct *BaseFuncts,
@@ -991,7 +991,7 @@ void LocalAssembling<d>::set_parameters_for_tcd(LocalAssembling_type type)
 template<int d>
 void LocalAssembling<d>::set_parameters_for_nse( LocalAssembling_type type)
 {
-  bool with_coriolis = db["with_coriolis_force"];
+  //bool with_coriolis = db["with_coriolis_force"];
   //bool laplace_type_deformation = (TDatabase::ParamDB->LAPLACETYPE == 1);
   bool laplace_type_deformation = this->db["laplace_type_deformation"];
   std::string disc_type = this->db["space_discretization_type"];

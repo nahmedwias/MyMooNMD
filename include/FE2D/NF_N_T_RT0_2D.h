@@ -14,8 +14,8 @@ static double NF_N_T_RT0_2D_Eta[6] =
   (sqrt(1./3.)+1.)/2., (-sqrt(1./3.)+1.)/2.};
 static double NF_N_T_RT0_2D_T[] = {-sqrt(1./3.), sqrt(1./3.)};
 
-void NF_N_T_RT0_2D_EvalAll(TCollection *Coll, TBaseCell *Cell, double *PointValues,
-                          double *Functionals)
+void NF_N_T_RT0_2D_EvalAll(TCollection *Coll, TBaseCell *Cell,
+                           const double *PointValues, double *Functionals)
 {
   // on the reference triangle with points (0,0), (1,0), (0,1) 
   if(Cell == nullptr)
@@ -61,8 +61,8 @@ void NF_N_T_RT0_2D_EvalAll(TCollection *Coll, TBaseCell *Cell, double *PointValu
   }
 }
 
-void NF_N_T_RT0_2D_EvalEdge(TCollection *Coll, TBaseCell *Cell, int Joint, double *PointValues,
-                           double *Functionals)
+void NF_N_T_RT0_2D_EvalEdge(TCollection *Coll, TBaseCell *Cell, int Joint,
+                            const double *PointValues, double *Functionals)
 {
   // this is needed for setting boundary conditions
   #ifdef __2D__

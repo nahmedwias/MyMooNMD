@@ -1268,7 +1268,7 @@ static double NF_N_H_Q3_3D_CellWeight3[] = {
       };
 
 void NF_N_H_Q3_3D_EvalAll(TCollection *Coll, TBaseCell *Cell,
-                          double *PointValues, double *Functionals)
+                          const double *PointValues, double *Functionals)
 {
   TJoint *joint;
   TBaseCell *neigh;
@@ -2284,7 +2284,7 @@ void NF_N_H_Q3_3D_EvalAll(TCollection *Coll, TBaseCell *Cell,
 }
 
 void NF_N_H_Q3_3D_EvalFace(TCollection *Coll, TBaseCell *Cell, int Joint, 
-                        double *PointValues, double *Functionals)
+                           const double *PointValues, double *Functionals)
 {
   TJoint *joint;
   TBaseCell *neigh;

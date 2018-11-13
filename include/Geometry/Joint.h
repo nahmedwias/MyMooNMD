@@ -28,8 +28,8 @@ class TJoint;
 
 struct StoreGeom
 {
-  TVertex *Vertices[MAXN_nVpoJ];
-  TJoint *Joints[MAXN_nJpoJ];
+  const TVertex *Vertices[MAXN_nVpoJ];
+  const TJoint *Joints[MAXN_nJpoJ];
   bool Filled;
 };
 
@@ -83,7 +83,7 @@ class TJoint
     { return MapType; }
     
     /** Function is used to get local edge index on neighboured element */
-    int GetNeighbourEdgeIndex(TBaseCell*, int);
+    int GetNeighbourEdgeIndex(const TBaseCell*, int) const;
 #endif
 
     /** check the refinement pattern on both sides for matching,
@@ -117,10 +117,10 @@ class TJoint
 
     #ifdef __3D__
       /** return mapper of refined vertices and faces */
-      void GetMapperRef(const int *&MapVerts, const int *&MapFaces);
+      void GetMapperRef(const int *&MapVerts, const int *&MapFaces) const;
 
       /** return mapper of original vertices and edges */
-      void GetMapperOrig(const int *&MapVerts, const int *&MapEdges);
+      void GetMapperOrig(const int *&MapVerts, const int *&MapEdges) const;
     #endif
             
     /** set value in ClipBoard */

@@ -40,7 +40,7 @@ class THexahedron : public TShapeDesc
     virtual double GetMeasure(TVertex **Verts) const override;
 
     /** check whether this hexahedron is a brick */
-    Shapes CheckHexa(TVertex **Vertices) const;
+    Shapes CheckHexa(const TVertex * const * Vertices) const;
 };
 
 #endif

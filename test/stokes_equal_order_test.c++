@@ -242,9 +242,9 @@ void check_other_stabilizations(ParameterDatabase db)
   {
     domain.RegRefineAll();
   }
-  std::array<double, int(5)> errors{0.89286842997152, 2.9279300657466,
-                                    11.015597277738, 3.3072741836106,
-                                    24.547961810913};
+  std::array<double, int(5)> errors{{0.89286842997152, 2.9279300657466,
+                                     11.015597277738, 3.3072741836106,
+                                     24.547961810913}};
   
   db["space_discretization_type"] = "local_projection";
   compute(domain, db, errors);
@@ -342,7 +342,7 @@ void check_other_stabilizations(ParameterDatabase db)
   // default construct a domain object
   TDomain domain(db);
   Grids grids = domain.refine_and_get_hierarchy_of_collections(db);
-  std::array<double, int(5)> errors{0.};
+  std::array<double, int(5)> errors{{0., 0., 0.,0., 0.}};
   
   // note: for this example f=0 and using Q1/Q1 the laplacians vanish so that
   // each of the methods used below should give the same solution. Furthermore 

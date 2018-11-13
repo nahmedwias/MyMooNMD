@@ -99,7 +99,7 @@ double NF_N_T_BDM2_2D_iw[19] =
 
 
 void NF_N_T_BDM2_2D_EvalAll(TCollection *Coll, TBaseCell *Cell,
-                            double *PointValues, double *Functionals)
+                            const double *PointValues, double *Functionals)
 {
   // set all Functionals to zero at first
   for(unsigned int i = 0; i < 12; ++i)
@@ -232,7 +232,7 @@ void NF_N_T_BDM2_2D_EvalAll(TCollection *Coll, TBaseCell *Cell,
 }
 
 void NF_N_T_BDM2_2D_EvalEdge(TCollection *Coll, TBaseCell *Cell, int Joint,
-                            double *PointValues, double *Functionals)
+                            const double *PointValues, double *Functionals)
 {
   // this is needed for setting boundary conditions
   #ifdef __2D__

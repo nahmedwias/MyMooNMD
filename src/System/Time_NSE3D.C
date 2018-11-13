@@ -617,7 +617,7 @@ bool Time_NSE3D::stop_it(unsigned int iteration_counter)
    *  scheme is solved just once, as a linear system. ) */
   double epsilon    = db_["nonlinloop_epsilon"];
   size_t max_It     = db_["nonlinloop_maxit"];
-  double conv_speed = db_["nonlinloop_slowfactor"];
+  //double conv_speed = db_["nonlinloop_slowfactor"];
   bool slow_conv    = false;
   
   if ( db_["nonlinloop_scale_epsilon_with_size"] )
@@ -696,7 +696,7 @@ void Time_NSE3D::compute_residuals()
 
   // This is the calculation of the residual, given the defect.
   BlockVector defect_impuls({number_u_Dof,number_u_Dof,number_u_Dof});
-  BlockVector defect_mass({number_p_Dof});
+  BlockVector defect_mass(std::vector<unsigned int>(1, number_p_Dof));
   //copy the entries (BlockVector offers no functionality to do this more nicely)
   for(size_t i = 0; i<3*number_u_Dof ;++i)
     defect_impuls.get_entries()[i] = defect_.get_entries()[i];
@@ -1067,7 +1067,7 @@ void Time_NSE3D::call_assembling_routine(Time_NSE3D::System_per_grid& s,
     Output::print(" ** START ASSEMBLE PRESSURE BC ON RHS **");
 
     const TFESpace3D *v_space = &s.velocitySpace_;
-    const TFESpace3D *p_space = &s.pressureSpace_;
+    //const TFESpace3D *p_space = &s.pressureSpace_;
     // get all cells: this is at the moment needed for the boundary assembling
     /// @todo get only the (relevant) boundary cells
     /// e.g., bdCells = coll->get_cells_on_component(i)

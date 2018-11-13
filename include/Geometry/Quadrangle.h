@@ -38,7 +38,7 @@ class TQuadrangle : public TShapeDesc
 
     /** check a special quadrangle whether it is a parallelogram
         or even a square */
-    Shapes CheckQuad(TVertex **Vertices) const;
+    Shapes CheckQuad(const TVertex * const * Vertices) const;
 };
 
 #endif
