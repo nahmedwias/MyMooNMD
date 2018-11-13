@@ -187,9 +187,6 @@ class TDomain
     void ReadBdParam(std::istream& dat, bool& sandwich_flag);
 #endif
 
-    /** @brief read mapping information */
-    int ReadMapFile(char *MapFile, TDatabase *database);
-
     /** @brief get boundary part of BdCompID */
     int GetBdPartID(int BdCompID);
     /** @brief get local number of boundary component */
