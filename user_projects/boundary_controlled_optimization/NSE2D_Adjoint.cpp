@@ -8,7 +8,7 @@ namespace nse2d_adjoint
 void zero_solution(double x, double y, double *values);
 void adjoint_assembling(double, double*, double*, double, double**, int*,
                         double***, double**);
-void params_function(double *in, double *out);
+void params_function(const double *in, double *out);
 // very ugly to put this here, but I don't know how to get this into the local
 // assembling
 std::vector<double> cost_functional_weights;
@@ -245,7 +245,7 @@ void nse2d_adjoint::adjoint_assembling(double Mult, double *coeff, double *param
 }
 
 
-void nse2d_adjoint::params_function(double *in, double *out)
+void nse2d_adjoint::params_function(const double *in, double *out)
 {
   out[0] = in[2]; // u1old
   out[1] = in[3]; // u2old
