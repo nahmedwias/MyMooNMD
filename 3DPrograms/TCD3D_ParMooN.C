@@ -30,7 +30,7 @@ int main(int argc, char *argv[])
   {
   Chrono timer;
   // Construct the ParMooN Databases.
-  TDatabase Database;
+  TDatabase Database(argv[1]);
   ParameterDatabase parmoon_db = ParameterDatabase::parmoon_default_database();
   parmoon_db.merge(TimeDiscretization::default_TimeDiscretization_database());
   parmoon_db.read(argv[1]);
@@ -56,7 +56,7 @@ int main(int argc, char *argv[])
   Output::setVerbosity(parmoon_db["verbosity"]);
   
   TFEDatabase3D feDatabase;
-  TDomain domain(parmoon_db, argv[1]);
+  TDomain domain(parmoon_db);
   
   if(i_am_root)
   {

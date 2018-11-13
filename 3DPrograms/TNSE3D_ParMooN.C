@@ -58,7 +58,7 @@ int main(int argc, char* argv[])
   Chrono timer;
 
   // Construct the ParMooN Databases.
-  TDatabase Database;
+  TDatabase Database(argv[1]);
   ParameterDatabase parmoon_db = ParameterDatabase::parmoon_default_database();
   parmoon_db.merge(ParameterDatabase::default_tetgen_database(), true);
   parmoon_db.read(argv[1]);
@@ -83,8 +83,7 @@ int main(int argc, char* argv[])
   // =====================================================================
   // set the database values and generate mesh
   // =====================================================================
-  // Construct domain, thereby read in controls from the input file.
-  TDomain domain(parmoon_db, argv[1]);
+  TDomain domain(parmoon_db);
 
   //open OUTFILE, this is where all output is written to (additionally to console)
   if(parmoon_db["problem_type"].is(0))

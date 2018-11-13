@@ -11,7 +11,7 @@ using namespace std;
 
 int main(int argc, char* argv[])
 {
-  TDatabase Database;
+  TDatabase Database(argv[1]);
   TFEDatabase2D FEDatabase2D;
 
   ParameterDatabase parmoon_db = ParameterDatabase::parmoon_default_database();
@@ -23,8 +23,7 @@ int main(int argc, char* argv[])
   // ======================================================================
   // set the database values and generate mesh
   // ======================================================================
-  /** set variables' value in TDatabase using argv[1] (*.dat file), and generate the MESH based */
-  TDomain Domain(parmoon_db, argv[1]);
+  TDomain Domain(parmoon_db);
 
   parmoon_db.write(Output::get_outfile());
   Database.WriteParamDB(argv[0]);

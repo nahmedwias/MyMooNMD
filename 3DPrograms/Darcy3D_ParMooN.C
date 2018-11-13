@@ -12,7 +12,7 @@ int main(int argc, char* argv[])
 {
   double t_start = GetTime();
   //  declaration of database, you need this in every program
-  TDatabase Database;
+  TDatabase Database(argv[1]);
   TFEDatabase3D FEDatabase;
   ParameterDatabase parmoon_db = ParameterDatabase::parmoon_default_database();
   parmoon_db.read(std::string(argv[1]));
@@ -21,8 +21,7 @@ int main(int argc, char* argv[])
   Output::set_outfile(parmoon_db["outfile"], parmoon_db["script_mode"]);
   Output::setVerbosity(parmoon_db["verbosity"]);
   
-  /** set variables' value in TDatabase using argv[1] (*.dat file) */
-  TDomain domain(parmoon_db, argv[1]);
+  TDomain domain(parmoon_db);
  
   // write all Parameters to the OUTFILE (not to console) for later reference
   parmoon_db.write(Output::get_outfile());

@@ -26,8 +26,8 @@ int main(int argc, char* argv[])
   Chrono timer;
   
   //  declaration of database, you need this in every program
-  TDatabase Database;
-  TFEDatabase2D FEDatabase; 
+  TDatabase Database(argv[1]);
+  TFEDatabase2D FEDatabase;
   ParameterDatabase parmoon_db = ParameterDatabase::parmoon_default_database();
   parmoon_db.merge(NSE2D::default_NSE_database());
   parmoon_db.read(argv[1]);
@@ -40,8 +40,7 @@ int main(int argc, char* argv[])
                          || parmoon_db["problem_type"].is(7));
   TDatabase::ParamDB->INTERNAL_PROBLEM_LINEAR = linear_problem;
   
-  /** set variables' value in TDatabase using argv[1] (*.dat file) */
-  TDomain domain(parmoon_db, argv[1]);
+  TDomain domain(parmoon_db);
   
   // possibly change parameters in the database, if they are not meaningful now
   check_parameters_consistency_NSE(parmoon_db);

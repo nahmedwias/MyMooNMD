@@ -745,7 +745,10 @@ bool SOURCE_SINK_FUNCTION;
   MPI_Comm Comm;
  #endif
   
+  TParaDB() = default;
   ~TParaDB();
+  
+  void read_parameters(const char *ParamFile);
 };
 
 typedef struct TParaDB TParamDB;
@@ -870,6 +873,8 @@ struct TTimDB
   double RK_e[5];
   int RK_ord;   // Ordnung des RK-Verfahrens    mlh
   int RK_ord_e;   // Ordnung des eingebetteten RK-Verfahrens  mlh
+  
+  void read_parameters(const char *ParamFile);
 };
 
 typedef struct TTimDB TTimeDB;
@@ -899,8 +904,13 @@ class TDatabase
 
   public:
     // Constructors
-    /** initialize the database */
-    TDatabase();
+    /** @brief initialize the database.
+     * 
+     * If ParamFile is nullptr, all parameters are set to their default values
+     * using the method 'SetDefaultParameters'. If a valid file is given as 
+     * 'ParamFile', the respective default values are overwritten.
+     */
+    TDatabase(const char *ParamFile = nullptr);
     
     ~TDatabase();
 
@@ -910,6 +920,9 @@ class TDatabase
     static void WriteParamDB(char *ExecutedFile);
 
     static void WriteTimeDB();
+  
+  protected:
+    void read_parameters(const char *ParamFile);
 };
 
 

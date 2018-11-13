@@ -113,7 +113,7 @@ class TDomain
      * given, it is used to fill the old Database.
      *
      */
-     TDomain(const ParameterDatabase& db, const char *ParamFile = nullptr);
+     TDomain(const ParameterDatabase& db);
      
     /** @brief copy constructor, deleted as a precaution */
     TDomain(const TDomain&) = delete;
@@ -177,9 +177,6 @@ class TDomain
     /** @brief mesh genration using Triangle for give IN */
     void TriMeshGen(struct triangulateio *In);
 #endif
-
-    /** @brief read parameter file */
-    int ReadParam(const char *ParamFile);
 
     /** @brief Reads in boundary parameterization in ".PRM" file format
      *
