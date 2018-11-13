@@ -12,8 +12,8 @@
 #include <FEDatabase2D.h>
 
 #include <ROM_TCDR2D.h>
+#include <ROM_TCDR2D_Rep.h>
 
-#include <LocalAssembling2D.h>
 #include <Example_TimeCD2D.h>
 #include <TimeDiscRout.h>
 
@@ -29,9 +29,9 @@ int main(int argc, char* argv[])
   ParameterDatabase parmoon_db = ParameterDatabase::parmoon_default_database();
   for (int i=1; i<argc; ++i)
   {
-	std::ifstream fs(argv[i]);
-	parmoon_db.read(fs);
-	fs.close();
+    std::ifstream fs(argv[i]);
+    parmoon_db.read(fs);
+    fs.close();
   }
 
   // ======================================================================
@@ -56,33 +56,39 @@ int main(int argc, char* argv[])
   if(parmoon_db["output_write_ps"])
     Domain.PS("Domain.ps", It_Finest, 0);
   
-  TCollection *coll = Domain.GetCollection(It_Finest, 0);
   Example_TimeCD2D example( parmoon_db );
 
-  ROM_TCDR2D rom_2d(*coll, parmoon_db, example);
+  ROM_TCDR2D_Rep rom_2d_rep(Domain, parmoon_db, example);
   
-  double end_time = TDatabase::TimeDB->ENDTIME;
-  double tau      = TDatabase::TimeDB->TIMESTEPLENGTH;
-  int step = 0;
+  TimeDiscretization& tss = rom_2d_rep.get_time_stepping_scheme();
+  tss.current_step_ = 0;
+  tss.set_time_disc_parameters();
+  
+  double end_time = tss.get_end_time();
+  double tau = tss.get_step_length();
 
-  rom_2d.compute_initial_solution();
-  rom_2d.output(0);
+  rom_2d_rep.assemble_matrices_rhs(true);
+  
+  rom_2d_rep.compute_initial_solution();
+  rom_2d_rep.output(0);
 
-  rom_2d.set_system_matrix();
+  
+  rom_2d_rep.set_system_matrix();
 
   // ======================================================================
   // time iteration
   // ======================================================================
   while(TDatabase::TimeDB->CURRENTTIME < end_time - 1e-10)
   {
-    step++;
+    tss.current_step_++;
     TDatabase::TimeDB->CURRENTTIME += tau;
     Output::print<1>("\nCURRENT TIME: ", TDatabase::TimeDB->CURRENTTIME);
 
+    rom_2d_rep.assemble_matrices_rhs(false);
     /* set rom_2d.set_system_rhs(false) if the source term should not be reassembled */
-    rom_2d.set_system_rhs();
-    rom_2d.solve();
-    rom_2d.output(step);
+    rom_2d_rep.set_system_rhs();
+    rom_2d_rep.solve();
+    rom_2d_rep.output(tss.current_step_);
   }
   // ======================================================================
   Output::print("MEMORY: ", setw(10), GetMemory()/(1048576.0), " MB");

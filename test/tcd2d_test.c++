@@ -34,49 +34,49 @@ void testCN(Time_CD2D &tcd, int m)
   errors[1]<< "  " <<endl;}
   double eps = 1E-6;
   if(m==0)
-  {cout << "M: " << m << endl;
+  {
     if( fabs(errors[0] - 3.360188e-03) > eps )
       ErrThrow("test Crank-Nicolson: L2 norm not correct. ", errors[0]);
     if( fabs(errors[1] - 2.521492e-01) > eps )
       ErrThrow("test Crank-Nicolson: H1 norm not correct.");
   }
   else if(m==1)
-  {cout << "M: " << m << endl;
+  {
     if( fabs(errors[0] - 1.541462e-03) > eps )
       ErrThrow("test Crank-Nicolson: L2 norm not correct.");
     if( fabs(errors[1] - 2.647214e-01) > eps )
       ErrThrow("test Crank-Nicolson: H1 norm not correct.");
   }
   else if(m==2)
-  {cout << "M: " << m << endl;
+  {
     if( fabs(errors[0] - 2.207736e-03) > eps )
       ErrThrow("test Crank-Nicolson: L2 norm not correct.");
     if( fabs(errors[1] - 2.782276e-01) > eps )
       ErrThrow("test Crank-Nicolson: H1 norm not correct.");
   }
   else if(m==3)
-  {cout << "M: " << m << endl;
+  {
     if( fabs(errors[0] - 2.116156e-03) > eps )
       ErrThrow("test Crank-Nicolson: L2 norm not correct.");
     if( fabs(errors[1] - 2.924973e-01) > eps )
       ErrThrow("test Crank-Nicolson: H1 norm not correct.");
   } 
   else if(m==18)
-  {cout << "M: " << m << endl;
+  {
     if( fabs(errors[0] - 4.577653e-03) > eps )
       ErrThrow("test Crank-Nicolson: L2 norm not correct.");
     if( fabs(errors[1] - 6.192082e-01) > eps )
       ErrThrow("test Crank-Nicolson: H1 norm not correct.");
   }
   else if(m==19)
-  {cout << "M: " << m << endl;
+  {
     if( fabs(errors[0] - 4.812381e-03) > eps )
       ErrThrow("test Crank-Nicolson: L2 norm not correct.");
     if( fabs(errors[1] - 6.509557e-01) > eps )
       ErrThrow("test Crank-Nicolson: H1 norm not correct.");
   }
   else if(m==20)
-  {cout << "M: " << m << endl;
+  {
     if( fabs(errors[0] - 5.059094e-03) > eps )
       ErrThrow("test Crank-Nicolson: L2 norm not correct.");
     if( fabs(errors[1] - 6.843309e-01) > eps )
@@ -88,30 +88,27 @@ void time_integration(int td, Time_CD2D& tcd, TimeDiscretization& tss)
 {
   TDatabase::TimeDB->TIME_DISC = td;
   
-  TDatabase::TimeDB->CURRENTTIME = TDatabase::TimeDB->STARTTIME;
-  
+  tss.current_step_ = 0;
   tcd.assemble_initial_time();
   
-  int step=0;
-  testCN(tcd, step);
+  testCN(tcd, tss.current_step_);
   
-  while(TDatabase::TimeDB->CURRENTTIME < 
-    TDatabase::TimeDB->ENDTIME-1e-10)
+  while(tss.current_time_ < tss.get_end_time()-1e-10)
   {
-    step ++;
+    tss.current_step_ ++;
     TDatabase::TimeDB->INTERNAL_STARTTIME 
-       = TDatabase::TimeDB->CURRENTTIME;
+       = tss.current_time_;
     tss.set_time_disc_parameters();
     SetTimeDiscParameters(1);
     
-    double tau = TDatabase::TimeDB->TIMESTEPLENGTH;
-    TDatabase::TimeDB->CURRENTTIME += tau;
+    double tau = tss.get_step_length();
+    tss.current_time_ += tau;
+    TDatabase::TimeDB->CURRENTTIME = tss.current_time_;
     
-    Output::print<1>("\nCURRENT TIME: ", 
-		     TDatabase::TimeDB->CURRENTTIME);
+    Output::print<1>("\nCURRENT TIME: ", tss.current_time_);
     tcd.assemble();
     tcd.solve();
-    testCN(tcd, step);
+    testCN(tcd, tss.current_step_);
   }
   
 }
@@ -153,6 +150,7 @@ int main(int argc, char* argv[])
     Time_CD2D tcd(domain, db);
     TimeDiscretization& tss = tcd.get_time_stepping_scheme();
     tss.current_step_ = 0;
+    tss.current_time_ = db["time_start"];
     
     time_integration(2, tcd, tss);
     
@@ -165,10 +163,55 @@ int main(int argc, char* argv[])
     Output::print("\n\nTesting PETSc\n");
     db["solver_type"] = "petsc";
     Time_CD2D tcd_petsc(domain, db);
-    //TimeDiscretization& tss = tcd.get_time_stepping_scheme();
-    tss.current_step_ = 0;
-    tss.set_time_disc_parameters();
-    time_integration(2, tcd_petsc, tss);
+    TimeDiscretization& tssp = tcd_petsc.get_time_stepping_scheme();
+    tssp.current_time_ = db["time_start"];
+    tssp.set_time_disc_parameters();
+    time_integration(2, tcd_petsc, tssp);
+  }
+  
+  {
+    TDatabase Database;
+    TFEDatabase2D FEDatabase;
+    ParameterDatabase db = ParameterDatabase::parmoon_default_database();
+    db.merge(Example2D::default_example_database());
+    db.merge(LocalAssembling2D::default_local_assembling_database());
+    db.merge(TimeDiscretization::default_TimeDiscretization_database());
+    db["example"] = 0;
+    db["reynolds_number"] = 1;
+    
+    Output::print("\n\nSUPG with Direct solver\n");
+    // TODO: compute the correct errors and change the error comparison
+    // db["diffusion_coefficient"] = 1e-10;
+    // TDatabase::ParamDB->PE_NR = 1e5;
+    db["space_discretization_type"] = "supg";
+    TDatabase::ParamDB->SDFEM_TYPE = 0;
+    TDatabase::ParamDB->DELTA0 = 0.;
+    TDatabase::ParamDB->DELTA1 = 0.;
+    db["time_discretization"] = "crank_nicolson";
+    db["time_step_length"] = 0.05;
+    db["time_start"] = 0.;
+    db["time_end"] = 1.0;
+    TDatabase::ParamDB->ANSATZ_ORDER=1;
+    
+    //  declaration of databases
+    db.add("boundary_file", "Default_UnitSquare", "");
+    db.add("geo_file", "UnitSquare", "", {"UnitSquare", "TwoTriangles"});
+    TDomain domain(db);
+    
+    SetTimeDiscParameters(0);
+    // some parameters
+       
+    for(int i=0; i< 5; ++i)
+    domain.RegRefineAll();
+    
+    db.add("solver_type", "direct", "", {"direct", "petsc"});
+    Time_CD2D tcd_supg(domain, db);
+    TimeDiscretization& tss = tcd_supg.get_time_stepping_scheme();
+
+
+    db["solver_type"] = "direct";
+    tss.current_time_ = db["time_start"];
+    time_integration(2, tcd_supg, tss);
   }
   return 0;
 }

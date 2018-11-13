@@ -160,6 +160,10 @@ public:
     {
       return total_time_steps;
     }
+    double get_current_time()
+    {
+      return current_time_;
+    }
 };
 
 #endif // TIMEDISCRETIZATIONS_H

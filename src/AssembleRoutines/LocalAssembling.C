@@ -51,6 +51,10 @@ std::ostream& operator<<(std::ostream& out, const LocalAssembling_type value)
     PROCESS_VAL(TCD3D);
     PROCESS_VAL(TCD3DStiffRhs);
     PROCESS_VAL(TCDStiffMassRhs);
+    PROCESS_VAL(TCDStiffRhs);
+    PROCESS_VAL(TCDMassOnly);
+    PROCESS_VAL(TCDGradGradOnly);
+    PROCESS_VAL(TCDRhsOnly);
     PROCESS_VAL(NSE3D_Linear);
     PROCESS_VAL(NSE3D_NonLinear);
     PROCESS_VAL(TNSE3D_LinGAL);
@@ -397,40 +401,15 @@ LocalAssembling<d>::LocalAssembling(ParameterDatabase param_db,
         ErrThrow("currently the discretization type ", disc_type,
                  " is not supported by the class CD3D");
       }
-      break; // break for the type LocalAssembling3D_type::CD3D 
+      break; // break for the type LocalAssembling_type::CD3D 
     }
     case LocalAssembling_type::TCDStiffMassRhs:
     case LocalAssembling_type::TCDStiffRhs:
+    case LocalAssembling_type::TCDMassOnly:
+    case LocalAssembling_type::TCDGradGradOnly:
+    case LocalAssembling_type::TCDRhsOnly:
       this->set_parameters_for_tcd(type);
-      /*{
-        this->N_Matrices = 2;
-        this->RowSpace = { 0, 0 };
-        this->ColumnSpace = { 0, 0 };
-        this->N_Rhs = 1;
-        this->RhsSpace = { 0 };
-        this->N_Terms = d+1;
-        //this->Derivatives = { D000, D100, D010, D001 }; // or {D00, D10, D01}
-        this->Derivatives = indices_up_to_order<d>(1);
-        this->Needs2ndDerivatives = new bool[1];
-        this->Needs2ndDerivatives[0] = false;
-        this->FESpaceNumber = std::vector<int>(d+1, 0);
-        this->local_assemblings_routines.push_back(BilinearAssembleGalerkin<d>);
-        // this->local_assemblings_routines.push_back(LocalMatrixM);
-        this->Manipulate = nullptr;
-        if(disc_type.is("supg") )
-        {
-          this->Derivatives = indices_up_to_order<d>(2);
-          this->N_Terms = this->Derivatives.size();
-          this->Needs2ndDerivatives[0] = true;
-          this->FESpaceNumber = std::vector<int>(d+d+1, 0);          
-        }
-        else if(!disc_type.is("galerkin"))
-        {
-          ErrThrow("currently the discretization type ", disc_type,
-                   " is not supported by the class CD3D");
-        }
-      }
-      */break;
+      break;
     
     ///////////////////////////////////////////////////////////////////////////
     // TCD3D: nonstationary convection-diffusion-reaction problems
@@ -920,7 +899,7 @@ void LocalAssembling<d>::set_parameters_for_tcd(LocalAssembling_type type)
   this->Derivatives = indices_up_to_order<d>(1);
   this->Needs2ndDerivatives = new bool[1];
   this->Needs2ndDerivatives[0] = false;
-  this->FESpaceNumber = std::vector<int>(d+1, 0);
+  this->FESpaceNumber = std::vector<int>(N_Terms, 0);
   this->Manipulate = nullptr;
   
   Parameter disc_type{this->db["space_discretization_type"]};
@@ -933,6 +912,25 @@ void LocalAssembling<d>::set_parameters_for_tcd(LocalAssembling_type type)
       this->local_assemblings_routines.push_back(TCDMass<d>);
       // rhs 
       this->local_assemblings_routines.push_back(TCDRhs<d>);
+      if(disc_type.is("supg"))
+      {
+        this->Derivatives = indices_up_to_order<d>(2);
+        this->N_Terms = this->Derivatives.size();
+        this->Needs2ndDerivatives[0] = true;
+        this->Needs2ndDerivatives[1] = true;
+        this->FESpaceNumber = std::vector<int>(N_Terms, 0);
+        // stiffness matrix and rhs 
+        this->local_assemblings_routines.push_back(TCDStiffSUPG<d>);
+        // mass matrix 
+        this->local_assemblings_routines.push_back(TCDMassSUPG<d>);
+        // rhs 
+        this->local_assemblings_routines.push_back(TCDRhsSUPG<d>);
+      }
+      else if(!disc_type.is("galerkin"))
+      {
+        ErrThrow("currently the discretization type ", disc_type,
+                 " is not supported by the class Time_CD2D");
+      }
       break;
     case LocalAssembling_type::TCDStiffRhs:
       // stiff matrix, rhs 
@@ -940,12 +938,20 @@ void LocalAssembling<d>::set_parameters_for_tcd(LocalAssembling_type type)
       this->local_assemblings_routines.push_back(TCDStiff<d>);
       // rhs 
       this->local_assemblings_routines.push_back(TCDRhs<d>);
-      
-      if(disc_type.is("supg"))
-      {
-      }
       break;
-      default:
+    case LocalAssembling_type::TCDMassOnly:
+      N_Rhs = 0;
+      this->local_assemblings_routines.push_back(TCDMassPOD<d>);
+      break;
+    case LocalAssembling_type::TCDGradGradOnly:
+      N_Rhs = 0;
+      this->local_assemblings_routines.push_back(GradGrad<d>);
+      break;
+    case LocalAssembling_type::TCDRhsOnly:
+      N_Matrices = 0;
+      this->local_assemblings_routines.push_back(TCDRhs<d>);
+      break;
+    default:
       ErrThrow("unknown LocalAssembling_type ", this->type);
       break;
   }
@@ -1110,7 +1116,7 @@ void LocalAssembling<d>::set_parameters_for_nse( LocalAssembling_type type)
       }
       break;
     default:
-      ErrThrow("unknown LocalAssembling3D_type ", this->type);
+      ErrThrow("unknown LocalAssembling_type ", this->type);
       break;
   }
 }
@@ -1369,7 +1375,7 @@ void LocalAssembling<d>::set_parameters_for_tnse( LocalAssembling_type la_type)
       }
       break;
     default:
-      ErrThrow("Wrong LocalAssembling3D_type for set_parameters_for_tnse.");
+      ErrThrow("Wrong LocalAssembling_type for set_parameters_for_tnse.");
   }
 }
 //========================================================================
@@ -1608,7 +1614,7 @@ void LocalAssembling<3>::set_parameters_for_tnse_smagorinsky( LocalAssembling_ty
 //       }
 //      break;
 //         default:
-//           ErrThrow("Unknown LocalAssembling3D_type");
+//           ErrThrow("Unknown LocalAssembling_type");
 //   }
 }
 

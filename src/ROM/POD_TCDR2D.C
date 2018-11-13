@@ -78,8 +78,8 @@ void POD_TCDR2D::set_parameters()
   // For assembling of the Gramian matrix for the computation of
   // the POD basis only the "Galerkin" part of the matrices is needed.
   // TDatabase::ParamDB->DISCTYPE = GALERKIN;
-  if(!rom_db["space_discretization_type"].is("supg"))
-    rom_db["space_discretization_type"] = "supg";
+  if(!rom_db["space_discretization_type"].is("galerkin"))
+    rom_db["space_discretization_type"] = "galerkin";
 
 }
 
@@ -90,12 +90,12 @@ void POD_TCDR2D::assemble_gramian()
   LocalAssembling_type type;
   if (rom_db["pod_inner_product"].get<std::string>() == "l2")
   {
-	//type = LocalAssembling_type::TCD2D_Mass;
+    type = LocalAssembling_type::TCDMassOnly;
   }
   else if (rom_db["pod_inner_product"].get<std::string>() == "eucl")
   {
-	  Output::print<1>("For given parameter 'pod_inner_product' no assembling needed.");
-	  return;
+    Output::print<1>("For given parameter 'pod_inner_product' no assembling needed.");
+    return;
   }
 
   TFEFunction2D * pointer_to_function = &this->fe_function;
@@ -120,24 +120,25 @@ void POD_TCDR2D::compute_pod_basis()
 {
   if(this->rom_db["pod_inner_product"] != "eucl")
   {
-	assemble_gramian();
-	POD::set_gramian(this->gramian_matrix.get_combined_matrix());
+    assemble_gramian();
+    //cout<<"norm: "<< gramian_matrix.get_blocks().at(0)->GetNorm()<<endl;exit(0);
+    POD::set_gramian(this->gramian_matrix.get_combined_matrix());
   }
   POD::compute_basis();
 
   if(rom_db["pod_inner_product"].get<std::string>() == "eucl")
   {
-  	Output::print<1>("POD w.r.t euclidean inner product.");
-  	POD::write_pod(rom_db["pod_basename"].get<std::string>()+"eucl.");
+    Output::print<1>("POD w.r.t euclidean inner product.");
+    POD::write_pod(rom_db["pod_basename"].get<std::string>()+"eucl.");
   }
   else if(rom_db["pod_inner_product"].get<std::string>() == "l2")
   {
-  	Output::print<1>("POD w.r.t L2 inner product.");
-  	POD::write_pod(rom_db["pod_basename"].get<std::string>()+"l2.");
+    Output::print<1>("POD w.r.t L2 inner product.");
+    POD::write_pod(rom_db["pod_basename"].get<std::string>()+"l2.");
   }
   else
   {
-  	ErrThrow("Unknown value of parameter 'pod_inner_product'. Choose eucl or l2.");
+    ErrThrow("Unknown value of parameter 'pod_inner_product'. Choose eucl or l2.");
   }
 }
 
