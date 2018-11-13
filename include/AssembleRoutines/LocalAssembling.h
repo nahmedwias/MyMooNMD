@@ -49,8 +49,8 @@ enum class LocalAssembling_type
     Darcy, // stationary Darcy problem (mixed form)
     TCD3D, // mass matrix (+ matrix comming from time discretization SUPG case)
     TCD3DStiffRhs, // stiffness matrix and right hand side
-    TCD2D, // stiffness matrix and rhs
-    TCD2D_Mass,// mass matrix, (+ K matrix in case of SUPG)
+    TCDStiffMassRhs,
+    TCDStiffRhs,
     NSE3D_Linear,    /// Linear part of stationary Navier--Stokes in 3D
     NSE3D_NonLinear, /// Non-linear part of stationary Navier--Stokes in 3D
     TNSE3D_LinGAL,   /// Linear part of time-dependent NS in 3D
@@ -158,6 +158,8 @@ class LocalAssembling
     
     static constexpr int n_local_coefficients = 40;
     std::vector<std::array<double, n_local_coefficients>> local_coefficients;
+    
+    void set_parameters_for_tcd(LocalAssembling_type type);
 
     /** Depending on the NSTYPE and the 'nse_nonlinear_form' all parameters are 
      * set within this function. This function is called from the constructor 
