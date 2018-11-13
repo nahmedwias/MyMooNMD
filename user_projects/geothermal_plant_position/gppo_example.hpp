@@ -31,8 +31,8 @@ void initial_condition_temperature(double x, double y, double *values)
 {
   values[0] = surrounding_temperature;
 }
-void pde_coefficients_flow(int n_points, double *, double *, double ** parameters,
-        double **coeffs, double nu, double sigma)
+void pde_coefficients_flow(int n_points, double *x, double *y, double ** parameters,
+        double **coeffs, double nu, double sigma, bool use_parameters = false)
 {
   for(int i = 0; i < n_points; i++)
   {
@@ -41,13 +41,26 @@ void pde_coefficients_flow(int n_points, double *, double *, double ** parameter
     coeffs[i][1] = 0.; // f1
     coeffs[i][2] = 0.; // f2
     coeffs[i][3] = 0.; // divergence
-    if (parameters[i] == nullptr) // initial assembling
+
+    if (!use_parameters) // initial assembling // if (parameters[i] == nullptr)
     {
-      coeffs[i][4] = sigma;
+      if (abs(x[i] - 1.5 - y[i] + 0.01) < 0.02)
+        {
+        coeffs[i][4] = 1e-11;
+        //cout<< "erste Gerade" <<endl;
+        }
+      else if (abs(x[i] - 2.5 - y[i] - 0.01) < 0.02)
+        {
+        coeffs[i][4] = 1e-11;
+        //cout<< "zweite Gerade" <<endl;
+        }
+      else
+       coeffs[i][4] = sigma;
     }
     else
     {
       coeffs[i][4] = parameters[i][0];
+      //cout << "parameters set !!!!!!!!!!!!!" <<endl;
     }
   }
 }
@@ -84,8 +97,9 @@ Example_NSE2D get_gppo_flow_example(const ParameterDatabase & db)
   double reynolds_number = db["reynolds_number"];
   double sigma = db["inverse_permeability"];
   using namespace std::placeholders;
+  bool use_coeff_fct = db["use_coeff_fct"];
   CoeffFct2D coeffs = std::bind(pde_coefficients_flow, _1, _2, _3, _4, _5,
-                                1./reynolds_number, sigma);
+                                1./reynolds_number, sigma, use_coeff_fct);
   return Example_NSE2D(exact, bc, bd, coeffs, 1./reynolds_number);
 }
 
