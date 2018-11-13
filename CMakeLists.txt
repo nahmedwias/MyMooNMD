@@ -174,6 +174,7 @@ set_target_properties(cd2d PROPERTIES OUTPUT_NAME parMooN_cd2d_${PARMOON_PARALLE
 target_compile_definitions(cd2d PUBLIC -D__2D__)
 # Link in the required libraries.
 target_link_libraries(cd2d parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
+list(APPEND parmoon_main_programs cd2d)
 
 ### Darcy2D ###
 # Standard executable target.
@@ -183,6 +184,7 @@ set_target_properties(darcy2d PROPERTIES OUTPUT_NAME parMooN_darcy2d_${PARMOON_P
 target_compile_definitions(darcy2d PUBLIC -D__2D__)
 # Link in the required libraries.
 target_link_libraries(darcy2d parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
+list(APPEND parmoon_main_programs darcy2d)
 
 ### NSE2D ###
 # Standard executable target.
@@ -192,7 +194,7 @@ set_target_properties(nse2d PROPERTIES OUTPUT_NAME parMooN_nse2d_${PARMOON_PARAL
 target_compile_definitions(nse2d PUBLIC -D__2D__)
 # Link in the required libraries.
 target_link_libraries(nse2d parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
-
+list(APPEND parmoon_main_programs nse2d)
 
 ### Brinkman2D ###
 # Standard executable target.
@@ -202,6 +204,7 @@ set_target_properties(brinkman2d PROPERTIES OUTPUT_NAME parMooN_brinkman2d_${PAR
 target_compile_definitions(brinkman2d PUBLIC -D__2D__)
 # Link in the required libraries.
 target_link_libraries(brinkman2d parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
+list(APPEND parmoon_main_programs brinkman2d)
 
 ### Brinkman3D ###
 # Standard executable target.
@@ -211,6 +214,7 @@ set_target_properties(brinkman3d PROPERTIES OUTPUT_NAME parMooN_brinkman3d_${PAR
 target_compile_definitions(brinkman3d PUBLIC -D__3D__)
 # Link in the required libraries.
 target_link_libraries(brinkman3d parmoon_3d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES}) 
+list(APPEND parmoon_main_programs brinkman3d)
 
 ### TCD2D ###
 # Standard executable target.
@@ -220,6 +224,7 @@ set_target_properties(tcd2d PROPERTIES OUTPUT_NAME parMooN_tcd2d_${PARMOON_PARAL
 target_compile_definitions(tcd2d PUBLIC -D__2D__)
 # Link in the required libraries.
 target_link_libraries(tcd2d parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
+list(APPEND parmoon_main_programs tcd2d)
 
 ### TNSE2D ###
 # Standard executable target.
@@ -229,6 +234,7 @@ set_target_properties(tnse2d PROPERTIES OUTPUT_NAME parMooN_tnse2d_${PARMOON_PAR
 target_compile_definitions(tnse2d PUBLIC -D__2D__)
 # Link in the required libraries.
 target_link_libraries(tnse2d parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
+list(APPEND parmoon_main_programs tnse2d)
 
 ### Thermohydraulic Brinkman2D ###
 # Standard executable target.
@@ -256,6 +262,7 @@ set_target_properties(mesh PROPERTIES OUTPUT_NAME parMooN_mesh_${PARMOON_PARALLE
 target_compile_definitions(mesh PUBLIC -D__2D__)
 # Link in the required libraries.
 target_link_libraries(mesh parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
+list(APPEND parmoon_main_programs mesh)
 
 ### MESH2GEO(2D) ###
 # Standard executable target.
@@ -265,6 +272,7 @@ set_target_properties(geo2mesh2d PROPERTIES OUTPUT_NAME parMooN_geo2mesh2d_${PAR
 target_compile_definitions(geo2mesh2d PUBLIC -D__2D__)
 # Link in the required libraries.
 target_link_libraries(geo2mesh2d parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
+list(APPEND parmoon_main_programs geo2mesh2d)
 
 ### Standard 3D Programs ###
 
@@ -276,6 +284,7 @@ set_target_properties(cd3d PROPERTIES OUTPUT_NAME parMooN_cd3d_${PARMOON_PARALLE
 target_compile_definitions(cd3d PUBLIC -D__3D__)
 # Link in the required libraries.
 target_link_libraries(cd3d parmoon_3d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
+list(APPEND parmoon_main_programs cd3d)
 
 ### Darcy3D ###
 add_executable(darcy3d ${PROJECT_SOURCE_DIR}/3DPrograms/Darcy3D_ParMooN.C)
@@ -284,6 +293,7 @@ set_target_properties(darcy3d PROPERTIES OUTPUT_NAME parMooN_darcy3d_${PARMOON_P
 target_compile_definitions(darcy3d PUBLIC -D__3D__)
 # Link in the required libraries.
 target_link_libraries(darcy3d parmoon_3d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
+list(APPEND parmoon_main_programs darcy3d)
 
 ### TCD3D ###
 add_executable(tcd3d ${PROJECT_SOURCE_DIR}/3DPrograms/TCD3D_ParMooN.C)
@@ -292,6 +302,7 @@ set_target_properties(tcd3d PROPERTIES OUTPUT_NAME parMooN_tcd3d_${PARMOON_PARAL
 target_compile_definitions(tcd3d PUBLIC -D__3D__)
 # Link in the required libraries.
 target_link_libraries(tcd3d parmoon_3d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
+list(APPEND parmoon_main_programs tcd3d)
 
 ### NSE3D ###
 # Standard executable target.
@@ -301,6 +312,7 @@ set_target_properties(nse3d PROPERTIES OUTPUT_NAME parMooN_nse3d_${PARMOON_PARAL
 target_compile_definitions(nse3d PUBLIC -D__3D__)
 # Link in the required libraries.
 target_link_libraries(nse3d parmoon_3d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
+list(APPEND parmoon_main_programs nse3d)
 
 ### TNSE3D ###
 # Standard executable target.
@@ -310,6 +322,7 @@ set_target_properties(tnse3d PROPERTIES OUTPUT_NAME parMooN_tnse3d_${PARMOON_PAR
 target_compile_definitions(tnse3d PUBLIC -D__3D__)
 # Link in the required libraries.
 target_link_libraries(tnse3d parmoon_3d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
+list(APPEND parmoon_main_programs tnse3d)
 
 ### MESH(3D) ###
 # Standard executable target.
@@ -319,7 +332,9 @@ set_target_properties(mesh3d PROPERTIES OUTPUT_NAME parMooN_mesh3d_${PARMOON_PAR
 target_compile_definitions(mesh3d PUBLIC -D__3D__)
 # Link in the required libraries.
 target_link_libraries(mesh3d parmoon_3d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
+list(APPEND parmoon_main_programs mesh3d)
 
+set(parmoon_main_programs ${parmoon_main_programs})
 ###############################################################################
 # building the documentation using doxygen (define target 'doc')
 find_package(Doxygen)
@@ -364,9 +379,9 @@ add_subdirectory(test EXCLUDE_FROM_ALL)
 #   parallel type. Use it excessively!             #
 ####################################################
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure --exclude-regex all
-                  DEPENDS ${parmoon_tests})
+                  DEPENDS ${parmoon_tests} ${parmoon_main_programs})
 add_custom_target(check_all COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure 
-				  DEPENDS ${parmoon_tests})
+		  DEPENDS ${parmoon_tests} ${parmoon_main_programs})
 
 
 ############
