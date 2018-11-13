@@ -51,6 +51,9 @@ enum class LocalAssembling_type
     TCD3DStiffRhs, // stiffness matrix and right hand side
     TCDStiffMassRhs,
     TCDStiffRhs,
+    TCDMassOnly,
+    TCDGradGradOnly,
+    TCDRhsOnly,
     NSE3D_Linear,    /// Linear part of stationary Navier--Stokes in 3D
     NSE3D_NonLinear, /// Non-linear part of stationary Navier--Stokes in 3D
     TNSE3D_LinGAL,   /// Linear part of time-dependent NS in 3D

@@ -68,30 +68,32 @@ int main(int argc, char* argv[])
   tcd.assemble_initial_time();
   // ======================================================================
   
-  double end_time = TDatabase::TimeDB->ENDTIME; 
+  double end_time = tss.get_end_time(); 
   tcd.output();
   // store initial condition as snapshot
   snaps.write_data(tcd.get_solution());
   // ======================================================================
   // time iteration
   // ======================================================================
-  while(TDatabase::TimeDB->CURRENTTIME < end_time - 1e-10)
+  while(tss.current_time_ < end_time - 1e-10)
   {
     tss.current_step_++;
     // Output::print("mem before: ", GetMemory());
-    TDatabase::TimeDB->INTERNAL_STARTTIME = TDatabase::TimeDB->CURRENTTIME;
+    TDatabase::TimeDB->INTERNAL_STARTTIME = tss.current_time_;
     tss.set_time_disc_parameters();
     double tau = parmoon_db["time_step_length"];
     
-    TDatabase::TimeDB->CURRENTTIME += tau;
-    Output::print("\nCURRENT TIME: ", TDatabase::TimeDB->CURRENTTIME);
+    tss.current_time_ += tau;
+    TDatabase::TimeDB->CURRENTTIME = tss.current_time_;
+    Output::print("\nCURRENT TIME: ", tss.current_time_);
     SetTimeDiscParameters(1);
     
     tcd.assemble();    
     tcd.solve();
-      // write the snap shots
+    // write the snap shots
+    snaps.write_data(tcd.get_solution(), tss.current_step_);
+    cout<<" current step: "<< tss.current_step_<< endl;
     if((tss.current_step_-1) % TDatabase::TimeDB->STEPS_PER_IMAGE == 0)
-      snaps.write_data(tcd.get_solution(), step);
       tcd.output();
   }
   // ======================================================================

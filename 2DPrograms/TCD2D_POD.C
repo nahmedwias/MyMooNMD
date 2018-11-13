@@ -20,7 +20,6 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#include <LocalAssembling2D.h>
 #include <Example_TimeCD2D.h>
 #include <TimeDiscRout.h>
 
