@@ -50,7 +50,7 @@ void TQuadFormula3D::InitObject(int n, double* w,
   Accuracy = acc;
 }
 
-const double *TQuadFormula3D::GetCoords(int i)
+const double *TQuadFormula3D::GetCoords(int i) const
 {
   double *ret=nullptr;
 
