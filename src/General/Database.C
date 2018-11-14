@@ -3718,7 +3718,7 @@ TDatabase::~TDatabase()
     delete ShapeDB[Brick];
   #endif
   delete [] ShapeDB;
-  
+   
   delete RefDescDB[S_Line];
   delete RefDescDB[Triangle];
   delete RefDescDB[Quadrangle];
@@ -3731,6 +3731,7 @@ TDatabase::~TDatabase()
   #endif
   delete RefDescDB[N_SHAPES + LineReg];
   delete RefDescDB[N_SHAPES + TriReg];
+  delete RefDescDB[N_SHAPES + TriBary];
   delete RefDescDB[N_SHAPES + TriBis0];
   delete RefDescDB[N_SHAPES + TriBis1];
   delete RefDescDB[N_SHAPES + TriBis2];
@@ -3758,6 +3759,7 @@ TDatabase::~TDatabase()
 
   #ifdef __3D__
     delete RefDescDB[N_SHAPES + TetraReg];
+    delete RefDescDB[N_SHAPES + TetraBary];
     delete RefDescDB[N_SHAPES + TetraReg0];
     delete RefDescDB[N_SHAPES + TetraReg1];
     delete RefDescDB[N_SHAPES + TetraReg2];

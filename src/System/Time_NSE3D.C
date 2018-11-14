@@ -1144,6 +1144,8 @@ void Time_NSE3D::call_assembling_routine(Time_NSE3D::System_per_grid& s,
     }
   }
   
+  for (int i=0; i<=2; i++)
+    delete fefunctions[i];
 }
 /**************************************************************************** */
 void Time_NSE3D::set_arrays(Time_NSE3D::System_per_grid& s, 

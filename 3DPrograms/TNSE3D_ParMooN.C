@@ -229,13 +229,17 @@ int main(int argc, char* argv[])
 
   timer.print_total_time("whole solving procedure ");
 
+  for (auto i: gridCollections)
+    delete i;
+  gridCollections.clear();
+  
   // ======================================================================
   Output::print("MEMORY: ", setw(10), GetMemory()/(1048576.0), " MB");
   Output::print("used time: ", GetTime() - t_start, "s");
   // ======================================================================
-
+  
   Output::close_file();
-
+  
 }
 #ifdef _MPI
   MPI_Finalize();
