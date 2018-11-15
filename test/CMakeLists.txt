@@ -173,12 +173,6 @@ if(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL OR ${PARMOON_PARALLEL_TYPE} STRE
   add_test(brinkman2d ParMooN_test_brinkman2d)
   list(APPEND parmoon_tests ParMooN_test_brinkman2d)
 
- #thermohydraulic_Brinkman2d_test
- #  add_executable(ParMooN_test_thermohydraulic_brinkman2d thermohydraulic_brinkman2d_test.c++)
- # target_link_libraries(ParMooN_test_thermohydraulic_brinkman2d parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
- # add_test(thermohydraulic_brinkman2d ParMooN_test_thermohydraulic_brinkman2d)
- # list(APPEND parmoon_tests ParMooN_test_thermohydraulic_brinkman2d)  
-
   #nse2d test
   add_executable(ParMooN_test_nse2d nse2d_test.c++)
   target_link_libraries(ParMooN_test_nse2d parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
