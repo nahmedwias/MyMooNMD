@@ -251,6 +251,9 @@ TDomain::~TDomain()
   for(int i = 0; i < N_BoundParts; ++i)
     delete BdParts[i];
   delete [] BdParts;
+  for(auto coll: gridCollections)
+    delete coll;
+  gridCollections.clear();
   /// @todo delete cells, joints, vertices here
   delete [] CellTree;
 }
