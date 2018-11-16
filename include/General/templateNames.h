@@ -1,6 +1,8 @@
 #ifndef INCLUDE_GENERAL_TEMPLATENAMES_H_
 #define INCLUDE_GENERAL_TEMPLATENAMES_H_
 
+class Example_CD2D;
+class Example_CD3D;
 class Example_Darcy2D;
 class Example_Darcy3D;
 class TFEFunction2D;
@@ -34,6 +36,7 @@ struct Template_names
 template <>
 struct Template_names<2>
 {
+  typedef Example_CD2D Example_CD;
   typedef Example_Darcy2D Example_Darcy;
   typedef TFEFunction2D FEFunction;
   typedef TFESpace2D FESpace;
@@ -41,7 +44,6 @@ struct Template_names<2>
   typedef std::vector<MultiIndex2D> MultiIndex_vector;
   typedef BaseFunct2D BaseFunct;
   typedef CoeffFct2D CoeffFct;
-  typedef ErrorMethod2D ErrorMethod;
   typedef ManipulateFct2D ManipulateFct;
   typedef BoundCondFunct2D BoundaryConditionFunction;
   typedef BoundValueFunct2D BoundaryValuesFunction;
@@ -51,6 +53,7 @@ struct Template_names<2>
 template <>
 struct Template_names<3>
 {
+  typedef Example_CD3D Example_CD;
   typedef Example_Darcy3D Example_Darcy;
   typedef TFEFunction3D FEFunction;
   typedef TFESpace3D FESpace;
@@ -58,7 +61,6 @@ struct Template_names<3>
   typedef std::vector<MultiIndex3D> MultiIndex_vector;
   typedef BaseFunct3D BaseFunct;
   typedef CoeffFct3D CoeffFct;
-  typedef ErrorMethod3D ErrorMethod;
   typedef ManipulateFct3D ManipulateFct;
   typedef BoundCondFunct3D BoundaryConditionFunction;
   typedef BoundValueFunct3D BoundaryValuesFunction;

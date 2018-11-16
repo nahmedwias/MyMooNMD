@@ -3815,18 +3815,16 @@ void determine_n_refinement_steps_multigrid(
   }
 }
 
-std::list<TCollection* > TDomain::refine_and_get_hierarchy_of_collections(
-    const ParameterDatabase& parmoon_db
-#ifdef _MPI
-    , int& maxSubDomainPerDof
-#endif
-    )
+std::list<TCollection*> TDomain::refine_and_get_hierarchy_of_collections(
+    const ParameterDatabase& parmoon_db)
 {
 #ifdef _MPI
   int my_rank, size;
   MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
 #endif
+  gridCollections.clear();
+  gridCollections.push_front(this->GetCollection(It_Finest, 0));
 
   // Split the number of refinement steps - see doc of the method
   // TODO Removing this strange construction is a TODO
@@ -3850,6 +3848,7 @@ std::list<TCollection* > TDomain::refine_and_get_hierarchy_of_collections(
       this->barycentric_refinement();
     else
       this->RegRefineAll();
+    gridCollections.push_front(this->GetCollection(It_Finest, 0));
   }
 
 #ifdef _MPI
@@ -3872,13 +3871,14 @@ std::list<TCollection* > TDomain::refine_and_get_hierarchy_of_collections(
   //(since distributing changed the domain).
   this->GenerateEdgeInfo();
 
-  // calculate largest possible number of processes which share one dof
-  maxSubDomainPerDof = MIN(maxCellsPerVertex, size);
+  // with _MPI the coarser grids are no longer used
+  gridCollections.clear();
+  gridCollections.push_front(this->GetCollection(It_Finest, 0));
 
 #endif
 
-  std::list<TCollection* > gridCollections;
-  gridCollections.push_front(this->GetCollection(It_Finest, 0));
+  
+  
 
   //this is only relevant for multigrid
   for(int level=0; level < n_ref_after; ++level)

@@ -75,25 +75,25 @@ void ComputeVorticityDivergence(const TFESpace2D *velo, TFEFunction2D *u1, TFEFu
                       const TFESpace2D *vorticity, double *vort, double *div);
 
 // determine L2 and H1 error
-void L2H1Errors(int N_Points, double *X, double *Y, double *AbsDetjk, 
+void L2H1Errors(int N_Points, std::array<double*, 2> xy, double *AbsDetjk, 
                 const double *Weights, double hK, 
                 double **Der, double **Exact,
                 double **coeffs, double *LocError);
 
 // determine L2-error, divergence error and H1 error, 2D
-void L2DivH1Errors(int N_Points, double *X, double *Y, double *AbsDetjk, 
+void L2DivH1Errors(int N_Points, std::array<double*, 2> xy, double *AbsDetjk, 
                    const double *Weights, double hK, 
                    double **Der, double **Exact,
                    double **coeffs, double *LocError);
 
 // determine L1 error, 2D
-void L1Error(int N_Points, double *X, double *Y, double *AbsDetjk, 
+void L1Error(int N_Points, std::array<double*, 2> xy, double *AbsDetjk, 
 	     const double *Weights, double hK, 
 	     double **Der, double **Exact,
 	     double **coeffs, double *LocError);
 
 // determine L2, H1 and SDFEM error
-void SDFEMErrors(int N_Points, double *X, double *Y, double *AbsDetjk, 
+void SDFEMErrors(int N_Points, std::array<double*, 2> xy, double *AbsDetjk, 
                  const double *Weights, double hK, double **Der, double **Exact,
                  double **coeffs, double *LocError);
 
@@ -176,7 +176,7 @@ void ComputeVorticityDivergence(TFESpace3D *velo, TFEFunction3D *u1,
                                 double *div);
 
 // determine L2 and H1 error
-void L2H1Errors(int N_Points, double *X, double *Y, double *Z,
+void L2H1Errors(int N_Points, std::array<double*, 3> xyz,
                 double *AbsDetjk, 
                 const double *Weights, double hK, 
                 double **Der, double **Exact,
@@ -189,12 +189,12 @@ void L2H1ErrorsSmooth(int N_Points, double *X, double *Y, double *Z,
 
 // compute L2 error, L2 error of divergence, and H1 error for vector valued
 // basis functions (Raviart-Thomas or Brezzi-Douglas-Marini)
-void L2DivH1Errors(int N_Points, double *X, double *Y, double *Z, 
+void L2DivH1Errors(int N_Points, std::array<double*, 3> xyz,
                    double *AbsDetjk, const double *Weights, double hK, double **Der,
                    double **Exact, double **coeffs, double *LocError);
 
 // determine L1 error
-void L1Error(int N_Points, double *X, double *Y,  double *Z, double *AbsDetjk, 
+void L1Error(int N_Points, std::array<double*, 3> xyz, double *AbsDetjk, 
 	     const double *Weights, double hK, 
 	     double **Der, double **Exact,
 	     double **coeffs, double *LocError);

@@ -94,14 +94,8 @@ class Time_NSE3D
        * main program and handed down to the FESpaces. Getting rid of this
        * construction is a TODO .
        */
-#ifdef _MPI
-      System_per_grid(const Example_TimeNSE3D& ex,
-                    TCollection& coll, std::pair<int, int> order, Time_NSE3D::Matrix type,
-                    int maxSubDomainPerDof);
-#else
       System_per_grid(const Example_TimeNSE3D& ex, TCollection& coll,
                       std::pair<int, int> order, Time_NSE3D::Matrix type);
-#endif
 
       // System_per_grid is not supposed to be copied or moved
       // until underlying classes realize the rule of zero.
@@ -223,16 +217,11 @@ class Time_NSE3D
      * functions as well as matrices, solution and right hand side vectors are
      * initialized.
      *
-     * @param collections
+     * @param domain
      * @param example The example to perform
      */
-#ifdef _MPI
-    Time_NSE3D(std::list<TCollection* > collections_, const ParameterDatabase& param_db, 
-               const Example_TimeNSE3D& example, int maxSubDomainPerDof);
-#else
-    Time_NSE3D(std::list<TCollection* > collections_, const ParameterDatabase& param_db, 
+    Time_NSE3D(const TDomain& domain, const ParameterDatabase& param_db, 
                const Example_TimeNSE3D& example);
-#endif
     
 // ======================================================================
     /** @brief This returns the number of the current time step.

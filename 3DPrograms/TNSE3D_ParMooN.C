@@ -96,27 +96,15 @@ int main(int argc, char* argv[])
     Database.WriteParamDB(argv[0]);
     Database.WriteTimeDB();
   }
-  // Initial refinement and grid collection
-#ifdef _MPI
-  int maxSubDomainPerDof = 0;
-#endif
-  std::list<TCollection* > gridCollections
-     = domain.refine_and_get_hierarchy_of_collections(
-       parmoon_db
-#ifdef _MPI
-       , maxSubDomainPerDof
-#endif       
-    );
+  // Initial refinement
+  domain.refine_and_get_hierarchy_of_collections(parmoon_db);
+
   //print information on the mesh partition on the finest grid
   domain.print_info("TNSE3D domain");
   // set some parameters for time stepping
   SetTimeDiscParameters(0);
   // Construct an object of the Time_NSE3D-problem type.
-#ifdef _MPI
-  Time_NSE3D tnse3d(gridCollections, parmoon_db, example, maxSubDomainPerDof);
-#else
-  Time_NSE3D tnse3d(gridCollections, parmoon_db, example);
-#endif
+  Time_NSE3D tnse3d(domain, parmoon_db, example);
   
   TimeDiscretization& tss = tnse3d.get_time_stepping_scheme();
   tss.current_step_ = 0;

@@ -42,17 +42,13 @@ int main(int argc, char* argv[])
   Database.WriteParamDB(argv[0]);
   Database.WriteTimeDB();
   
-  // refine grid up to the coarsest level
-  size_t n_ref = Domain.get_n_initial_refinement_steps();
-  for(unsigned int i=0; i<n_ref; i++){
-    Domain.RegRefineAll();  
-  }
+  // refine grid
+  Domain.refine_and_get_hierarchy_of_collections(parmoon_db);
   // write grid into an Postscript file
   if(parmoon_db["output_write_ps"])
     Domain.PS("Domain.ps", It_Finest, 0);
   
-  Example_TimeCD2D example( parmoon_db );
-  Time_CD2D tcd(Domain, parmoon_db, example);
+  Time_CD2D tcd(Domain, parmoon_db);
   
   TimeDiscretization& tss = tcd.get_time_stepping_scheme();
   tss.current_step_ = 0;

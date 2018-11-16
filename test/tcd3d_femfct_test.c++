@@ -14,6 +14,7 @@
 #include <TimeDiscRout.h>
 #include <TimeDiscretizations.h>
 #include <MainUtilities.h>
+#include <ConvDiff.h>
 
 #ifdef _MPI
 #include <mpi.h>
@@ -66,8 +67,8 @@ void check_solution_norms(Time_CD3D &tcd, int m)
     std::array<double, 5> locError = {};
     const TFESpace3D* space = tcd.get_function().GetFESpace3D();
 
-    tcd.get_function().GetErrors(tcd.get_example().get_exact(0), 4, allDerivatives, 2,
-                            L2H1Errors, tcd.get_example().get_coeffs(), &aux, 1, &space,
+    tcd.get_function().GetErrors(tcd.get_example().get_exact(0), 4, allDerivatives, 4,
+                            conv_diff_l2_h1_linf_error<3>, tcd.get_example().get_coeffs(), &aux, 1, &space,
                             locError.data());
 
   #ifdef _MPI
@@ -75,19 +76,20 @@ void check_solution_norms(Time_CD3D &tcd, int m)
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
     std::vector<double> errorsReduced(4);
-    MPI_Reduce(locError.data(), errorsReduced.data(), 2, MPI_DOUBLE, MPI_SUM, 0,
+    MPI_Reduce(locError.data(), errorsReduced.data(), 3, MPI_DOUBLE, MPI_SUM, 0,
                MPI_COMM_WORLD);
-    MPI_Reduce(&locError[2], &errorsReduced[2], 1, MPI_DOUBLE, MPI_MAX, 0,
+    MPI_Reduce(&locError[3], &errorsReduced[3], 1, MPI_DOUBLE, MPI_MAX, 0,
                MPI_COMM_WORLD);
     if(rank == 0)
     {//this is only performed on root - just root willl have the correct values
       locError[0] = sqrt(errorsReduced[0]);
       locError[1] = sqrt(errorsReduced[1]);
-      locError[2] = errorsReduced[2];
+      locError[2] = sqrt(errorsReduced[2]);
+      locError[3] = errorsReduced[3];
   #endif // _MPI
 
     Output::print("Norms in step ", m); //This is how the reference values were produced.
-    Output::dash(std::setprecision(10), locError[0], ", ", locError[1], ", ", locError[2]);
+    Output::dash(std::setprecision(10), locError[0], ", ", locError[1], ", ", locError[3]);
 
     int control_step = m/10 - 1;
     double tol = 1e-9;
@@ -100,9 +102,9 @@ void check_solution_norms(Time_CD3D &tcd, int m)
       ErrThrow("H1 norm at timestep ", TDatabase::TimeDB->CURRENTTIME,  " is not correct, ",
                locError[1], " != ", target_norms[control_step][1]);
 
-    if( fabs(locError[2]  - target_norms[control_step][2]) > tol )
+    if( fabs(locError[3]  - target_norms[control_step][2]) > tol )
       ErrThrow("L^inf norm at timestep ", TDatabase::TimeDB->CURRENTTIME,  " is not correct, ",
-               locError[2], " != ", target_norms[control_step][2]);
+               locError[3], " != ", target_norms[control_step][2]);
     Output::print("Solution norms checked succesfully.");
 
 #ifdef _MPI
@@ -157,24 +159,12 @@ int main(int argc, char* argv[])
     db["residual_reduction"] =  0.0;
 
     TDomain domain(db);
-#ifdef _MPI
-  int maxSubDomainPerDof = 0;
-#endif
-    std::list<TCollection* > gridCollections
-      = domain.refine_and_get_hierarchy_of_collections( db
-#ifdef _MPI
-    , maxSubDomainPerDof
-#endif
-          );
+    domain.refine_and_get_hierarchy_of_collections(db);
 
     // example object
     Example_TimeCD3D example_obj(db);
     // tcd3d system object
-#ifdef _MPI
-    Time_CD3D tcd(gridCollections, db, example_obj, maxSubDomainPerDof);
-#else
-    Time_CD3D tcd(gridCollections, db, example_obj);
-#endif
+    Time_CD3D tcd(domain, db, example_obj);
 
 
     tcd.assemble_initial_time();

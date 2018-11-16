@@ -242,7 +242,7 @@ void Darcy<d>::solve()
 template <int d>
 void Darcy<d>::output(int i)
 {
-  using ErrorMethod = typename Template_names<d>::ErrorMethod;
+  using ErrorMethod = typename FEFunction::ErrorMethod;
   
   System_per_grid & s = this->systems.front();
   if((size_t)db["verbosity"]> 1)
@@ -273,7 +273,9 @@ void Darcy<d>::output(int i)
     MultiIndex2D AllDerivatives[3] = { D00, D10, D01 };
 #endif
     const FESpace * pointer_to_p_space = s.pressure_space.get();
-    s.p.GetErrors(example.get_exact(d), d+1, AllDerivatives, 2, L2H1Errors,
+    // the 'd' for the number of errors is a dirty hack, we need to refactor
+    // the GetErrors methods.
+    s.p.GetErrors(example.get_exact(d), d+1, AllDerivatives, d, L2H1Errors,
                   nullptr, &aux, 1, &pointer_to_p_space, errors.data() + 3);
 
     Output::print<1>(" L2(u):      ", setprecision(14), errors[0]);

@@ -29,10 +29,8 @@ int main(int argc, char* argv[])
   Database.WriteParamDB(argv[0]);
   Database.WriteTimeDB();
 
-  // refine grid up to the coarsest level
-  size_t n_ref = Domain.get_n_initial_refinement_steps();
-  for(size_t i = 0; i < n_ref; i++)
-    Domain.RegRefineAll();
+  // refine grid
+  Domain.refine_and_get_hierarchy_of_collections(parmoon_db);
 
   // write grid into an Postscript file
   if(parmoon_db["output_write_ps"])
@@ -41,9 +39,8 @@ int main(int argc, char* argv[])
   // set some parameters for time stepping
   SetTimeDiscParameters(0);
 
-  Example_TimeNSE2D example( parmoon_db );
   // create an object of Time_NSE2D class
-  Time_NSE2D tnse2d(Domain, parmoon_db, example);
+  Time_NSE2D tnse2d(Domain, parmoon_db);
   
   TimeDiscretization& tss = tnse2d.get_time_stepping_scheme();
   tss.current_step_ = 0;

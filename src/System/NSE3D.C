@@ -57,11 +57,8 @@ ParameterDatabase NSE3D::default_NSE_database()
 
 NSE3D::System_per_grid::System_per_grid(const Example_NSE3D& example,
                                     TCollection& coll, std::pair<int, int> order, 
-                                    NSE3D::Matrix type
-#ifdef _MPI
-                                    , int maxSubDomainPerDof
-#endif
-) :  velocitySpace_(new TFESpace3D(&coll, "u", "nse3d velocity", 
+                                    NSE3D::Matrix type)
+  :  velocitySpace_(new TFESpace3D(&coll, "u", "nse3d velocity", 
                                    example.get_bc(0), //bd cond at 0 is x velo bc
                                    order.first)),
      pressureSpace_(new TFESpace3D(&coll, "p", "nse3d pressure", 
@@ -98,14 +95,9 @@ NSE3D::System_per_grid::System_per_grid(const Example_NSE3D& example,
      solution_.length(3));
 
 #ifdef _MPI
-
-  velocitySpace_->initialize_parallel(maxSubDomainPerDof);
-  pressureSpace_->initialize_parallel(maxSubDomainPerDof);
-
   //print some information
   velocitySpace_->get_communicator().print_info();
   pressureSpace_->get_communicator().print_info();
-
 #endif
 }
 
@@ -151,12 +143,14 @@ void NSE3D::output_problem_size_info() const
     }
 }
 
-NSE3D::NSE3D(std::list<TCollection* > collections, const ParameterDatabase& param_db,
-             const Example_NSE3D& example
-#ifdef _MPI
-             , int maxSubDomainPerDof
-#endif
-) : systems_(), example_(example), db(default_NSE_database()), outputWriter(param_db),
+NSE3D::NSE3D(const TDomain& domain, const ParameterDatabase& param_db)
+ : NSE3D(domain, param_db, Example_NSE3D(param_db))
+{
+}
+
+NSE3D::NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
+             const Example_NSE3D& example)
+  : systems_(), example_(example), db(default_NSE_database()), outputWriter(param_db),
     solver(param_db), defect_(), old_residuals_(), initial_residual_(1e10), 
     errors_()
 {
@@ -189,14 +183,10 @@ NSE3D::NSE3D(std::list<TCollection* > collections, const ParameterDatabase& para
   }
   
   bool usingMultigrid = solver.is_using_multigrid();
+  auto collections = domain.get_grid_collections();
   TCollection *coll = collections.front(); //the finest grid collection
   // create finite element space and function, a matrix, rhs, and solution
-  #ifdef _MPI
-  systems_.emplace_back(example_, *coll, velocity_pressure_orders, type,
-                        maxSubDomainPerDof);
-  #else
   systems_.emplace_back(example_, *coll, velocity_pressure_orders, type);
-  #endif
   
   if(usingMultigrid)
   {
@@ -204,13 +194,17 @@ NSE3D::NSE3D(std::list<TCollection* > collections, const ParameterDatabase& para
     auto mg = solver.get_multigrid();
     bool mdml = mg->is_using_mdml();
 
-
     //Check whether number of given grids is alright
     size_t n_geo_multigrid_levels = mg->get_n_geometric_levels();
     size_t n_grids = collections.size();
-    if(n_geo_multigrid_levels != n_grids )
+    if(n_geo_multigrid_levels > n_grids )
       ErrThrow("Wrong number of grids for multigrid! I was expecting ",
                n_geo_multigrid_levels, " geometric grids but only got ", n_grids,".");
+    // remove not needed coarser grid from list of collections
+    for(int i = n_geo_multigrid_levels; i < n_grids; ++i)
+    {
+      collections.pop_back();
+    }
 
     if(mdml)
     {
@@ -234,12 +228,7 @@ NSE3D::NSE3D(std::list<TCollection* > collections, const ParameterDatabase& para
 
     for(auto coll : collections) // initialize the coarse grid space hierarchy
     {
-      #ifndef _MPI
       systems_.emplace_back(example, *coll, velocity_pressure_orders, type);
-      #else
-      systems_.emplace_back(example, *coll, velocity_pressure_orders, type,
-                            maxSubDomainPerDof);
-      #endif
       // prepare input argument for multigrid object
       matrices.push_front(&systems_.back().matrix_);
     }
@@ -248,7 +237,6 @@ NSE3D::NSE3D(std::list<TCollection* > collections, const ParameterDatabase& para
   }
 
   output_problem_size_info();
-
 }
 
 void NSE3D::check_parameters()
@@ -899,19 +887,19 @@ void NSE3D::output(int i)
     const TFESpace3D *pressure_space = &this->get_pressure_space();
     
     // errors in first velocity component
-    u1->GetErrors(example_.get_exact(0), 4, nsAllDerivs, 2,
+    u1->GetErrors(example_.get_exact(0), 4, nsAllDerivs, 3,
                   L2H1Errors, nullptr, &aux, 1, &velocity_space, err_u1);
     // errors in second velocity component
-    u2->GetErrors(example_.get_exact(1), 4, nsAllDerivs, 2,
+    u2->GetErrors(example_.get_exact(1), 4, nsAllDerivs, 3,
                   L2H1Errors, nullptr, &aux, 1, &velocity_space, err_u2);
     // errors in third velocity component
-    u3->GetErrors(example_.get_exact(2), 4, nsAllDerivs, 2,
+    u3->GetErrors(example_.get_exact(2), 4, nsAllDerivs, 3,
                   L2H1Errors, nullptr, &aux, 1, &velocity_space, err_u3);
     double div_error = s.u_.GetL2NormDivergenceError(example_.get_exact(0),
                                                      example_.get_exact(1), 
                                                      example_.get_exact(2));
     // errors in pressure
-    s.p_.GetErrors(example_.get_exact(3), 4, nsAllDerivs, 2, L2H1Errors,
+    s.p_.GetErrors(example_.get_exact(3), 4, nsAllDerivs, 3, L2H1Errors,
                    nullptr, &aux, 1, &pressure_space, err_p);
     
 #ifdef _MPI

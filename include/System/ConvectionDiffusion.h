@@ -1,36 +1,31 @@
-/** ***************************************************************************
- *
- * @class       CD2D
- * @brief      store everything needed to solve a convection-diffusion-reaction
- *             (cdr) problem
- *
- * Store matrix, right hand side, FE spaces, FE functions and the solution 
- * vector of a convection-diffusion problem. This wraps up everything which is 
- * necessary to solve a convection diffusion problem in 2D.
- *
- * @author     Ulrich Wilbrandt
- * @date       06.09.13
- *
- ******************************************************************************/
+#ifndef __SYSTEM_CONVECTIONDIFFUSION_H__
+#define __SYSTEM_CONVECTIONDIFFUSION_H__
 
-#ifndef __CD2D_H__
-#define __CD2D_H__
+#include "BlockFEMatrix.h"
+#ifdef __2D__
+#include "Example_CD2D.h"
+#include "FEFunction2D.h"
+#else
+#include "Example_CD3D.h"
+#include "FEFunction3D.h"
+#endif
+#include "BlockVector.h"
+#include "ParameterDatabase.h"
+#include "Solver.h"
+#include "templateNames.h"
+#include "DataWriter.h"
 
-#include <Example_CD2D.h>
-#include <FEFunction2D.h>
-#include <Domain.h>
 #include <deque>
+#include <array>
 
-#include <BlockFEMatrix.h>
-#include <BlockVector.h>
-#include <ParameterDatabase.h>
-#include <Solver.h>
-#include <DataWriter.h>
-
-class Multigrid;
-
-class CD2D
+template<int d>
+class ConvectionDiffusion
 {
+  public:
+    using FEFunction = typename Template_names<d>::FEFunction;
+    using FESpace = typename Template_names<d>::FESpace;
+    using Example_CD = typename Template_names<d>::Example_CD;
+  
   protected:
     
     /** @brief store a complete system on a particular grid
@@ -38,10 +33,10 @@ class CD2D
      * This combines a matrix, rhs, solution, space and function needed to 
      * describe one convection-diffusion-reaction problem in 2D.
      */
-    struct System_per_grid
+    struct SystemPerGrid
     {
       /** @brief Finite Element space */
-      std::shared_ptr<const TFESpace2D> fe_space;
+      std::shared_ptr<const FESpace> fe_space;
 
       /** @brief the system matrix */
       BlockFEMatrix matrix;
@@ -50,30 +45,28 @@ class CD2D
       /** @brief solution vector with one component. */
       BlockVector solution;
       /** @brief Finite Element function */
-      TFEFunction2D fe_function;
+      FEFunction fe_function;
       
       /** @brief constructor */
-      System_per_grid( const Example_CD2D& example, TCollection& coll, 
-                       int ansatz_order );
+      SystemPerGrid(const Example_CD& example, TCollection& coll,
+                    int ansatz_order);
 
       // Special member functions. Disable copy/move, set destructor to default.
-      // Will be changed only when the underlying
-      // classes TFESpace2D and TFESpace2D follow rule of 0/5.
 
       //! Delete copy constructor.
-      System_per_grid(const System_per_grid&) = delete;
+      SystemPerGrid(const SystemPerGrid&) = delete;
 
       //! Delete move constructor.
-      System_per_grid(System_per_grid&&) = delete;
+      SystemPerGrid(SystemPerGrid&&) = delete;
 
       //! Delete copy assignment operator.
-      System_per_grid& operator=(const System_per_grid&) = delete;
+      SystemPerGrid& operator=(const SystemPerGrid&) = delete;
 
       //! Delete move assignment operator.
-      System_per_grid& operator=(System_per_grid&&) = delete;
+      SystemPerGrid& operator=(SystemPerGrid&&) = delete;
 
       //! Default destructor.
-      ~System_per_grid() = default;
+      ~SystemPerGrid() = default;
     };
     
     /** @brief a complete system on each grid 
@@ -81,10 +74,10 @@ class CD2D
      * Note that the size of this deque is at least one and larger only in case
      * of multigrid.
      */
-    std::deque<System_per_grid> systems;
+    std::deque<SystemPerGrid> systems;
     
     /** @brief Definition of the used example */
-    const Example_CD2D example;
+    const Example_CD example;
     
     /** @brief a local parameter database which constrols this class
      * 
@@ -97,7 +90,7 @@ class CD2D
     ParameterDatabase db;
 
     /** @brief class for output handling */
-    DataWriter2D outputWriter;
+    DataWriter<d> outputWriter;
 
     /** @brief a solver object which will solve the linear system
      * 
@@ -106,6 +99,7 @@ class CD2D
      */
     Solver<BlockFEMatrix, BlockVector> solver;
     
+    static constexpr int n_errors = 4;
     /** @brief store the errors to access them from outside this class
      * 
      * This array is filled during a call to CD2D::output if the parameter
@@ -121,7 +115,7 @@ class CD2D
      *  - SD error (streamline diffusion, useful for SDFEM)
      *  - L_inf error
      */
-    std::array<double, 4> errors;
+    std::array<double, n_errors> errors;
     
     /** @brief set parameters in database
      * 
@@ -133,6 +127,9 @@ class CD2D
      * throws an exception.
      */
     void set_parameters();
+    
+    /** @brief write some information (number of cells, dofs, ...) */
+    void output_problem_size_info() const;
     
   public:
     
@@ -146,11 +143,9 @@ class CD2D
      * @param[in] param_db A parameter database with parameters concerning this
      *                     class or any of its members (fe space, solver,
      *                     assemble,...)
-     * @param[in] reference_id The cell reference id, of which cells to create
-     *                         the TCollection.
      */
-    CD2D(const TDomain& domain, const ParameterDatabase& param_db,
-         int reference_id = -4711);
+    ConvectionDiffusion(const TDomain& domain,
+                        const ParameterDatabase& param_db);
     
     /** @brief constructor 
      * 
@@ -164,23 +159,23 @@ class CD2D
      *                     assemble,...)
      * @param[in] example a description of the example to be used, this is 
      *                    copied into a local member.
-     * @param[in] reference_id The cell reference id, of which cells to create
-     *                         the TCollection.
      */
-    CD2D(const TDomain& domain, const ParameterDatabase& param_db, 
-         const Example_CD2D& example, int reference_id = -4711);
+    ConvectionDiffusion(const TDomain& domain,
+                        const ParameterDatabase& param_db,
+                        const Example_CD& example);
     
+    /** @brief get a database with all parameters needed by this class, 
+     *  initialized with default values.
+     */
+    static ParameterDatabase get_default_cd_database();
+
     /** @brief assemble matrix, 
      * 
      * depending on 'this->db["space_discretization_type]' different (local)
      * assembling routines are used. Also in case of multigrid the matrices
      * on all grids are assembled.
      */
-
-    // Initialize/Declare CD2D database, called with the constructor (for the use outside CD2D.C)
-    static ParameterDatabase get_default_CD2D_parameters();
-
-    void assemble(TFEFunction2D* coefficient_function1 = nullptr, TFEFunction2D* coefficient_function2 = nullptr);
+    void assemble();
     
     /** @brief solve the system */
     void solve();
@@ -219,10 +214,10 @@ class CD2D
     { return this->systems.front().rhs; }
     BlockVector & get_rhs()
     { return this->systems.front().rhs; }
-    const TFEFunction2D & get_function() const
+    const FEFunction & get_function() const
     { return this->systems.front().fe_function; }
     
-    const TFESpace2D & get_space() const
+    const FESpace & get_space() const
     { return *this->systems.front().fe_space; }
     
     const BlockVector & get_solution() const
@@ -231,7 +226,7 @@ class CD2D
     { return this->systems.front().solution; }
     unsigned int get_size() const
     { return this->systems.front().solution.length(); }
-    const Example_CD2D& get_example() const
+    const Example_CD& get_example() const
     { return example; }
     const ParameterDatabase & get_db() const
     { return db; }
@@ -240,19 +235,19 @@ class CD2D
     // Will be changed only when the underlying classes follow rule of 0/5.
 
     //! Delete copy constructor.
-    CD2D(const CD2D&) = delete;
+    ConvectionDiffusion(const ConvectionDiffusion&) = delete;
 
     //! Delete move constructor.
-    CD2D(CD2D&&) = delete;
+    ConvectionDiffusion(ConvectionDiffusion&&) = delete;
 
     //! Delete copy assignment operator.
-    CD2D& operator=(const CD2D&) = delete;
+    ConvectionDiffusion& operator=(const ConvectionDiffusion&) = delete;
 
     //! Delete move assignment operator.
-    CD2D& operator=(CD2D&&) = delete;
+    ConvectionDiffusion& operator=(ConvectionDiffusion&&) = delete;
 
-    //! Destructor. Still leaks memory (esp. because of the multigrid objeect).
-    ~CD2D();
+    //! Destructor.
+    ~ConvectionDiffusion() = default;
 
   private:
     /**
@@ -266,4 +261,4 @@ class CD2D
     void do_algebraic_flux_correction();
 };
 
-#endif // __CD2D_H__
+#endif // __SYSTEM_CONVECTIONDIFFUSION_H__

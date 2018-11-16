@@ -36,14 +36,6 @@ TParFEMapper3D::TParFEMapper3D(int N_dim, TFESpace3D *fespace, int *rowptr, int 
  
   N_Dof = FESpace->GetN_DegreesOfFreedom();
   
-  MaxSubDomainPerDof = fespace->GetMaxSubDomainPerDof();
-  if(MaxSubDomainPerDof<0)
-  {
-    printf("Error: SetMaxSubDomainPerDof in FeSpace before calling ParFECommunicator3D \n");
-    MPI_Finalize();
-    exit(-1);
-  }
-  
   if(TDatabase::ParamDB->MapperType != 2)
   {
     ConstructDofMap_Master_Halo();
@@ -84,8 +76,6 @@ TParFEMapper3D::TParFEMapper3D()
 		//assign non-array built-in type data members
 		N_Dim = 0;
 		N_Dof = 0;
-
-		MaxSubDomainPerDof = 0;
 
 		N_InterfaceM = 0;
 		N_InterfaceS = 0;
@@ -2213,8 +2203,6 @@ TParFEMapper3D::TParFEMapper3D(const TParFEMapper3D& other)
 	N_Dim = other.N_Dim;
 	N_Dof = other.N_Dof;
 
-	MaxSubDomainPerDof = other.MaxSubDomainPerDof;
-
 	N_InterfaceM = other.N_InterfaceM;
 	N_InterfaceS = other.N_InterfaceS;
 	N_Halo1 = other.N_Halo1;
@@ -2360,7 +2348,6 @@ void swap(TParFEMapper3D& first, TParFEMapper3D& second)
 	std::swap(first.KCol , second.KCol );
 #endif
 	std::swap(first.FESpace , second.FESpace );
-	std::swap(first.MaxSubDomainPerDof , second.MaxSubDomainPerDof );
 	std::swap(first.Master , second.Master );
 	std::swap(first.OwnDofs , second.OwnDofs );
 	std::swap(first.DofMarker , second.DofMarker );

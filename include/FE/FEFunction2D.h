@@ -27,6 +27,11 @@ class TAuxParam2D;
 /** a function from a finite element space */
 class TFEFunction2D
 {
+  public:
+    typedef void ErrorMethod(int, std::array<double*, 2>, double *,
+                             const double *, double, double **, double **,
+                             double **, double *);
+    
   protected:
     /** name of the function */
     std::string Name;
@@ -92,7 +97,7 @@ class TFEFunction2D
      */
     void GetErrors(DoubleFunct2D *Exact, int N_Derivatives,
         MultiIndex2D *NeededDerivatives,
-        int N_Errors, ErrorMethod2D *ErrorMeth, 
+        int N_Errors, ErrorMethod *ErrorMeth, 
         CoeffFct2D Coeff, TAuxParam2D *Aux,
         int n_fespaces, const TFESpace2D **fespaces,
         double *errors, bool is_SDFEM = 0,
@@ -103,7 +108,7 @@ class TFEFunction2D
      *         or Brezzi-Douglas-Marini (BDM) elements) */
     void  GetErrorsForVectorValuedFunction(
         DoubleFunct2D * const * const Exact, 
-        ErrorMethod2D * const ErrorMeth, 
+        ErrorMethod * const ErrorMeth, 
         double * const errors) const;
 
     /** determine the value of function and its first derivatives at
@@ -174,7 +179,7 @@ class TFEFunction2D
     /** calculate parameters which are connected to a mesh cell */
     void GetMeshCellParams(DoubleFunct2D *Exact, int N_Derivatives,
         MultiIndex2D *NeededDerivatives,
-        int N_Errors, ErrorMethod2D *ErrorMeth, 
+        int N_Errors, ErrorMethod *ErrorMeth, 
         CoeffFct2D Coeff, 
         TAuxParam2D *Aux,
         int n_fespaces, const TFESpace2D **fespaces,

@@ -66,16 +66,6 @@ typedef void BoundValueFunct3D(double, double, double, double &);
 typedef void BoundCondFunct2D(int, double, BoundCond &);
 typedef void BoundValueFunct2D(int, double, double &);
 
-typedef void ErrorMethod2D(int, double *, double *, 
-                           double *, const double *, double,
-                           double **, double **,
-                           double **, double *);
-
-typedef void ErrorMethod3D(int, double *, double *, double *,
-                           double *, const double *, double,
-                           double **, double **,
-                           double **, double *);
-
 typedef DoubleFunctVect ParamFct;
 
 typedef std::function<void(int, double*, double*, double**, double**)> 

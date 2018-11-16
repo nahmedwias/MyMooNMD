@@ -96,6 +96,8 @@ class TDomain
       int N_OwnCells;
 #endif
 
+      /** @brief see documentation of refine_and_get_hierarchy_of_collections */
+      std::list<TCollection*> gridCollections;
       /**
        * A Database object which holds parameters which are of a certain
        * interest to this domain object.
@@ -578,19 +580,17 @@ class TDomain
    *   determine_n_refinement_steps_multigrid
    * for a description of the problem.
    * @param[in] parmoon_db The input database.
-   * @param[out] maxSubDomainPerDof A very annoying value, which we must
-   * curetnly drag through the whole program. Is finally used in TParFECommunicator
-   * to determine, how much space to allocate for MPI Communications
    * @return A hierarchy of geometric grids which can be used for multigrid,
    * finest grid first.
    *
    */
-  std::list<TCollection* > refine_and_get_hierarchy_of_collections(
-      const ParameterDatabase& parmoon_db
-  #ifdef _MPI
-      , int& maxSubDomainPerDof
-  #endif
-      );
+  std::list<TCollection*> refine_and_get_hierarchy_of_collections(
+      const ParameterDatabase& parmoon_db);
+
+  const std::list<TCollection*> get_grid_collections() const
+  {
+    return gridCollections;
+  }
 
   /// Get a const reference to the database of this domain object.
   const ParameterDatabase& get_database() const {return this->db;};

@@ -366,7 +366,7 @@ void TFEVectFunct3D::GetDeformationTensorErrors(
   DoubleFunct3D *Exact2,
   int N_Derivatives,
   MultiIndex3D *NeededDerivatives,
-  int N_Errors, ErrorMethod3D *ErrorMeth, 
+  int N_Errors, TFEFunction3D::ErrorMethod *ErrorMeth, 
   CoeffFct3D Coeff, 
   TAuxParam3D *Aux,
   int n_fespaces, TFESpace3D **fespaces,
@@ -526,7 +526,7 @@ void TFEVectFunct3D::GetDeformationTensorErrors(
     if(Coeff)
       Coeff(N_Points, X, Y, Z, Param, AuxArray);      
 
-    ErrorMeth(N_Points, X, Y, Z, AbsDetjk, weights, hK, Derivatives, 
+    ErrorMeth(N_Points, {{X, Y, Z}}, AbsDetjk, weights, hK, Derivatives, 
               ExactVal, AuxArray, LocError);
 
     for(j=0;j<N_Errors;j++)

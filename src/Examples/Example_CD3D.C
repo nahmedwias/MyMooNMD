@@ -119,7 +119,7 @@ Example_CD3D::Example_CD3D(const ParameterDatabase& user_input_parameter_db)
   }
 }
 
-void Example_CD3D::do_post_processing(CD3D& cd3d) const
+void Example_CD3D::do_post_processing(ConvectionDiffusion<3>& cd3d) const
 {
   if(post_processing_stat)
   {

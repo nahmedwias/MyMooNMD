@@ -51,11 +51,7 @@ ParameterDatabase get_default_TNSE3D_parameters()
 /* *************************************************************************** */
 Time_NSE3D::System_per_grid::System_per_grid(const Example_TimeNSE3D& example,
                   TCollection& coll, std::pair< int, int > order, 
-                  Time_NSE3D::Matrix type
-#ifdef _MPI
-                  , int maxSubDomainPerDof
-#endif
-)
+                  Time_NSE3D::Matrix type)
  : velocitySpace_(&coll, "u", "velocity space",  example.get_bc(0),
                   order.first),
    pressureSpace_(&coll, "p", "pressure space", example.get_bc(3),
@@ -96,8 +92,6 @@ Time_NSE3D::System_per_grid::System_per_grid(const Example_TimeNSE3D& example,
                     solution_.length(3));
 
 #ifdef _MPI
-  velocitySpace_.initialize_parallel(maxSubDomainPerDof);
-  pressureSpace_.initialize_parallel(maxSubDomainPerDof);
   //print some information on the parallel infrastructure
   velocitySpace_.get_communicator().print_info();
   pressureSpace_.get_communicator().print_info();
@@ -105,12 +99,9 @@ Time_NSE3D::System_per_grid::System_per_grid(const Example_TimeNSE3D& example,
 }
 
 /**************************************************************************** */
-Time_NSE3D::Time_NSE3D(std::list< TCollection* > collections_, const ParameterDatabase& param_db, 
-                       const Example_TimeNSE3D& ex
-#ifdef _MPI
-, int maxSubDomainPerDof
-#endif  
-)
+Time_NSE3D::Time_NSE3D(const TDomain& domain,
+                       const ParameterDatabase& param_db, 
+                       const Example_TimeNSE3D& ex)
 : db_(get_default_TNSE3D_parameters()), outputWriter(param_db),systems_(), example_(ex),
    solver_(param_db), defect_(), old_residual_(), 
    initial_residual_(1e10), errors_(), oldtau_(), 
@@ -138,23 +129,24 @@ Time_NSE3D::Time_NSE3D(std::list< TCollection* > collections_, const ParameterDa
                " That NSE Block Matrix Type is unknown to class Time_NSE3D.");
   }
   bool usingMultigrid = solver_.is_using_multigrid();
-  TCollection *coll = collections_.front(); // finest grid collection
+  auto collections = domain.get_grid_collections();
+  TCollection *coll = collections.front(); // finest grid collection
   // create finite element space and function, a matrix, rhs, and solution
-#ifdef _MPI
-  systems_.emplace_back(example_, *coll, velocity_pressure_orders, type,
-                        maxSubDomainPerDof);
-#else
   systems_.emplace_back(example_, *coll, velocity_pressure_orders, type);
-#endif
   if(usingMultigrid)
   {
     auto mg = this->solver_.get_multigrid();
     size_t n_multigrid_levels = mg->get_n_geometric_levels();
-    size_t n_grids=collections_.size();
-    if(n_multigrid_levels != n_grids)
+    size_t n_grids=collections.size();
+    if(n_multigrid_levels > n_grids)
     {
       ErrThrow("Wrong number of grids for multigrid! expecting ",
                n_multigrid_levels, " geometric grids but got", n_grids,".");
+    }
+    // remove not needed coarser grid from list of collections
+    for(int i = n_multigrid_levels; i < n_grids; ++i)
+    {
+      collections.pop_back();
     }
     
     if(mg->is_using_mdml())
@@ -169,21 +161,16 @@ Time_NSE3D::Time_NSE3D(std::list< TCollection* > collections_, const ParameterDa
       // for standard multigrid, pop the finest collection - it was already
       // used to construct a space before the "if(usingMultigrid)" clause
       // and will not (as in mdml) be used a second time with a different discretization
-      collections_.pop_front();
+      collections.pop_front();
     }
     // Construct systems per grid and store them, finest level first
     std::list<BlockFEMatrix*> matrices;
     // matrix on finest grid is already constructed
     matrices.push_back(&systems_.back().matrix_);
     
-    for(auto coll : collections_)
+    for(auto coll : collections)
     {
-#ifdef _MPI
-      systems_.emplace_back(example_, *coll, velocity_pressure_orders, type, 
-                            maxSubDomainPerDof);
-#else
       systems_.emplace_back(example_, *coll, velocity_pressure_orders, type);
-#endif
       // prepare input argument for multigrid 
       matrices.push_front(&systems_.back().matrix_);
     }
