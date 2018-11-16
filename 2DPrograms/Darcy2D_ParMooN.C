@@ -35,19 +35,14 @@ int main(int argc, char* argv[])
   Database.WriteParamDB(argv[0]);
   
   // refine grid
-  size_t n_ref = domain.get_n_initial_refinement_steps();
-  for(size_t i = 0; i < n_ref; i++)
-    domain.RegRefineAll();
+  domain.refine_and_get_hierarchy_of_collections(parmoon_db);
   
   // write grid into an Postscript file
   if(parmoon_db["output_write_ps"])
     domain.PS("Domain.ps", It_Finest, 0);
   
-  // choose example according to the value of db["example"]
-  Example_Darcy2D example(parmoon_db);
-  
   //=========================================================================
-  Darcy<2> darcy2d(domain, parmoon_db, example);
+  Darcy<2> darcy2d(domain, parmoon_db);
   darcy2d.assemble();
   darcy2d.solve();
   darcy2d.output();

@@ -59,9 +59,6 @@ class TFESpace3D : public TFESpace
    BoundCondFunct3D* boundCondition_;
 
 #ifdef  _MPI
-     /** Maximum number of subdomains associated with any dof */
-    int MaxSubDomainPerDof;
-
    /// There belongs a ParFECommunicator to this space. Store it!
    std::shared_ptr<TParFECommunicator3D> comm_;
 
@@ -154,16 +151,6 @@ class TFESpace3D : public TFESpace
 			   std::vector< std::vector<double> >& basisFunctionsValues) const;
 
 #ifdef  _MPI
-    /**
-     * As soon as the maxSubDomainPerDof is known, the parallel infrastructure
-     * can be initialized.
-     */
-    void initialize_parallel(int maxSubDomainPerDof);
-
-    /** return  MaxSubDomainPerDof */
-    int GetMaxSubDomainPerDof()
-    { return MaxSubDomainPerDof; }
-
     const TParFECommunicator3D& get_communicator() const
     { return *comm_; }
 

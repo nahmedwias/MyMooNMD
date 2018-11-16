@@ -13,6 +13,7 @@
 #include <FEDatabase2D.h>
 #include <TimeDiscRout.h>
 #include <MainUtilities.h>
+#include <ConvDiff.h>
 #include <AuxParam2D.h>
 #include <TimeDiscretizations.h>
 
@@ -26,8 +27,8 @@ void testCN(Time_CD2D &tcd, int m)
   const TFESpace2D* space = function.GetFESpace2D();
 
   function.GetErrors(tcd.get_example().get_exact(0), 3, AllDerivatives, 4,
-                       SDFEMErrors, tcd.get_example().get_coeffs(), &aux, 1,
-                       &space, errors);
+                     conv_diff_l2_h1_linf_error<2>,
+                     tcd.get_example().get_coeffs(), &aux, 1, &space, errors);
   double eps1 = 1E-6;
   double eps2 = 1E-5;
   if(m==0)

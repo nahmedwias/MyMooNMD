@@ -28,33 +28,12 @@ int main(int argc, char* argv[])
   Database.WriteParamDB(argv[0]);
   
   // refine grid
-  size_t n_ref = domain.get_n_initial_refinement_steps();
-  for(size_t i = 0; i < n_ref; i++)
-    domain.RegRefineAll();
-  
-  // choose example according to the value of db["example"]
-  Example_Darcy3D example(parmoon_db);
+  domain.refine_and_get_hierarchy_of_collections(parmoon_db);
   
   //=========================================================================
-  Darcy<3> darcy3d(domain, parmoon_db, example);
+  Darcy<3> darcy3d(domain, parmoon_db);
   darcy3d.assemble();
   darcy3d.solve();
-//   double a = 1./3.;
-//   darcy3d.get_solution()[12] = -a;
-//   darcy3d.get_solution()[13] = a;
-//   darcy3d.get_solution()[14] = a;
-//   darcy3d.get_solution()[15]= -a;
-// 
-//   darcy3d.get_solution()[24] = a;
-//   darcy3d.get_solution()[25] = -a;
-//   darcy3d.get_solution()[26] = -a;
-//   darcy3d.get_solution()[27] = a;
-//   auto& space = darcy3d.get_velocity_space();
-//   double v[3];
-//   darcy3d.get_velocity().FindValueLocal(space.GetCollection()->GetCell(0), 
-//                                         0, 1., 0.5, 0.5, v);
-//   Output::print("values: ", v[0], ", ", v[1], ", ", v[2]);
-//   darcy3d.get_solution().print("sol");
   darcy3d.output();
   //=========================================================================
   

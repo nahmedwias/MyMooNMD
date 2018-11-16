@@ -78,7 +78,7 @@ TFEFunction3D::~TFEFunction3D()
 /** calculate errors to given function */
 void TFEFunction3D::GetErrors(DoubleFunct3D *Exact, int N_Derivatives,
                               MultiIndex3D *NeededDerivatives,
-                              int N_Errors, ErrorMethod3D *ErrorMeth, 
+                              int N_Errors, ErrorMethod *ErrorMeth, 
                               CoeffFct3D Coeff, 
                               TAuxParam3D *Aux,
                               int n_fespaces, const TFESpace3D **fespaces,
@@ -155,7 +155,7 @@ void TFEFunction3D::GetErrors(DoubleFunct3D *Exact, int N_Derivatives,
 // ########################################################################
   Coll = fespaces[0]->GetCollection(); // all spaces use same Coll
   N_Cells = Coll->GetN_Cells();
-
+  
   for(i=0;i<N_Cells;i++)
   {
     cell = Coll->GetCell(i);
@@ -225,29 +225,26 @@ void TFEFunction3D::GetErrors(DoubleFunct3D *Exact, int N_Derivatives,
       } // endfor j
     } // endfor k
  
-    errors[N_Errors] = 0.0;  //added D.Sirch
     for(j=0;j<N_Points;j++)
     {
       Exact(X[j], Y[j], Z[j], ExactVal[j]);
-      
-       // D.Sirch: computation of L^\inf-error
-      if(fabs(*ExactVal[j] - Derivatives[j][0]) > errors[N_Errors])
-        errors[N_Errors] = fabs(*ExactVal[j] - Derivatives[j][0]);
     }
 
     if(Coeff)
       Coeff(N_Points, X, Y, Z, Param, AuxArray);
 
-    ErrorMeth(N_Points, X, Y, Z, AbsDetjk, weights, hK, Derivatives, 
+    ErrorMeth(N_Points, {{X, Y, Z}}, AbsDetjk, weights, hK, Derivatives, 
               ExactVal, AuxArray, LocError);
 
-    for(j=0;j<N_Errors;j++)
+    for(j=0;j<N_Errors-1;j++)
       errors[j] += LocError[j];
-
+    // L-inf error
+    if(errors[N_Errors-1] < LocError[N_Errors-1])
+      errors[N_Errors-1] = LocError[N_Errors-1];
   } // endfor i
 
 #ifndef _MPI // sqrt(errors[j]) in the main programm after collecting error from all subdomains
-  for(j=0;j<N_Errors;j++)
+  for(j=0;j<N_Errors-1;j++)
     errors[j] = sqrt(errors[j]);
 #endif
   
@@ -262,7 +259,7 @@ void TFEFunction3D::GetErrors(DoubleFunct3D *Exact, int N_Derivatives,
 } // TFEFunction3D::GetErrors
 
 void TFEFunction3D::GetErrorsForVectorValuedFunction(
-    DoubleFunct3D * const * const Exact, ErrorMethod3D * const ErrMeth,
+    DoubleFunct3D * const * const Exact, ErrorMethod * const ErrMeth,
   double * const errors)
 {
   // write zeros into the array "errors"
@@ -420,7 +417,7 @@ void TFEFunction3D::GetErrorsForVectorValuedFunction(
     // ErrorMeth=L2DivH1Errors
     double hK = 1;
     double LocError[3]; // L^2 error in value, divergence and first derivative
-    ErrMeth(N_Points, X, Y, Z, AbsDetjk, weights, hK, Derivatives, ExactVal,
+    ErrMeth(N_Points, {{X, Y, Z}}, AbsDetjk, weights, hK, Derivatives, ExactVal,
             nullptr, LocError);
     for(int j=0;j<3;j++) 
     {
@@ -450,7 +447,7 @@ void TFEFunction3D::GetErrorsForVectorValuedFunction(
 
 void TFEFunction3D::GetMeshCellParams(DoubleFunct3D *Exact, int N_Derivatives,
                               MultiIndex3D *NeededDerivatives,
-                              int N_Errors, ErrorMethod3D *ErrorMeth, 
+                              int N_Errors, ErrorMethod *ErrorMeth, 
                               CoeffFct3D Coeff, 
                               TAuxParam3D *Aux,
                               int n_fespaces, const TFESpace3D **fespaces,
@@ -585,7 +582,7 @@ void TFEFunction3D::GetMeshCellParams(DoubleFunct3D *Exact, int N_Derivatives,
     if(Coeff)
       Coeff(N_Points, X, Y, Z, Param, AuxArray);
 
-    ErrorMeth(N_Points, X, Y, Z, AbsDetjk, weights, hK, Derivatives, 
+    ErrorMeth(N_Points, {{X, Y, Z}}, AbsDetjk, weights, hK, Derivatives, 
               ExactVal, AuxArray, LocError);
 
     for(j=0;j<N_Errors;j++)

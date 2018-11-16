@@ -49,20 +49,14 @@ int main(int argc, char* argv[])
   Database.WriteParamDB(argv[0]);
   
   // refine grid
-  size_t n_ref = domain.get_n_initial_refinement_steps();
-  for(size_t i = 0; i < n_ref; i++)
-    domain.RegRefineAll();
-  if(domain.get_database()["refinement_final_step_barycentric"])
-    domain.barycentric_refinement();
+  domain.refine_and_get_hierarchy_of_collections(parmoon_db);
   
   // write grid into an Postscript file
   if(parmoon_db["output_write_ps"])
     domain.PS("Domain.ps", It_Finest, 0);
   
-  Example_NSE2D example(parmoon_db);
-  
   // create an object of the Navier-Stokes class
-  NSE2D ns(domain, parmoon_db, example);
+  NSE2D ns(domain, parmoon_db);
   ns.assemble();
   // if solution was not zero up to here, you should call 
   //ns.assemble_nonlinear_term();

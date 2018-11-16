@@ -60,27 +60,15 @@ void check(ParameterDatabase& db, int ansatz_order, int time_disc,
 #endif
   TDomain domain(db);
 
-  // Intial refinement and grabbing of grids for multigrid.
-#ifdef _MPI
-  int maxSubDomainPerDof = 0;
-#endif
-  std::list<TCollection* > gridCollections
-  = domain.refine_and_get_hierarchy_of_collections( db
-  #ifdef _MPI
-      , maxSubDomainPerDof
-  #endif
-      );
+  // Intial refinement
+  domain.refine_and_get_hierarchy_of_collections(db);
   
   // set the time discretization 
   SetTimeDiscParameters(0);
 
   // example object
   Example_TimeCD3D example_obj(db);
-#ifdef _MPI
-  Time_CD3D tcd3d(gridCollections, db, example_obj, maxSubDomainPerDof);
-#else
-  Time_CD3D tcd3d(gridCollections, db, example_obj);
-#endif
+  Time_CD3D tcd3d(domain, db, example_obj);
   
   // assemble the matrices and right hand side at the start time
   tcd3d.assemble_initial_time();

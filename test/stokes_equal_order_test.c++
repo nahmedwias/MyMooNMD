@@ -15,11 +15,9 @@ double accuracy = 1e-6;
 #ifdef __2D__
 typedef TFEDatabase2D OldDatabase;
 typedef NSE2D Stokes;
-typedef TDomain Grids;
 #else // 3D
 typedef TFEDatabase3D OldDatabase;
 typedef NSE3D Stokes;
-typedef std::list<TCollection*> Grids;
 #endif
 
 void compare(const Stokes& stokes, std::array<double, int(5)> errors)
@@ -58,15 +56,13 @@ void compare(const Stokes& stokes, std::array<double, int(5)> errors)
   }
 }
 
-void compute(Grids &domain, ParameterDatabase& db,
+void compute(const TDomain& domain, ParameterDatabase& db,
              std::array<double, int(5)> errors)
 {
-#ifdef __2D__
   Stokes stokes(domain, db);
+#ifdef __2D__
   stokes.assemble();
 #else // 3D, this needs to be refactored and made nicer in 3D
-  Example_NSE3D example(db);
-  Stokes stokes(domain, db, example);
   stokes.assemble_linear_terms();
 #endif
   stokes.solve();
@@ -75,7 +71,7 @@ void compute(Grids &domain, ParameterDatabase& db,
   compare(stokes, errors);
 }
 
-void check(Grids &domain, ParameterDatabase db,
+void check(const TDomain& domain, ParameterDatabase db,
            int velocity_order, int laplace_type,
            std::array<double, int(5)> errors)
 {
@@ -152,12 +148,8 @@ void pspg_on_triangles(ParameterDatabase db)
   
   // default construct a domain object
   TDomain domain(db);
-  // refine grid
-  size_t n_ref = domain.get_n_initial_refinement_steps();
-  for(unsigned int i=0; i < n_ref; i++)
-  {
-    domain.RegRefineAll();
-  }
+  // refinement
+  domain.refine_and_get_hierarchy_of_collections(db);
   std::array<double, int(5)> errors;
   
   //=========================================================================
@@ -194,11 +186,8 @@ void pspg_on_quads(ParameterDatabase db)
   // default construct a domain object
   TDomain domain(db);
   // refine grid
-  size_t n_ref = domain.get_n_initial_refinement_steps();
-  for(unsigned int i=0; i < n_ref; i++)
-  {
-    domain.RegRefineAll();
-  }
+  // refinement
+  domain.refine_and_get_hierarchy_of_collections(db);
   std::array<double, int(5)> errors;
   
   //=========================================================================
@@ -236,12 +225,8 @@ void check_other_stabilizations(ParameterDatabase db)
   check_parameters_consistency_NSE(db);
   // default construct a domain object
   TDomain domain(db);
-  // refine grid
-  size_t n_ref = domain.get_n_initial_refinement_steps();
-  for(unsigned int i=0; i < n_ref; i++)
-  {
-    domain.RegRefineAll();
-  }
+  // refinement
+  domain.refine_and_get_hierarchy_of_collections(db);
   std::array<double, int(5)> errors{{0.89286842997152, 2.9279300657466,
                                      11.015597277738, 3.3072741836106,
                                      24.547961810913}};
@@ -264,25 +249,26 @@ void pspg_on_tetrahedra(ParameterDatabase db)
   // or not. So the corresponding values are set here
   db["solver_type"] = "iterative";
   db["preconditioner"] = "multigrid";
-  Grids grids = domain.refine_and_get_hierarchy_of_collections(db);
+  // refinement
+  domain.refine_and_get_hierarchy_of_collections(db);
   std::array<double, int(5)> errors;
   
   //=========================================================================
   Output::print<1>("\nTesting the P1/P1 elements on tetrahedra");
   errors = {{ 0.29285842764476, 1.7431669708558, 2.9734925486895,
               1.8843195210647, 15.547490346215 }};
-  check(grids, db, 1, 0, errors);
+  check(domain, db, 1, 0, errors);
   
   //=========================================================================
   Output::print<1>("\nTesting the P2/P2 elements on tetrahedra");
   errors = {{ 0.08968982096761, 0.66817478276149, 0.94421281958215,
               1.0325260352197, 9.6560759201588 }};
-  check(grids, db, 2, 0, errors);
+  check(domain, db, 2, 0, errors);
 
   //=========================================================================
 //   Output::print<1>("\nTesting the P3/P3 elements on tetrahedra");
 //   errors = {{  }};
-//   check(grids, db, 3, 0, errors);
+//   check(domain, db, 3, 0, errors);
 // 
   // no P4 elements on tetrahedra implemented
 }
@@ -299,20 +285,21 @@ void pspg_on_hexahedra(ParameterDatabase db)
   // or not. So the corresponding values are set here
   db["solver_type"] = "iterative";
   db["preconditioner"] = "multigrid";
-  Grids grids = domain.refine_and_get_hierarchy_of_collections(db);
+  // refinement
+  domain.refine_and_get_hierarchy_of_collections(db);
   std::array<double, int(5)> errors;
   
   //=========================================================================
   Output::print<1>("\nTesting the Q1/Q1 elements on hexahedra");
   errors = {{ 0.22856023489804, 0.89092443247775, 1.6452219971921,
               1.973590165051, 15.739699775035 }};
-  check(grids, db, 1, 0, errors);
+  check(domain, db, 1, 0, errors);
   
   //=========================================================================
   Output::print<1>("\nTesting the Q2/Q2 elements on hexahedra");
   errors = {{ 0.0069455335607669, 0.082635103449365, 0.13147215146863,
               0.14765503705692, 2.3797784866446 }};
-  check(grids, db, 2, 0, errors);
+  check(domain, db, 2, 0, errors);
 
   // the following tests take too long for the tests
   return;
@@ -320,13 +307,13 @@ void pspg_on_hexahedra(ParameterDatabase db)
   Output::print<1>("\nTesting the Q3/Q3 elements on hexahedra");
   errors = {{ 0.0022527831353322, 0.027168669298461, 0.030403766396944,
               0.035154057676842, 0.82782568660416 }};
-  check(grids, db, 3, 0, errors);
+  check(domain, db, 3, 0, errors);
 
   //=========================================================================
   Output::print<1>("\nTesting the Q4/Q4 elements on hexahedra");
   errors = {{ 4.8691604234513e-05, 0.0007091120130668, 0.0011725745728817,
               0.0020906154874585, 0.044064601854262 }};
-  check(grids, db, 4, 0, errors);
+  check(domain, db, 4, 0, errors);
 }
 
 void check_other_stabilizations(ParameterDatabase db)
@@ -341,7 +328,8 @@ void check_other_stabilizations(ParameterDatabase db)
   check_parameters_consistency_NSE(db);
   // default construct a domain object
   TDomain domain(db);
-  Grids grids = domain.refine_and_get_hierarchy_of_collections(db);
+  // refinement
+  domain.refine_and_get_hierarchy_of_collections(db);
   std::array<double, int(5)> errors{{0., 0., 0.,0., 0.}};
   
   // note: for this example f=0 and using Q1/Q1 the laplacians vanish so that
@@ -351,13 +339,13 @@ void check_other_stabilizations(ParameterDatabase db)
   db["space_discretization_type"] = "symm_gls";
   accuracy = 1.e-12;
   Chrono timer;
-  compute(grids, db, errors);
+  compute(domain, db, errors);
   timer.restart_and_print("stokes direct solver, symmetric GLS");
   db["space_discretization_type"] = "nonsymm_gls";
-  compute(grids, db, errors);
+  compute(domain, db, errors);
   timer.restart_and_print("stokes direct solver, non-symmetric GLS");
   db["space_discretization_type"] = "brezzi_pitkaeranta";
-  compute(grids, db, errors);
+  compute(domain, db, errors);
   timer.restart_and_print("stokes direct solver, Brezzi-Pitkaeranta");
 }
 

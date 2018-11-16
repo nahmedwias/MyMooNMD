@@ -24,6 +24,10 @@
 /** a function from a finite element space */
 class TFEFunction3D
 {
+  public:
+    typedef void ErrorMethod(int, std::array<double*, 3>, double *,
+                             const double *, double, double **, double **,
+                             double **, double *);
   protected:
     /** name of the function */
     std::string Name;
@@ -91,19 +95,19 @@ class TFEFunction3D
      */
     void GetErrors(DoubleFunct3D *Exact, int N_Derivatives,
                    MultiIndex3D *NeededDerivatives,
-                   int N_Errors, ErrorMethod3D *ErrorMeth, 
+                   int N_Errors, ErrorMethod *ErrorMeth, 
                    CoeffFct3D Coeff, TAuxParam3D *Aux,
                    int n_fespaces, const TFESpace3D **fespaces,
                    double *errors) const;
     
     void GetErrorsForVectorValuedFunction(DoubleFunct3D * const * const Exact,
-                                          ErrorMethod3D * const ErrMeth,
+                                          ErrorMethod * const ErrMeth,
                                           double * const errors);
 
     /** calculate errors to given function */
     void GetMeshCellParams(DoubleFunct3D *Exact, int N_Derivatives,
                    MultiIndex3D *NeededDerivatives,
-                   int N_Errors, ErrorMethod3D *ErrorMeth, 
+                   int N_Errors, ErrorMethod *ErrorMeth, 
                    CoeffFct3D Coeff, TAuxParam3D *Aux,
                    int n_fespaces, const TFESpace3D **fespaces,
                    double *errors, double *cell_parameters);

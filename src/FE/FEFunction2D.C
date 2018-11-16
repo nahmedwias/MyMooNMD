@@ -24,6 +24,7 @@
 #include <MooNMD_Io.h>
 #include <AuxParam2D.h>
 #include <GridCell.h>
+#include <ConvDiff.h>
 
 #include <InterfaceJoint.h>
 #include <IsoBoundEdge.h>
@@ -184,7 +185,7 @@ void TFEFunction2D::GetL2BoundaryError(BoundValueFunct2D *Exact,
 /** parallel with MPI, Sashi : 10.10.09 */
 void TFEFunction2D::GetErrors(DoubleFunct2D *Exact, int N_Derivatives,
     MultiIndex2D *NeededDerivatives,
-    int N_Errors, ErrorMethod2D *ErrorMeth, 
+    int N_Errors, ErrorMethod *ErrorMeth, 
     CoeffFct2D Coeff, 
     TAuxParam2D *Aux,
     int n_fespaces, const TFESpace2D **fespaces,
@@ -392,11 +393,11 @@ void TFEFunction2D::GetErrors(DoubleFunct2D *Exact, int N_Derivatives,
     }
 #endif
     double LocError[4];
-    ErrorMeth(N_QuadPoints, X, Y, AbsDetjk, weights, hK, Derivatives, 
+    ErrorMeth(N_QuadPoints, {{X, Y}}, AbsDetjk, weights, hK, Derivatives, 
         ExactVal, AuxArray, LocError);
 
 #ifdef __2D__
-    if (!(ErrorMeth == &SDFEMErrors))
+    if (!(ErrorMeth == &conv_diff_l2_h1_linf_error<2>))
     {
       for(int j = 0; j < N_Errors; j++)
         errors[j] += LocError[j];
@@ -418,7 +419,7 @@ void TFEFunction2D::GetErrors(DoubleFunct2D *Exact, int N_Derivatives,
 #ifdef __2D__
   if (!(ErrorMeth == &L1Error))
   {
-    if (!(ErrorMeth == &SDFEMErrors))
+    if (!(ErrorMeth == &conv_diff_l2_h1_linf_error<2>))
     {
       for(int j = 0; j < N_Errors; j++)
         errors[j] = sqrt(errors[j]);
@@ -1060,7 +1061,7 @@ void TFEFunction2D::Interpolate(DoubleFunct2D *Exact)
 /** calculate parameters which are connected to a mesh cell */
 void TFEFunction2D::GetMeshCellParams(DoubleFunct2D* Exact, int N_Derivatives, 
     MultiIndex2D* NeededDerivatives,
-    int N_Errors, ErrorMethod2D* ErrorMeth,
+    int N_Errors, ErrorMethod* ErrorMeth,
     CoeffFct2D Coeff, TAuxParam2D* Aux,
     int n_fespaces,
     const TFESpace2D** fespaces,
@@ -1193,7 +1194,7 @@ void TFEFunction2D::GetMeshCellParams(DoubleFunct2D* Exact, int N_Derivatives,
     if(Coeff)
       Coeff(N_Points, X, Y, Param, AuxArray);
 
-    ErrorMeth(N_Points, X, Y, AbsDetjk, weights, hK, Derivatives,
+    ErrorMeth(N_Points, {{X, Y}}, AbsDetjk, weights, hK, Derivatives,
         ExactVal, AuxArray, LocError);
 
     for(j=0;j<N_Errors;j++)
@@ -1395,7 +1396,7 @@ void TFEFunction2D::InterpolateSuper(DoubleFunct2D *Exact)
  */
 void TFEFunction2D::GetErrorsForVectorValuedFunction(
     DoubleFunct2D * const * const Exact, 
-    ErrorMethod2D * const ErrorMeth, 
+    ErrorMethod * const ErrorMeth, 
     double * const errors) const
 {
   // set all errors to zero at first
@@ -1506,7 +1507,7 @@ void TFEFunction2D::GetErrorsForVectorValuedFunction(
     double hK=1; // we set it one here since it is not needed in 
     // ErrorMeth=L2H1Errors
     double LocError[3]; // L^2 error in value, divergence and first derivative
-    ErrorMeth(n_points, X, Y, AbsDetjk, weights, hK, Derivatives, 
+    ErrorMeth(n_points, {{X, Y}}, AbsDetjk, weights, hK, Derivatives, 
         ExactVal, nullptr, LocError);
     for(int j = 0; j < 3; j++) 
     {

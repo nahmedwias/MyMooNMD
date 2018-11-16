@@ -60,14 +60,8 @@ class NSE3D
        * main program and handed down to the FESpaces. Getting rid of this
        * construction is a TODO .
        */
-#ifdef _MPI
-      System_per_grid(const Example_NSE3D& example,
-                    TCollection& coll, std::pair<int, int> order, NSE3D::Matrix type, 
-                    int maxSubDomainPerDof);
-#else
       System_per_grid(const Example_NSE3D& example, TCollection& coll,
                       std::pair<int, int> order, NSE3D::Matrix type);
-#endif
 
       /** @brief Finite Element space for the velocity */
       std::shared_ptr<TFESpace3D> velocitySpace_;
@@ -119,7 +113,7 @@ class NSE3D
     std::deque<System_per_grid> systems_;
 
     /** @brief Definition of the used example. */
-    const Example_NSE3D& example_;
+    const Example_NSE3D example_;
     
     /** @brief a local parameter database which controls this class
      * 
@@ -180,16 +174,24 @@ class NSE3D
      * functions as well as matrices, solution and right hand side vectors are
      * initialized.
      *
-     * @param collections
+     * @param domain the computational domain to get the grid(s)
+     * @param param_db parameters controlling this class
+     */
+    NSE3D(const TDomain& domain, const ParameterDatabase& param_db);
+
+    /** @brief Standard constructor of an NSE3D problem.
+     *
+     * @note The domain must have been refined a couple of times already if you want
+     * to use multigrid. On the finest level the finite element spaces and
+     * functions as well as matrices, solution and right hand side vectors are
+     * initialized.
+     *
+     * @param domain the computational domain to get the grid(s)
+     * @param param_db parameters controlling this class
      * @param example The example to perform
      */
-#ifdef _MPI
-    NSE3D(std::list<TCollection* > collections, const ParameterDatabase& param_db,
-          const Example_NSE3D& example, int maxSubDomainPerDof);
-#else
-    NSE3D(std::list<TCollection* > collections, const ParameterDatabase& param_db,
+    NSE3D(const TDomain& domain, const ParameterDatabase& param_db,
           const Example_NSE3D& example);
-#endif
 
 
     /** @brief return a database with all parameters necessary for 

@@ -59,12 +59,7 @@ class Time_CD3D
        * main program and handed down to the FESpaces. Getting rid of this
        * construction is a TODO .
        */
-#ifdef _MPI
-      SystemPerGrid(const Example_TimeCD3D& example, TCollection& coll, 
-		      int maxSubDomainPerDof);
-#else
       SystemPerGrid(const Example_TimeCD3D& example, TCollection& coll);
-#endif
 
       /**
        * Reset the stiffness matrix A to its 'pure' state before the
@@ -160,40 +155,17 @@ class Time_CD3D
     int disctype;
 
   public:
-    /** @brief The standard constructor, can be used for multigrid and non-multigrid.
+    /** @brief The standard constructor, can be used for multigrid and 
+     * non-multigrid.
      *
-     * It is user responsibility to call this constructor with correct TCollections.
-     * Here is a "safe" way to do it.
-     *
-     * When not using multigrid, this must be of length 1,
-     * containing a reference to a collection gained e.g. by calling
-     * domain.GetCollection(It_Finest, 0) in the main program.
-     *
-     * In multigrid case, the collections vector must contain TCollections gained
-     * by calling domain.GetCollection(It_Finest, 0) in the main program repeatedly,
-     * directly after the corresponding refinement step (and after Domain_Crop in MPI
-     * case).
-     *
-     *
-     * @param[in] collections A hierarchy of cell collections used for multigrid solve,
-     * or just one collection in non-multigrid case. Ordered by fineness of the grid -
-     * finest collection first!
+     * @param[in] domain The computational domain providing the grids
      * @param[in] param_db A parameter database with parameters concerning this
      *                     class or any of its members (fe space, solver,
      *                     assemble,...)
      * @param[in] example The example which is to be calculated.
-     * @param[in] maxSubDomainPerDof Only in MPI case! the maximal number of
-     * processes which share a single dof. The value is calculated in the
-     * main program and handed down to the FESpaces. Getting rid of this
-     * construction is a TODO .
      */
-#ifdef _MPI
-    Time_CD3D(std::list<TCollection* >collections, const ParameterDatabase &param_db,
-	      const Example_TimeCD3D& _example, int maxSubDomainPerDof);
-#else
-    Time_CD3D(std::list<TCollection* >collections, const ParameterDatabase &param_db,
+    Time_CD3D(const TDomain& domain, const ParameterDatabase &param_db,
 	      const Example_TimeCD3D& _example);
-#endif    
     /** @brief Assemble all the matrices before the time iterations
      * 
      * This includes the assembling of: Stiff_matrix, Mass_Matrix, 

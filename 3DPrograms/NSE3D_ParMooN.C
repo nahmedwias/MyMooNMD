@@ -73,31 +73,15 @@ int main(int argc, char* argv[])
     // Do the parameter check of the Database.
     check_parameters_consistency_NSE(parmoon_db);
 
-    // Intial refinement and grabbing of grids for multigrid.
-#ifdef _MPI
-    int maxSubDomainPerDof = 0;
-#endif
-    std::list<TCollection* > gridCollections
-    = domain.refine_and_get_hierarchy_of_collections(
-        parmoon_db
-#ifdef _MPI
-        , maxSubDomainPerDof
-#endif
-    );
+    // Intial refinement
+    domain.refine_and_get_hierarchy_of_collections(parmoon_db);
 
     //print information on the mesh partition on the finest grid
     domain.print_info("NSE3D domain");
 
-    // Choose and construct example.
-    Example_NSE3D example(parmoon_db);
-
     timer.restart_and_print("setup(domain, example, database)");
     // Construct an object of the NSE3D-problem type.
-#ifdef _MPI
-    NSE3D nse3d(gridCollections, parmoon_db, example, maxSubDomainPerDof);
-#else
-    NSE3D nse3d(gridCollections, parmoon_db, example);
-#endif
+    NSE3D nse3d(domain, parmoon_db);
     timer.restart_and_print("constructing NSE3D object");
     
     // assemble all matrices and right hand side

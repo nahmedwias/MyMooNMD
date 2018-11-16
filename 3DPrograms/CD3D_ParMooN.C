@@ -8,7 +8,7 @@
 #include <Domain.h>
 #include <Database.h>
 #include <FEDatabase3D.h>
-#include <CD3D.h>
+#include "ConvectionDiffusion.h"
 #include <Example_CD3D.h>
 #include <MeshPartition.h>
 #include <Chrono.h>
@@ -74,20 +74,8 @@ int main(int argc, char* argv[])
     Database.WriteParamDB(argv[0]);
   }
 
-  // write grid into an Postscript file
-  if(parmoon_db["output_write_ps"] && my_rank==0)
-    domain.PS("Domain.ps", It_Finest, 0);
-
-  // Intial refinement and grabbing of grids for multigrid.
-#ifdef _MPI
-  int maxSubDomainPerDof = 0;
-#endif
-  std::list<TCollection* > gridCollections
-  = domain.refine_and_get_hierarchy_of_collections(parmoon_db
-  #ifdef _MPI
-      , maxSubDomainPerDof
-  #endif
-      );
+  // Intial refinement
+  domain.refine_and_get_hierarchy_of_collections(parmoon_db);
   
   //print information on the mesh partition on the finest grid
   domain.print_info("cd3d domain");
@@ -97,11 +85,7 @@ int main(int argc, char* argv[])
 
   timer.restart_and_print("setup(domain, example, database)");
   // Construct the cd3d problem object.
-#ifdef _MPI
-  CD3D cd3d(gridCollections, parmoon_db, example, maxSubDomainPerDof);
-#else
-  CD3D cd3d(gridCollections, parmoon_db, example);
-#endif
+  ConvectionDiffusion<3> cd3d(domain, parmoon_db, example);
   timer.restart_and_print("constructing CD3D object");
   
   //=========================================================================

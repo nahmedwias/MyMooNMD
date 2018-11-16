@@ -2129,3 +2129,69 @@ void BilinearAssemble_GLS<3>(double Mult, double *coeff, double* param,
   }
 }
 
+template<int d>
+void conv_diff_l2_h1_linf_error(int N_Points, std::array<double*, d> xyz,
+                                double *AbsDetjk, const double *Weights,
+                                double hK, double **Der, double **Exact,
+                                double **coeffs, double *LocError)
+{
+  LocError[0] = 0.0;
+  LocError[1] = 0.0;
+  LocError[2] = 0.0;
+  LocError[3] = 0.0;
+  for(int i=0;i<N_Points;i++)
+  {
+    double nu = coeffs[i][0];
+    std::array<double, d> convection;
+    for(int j = 0; j < d; ++j)
+      convection[j] = coeffs[i][1+j];
+    double c = coeffs[i][d+1];
+    double b_norm = std::max(std::abs(convection[0]), std::abs(convection[1]));
+    if(d == 3)
+      b_norm = std::max(b_norm, std::abs(convection[2]));
+    // SUPG parameter
+    double delta = Compute_SDFEM_delta<d>(hK, nu, convection, c, b_norm);
+    
+    double * deriv = Der[i];
+    double * exactval = Exact[i];
+    double w = Weights[i]*AbsDetjk[i];
+
+    // error in solution
+    double e0 = deriv[0]-exactval[0];
+    // for l2 norm
+    LocError[0] += w*e0*e0;
+    // for l_inf norm
+    if(fabs(e0) > LocError[3])
+      LocError[3] = fabs(e0);
+    
+    // error in x-derivative of solution
+    double e1 = deriv[1]-exactval[1];
+    LocError[1] += w*e1*e1;
+    // error in y-derivative of solution
+    double e2 = deriv[2]-exactval[2];
+    LocError[1] += w*e2*e2;
+    // error in z-derivative of solution
+    double e3 = d == 2 ? 0. : (deriv[3] - exactval[3]);
+    LocError[1] += w*e3*e3;
+    
+    // sd error
+    // THIS IS ONLY CORRECT IF DIV(b) = 0
+    double e4 = convection[0]*e1 + convection[1]*e2;
+    if(d == 3)
+      e4 += convection[2]*e3;
+    LocError[2] += w*(nu*(e1*e1 + e2*e2 + e3*e3) + c*e0*e0 + delta*e4*e4);
+  } // endfor i
+}
+
+#ifdef __2D__
+template void conv_diff_l2_h1_linf_error<2>(
+  int N_Points, std::array<double*, 2> xyz, double *AbsDetjk,
+  const double *Weights, double hK, double **Der, double **Exact,
+  double **coeffs, double *LocError);
+#endif // 2D
+#ifdef __3D__
+template void conv_diff_l2_h1_linf_error<3>(
+  int N_Points, std::array<double*, 3> xyz, double *AbsDetjk,
+  const double *Weights, double hK, double **Der, double **Exact,
+  double **coeffs, double *LocError);
+#endif // 3D

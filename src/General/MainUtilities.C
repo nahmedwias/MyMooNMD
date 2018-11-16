@@ -626,7 +626,7 @@ void ComputeVorticityDivergence(const TFESpace2D *velo, TFEFunction2D *u1,
 }
 
 // determine L2 and H1 error, 2D
-void L2H1Errors(int N_Points, double *X, double *Y, double *AbsDetjk, 
+void L2H1Errors(int N_Points, std::array<double*, 2> xy, double *AbsDetjk, 
                 const double *Weights, double hK, 
                 double **Der, double **Exact,
                 double **coeffs, double *LocError)
@@ -654,7 +654,7 @@ void L2H1Errors(int N_Points, double *X, double *Y, double *AbsDetjk,
 }
 
 // determine L2-error, divergence error and H1 error, 2D
-void L2DivH1Errors(int N_Points, double *X, double *Y, double *AbsDetjk, 
+void L2DivH1Errors(int N_Points, std::array<double*, 2> xy, double *AbsDetjk, 
                   const double *Weights, double hK, 
                   double **Der, double **Exact,
                   double **coeffs, double *LocError)
@@ -698,11 +698,7 @@ void L2DivH1Errors(int N_Points, double *X, double *Y, double *AbsDetjk,
 
 
 
-// determine L2, H1 and SDFEM error
-// there are problems with includiung ConvDiff2D_Routines.h
-double Mesh_size_in_convection_direction(double hK, double b1, double b2);
-
-void SDFEMErrors(int N_Points, double *X, double *Y, double *AbsDetjk, 
+void SDFEMErrors(int N_Points, std::array<double*, 2> xy, double *AbsDetjk, 
                  const double *Weights, double hK, double **Der, double **Exact,
                  double **coeffs, double *LocError)
 {
@@ -1158,7 +1154,7 @@ void SPGErrorsOseenPressure(int N_Points, double *X, double *Y, double *AbsDetjk
 
 
 // determine L1 error, 2D
-void L1Error(int N_Points, double *X, double *Y, double *AbsDetjk, 
+void L1Error(int N_Points, std::array<double*, 2> xy, double *AbsDetjk, 
              const double *Weights, double hK, 
              double **Der, double **Exact,
              double **coeffs, double *LocError)
@@ -1225,8 +1221,8 @@ void L1Error(int N_Points, double *X, double *Y, double *AbsDetjk,
       for (i=0;i<3;i++)
       {
           va[i] = v[(index+1+i)%3]; 
-          xa[i] = X[(index+1+i)%3]; 
-          ya[i] = Y[(index+1+i)%3]; 
+          xa[i] = xy[0][(index+1+i)%3]; 
+          ya[i] = xy[1][(index+1+i)%3]; 
       }     
       //for (i=0;i<3;i++)
       //          OutPut(xa[i] << " " << ya[i] << " " << va[i] << endl);
@@ -1599,7 +1595,7 @@ void ComputeVorticityDivergence(TFESpace3D *velo, TFEFunction3D *u1,
 
 
 // determine L2 and H1 error, 3D
-void L2H1Errors(int N_Points, double *X, double *Y, double *Z, 
+void L2H1Errors(int N_Points, std::array<double*, 3> xyz,
                 double *AbsDetjk, 
                 const double *Weights, double hK, 
                 double **Der, double **Exact,
@@ -1668,7 +1664,7 @@ void L2H1ErrorsSmooth(int N_Points, double *X, double *Y, double *Z,
   // cout << "LocError[1]: " << LocError[1] << endl;
 }
 
-void L2DivH1Errors(int N_Points, double *X, double *Y, double *Z, 
+void L2DivH1Errors(int N_Points, std::array<double*, 3> xyz,
                    double *AbsDetjk, const double *Weights, double hK,
                    double **Der, double **Exact, double **coeffs,
                    double *LocError)
@@ -1718,7 +1714,7 @@ void L2DivH1Errors(int N_Points, double *X, double *Y, double *Z,
 }
 
 // determine L1 error, 3D
-void L1Error(int N_Points, double *X, double *Y, double *Z,  double *AbsDetjk,
+void L1Error(int N_Points, std::array<double*, 3> xyz,  double *AbsDetjk,
              const double *Weights, double hK, double **Der, double **Exact,
              double **coeffs, double *LocError)
 {

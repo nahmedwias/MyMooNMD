@@ -1,4 +1,5 @@
 #include <Time_CD2D.h>
+#include <ConvDiff.h>
 #include <Database.h>
 #include <DirectSolver.h>
 #include <MainUtilities.h>
@@ -337,8 +338,8 @@ void Time_CD2D::output()
     const TFESpace2D* space = fe_function.GetFESpace2D();
     
     fe_function.GetErrors(this->example.get_exact(0), 3, AllDerivatives, 4,
-                          SDFEMErrors, this->example.get_coeffs(), &aux, 1, 
-                          &space, loc_e);
+                          conv_diff_l2_h1_linf_error<2>,
+                          this->example.get_coeffs(), &aux, 1, &space, loc_e);
     
     Output::print<1>("time: ", TDatabase::TimeDB->CURRENTTIME);
     Output::print<1>("  L2: ", loc_e[0]);

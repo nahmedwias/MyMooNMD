@@ -65,17 +65,8 @@ int main(int argc, char *argv[])
   }
   
 
-  // Intial refinement and grabbing of grids for multigrid.
-#ifdef _MPI
-  int maxSubDomainPerDof = 0;
-#endif
-  std::list<TCollection* > gridCollections
-  = domain.refine_and_get_hierarchy_of_collections(
-      parmoon_db
-  #ifdef _MPI
-      , maxSubDomainPerDof
-  #endif
-      );
+  // Intial refinement
+  domain.refine_and_get_hierarchy_of_collections(parmoon_db);
   //print information on the mesh partition on the finest grid
   domain.print_info("TCD3D domain");
   
@@ -87,11 +78,7 @@ int main(int argc, char *argv[])
   
   timer.restart_and_print("setup(domain, example, database)");
   // create an object of the class Time_CD3D
-#ifdef _MPI
-  Time_CD3D tcd3d(gridCollections, parmoon_db, example, maxSubDomainPerDof);
-#else
-  Time_CD3D tcd3d(gridCollections, parmoon_db, example);
-#endif
+  Time_CD3D tcd3d(domain, parmoon_db, example);
   timer.restart_and_print("constructing Time_CD3D object");
   
   // assemble the matrices and right hand side at the start time

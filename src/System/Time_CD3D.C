@@ -42,31 +42,14 @@ ParameterDatabase get_default_TCD3D_parameters()
   return parmoon_db;  
 }
 //==============================================================================
-#ifdef _MPI
-Time_CD3D::SystemPerGrid::SystemPerGrid(const Example_TimeCD3D& example, TCollection& coll, 
-                                             int maxSubDomainPerDof)
-: feSpace_(&coll, "space", "TCD3D feSpace", example.get_bc(0),
-           TDatabase::ParamDB->ANSATZ_ORDER)
-{
-  //inform the fe space about the maximum number of subdomains per dof
-  feSpace_.initialize_parallel(maxSubDomainPerDof);
-  
-  stiffMatrix_ = BlockFEMatrix::CD3D(feSpace_);
-  massMatrix_ = BlockFEMatrix::CD3D(feSpace_);
-
-  rhs_ = BlockVector(stiffMatrix_, true);
-  solution_ = BlockVector (stiffMatrix_, false);
-
-  old_Au = BlockVector(this->stiffMatrix_, true);
-  feFunction_ = TFEFunction3D(&feSpace_, "u", "u",
-                              solution_.get_entries(),solution_.length());
-}
-#else /* ***********************************************************************/
 Time_CD3D::SystemPerGrid::SystemPerGrid(const Example_TimeCD3D& example, 
                                         TCollection& coll)
 : feSpace_(&coll, "space", "TCD3D feSpace", example.get_bc(0),
            TDatabase::ParamDB->ANSATZ_ORDER)
 {
+#ifdef _MPI
+  feSpace_.get_communicator().print_info();
+#endif
   stiffMatrix_ = BlockFEMatrix::CD3D(feSpace_);
   massMatrix_ = BlockFEMatrix::CD3D(feSpace_);
 
@@ -78,16 +61,9 @@ Time_CD3D::SystemPerGrid::SystemPerGrid(const Example_TimeCD3D& example,
                               solution_.get_entries(),solution_.length());
 }
 
-#endif
-
 //==============================================================================
-Time_CD3D::Time_CD3D(std::list<TCollection* >collections,
-                     const ParameterDatabase &param_db,
-                     const Example_TimeCD3D& _example
-#ifdef _MPI
-                     , int maxSubDomainPerDof
-#endif
-                     )
+Time_CD3D::Time_CD3D(const TDomain& domain, const ParameterDatabase &param_db,
+                     const Example_TimeCD3D& _example)
 :  db(get_default_TCD3D_parameters()),
   solver(param_db), systems_(), example_(_example), errors_({}), 
   outputWriter(param_db)
@@ -96,21 +72,12 @@ Time_CD3D::Time_CD3D(std::list<TCollection* >collections,
   this->check_and_set_parameters();
   
   bool usingMultigrid = this->solver.is_using_multigrid();
+  auto collections = domain.get_grid_collections();
   if(!usingMultigrid)
   {
-    // check at least if the collections list contains exactly one collection
-    if(collections.size() != 1)
-    {
-      ErrThrow("Non-multigrid: expected exactly one collection");
-    }
     // the given collection for particular cell
     TCollection& cellCollection = *collections.front();
-#ifdef _MPI
-    // create finite element spaces, function, matrices, and rhs and solution vectors
-    systems_.emplace_back(example_, cellCollection, maxSubDomainPerDof);
-#else
     systems_.emplace_back(example_, cellCollection);
-#endif    
     // initial concentration
     this->systems_.front().feFunction_.Interpolate(example_.get_initial_cond(0));
   }
@@ -118,20 +85,22 @@ Time_CD3D::Time_CD3D(std::list<TCollection* >collections,
   {
     auto multigrid = this->solver.get_multigrid();
     size_t nMgLevels = multigrid->get_n_geometric_levels();
-    if(collections.size() != nMgLevels)
+    size_t n_grids = collections.size();
+    if(n_grids < nMgLevels)
     {
-      ErrThrow("Multigrid: expected ", nMgLevels, " collections ", 
-	       collections.size(), "provided.");
+      ErrThrow("Multigrid: expected ", nMgLevels, " collections, ", n_grids,
+               " provided.");
     }
-        std::list<BlockFEMatrix*> matrices;
+    // remove not needed coarser grid from list of collections
+    for(int i = nMgLevels; i < n_grids; ++i)
+    {
+      collections.pop_back();
+    }
+    std::list<BlockFEMatrix*> matrices;
     // construct all SystemPerGrid and store them
     for(auto it : collections)
     {
-#ifdef _MPI
-      systems_.emplace_back(example_, *it, maxSubDomainPerDof);
-#else
       systems_.emplace_back(example_, *it);
-#endif
       systems_.front().feFunction_.Interpolate(example_.get_initial_cond(0));
       matrices.push_front(&systems_.back().stiffMatrix_);
     }
