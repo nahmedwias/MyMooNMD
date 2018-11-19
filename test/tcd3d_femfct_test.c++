@@ -92,6 +92,7 @@ void check_solution_norms(Time_CD3D &tcd, int m)
     int control_step = m/10 - 1;
     double tol = 1e-9;
 
+    cout<<TDatabase::TimeDB->CURRENTTIME<<endl;
     if( fabs(locError[0] - target_norms[control_step][0]) > tol )
       ErrThrow("L2 norm at timestep ", TDatabase::TimeDB->CURRENTTIME,  " is not correct, ",
                locError[0], " != ", target_norms[control_step][0]);
@@ -142,7 +143,12 @@ int main(int argc, char* argv[])
     TDatabase::ParamDB->ANSATZ_ORDER=1;
 
     db["time_end"] = 1;
+    db["time_discretization"] = "crank_nicolson";
+    TDatabase::TimeDB->TIME_DISC = 2;
     TDatabase::TimeDB->TIMESTEPLENGTH = 0.01;
+    db["time_start"] = 0;
+    TDatabase::TimeDB->CURRENTTIME = db["time_start"];
+    db["time_step_length"] = 0.01;
     SetTimeDiscParameters(0);
 
     db.add("boundary_file", "Default_UnitCube", "");
@@ -176,28 +182,28 @@ int main(int argc, char* argv[])
     Time_CD3D tcd(gridCollections, db, example_obj);
 #endif
 
-
+    TimeDiscretization& tss = tcd.get_time_stepping_scheme();
+    tss.current_step_ = 0;
+    tss.current_time_ = db["time_start"];
+    // assemble the matrices and right hand side at the start time
     tcd.assemble_initial_time();
-
-    int step = 0;
-    //tcd.output(step);
     double end_time = db["time_end"];
-    while(TDatabase::TimeDB->CURRENTTIME < end_time-1e-10)
+    while(tss.current_time_ < tss.get_end_time()-1e-10)
     {
-      step ++;
-      TDatabase::TimeDB->INTERNAL_STARTTIME
-         = TDatabase::TimeDB->CURRENTTIME;
+      tss.current_step_++;
+      TDatabase::TimeDB->INTERNAL_STARTTIME = tss.current_time_;
+      tss.set_time_disc_parameters();
       SetTimeDiscParameters(1);
-
-      double tau = TDatabase::TimeDB->TIMESTEPLENGTH;
+      double tau = tss.get_step_length();
+      tss.current_time_ += tau;
+      // this is used at several places, e.g., in the example file etc.
       TDatabase::TimeDB->CURRENTTIME += tau;
       if(rank == 0)
-        Output::print<1>("CURRENT TIME: ", TDatabase::TimeDB->CURRENTTIME);
+        Output::print<1>("CURRENT TIME: ", tss.current_time_);
       tcd.assemble();
       tcd.solve();
 
-      //tcd.output(step);
-      check_solution_norms(tcd, step);
+      check_solution_norms(tcd, tss.current_step_);
     }
 
   }

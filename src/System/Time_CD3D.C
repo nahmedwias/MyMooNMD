@@ -57,9 +57,14 @@ Time_CD3D::SystemPerGrid::SystemPerGrid(const Example_TimeCD3D& example, TCollec
   rhs_ = BlockVector(stiffMatrix_, true);
   solution_ = BlockVector (stiffMatrix_, false);
 
-  old_Au = BlockVector(this->stiffMatrix_, true);
   feFunction_ = TFEFunction3D(&feSpace_, "u", "u",
                               solution_.get_entries(),solution_.length());
+  solution_m1 = BlockVector(stiffMatrix_, false);
+  u_m1 = TFEFunction3D(&feSpace_, "u_m1", "u_m1",
+                              solution_m1.get_entries(),solution_m1.length());
+  solution_m2 = BlockVector(stiffMatrix_, false);
+  u_m2 = TFEFunction3D(&feSpace_, "u_m2", "u_m2",
+                              solution_m2.get_entries(),solution_m2.length());
 }
 #else /* ***********************************************************************/
 Time_CD3D::SystemPerGrid::SystemPerGrid(const Example_TimeCD3D& example, 
@@ -73,9 +78,14 @@ Time_CD3D::SystemPerGrid::SystemPerGrid(const Example_TimeCD3D& example,
   rhs_ = BlockVector(stiffMatrix_, true);
   solution_ = BlockVector (stiffMatrix_, false);
 
-  old_Au = BlockVector(this->stiffMatrix_, true);
   feFunction_ = TFEFunction3D(&feSpace_, "u", "u",
                               solution_.get_entries(),solution_.length());
+  solution_m1 = BlockVector(stiffMatrix_, false);
+  u_m1 = TFEFunction3D(&feSpace_, "u_m1", "u_m1",
+                              solution_m1.get_entries(),solution_m1.length());
+  solution_m2 = BlockVector(stiffMatrix_, false);
+  u_m2 = TFEFunction3D(&feSpace_, "u_m2", "u_m2",
+                              solution_m2.get_entries(),solution_m2.length());
 }
 
 #endif
@@ -90,7 +100,7 @@ Time_CD3D::Time_CD3D(std::list<TCollection* >collections,
                      )
 :  db(get_default_TCD3D_parameters()),
   solver(param_db), systems_(), example_(_example), errors_({}), 
-  outputWriter(param_db)
+  outputWriter(param_db), time_stepping_scheme(param_db)
 {
   this->db.merge(param_db,false); // update this database with given values
   this->check_and_set_parameters();
@@ -139,6 +149,7 @@ Time_CD3D::Time_CD3D(std::list<TCollection* >collections,
   }// multigrid case
   // print useful information
   this->output_problem_size_info();
+  this->rhs_from_time_disc.copy_structure(this->systems_.front().rhs_);
 }
 
 //==============================================================================
@@ -201,36 +212,6 @@ void Time_CD3D::output_problem_size_info() const
     Output::dash("Total number of degrees of freedom: ", sum_dof_total);
     Output::dash("Global hMin/hMax: ", hMin, "/", hMax);
   }
-#endif
-}
-
-//==============================================================================
-void Time_CD3D::SystemPerGrid::descale_stiff_matrix(double tau, double theta1)
-{
-  if(tau == 0 || theta1 ==0)
-  {
-    ErrThrow("Do not divide by zero in descaling the stiffMatrix_! ", tau, 
-	     " theta1 ", theta1);
-  }
-  // mass matrix (or matrices M ) are added to stiffMatrix_, subtract first
-  const FEMatrix& massBlock = *massMatrix_.get_blocks().at(0).get();
-  stiffMatrix_.add_matrix_actives(massBlock, -1, {{0,0}}, {false});
-  // dscale stiffMatrix_
-  const std::vector<std::vector<size_t>> cell_positions = {{0,0}};
-  stiffMatrix_.scale_blocks_actives(1./(tau*theta1), cell_positions);
-}
-
-//==============================================================================
-void Time_CD3D::SystemPerGrid::update_old_Au()
-{
-#ifdef _MPI
-  feSpace_.get_communicator().consistency_update(solution_.get_entries(), 2);
-#endif
-  stiffMatrix_.apply(solution_, old_Au);
-#ifdef _MPI
-  // old_Au is used in a matrix-vector product, so we put it in consistency 
-  // level 2 here. (is this really necessary??)
-  feSpace_.get_communicator().consistency_update(old_Au.get_entries(), 2);
 #endif
 }
 
@@ -313,7 +294,7 @@ void Time_CD3D::check_and_set_parameters()
 //==============================================================================
 void Time_CD3D::assemble_initial_time()
 {
-  LocalAssembling_type allMatrices = LocalAssembling_type::TCD3D;
+  LocalAssembling_type allMatrices = LocalAssembling_type::TCDStiffMassRhs;
   for(auto &s : this->systems_)
   {
     TFEFunction3D *feFunction = {&s.feFunction_};
@@ -323,12 +304,11 @@ void Time_CD3D::assemble_initial_time()
     // that which method is used. 
     // 
     call_assembling_routine(s, la, true);
-   
-    // initialize old_Au
-    s.update_old_Au();
   }
   SystemPerGrid& s = this->systems_.front();
   old_rhs = s.rhs_;
+  s.solution_m1 = s.solution_;
+  s.solution_m2 = s.solution_m1;  
 }
 
 //==============================================================================
@@ -339,84 +319,54 @@ void Time_CD3D::assemble()
   // which comes from the time discretization of the SUPG method. We have 
   // to assemble the Mass matrix also for each time step due to the convection 
   // field which might also depend on time as well.
-  LocalAssembling_type stiffMatrixRhs = LocalAssembling_type::TCD3DStiffRhs;
+  LocalAssembling_type la_type = LocalAssembling_type::TCDStiffRhs;
+  bool assemble_both = false;
   for(auto &s : this->systems_)
   {
-    TFEFunction3D *feFunction = {&s.feFunction_};
-    LocalAssembling3D la(this->db, stiffMatrixRhs, &feFunction,
-                         example_.get_coeffs(), this->disctype);
     // call assembling routine 
-    if(db["space_discretization_type"].is("galerkin"))
+    if(db["space_discretization_type"].is("supg"))
     {
-      call_assembling_routine(s, la, false);
+      la_type = LocalAssembling_type::TCDStiffMassRhs;
     }
-    else if(db["space_discretization_type"].is("supg"))
-    {
-      call_assembling_routine(s, la, true);
-    }
+    TFEFunction3D *feFunction = {&s.feFunction_};
+    LocalAssembling3D la(this->db, la_type, &feFunction,
+                         example_.get_coeffs(), this->disctype);
+    call_assembling_routine(s, la, assemble_both);
   }
   
   // here the modifications due to time discretization begin
   if (!db["algebraic_flux_correction"].is("none") )
   {
     do_algebraic_flux_correction();
+    rhs_from_time_disc = this->systems_.front().rhs_;
     return; // modifications due to time discretization are per-
             // formed inside the afc scheme, so step out here!
   }
 
-  // preparing the right hand side 
-  double tau = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
-  double theta1 = TDatabase::TimeDB->THETA1;
-  double theta2 = TDatabase::TimeDB->THETA2;
-  double theta3 = TDatabase::TimeDB->THETA3;
-  double theta4 = TDatabase::TimeDB->THETA4;
+  // preparing the right hand side discretized by the used time
+  // stepping scheme
+  SystemPerGrid& s = this->systems_.front();
+  rhs_from_time_disc.reset();
+  rhs_from_time_disc = s.rhs_;
+  // all matrices are available
+  unsigned int n_sols = time_stepping_scheme.n_old_solutions();
+  std::vector<BlockVector> old_sols(n_sols);
+  old_sols[0] = s.solution_m1;
+  if(old_sols.size() == 2)
+    old_sols[1] = s.solution_m2;
+  std::vector<BlockVector> rhs(2);
+  rhs[0] = rhs_from_time_disc;
+  rhs[1] = old_rhs;
+  // prepare the right hand side from the previous time step
+  time_stepping_scheme.prepare_rhs_from_time_disc(s.stiffMatrix_, 
+                                                  s.massMatrix_, rhs, old_sols);
+  rhs_from_time_disc = rhs[0];
+  old_rhs=s.rhs_;
+  rhs_from_time_disc.copy_nonactive(s.rhs_);
   
-  SystemPerGrid & s = this->systems_.front();
-  
-  if(theta4)
-  {
-    // scale the right hand side by theta4 and tau
-    s.rhs_.scaleActive(tau*theta4);
-    // add rhs from previous time step to the rhs scaled with 
-    // time step length
-    if(theta3 != 0)
-      s.rhs_.addScaledActive((this->old_rhs), tau*theta3);
-    // save old rhs for the next time steps
-    if(theta3)
-    {
-      this->old_rhs.addScaledActive(s.rhs_, -1./(tau*theta3));
-      this->old_rhs.scaleActive(-theta3/theta4);
-    }
-  }
-  else
-  {
-    if(TDatabase::TimeDB->TIME_DISC == 0)
-    {
-      ErrThrow("Forward Euler method is not supported. "
-          "Choose TDatabase::TimeDB->TIME_DISC as 1 (bw Euler)"
-          " or 2 (Crank-Nicoloson)");
-    }    
-  }
-  // For the SUPG method: Mass Matrix = (u, v + delta * bgrad v)
-  s.massMatrix_.apply_scaled_add_actives(s.solution_, s.rhs_, 1.0);
-  // rhs -= tau*theta2*A_old*uold
-  s.rhs_.addScaledActive(s.old_Au, -tau*theta2);
-
-  
-  // copy nonactive to the solution vector
-  s.solution_.copy_nonactive(s.rhs_);
-  
-  // preparing the left hand side; stiffness matrix is scaled by
-  // tau * theta1 and adding the mass matrix to it
-  // descaling is necessary only if the coefficients depends on time
   for(auto &s : this->systems_)
-  {
-    const std::vector<std::vector<size_t>> cell_positions = {{0,0}};
-    s.stiffMatrix_.scale_blocks_actives(tau*theta1, cell_positions);
-    
-    const FEMatrix& mass_block = *s.massMatrix_.get_blocks().at(0).get();
-    s.stiffMatrix_.add_matrix_actives(mass_block, 1.0, {{0,0}}, {false});
-  }  
+    time_stepping_scheme.prepare_system_matrix(s.stiffMatrix_, s.massMatrix_);
+  systems_[0].solution_.copy_nonactive(systems_[0].rhs_);  
 }
 
 //==============================================================================
@@ -424,7 +374,7 @@ void Time_CD3D::solve()
 {
   SystemPerGrid& s = systems_.front();
 #ifndef _MPI
-  solver.solve(s.stiffMatrix_,s.rhs_,s.solution_); // sequential
+  solver.solve(s.stiffMatrix_,rhs_from_time_disc,s.solution_); // sequential
 #else // parallel
   if(solver.get_db()["solver_type"].is("direct")) // direct solvers
   {
@@ -434,6 +384,21 @@ void Time_CD3D::solve()
   else
     solver.solve(s.stiffMatrix_,s.rhs_,s.solution_); // same as sequential
 #endif
+  // restore stiffness matrix
+    if(db["algebraic_flux_correction"].is("none"))
+  {
+    for(auto &s : this->systems_)
+      time_stepping_scheme.reset_linear_matrices(s.stiffMatrix_, s.massMatrix_);
+  }
+  else
+  {
+    //in AFC case the stiffness matrix is "ruined" by now -
+    Output::print("AFC does not yet reset the stiffness"
+        "matrix and old_Au correctly!");
+  }
+  
+  s.solution_m2 = s.solution_m1;
+  s.solution_m1 = s.solution_;
 }
 
 //==============================================================================
@@ -493,12 +458,12 @@ void Time_CD3D::output(int m)
     
     if(i_am_root)
     {
-      Output::print<1>("time   : ", TDatabase::TimeDB->CURRENTTIME);
+      Output::print<1>("time   : ", time_stepping_scheme.current_time_);
       Output::print<1>("  L2   : ", std::setprecision(14), locError[0]);
       Output::print<1>("  H1   : ", std::setprecision(14), locError[1]);
       Output::print<1>("  L_inf: ", std::setprecision(14), locError.at(2));
     }
-    double tau = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
+    double tau = time_stepping_scheme.get_step_length();
     
     errors_[0] += (locError[0] * locError[0] + errors_[1] * errors_[1])*tau*0.5;
     errors_[1] = locError[0];
@@ -520,7 +485,7 @@ void Time_CD3D::output(int m)
 
 //==============================================================================
 void Time_CD3D::call_assembling_routine(Time_CD3D::SystemPerGrid& system, 
-					LocalAssembling3D& la, bool assemble_both)
+                                        LocalAssembling3D& la, bool assemble_both)
 {
   int nFESpaces = 1;
   const TFESpace3D * feSpace = &system.feSpace_;
@@ -562,28 +527,6 @@ void Time_CD3D::call_assembling_routine(Time_CD3D::SystemPerGrid& system,
   Assemble3D(nFESpaces, &feSpace, nsqMatrices, sqMatrices, 
 	       nRectMatrices, recMatrices, nRhs, &rhsEntries, &feSpaceRhs, 
 	       &boundCond, boundValue, la);
-}
-
-//==============================================================================
-void Time_CD3D::descale_stiffness()
-{
-  double theta1 = TDatabase::TimeDB->THETA1;
-  double tau = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
-  // restore the stiffMatrix_ and store the old_Au
-  if(db["algebraic_flux_correction"].is("none"))
-  {
-    for(auto &s : this->systems_)
-    {
-      s.descale_stiff_matrix(tau, theta1);
-      s.update_old_Au();
-    }
-  }
-  else
-  {
-    //in AFC case the stiffness matrix is "ruined" by now -
-    Output::print("AFC does not yet reset the stiffness"
-        "matrix and old_Au correctly!");
-  }
 }
 
 //==============================================================================
@@ -656,7 +599,7 @@ void Time_CD3D::do_algebraic_flux_correction()
     }
 
     //get current timestep length from Database
-    double delta_t = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
+    double delta_t = time_stepping_scheme.get_step_length();
 
     // apply C-N FEM-FCT
     AlgebraicFluxCorrection::crank_nicolson_fct(

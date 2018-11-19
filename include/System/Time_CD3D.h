@@ -20,6 +20,7 @@
 #include <Solver.h>
 #include <DataWriter.h>
 #include "LocalAssembling.h"
+#include "TimeDiscretizations.h"
 
 #include <vector>
 #include <array>
@@ -45,11 +46,19 @@ class Time_CD3D
       BlockVector rhs_;
       /** @brief solution vector */
       BlockVector solution_;
-      /** Stores stiffness_matrix * solution of last time step -
-       *  this is needed in (partly) explicit time stepping schemes.*/
-      BlockVector old_Au;
+
       /** @brief Finite element function */
       TFEFunction3D feFunction_;
+      
+      /** @brief
+       * old solution for the computation of the residual
+       * that passes as an FEFunction to the local assembling
+       * routines
+       */
+      BlockVector solution_m1;
+      TFEFunction3D u_m1;
+      BlockVector solution_m2;
+      TFEFunction3D u_m2;
 
       /** @brief constructor in mpi case
        * @param[in] example The current example.
@@ -65,20 +74,6 @@ class Time_CD3D
 #else
       SystemPerGrid(const Example_TimeCD3D& example, TCollection& coll);
 #endif
-
-      /**
-       * Reset the stiffness matrix A to its 'pure' state before the
-       * modifications due to a one-step/fractional-step theta scheme.
-       * Sets A = 1/(tau*theta_1)*(A - mass)
-       * This is for the case we want to reuse A in the next time step.
-       *
-       * @param tau The current time step length.
-       * @param theta_1 The impliciteness parameter for the transport (e.g. 1 for bw Euler).
-       */
-      void descale_stiff_matrix(double tau, double theta_1);
-
-      void update_old_Au();
-
       /**
        * Special member functions mostly deleted,
        * for struct takes ownership of the bad
@@ -142,6 +137,11 @@ class Time_CD3D
     
     /** @brief output object */
     DataWriter3D outputWriter;
+    
+    /// @brief time stepping scheme object to access everything
+    TimeDiscretization time_stepping_scheme;
+    /// @brief system right hand side which passes to the solver
+    BlockVector rhs_from_time_disc;
 
     /** @brief write some information (number of cells, dofs, ...) */
     void output_problem_size_info() const;
@@ -208,20 +208,6 @@ class Time_CD3D
      */
     void assemble();
     
-    /**
-     * Descales the stiffness matrices from the modifications due to time
-     * discretization (one step/fractional step theta).
-     * This should be called after all solve() of the current time step
-     * have been performed and the stiffness should be reused.
-     *
-     * Sets A := 1/(theta_1 * tau) * (A - M), where A is stiffness matrix and
-     * M mass matrix, on all grids.
-     *
-     * As a side effect, it updates the "old_Au" value which will be needed
-     * for the next time step.
-     */
-    void descale_stiffness();
-
     /** @brief solve the system
      */
     void solve();
@@ -268,6 +254,11 @@ class Time_CD3D
     { return this->systems_.front().feSpace_; }
     const ParameterDatabase & get_db() const
     { return db; }
+    
+    TimeDiscretization& get_time_stepping_scheme()
+    {return time_stepping_scheme;}
+    const TimeDiscretization& get_time_stepping_scheme() const
+    {return time_stepping_scheme;}
     
    /**
     * @brief return the computed errors at each discre time point
