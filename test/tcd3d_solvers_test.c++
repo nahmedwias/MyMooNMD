@@ -47,17 +47,16 @@ void check(ParameterDatabase& db, int ansatz_order, int time_disc,
            std::array<double, int(3)> errors, double tol)
 {
   TDatabase::ParamDB->ANSATZ_ORDER = ansatz_order;
-  TDatabase::TimeDB->TIME_DISC = time_disc;
+  if(time_disc == 1)
+    db["time_discretization"] = "backward_euler";
+  if(time_disc == 2)
+    db["time_discretization"] = "crank_nicolson";
   TDatabase::TimeDB->TIMESTEPLENGTH = 0.1;
+  db["time_step_length"] = 0.1;
   db["time_end"] = 1.;
+  db["time_start"] = 0;
   TDatabase::TimeDB->CURRENTTIME = db["time_start"];
   
-#ifdef _MPI
-  int my_rank, size;
-  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-  MPI_Comm_size(MPI_COMM_WORLD, &size);
-#else
-#endif
   TDomain domain(db);
 
   // Intial refinement
@@ -69,29 +68,27 @@ void check(ParameterDatabase& db, int ansatz_order, int time_disc,
   // example object
   Example_TimeCD3D example_obj(db);
   Time_CD3D tcd3d(domain, db, example_obj);
-  
+  TimeDiscretization& tss = tcd3d.get_time_stepping_scheme();
+  tss.current_step_ = 0;
+  tss.current_time_ = db["time_start"];
   // assemble the matrices and right hand side at the start time
   tcd3d.assemble_initial_time();
   
-  int step = 0;
-  tcd3d.output(step);
-  double end_time = db["time_end"];
-  while(TDatabase::TimeDB->CURRENTTIME < end_time-1e-10)
+  while(tss.current_time_ < tss.get_end_time()-1e-10)
   {
-    step ++;
-    TDatabase::TimeDB->INTERNAL_STARTTIME = TDatabase::TimeDB->CURRENTTIME;
+    tss.current_step_++;
+    TDatabase::TimeDB->INTERNAL_STARTTIME = tss.current_time_;
+    tss.set_time_disc_parameters();
     SetTimeDiscParameters(1);
 
-    double tau = TDatabase::TimeDB->TIMESTEPLENGTH;
-    TDatabase::TimeDB->CURRENTTIME += tau;
+    double tau = tss.get_step_length();
+    tss.current_time_ += tau;
+    TDatabase::TimeDB->CURRENTTIME = tss.current_time_;
     
-    Output::print<1>("\nCURRENT TIME: ", TDatabase::TimeDB->CURRENTTIME);
+    Output::print<1>("\nCURRENT TIME: ", tss.current_time_);
     tcd3d.assemble();
-    tcd3d.solve();
-    tcd3d.descale_stiffness();
-    
-    tcd3d.output(step);
-    
+    tcd3d.solve();    
+    tcd3d.output(tss.current_step_);
     compare(tcd3d, errors, tol);
   }
 }
@@ -188,9 +185,8 @@ int main(int argc, char* argv[])
   MPI_Comm comm = MPI_COMM_WORLD;
   TDatabase::ParamDB->Comm = comm;
 
-  int my_rank, size;
+  int my_rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-  MPI_Comm_size(MPI_COMM_WORLD, &size);
 #else
   int my_rank = 0;
 #endif
