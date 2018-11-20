@@ -3,8 +3,7 @@
 #include <ParameterDatabase.h>
 #include <FEDatabase2D.h>
 #include <FEDatabase3D.h>
-#include <NSE2D.h>
-#include <NSE3D.h>
+#include "NavierStokes.h"
 #include <Multigrid.h>
 #include <Chrono.h>
 #include <algorithm>
@@ -14,10 +13,10 @@ double accuracy = 1e-6;
 
 #ifdef __2D__
 typedef TFEDatabase2D OldDatabase;
-typedef NSE2D Stokes;
+typedef NavierStokes<2> Stokes;
 #else // 3D
 typedef TFEDatabase3D OldDatabase;
-typedef NSE3D Stokes;
+typedef NavierStokes<3> Stokes;
 #endif
 
 void compare(const Stokes& stokes, std::array<double, int(5)> errors)
@@ -60,11 +59,7 @@ void compute(const TDomain& domain, ParameterDatabase& db,
              std::array<double, int(5)> errors)
 {
   Stokes stokes(domain, db);
-#ifdef __2D__
-  stokes.assemble();
-#else // 3D, this needs to be refactored and made nicer in 3D
   stokes.assemble_linear_terms();
-#endif
   stokes.solve();
   stokes.output();
   // compare now the errors
@@ -362,7 +357,12 @@ int main(int argc, char* argv[])
   ParameterDatabase db = ParameterDatabase::parmoon_default_database();
   db.merge(ParameterDatabase::default_nonlinit_database());
   db.merge(ParameterDatabase::default_output_database());
-  db.merge(Stokes::default_NSE_database());
+  db.merge(Stokes::default_nse_database());
+#ifdef __2D__
+  db.merge(Example2D::default_example_database(), true);
+#else // 3D
+  db.merge(Example3D::default_example_database(), true);
+#endif // 2D
   db.merge(TDomain::default_domain_parameters());
   db.merge(Multigrid::default_multigrid_database());
 

@@ -135,7 +135,7 @@ class TFEFunction2D
     void Interpolate(TFEFunction2D *F);
     
     typedef std::function<double(const TBaseCell* cell, int cell_index,
-                                 double x, double y)> AnalyticFunction;
+                                 std::array<double, 2> xy)> AnalyticFunction;
     /**
      * @brief add a given function f to this fe function
      * 

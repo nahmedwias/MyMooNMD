@@ -43,7 +43,7 @@ std::pair<unsigned int, double> Iteration_richardson<L, Vector>::iterate(
 #ifndef _MPI
   double normb = rhs.norm();
 #elif _MPI
-  double normb = rhs.norm_global(comms);
+  double normb = rhs.norm(comms);
 #endif
   if (normb == 0.0)
     normb = 1;
@@ -64,7 +64,7 @@ std::pair<unsigned int, double> Iteration_richardson<L, Vector>::iterate(
   double resid = r.norm() / normb;
 #elif _MPI
   //MPI: Now r in consistency level 0
-  double resid = r.norm_global(comms) / normb;
+  double resid = r.norm(comms) / normb;
 #endif
   // safe initial residual, used to check stopping criteria later
   if(this->converged(resid, 0))
@@ -104,7 +104,7 @@ std::pair<unsigned int, double> Iteration_richardson<L, Vector>::iterate(
 #ifndef _MPI
     resid = r.norm()/ normb;
 #elif _MPI
-    resid = r.norm_global(comms) / normb;
+    resid = r.norm(comms) / normb;
 #endif
 
     if(this->converged(resid, i))

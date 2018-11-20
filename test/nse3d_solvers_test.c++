@@ -36,7 +36,7 @@
  * @date 2016/04/04
  */
 
-#include <NSE3D.h>
+#include "NavierStokes.h"
 
 #include <Database.h>
 #include <FEDatabase3D.h>
@@ -49,9 +49,10 @@ double bound = 0;
 double timeC = 0;
 #endif
 
-void compare(const NSE3D& nse3d, std::array<double, int(5)> errors, double tol)
+void compare(const NavierStokes<3>& nse3d, std::array<double, int(5)> errors,
+             double tol)
 {
-  std::array<double, int(5)> computed_errors = nse3d.get_errors();
+  std::array<double, 6> computed_errors = nse3d.get_errors();
 
   // check the L2-error of the velcoity
   if( fabs(computed_errors[0]-errors[0]) > tol ||
@@ -101,7 +102,7 @@ void check(ParameterDatabase& db, const TDomain& domain, int velocity_order,
   check_parameters_consistency_NSE(db);
 
   // Construct the nse3d problem object.
-  NSE3D nse3d(domain, db);
+  NavierStokes<3> nse3d(domain, db);
 
   nse3d.assemble_linear_terms();
 
@@ -114,7 +115,7 @@ void check(ParameterDatabase& db, const TDomain& domain, int velocity_order,
     nse3d.solve();
 
     // checking the first nonlinear iteration
-    nse3d.assemble_non_linear_term();;
+    nse3d.assemble_nonlinear_term();;
     if(nse3d.stop_it(k))
       break;
   }

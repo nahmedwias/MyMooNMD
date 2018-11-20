@@ -1529,6 +1529,11 @@ void TFEFunction3D::Interpolate(int N_Coord, double *Coords, int N_AuxFeFcts,  T
   }
 }
 
+void TFEFunction3D::add(AnalyticFunction f)
+{
+  ErrThrow("TFEFunction3D::add is not yet implemented");
+}
+
 
 /** compute integral and measure */
 void TFEFunction3D::compute_integral_and_measure(double& integral,

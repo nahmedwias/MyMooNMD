@@ -1836,7 +1836,7 @@ void TFEFunction2D::add(AnalyticFunction f)
 
     for(int j = 0; j < N_Points; j++)
     {
-      PointValues[j] = f(cell, i, X[j], Y[j]);
+      PointValues[j] = f(cell, i, {{X[j], Y[j]}});
     }
     std::vector<double> FunctionalValues(N_LocalDOFs, 0.);
     nf->GetAllFunctionals(Coll, (TGridCell *)cell, PointValues.data(),
