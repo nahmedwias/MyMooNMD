@@ -10,7 +10,7 @@
 #include <Domain.h>
 #include <Database.h>
 #include <FEDatabase2D.h>
-#include <NSE2D.h>
+#include "NavierStokes.h"
 #include <Example_NSE2D.h>
 #include <Chrono.h>
 #include <LoopInfo.h>
@@ -29,7 +29,7 @@ int main(int argc, char* argv[])
   TDatabase Database(argv[1]);
   TFEDatabase2D FEDatabase;
   ParameterDatabase parmoon_db = ParameterDatabase::parmoon_default_database();
-  parmoon_db.merge(NSE2D::default_NSE_database());
+  parmoon_db.merge(NavierStokes<2>::default_nse_database());
   parmoon_db.read(argv[1]);
   
   //open OUTFILE, this is where all output is written to (additionally to console)
@@ -56,17 +56,17 @@ int main(int argc, char* argv[])
     domain.PS("Domain.ps", It_Finest, 0);
   
   // create an object of the Navier-Stokes class
-  NSE2D ns(domain, parmoon_db);
-  ns.assemble();
+  NavierStokes<2> ns(domain, parmoon_db);
+  ns.assemble_linear_terms();
   // if solution was not zero up to here, you should call 
   //ns.assemble_nonlinear_term();
   
-  ns.stopIt(0);
+  ns.stop_it(0);
   
   LoopInfo loop_info("nonlinear");
   loop_info.print_time_every_step = true;
   loop_info.verbosity_threshold = 1; // full verbosity
-  loop_info.print(0, ns.getFullResidual());
+  loop_info.print(0, ns.get_full_residual());
   
   timer.restart_and_print("setting up spaces, matrices, linear assemble");
   
@@ -84,13 +84,13 @@ int main(int argc, char* argv[])
     
     ns.assemble_nonlinear_term();
     
-    if(ns.stopIt(k))
+    if(ns.stop_it(k))
     {
-      loop_info.finish(k, ns.getFullResidual());
+      loop_info.finish(k, ns.get_full_residual());
       break;
     }
     else
-      loop_info.print(k, ns.getFullResidual());
+      loop_info.print(k, ns.get_full_residual());
   } // end for k
   
   timer.restart_and_print("solving procedure");

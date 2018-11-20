@@ -8,7 +8,7 @@
 #include <Domain.h>
 #include <Database.h>
 #include <FEDatabase3D.h>
-#include <NSE3D.h>
+#include "NavierStokes.h"
 #include <Chrono.h>
 #include <LoopInfo.h>
 
@@ -81,7 +81,7 @@ int main(int argc, char* argv[])
 
     timer.restart_and_print("setup(domain, example, database)");
     // Construct an object of the NSE3D-problem type.
-    NSE3D nse3d(domain, parmoon_db);
+    NavierStokes<3> nse3d(domain, parmoon_db);
     timer.restart_and_print("constructing NSE3D object");
     
     // assemble all matrices and right hand side
@@ -114,7 +114,7 @@ int main(int argc, char* argv[])
       if(parmoon_db["problem_type"].is(3))
         break;
 
-      nse3d.assemble_non_linear_term();
+      nse3d.assemble_nonlinear_term();
 
       // checking residuals
       if(nse3d.stop_it(k))

@@ -161,6 +161,20 @@ class TFEFunction3D
      */
     void Interpolate_vector_valued_function(std::vector<DoubleFunct3D*> Exact);
     
+    typedef std::function<double(const TBaseCell* cell, int cell_index,
+                                 std::array<double, 3> xyz)> AnalyticFunction;
+    /**
+     * @brief add a given function f to this fe function
+     * 
+     * The cell and cell_index are from the collection of this TFEFunction3D
+     * and the point (x,y,z) is in that cell.
+     * 
+     * Note that this is similar to creating a second TFEFunction3D, 
+     * interpolating f on it and then adding it via operator+=. Here, no second
+     * TFEFunction3D is required.
+     */
+    void add(AnalyticFunction f);
+    
     /**
      * @brief project this functions into the space L20 (having zero mean value)
      *

@@ -465,7 +465,7 @@ double get_p_diff(const std::array<double,3>& point_A,
 }
 
 // this is the actual interface
-void compute_drag_lift_pdiff(NSE3D& nse3d)
+void compute_drag_lift_pdiff(NavierStokes<3>& nse3d)
 {
 #ifdef _MPI
   MPI_Comm comm = MPI_COMM_WORLD;

@@ -335,7 +335,7 @@ void GetCdCl(TFEFunction2D *u1fct, TFEFunction2D *u2fct,
   delete v;
 }
 
-void compute_drag_lift_pdiff(NSE2D& nse2d)
+void compute_drag_lift_pdiff(NavierStokes<2>& nse2d)
 {
   double drag, lift, dP1[4], dP2[4];
 

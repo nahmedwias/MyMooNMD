@@ -26,7 +26,7 @@
 #include <Database.h>
 #include <ParameterDatabase.h>
 #include <FEDatabase2D.h>
-#include <NSE2D.h>
+#include "NavierStokes.h"
 #include <Example_NSE2D.h>
 #include <Multigrid.h>
 #include <Chrono.h>
@@ -35,7 +35,7 @@
 
 double accuracy = 1e-6;
 
-void compare(const NSE2D& nse2d, std::array<double, int(5)> errors)
+void compare(const NavierStokes<2>& nse2d, std::array<double, int(5)> errors)
 {
   auto computed_errors = nse2d.get_errors();
   
@@ -69,18 +69,18 @@ void compare(const NSE2D& nse2d, std::array<double, int(5)> errors)
 void compute(TDomain &domain, ParameterDatabase& db,
              std::array<double, int(5)> errors)
 {
-  NSE2D nse2d(domain, db);
-  nse2d.assemble();
+  NavierStokes<2> nse2d(domain, db);
+  nse2d.assemble_linear_terms();
   // check stopping criterion
-  nse2d.stopIt(0);
+  nse2d.stop_it(0);
   for(unsigned int k=1;; k++)
   {
     Output::print<1>("nonlinear step " , setw(3), k-1, "\t",
-                     nse2d.getResiduals());
+                     nse2d.get_residuals());
     nse2d.solve();
     // checking the first nonlinear iteration    
     nse2d.assemble_nonlinear_term();;
-    if(nse2d.stopIt(k))
+    if(nse2d.stop_it(k))
       break;
   }
   nse2d.output();
@@ -223,11 +223,7 @@ int main(int argc, char* argv[])
     // possibly parameters in the database
     check_parameters_consistency_NSE(db);
     // refine grid
-    size_t n_ref = domain.get_n_initial_refinement_steps();
-    for(unsigned int i=0; i < n_ref; i++)
-    {
-      domain.RegRefineAll();
-    }
+    domain.refine_and_get_hierarchy_of_collections(db);
     std::array<double, int(5)> errors;
     
     //=========================================================================
@@ -352,11 +348,7 @@ int main(int argc, char* argv[])
     check_parameters_consistency_NSE(db);
 
     // refine grid
-    size_t n_ref = domain.get_n_initial_refinement_steps();
-    for(unsigned int i=0; i < n_ref; i++)
-    {
-      domain.RegRefineAll();
-    }
+    domain.refine_and_get_hierarchy_of_collections(db);
     std::array<double, int(5)> errors;
     
     //=========================================================================

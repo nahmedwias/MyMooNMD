@@ -705,9 +705,9 @@ void Time_NSE3D::compute_residuals()
     defect_mass.get_entries()[i] = defect_.get_entries()[3*number_u_Dof + i];
 
 #ifdef _MPI
-  double impuls_residual_square = defect_impuls.norm_global({comms[0],comms[1],comms[2]});
+  double impuls_residual_square = defect_impuls.norm({comms[0],comms[1],comms[2]});
   impuls_residual_square *= impuls_residual_square;
-  double mass_residual_square = defect_mass.norm_global({comms[3]});
+  double mass_residual_square = defect_mass.norm({comms[3]});
   mass_residual_square *= mass_residual_square;
 #else
   double impuls_residual_square = defect_impuls.norm();

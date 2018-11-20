@@ -589,6 +589,9 @@ class TDomain
 
   const std::list<TCollection*> get_grid_collections() const
   {
+    if(gridCollections.empty())
+      ErrThrow("There are no collections stored in the TDomain object, you "
+               "need to call 'refine_and_get_hierarchy_of_collections'");
     return gridCollections;
   }
 
