@@ -47,8 +47,6 @@ enum class LocalAssembling_type
     Brinkman2D_GradDivStabilization,
     ConvDiff, /// Stationary convection diffusion reaction in 3D
     Darcy, // stationary Darcy problem (mixed form)
-    TCD3D, // mass matrix (+ matrix comming from time discretization SUPG case)
-    TCD3DStiffRhs, // stiffness matrix and right hand side
     TCDStiffMassRhs,
     TCDStiffRhs,
     NSE3D_Linear,    /// Linear part of stationary Navier--Stokes in 3D
