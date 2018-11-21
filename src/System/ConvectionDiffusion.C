@@ -188,8 +188,6 @@ template<int d>
 void ConvectionDiffusion<d>::assemble()
 {
   using SquareMatrixD = typename Template_names<d>::SquareMatrixD;
-  using BoundaryValuesFunction
-    = typename Template_names<d>::BoundaryValuesFunction;
   
   LocalAssembling_type laType = LocalAssembling_type::ConvDiff;
   // this loop has more than one iteration only in case of multigrid
@@ -209,7 +207,7 @@ void ConvectionDiffusion<d>::assemble()
     int n_rect_matrices = 0;
     double * rhs_entries = s.rhs.get_entries();
     int n_rhs = 1;
-    BoundaryValuesFunction * non_const_bound_value = example.get_bd(0);
+    auto * non_const_bound_value = example.get_bd(0);
 
     //fetch stiffness matrix as block
     auto blocks = s.matrix.get_blocks_uniquely();
@@ -219,7 +217,7 @@ void ConvectionDiffusion<d>::assemble()
     s.rhs.reset();
     block->reset();
     // and call the assmebling method
-    #ifdef __3D__
+#ifdef __3D__
     Assemble3D(
 #else      
     Assemble2D(

@@ -8,7 +8,7 @@
  * @author Clemens Bartsch, Naveed Ahmed
  */
 #include <AlgebraicFluxCorrection.h>
-#include <Time_CD3D.h>
+#include "TimeConvectionDiffusion.h"
 #include <Database.h>
 #include <FEDatabase3D.h>
 #include <TimeDiscRout.h>
@@ -57,7 +57,7 @@ std::vector<std::vector<double>> target_norms_none =
 };
 
 
-void check_solution_norms(Time_CD3D &tcd, int m)
+void check_solution_norms(TimeConvectionDiffusion<3> &tcd, int m)
 {
 
   if(m%10 == 0)
@@ -170,7 +170,7 @@ int main(int argc, char* argv[])
     // example object
     Example_TimeCD3D example_obj(db);
     // tcd3d system object
-    Time_CD3D tcd(domain, db, example_obj);
+    TimeConvectionDiffusion<3> tcd(domain, db, example_obj);
 
     TimeDiscretization& tss = tcd.get_time_stepping_scheme();
     tss.current_step_ = 0;

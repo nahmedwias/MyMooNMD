@@ -12,7 +12,7 @@
  * 
  */
 
-#include <Time_CD3D.h>
+#include "TimeConvectionDiffusion.h"
 #include <Database.h>
 #include <FEDatabase3D.h>
 #include <Domain.h>
@@ -28,7 +28,8 @@ double timeC = 0;
 #endif
 
 // function to compare the errors
-void compare(const Time_CD3D& tcd3d, std::array<double, int(3)>errors, double tol)
+void compare(const TimeConvectionDiffusion<3>& tcd3d,
+             std::array<double, int(3)>errors, double tol)
 {
   std::array<double, int(3)> computed_errors;
   computed_errors = tcd3d.get_errors();
@@ -67,7 +68,7 @@ void check(ParameterDatabase& db, int ansatz_order, int time_disc,
 
   // example object
   Example_TimeCD3D example_obj(db);
-  Time_CD3D tcd3d(domain, db, example_obj);
+  TimeConvectionDiffusion<3> tcd3d(domain, db, example_obj);
   TimeDiscretization& tss = tcd3d.get_time_stepping_scheme();
   tss.current_step_ = 0;
   tss.current_time_ = db["time_start"];
@@ -88,7 +89,7 @@ void check(ParameterDatabase& db, int ansatz_order, int time_disc,
     Output::print<1>("\nCURRENT TIME: ", tss.current_time_);
     tcd3d.assemble();
     tcd3d.solve();    
-    tcd3d.output(tss.current_step_);
+    tcd3d.output();
     compare(tcd3d, errors, tol);
   }
 }

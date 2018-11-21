@@ -8,7 +8,7 @@
  * @author Clemens Bartsch, Naveed Ahmed
  */
 #include <AlgebraicFluxCorrection.h>
-#include <Time_CD2D.h>
+#include "TimeConvectionDiffusion.h"
 #include <Database.h>
 #include <FEDatabase2D.h>
 #include <TimeDiscRout.h>
@@ -17,7 +17,7 @@
 #include <AuxParam2D.h>
 #include <TimeDiscretizations.h>
 
-void testCN(Time_CD2D &tcd, int m)
+void testCN(TimeConvectionDiffusion<2> &tcd, int m)
 {
   double errors[5];
   errors[0]=errors[1]=errors[2]=errors[3]=0.;
@@ -83,7 +83,7 @@ void testCN(Time_CD2D &tcd, int m)
   }
 }
 
-void time_integration(int td, Time_CD2D& tcd, TimeDiscretization& tss)
+void time_integration(int td, TimeConvectionDiffusion<2>& tcd, TimeDiscretization& tss)
 {
   TDatabase::TimeDB->TIME_DISC = td;
   TDatabase::TimeDB->CURRENTTIME = tcd.get_db()["time_start"];
@@ -144,14 +144,14 @@ int main(int argc, char* argv[])
 
     db.add("boundary_file", "Default_UnitSquare", "");
     db.add("geo_file", "UnitSquare", "", {"UnitSquare", "TwoTriangles"});
+    db.add("refinement_n_initial_steps", (size_t) 5,"");
     TDomain domain(db);
     SetTimeDiscParameters(0);
-    // some parameters
-    for(int i=0; i< 5; ++i)
-      domain.RegRefineAll();
+    // refine grid
+    domain.refine_and_get_hierarchy_of_collections(db);
 
     db.add("solver_type", "direct", "", {"direct", "petsc"});
-    Time_CD2D tcd(domain, db);
+    TimeConvectionDiffusion<2> tcd(domain, db);
     
     TimeDiscretization& tss = tcd.get_time_stepping_scheme();
     tss.current_step_ = 0;
@@ -160,7 +160,7 @@ int main(int argc, char* argv[])
     time_integration(2,tcd, tss);
     
     db["solver_type"] = "petsc";
-    Time_CD2D tcd_petsc(domain, db);
+    TimeConvectionDiffusion<2> tcd_petsc(domain, db);
     time_integration(2, tcd_petsc, tss);
   }
 }

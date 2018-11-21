@@ -6,7 +6,7 @@
 #include <Domain.h>
 #include <Database.h>
 #include <FEDatabase3D.h>
-#include <Time_CD3D.h>
+#include "TimeConvectionDiffusion.h"
 #include <TimeDiscRout.h>
 #include <Chrono.h>
 #include <TimeDiscretizations.h>
@@ -73,12 +73,9 @@ int main(int argc, char *argv[])
   // set some parameters for time stepping
   SetTimeDiscParameters(0);
 
-  // Choose example according to the value of "example" in the given database
-  Example_TimeCD3D example(parmoon_db);
-  
   timer.restart_and_print("setup(domain, example, database)");
   // create an object of the class Time_CD3D
-  Time_CD3D tcd3d(domain, parmoon_db, example);
+  TimeConvectionDiffusion<3> tcd3d(domain, parmoon_db);
   timer.restart_and_print("constructing Time_CD3D object");
   
   TimeDiscretization& tss = tcd3d.get_time_stepping_scheme();
@@ -87,7 +84,6 @@ int main(int argc, char *argv[])
   
   // assemble the matrices and right hand side at the start time
   tcd3d.assemble_initial_time();
-  int image=0;
   timer.restart_and_print("initial assembling");
   Chrono timer_solve;
   timer_solve.stop();
@@ -113,7 +109,7 @@ int main(int argc, char *argv[])
                                +std::to_string(tss.current_time_));
     timer_solve.stop();
     
-    tcd3d.output(tss.current_step_);
+    tcd3d.output();
     timer.restart_and_print(
       "time step (t=" + std::to_string(tss.current_time_)+ ")");
   }
