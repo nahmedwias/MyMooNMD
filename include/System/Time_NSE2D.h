@@ -1,6 +1,3 @@
-#ifndef TIME_NSE2D_MERGE_H
-#define TIME_NSE2D_MERGE_H
-
 /** ************************************************************************
  *
  * @name         Time_NSE2D
@@ -11,27 +8,35 @@
  *
  * @author       Naveed Ahmed
  * @History      20.02.2017
+ * 
 **************************************************************************/
 
+
+
+
+
+
+#ifndef INCLUDE_SYSTEM_TIME_NSE2D_H
+#define INCLUDE_SYSTEM_TIME_NSE2D_H
 
 #include <FEVectFunct2D.h>
 
 #include <BlockFEMatrix.h>
 #include <BlockVector.h>
-
+#include <Residuals.h>
 #include <FESpace2D.h>
 #include <Example_TimeNSE2D.h>
-
-#include <Multigrid.h>
+#include <TimeDiscretizations.h>
+#include "LocalAssembling.h"
+#include <ParameterDatabase.h>
 #include <Solver.h>
-
+#include <DataWriter.h>
 #include <MainUtilities.h>
 
-#include <ParameterDatabase.h>
-#include <DataWriter.h>
-#include <Residuals.h>
-#include "LocalAssembling.h"
-#include <TimeDiscretizations.h>
+#include <Multigrid.h>
+
+
+
 
 
 class Time_NSE2D
@@ -186,7 +191,7 @@ class Time_NSE2D
     * If some parameters are set to unsupported values, an error occurs and
     * throws an exception.
     */
-    void set_parameters();
+    void check_and_set_parameters();
 
     /** @brief get velocity and pressure space*/
     void get_velocity_pressure_orders(std::pair <int,int> &velocity_pressure_orders);
@@ -390,4 +395,4 @@ private:
 
 
 
-#endif // TIME_NSE2D_MERGE_H
+#endif // INCLUDE_SYSTEM_TIME_NSE2D_H
