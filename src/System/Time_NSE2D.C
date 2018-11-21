@@ -1,15 +1,16 @@
 #include <Time_NSE2D.h>
 #include <Database.h>
-#include <Assemble2D.h>
 #include <LinAlg.h>
 #include <DirectSolver.h>
 #include <MainUtilities.h>
-#include <BoundaryAssembling2D.h>
 #include <GridTransfer.h>
+#include <Hotfixglobal_AssembleNSE.h>
+#include <BoundaryAssembling2D.h>
+#include <Assemble2D.h>
+#include <Upwind.h>
+
 #include <Domain.h>
 #include <LocalProjection.h>
-#include <Hotfixglobal_AssembleNSE.h>
-#include <Upwind.h>
 #include <AuxParam2D.h>
 #include <LocalProjection.h>
 
@@ -126,7 +127,7 @@ Time_NSE2D::Time_NSE2D(const TDomain& domain,
    time_stepping_scheme(param_db), is_rhs_and_mass_matrix_nonlinear(false)
 {
   db.merge(param_db);
-  this->set_parameters();
+  this->check_and_set_parameters();
 
   std::pair <int,int> velo_pres_order(TDatabase::ParamDB->VELOCITY_SPACE,
                                TDatabase::ParamDB->PRESSURE_SPACE);
@@ -243,7 +244,7 @@ Time_NSE2D::Time_NSE2D(const TDomain& domain,
 }
 
 /**************************************************************************** */
-void Time_NSE2D::set_parameters()
+void Time_NSE2D::check_and_set_parameters()
 {
   if(!db["problem_type"].is(6))
   {
@@ -507,6 +508,38 @@ void Time_NSE2D::assemble_matrices_rhs(unsigned int it_counter)
 }
 
 /**************************************************************************** */
+void Time_NSE2D::assemble_rhs_nonlinear()
+{
+  // initialize the rhs from the time discretization
+  rhs_from_time_disc = this->systems.front().rhs;
+  rhs_from_time_disc.reset();
+  System_per_grid& s = this->systems.front();
+  
+  // copy the right hand side to the "rhs_from_time_disc"
+  rhs_from_time_disc = s.rhs;
+  // all matrices from the previous time step are available
+  unsigned int n_sols = time_stepping_scheme.n_old_solutions();
+  std::vector<BlockVector> oldsolutions(n_sols);
+  oldsolutions[0] = s.solution_m1;
+  if(oldsolutions.size() == 2)
+    oldsolutions[1] = s.solution_m2;
+  // one needs two right hand sides only for the crank-Nicolson
+  // and fractional step theta schemes
+  std::vector<BlockVector> rhs_(2);
+  rhs_[0] = rhs_from_time_disc; // current rhs
+  rhs_[1] = old_rhs; // old right hand side is needed for the Crank-Nicolson time stepping
+
+  // prepare the right hand side for the solver
+  time_stepping_scheme.prepare_rhs_from_time_disc(s.matrix, s.mass_matrix,
+                   rhs_, oldsolutions);
+  rhs_from_time_disc=rhs_[0];
+  old_rhs=s.rhs;
+  // copy the non-actives
+  rhs_from_time_disc.copy_nonactive(s.rhs);
+  s.solution.copy_nonactive(s.rhs);
+}
+
+/**************************************************************************** */
 void Time_NSE2D::call_assembling_routine(Time_NSE2D::System_per_grid& s,
                                          LocalAssembling_type type)
 {
@@ -599,6 +632,121 @@ void Time_NSE2D::call_assembling_routine(Time_NSE2D::System_per_grid& s,
   //  s.mass_matrix.replace_blocks(*s.mass_matrix.get_blocks().at(0).get(), {{1,1}}, {false});    
     
   //}
+}
+
+/**************************************************************************** */
+void Time_NSE2D::set_arrays(Time_NSE2D::System_per_grid& s,
+                            std::vector< const TFESpace2D* >& spaces,
+                            std::vector< const TFESpace2D* >& spaces_rhs,
+                            std::vector< TFEFunction2D* >& functions)
+{
+  spaces.resize(2);
+  spaces_rhs.resize(3);
+
+  spaces[0] = s.velocity_space.get();
+  spaces[1] = s.pressure_space.get();
+
+      spaces_rhs[0] = s.velocity_space.get();
+      spaces_rhs[1] = s.velocity_space.get();
+      spaces_rhs[2] = s.pressure_space.get();
+  // standard for all methods.
+  functions.resize(3);  
+  functions[0] = s.u.GetComponent(0);
+  functions[1] = s.u.GetComponent(1);
+  functions[2] = &s.p;
+  bool is_imex = imex_scheme(0);
+  if(is_imex && db["extrapolate_velocity"])
+  {
+    if(db["space_discretization_type"].is("galerkin") || db["space_discretization_type"].is("local_projection"))
+    {
+      if(db["extrapolation_type"].is("constant_extrapolate"))
+      {
+        s.extrapolate_sol.reset();
+        s.extrapolate_sol = s.solution_m1;
+        
+        functions[0] = s.extrapolate_u.GetComponent(0);
+        functions[1] = s.extrapolate_u.GetComponent(1);
+      }
+      else if(db["extrapolation_type"].is("linear_extrapolate"))
+      {
+        s.extrapolate_sol.reset();
+        s.extrapolate_sol = s.solution_m1;
+        s.extrapolate_sol.scale(2.);
+        s.extrapolate_sol.add_scaled(s.solution_m2, -1.);
+       
+        functions[0] = s.extrapolate_u.GetComponent(0);
+        functions[1] = s.extrapolate_u.GetComponent(1);
+      }
+      else
+      {
+        ErrThrow("Only constant or linear extrapolation of velocity are used ", db["extrapolation_type"]);
+      }
+      functions[2] = &s.p;
+    }
+    // supg: NOTE: only tested with BDF2 so far
+    if(db["space_discretization_type"].is("supg") && !db["time_discretization"].is("bdf_two"))
+    {
+      ErrThrow("supg method is only implemented for BDF2 time stepping scheme");
+    }
+    
+    if(db["space_discretization_type"].is("supg"))
+    {
+      if(TDatabase::ParamDB->NSTYPE < 4)
+      {
+        ErrThrow("SUPG is for equal-order implemented so far !!!");        
+      }
+      functions.resize(4);
+      
+      s.extrapolate_sol.reset();
+      s.extrapolate_sol = s.solution_m1;
+      s.extrapolate_sol.scale(2.);
+      s.extrapolate_sol.add_scaled(s.solution_m2, -1.);
+      functions[0] = s.extrapolate_u.GetComponent(0);
+      functions[1] = s.extrapolate_u.GetComponent(1);
+      // combination of previous time solutions for assembling the right-hand
+      // side, this is used for the pressure part.
+      s.combined_old_sols.reset();
+      // copy and scale the solution at previous time step with factor 2
+      s.combined_old_sols = s.solution_m1;
+      s.combined_old_sols.scale(2.);
+      // subtract with right factor the solution at pre-previous solution
+      s.combined_old_sols.add_scaled(s.solution_m2, -1./2.);
+      
+      functions[2] = s.comb_old_u.GetComponent(0);
+      functions[3] = s.comb_old_u.GetComponent(1);
+    }
+  }
+  else 
+  {
+    // For the standard methods or symmetric stabilization schemes
+    // there is no time derivative involved in combination with the 
+    // pressure or velocity as in the supg case. So nothing to do 
+    // for those schemes.
+    
+    // 
+    if(db["space_discretization_type"].is("supg"))
+    {
+      if(time_stepping_scheme.pre_stage_bdf)
+      {
+        functions.resize(4);
+        functions[2] = s.u_m1.GetComponent(0);
+        functions[3] = s.u_m1.GetComponent(1);
+      }
+      else
+      {
+        s.combined_old_sols.reset();
+        // copy and scale the solution at previous time step with factor 2
+        s.combined_old_sols = s.solution_m1;
+        s.combined_old_sols.scale(2.);
+        // subtract with right factor the solution at pre-previous solution
+        s.combined_old_sols.add_scaled(s.solution_m2, -1./2.);
+        
+        functions.resize(4);
+        functions[2] = s.comb_old_u.GetComponent(0);
+        functions[3] = s.comb_old_u.GetComponent(1);
+      }
+    }
+  }
 }
 
 /**************************************************************************** */
@@ -817,121 +965,6 @@ void Time_NSE2D::set_matrices_rhs(Time_NSE2D::System_per_grid& s,
 }
 
 /**************************************************************************** */
-void Time_NSE2D::set_arrays(Time_NSE2D::System_per_grid& s,
-                            std::vector< const TFESpace2D* >& spaces,
-                            std::vector< const TFESpace2D* >& spaces_rhs,
-                            std::vector< TFEFunction2D* >& functions)
-{
-  spaces.resize(2);
-  spaces_rhs.resize(3);
-
-  spaces[0] = s.velocity_space.get();
-  spaces[1] = s.pressure_space.get();
-
-      spaces_rhs[0] = s.velocity_space.get();
-      spaces_rhs[1] = s.velocity_space.get();
-      spaces_rhs[2] = s.pressure_space.get();
-  // standard for all methods.
-  functions.resize(3);  
-  functions[0] = s.u.GetComponent(0);
-  functions[1] = s.u.GetComponent(1);
-  functions[2] = &s.p;
-  bool is_imex = imex_scheme(0);
-  if(is_imex && db["extrapolate_velocity"])
-  {
-    if(db["space_discretization_type"].is("galerkin") || db["space_discretization_type"].is("local_projection"))
-    {
-      if(db["extrapolation_type"].is("constant_extrapolate"))
-      {
-        s.extrapolate_sol.reset();
-        s.extrapolate_sol = s.solution_m1;
-        
-        functions[0] = s.extrapolate_u.GetComponent(0);
-        functions[1] = s.extrapolate_u.GetComponent(1);
-      }
-      else if(db["extrapolation_type"].is("linear_extrapolate"))
-      {
-        s.extrapolate_sol.reset();
-        s.extrapolate_sol = s.solution_m1;
-        s.extrapolate_sol.scale(2.);
-        s.extrapolate_sol.add_scaled(s.solution_m2, -1.);
-       
-        functions[0] = s.extrapolate_u.GetComponent(0);
-        functions[1] = s.extrapolate_u.GetComponent(1);
-      }
-      else
-      {
-        ErrThrow("Only constant or linear extrapolation of velocity are used ", db["extrapolation_type"]);
-      }
-      functions[2] = &s.p;
-    }
-    // supg: NOTE: only tested with BDF2 so far
-    if(db["space_discretization_type"].is("supg") && !db["time_discretization"].is("bdf_two"))
-    {
-      ErrThrow("supg method is only implemented for BDF2 time stepping scheme");
-    }
-    
-    if(db["space_discretization_type"].is("supg"))
-    {
-      if(TDatabase::ParamDB->NSTYPE < 4)
-      {
-        ErrThrow("SUPG is for equal-order implemented so far !!!");        
-      }
-      functions.resize(4);
-      
-      s.extrapolate_sol.reset();
-      s.extrapolate_sol = s.solution_m1;
-      s.extrapolate_sol.scale(2.);
-      s.extrapolate_sol.add_scaled(s.solution_m2, -1.);
-      functions[0] = s.extrapolate_u.GetComponent(0);
-      functions[1] = s.extrapolate_u.GetComponent(1);
-      // combination of previous time solutions for assembling the right-hand
-      // side, this is used for the pressure part.
-      s.combined_old_sols.reset();
-      // copy and scale the solution at previous time step with factor 2
-      s.combined_old_sols = s.solution_m1;
-      s.combined_old_sols.scale(2.);
-      // subtract with right factor the solution at pre-previous solution
-      s.combined_old_sols.add_scaled(s.solution_m2, -1./2.);
-      
-      functions[2] = s.comb_old_u.GetComponent(0);
-      functions[3] = s.comb_old_u.GetComponent(1);
-    }
-  }
-  else 
-  {
-    // For the standard methods or symmetric stabilization schemes
-    // there is no time derivative involved in combination with the 
-    // pressure or velocity as in the supg case. So nothing to do 
-    // for those schemes.
-    
-    // 
-    if(db["space_discretization_type"].is("supg"))
-    {
-      if(time_stepping_scheme.pre_stage_bdf)
-      {
-        functions.resize(4);
-        functions[2] = s.u_m1.GetComponent(0);
-        functions[3] = s.u_m1.GetComponent(1);
-      }
-      else
-      {
-        s.combined_old_sols.reset();
-        // copy and scale the solution at previous time step with factor 2
-        s.combined_old_sols = s.solution_m1;
-        s.combined_old_sols.scale(2.);
-        // subtract with right factor the solution at pre-previous solution
-        s.combined_old_sols.add_scaled(s.solution_m2, -1./2.);
-        
-        functions.resize(4);
-        functions[2] = s.comb_old_u.GetComponent(0);
-        functions[3] = s.comb_old_u.GetComponent(1);
-      }
-    }
-  }
-}
-
-/**************************************************************************** */
 void Time_NSE2D::restrict_function()
 {
   //assembling requires an approximate velocity solution on every grid
@@ -948,206 +981,6 @@ void Time_NSE2D::restrict_function()
     }
     GridTransfer::RestrictFunctionRepeatedly(spaces, u_entries, u_ns_dofs);
   }
-}
-
-/**************************************************************************** */
-bool Time_NSE2D::imex_scheme(bool print_info)
-{
-  if((db["imex_scheme_"] && time_stepping_scheme.current_step_ >= 3))
-  {
-    db["nonlinloop_maxit"] = 1;
-    db["extrapolate_velocity"] = true;
-    
-    if(print_info) // condition is here just to print it once
-      Output::info<1>("Nonlinear Loop MaxIteration",
-                      "The parameter 'nonlinloop_maxit' was changed to 1."
-                      " Only one non-linear iteration is done, because the IMEX scheme was chosen.\n");
-    // this is typical for the problem with slip type boundary condition
-    // NOTE: only tested for the mixing layer problem for the moment
-    if(TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION >=1)
-      is_rhs_and_mass_matrix_nonlinear = true;
-    if(db["space_discretization_type"].is("supg"))
-      space_disc_global = -2;
-    return true;
-  }
-  else
-    return false;
-}
-
-/**************************************************************************** */
-void Time_NSE2D::modify_slip_bc(bool BT_Mass, bool slip_A_nl)
-{
-  // modification of the matrices due to the
-  // slip type boundary conditions: If the mass matrices,
-  // the off-diagonal A-blocks , and the BT's block,
-  // are unchanged during the time iteration, then this modification
-  // is done only once in the time loop. However, in the SUPG
-  // and residual based VMS method these matrices are also
-  // updated during the time steps, so modification of all
-  // of them including the right-hand side is necessary.The
-  // modification of the diagonal A-blocks are necessary
-  // in any case.
-  if(TDatabase::ParamDB->NSTYPE < 4)
-  {
-    ErrThrow("Slip with friction b.c. is only implemented for NSTYPE 4 and 14");
-  }
-  std::vector<const TFESpace2D*> spaces_mat(1);
-  std::vector<double*> rhs_array(2);
-  std::vector<const TFESpace2D*> rhs_space(2);
-
-  for(System_per_grid& s: this->systems)
-  {
-    spaces_mat[0] = s.velocity_space.get();
-    rhs_space[0] = spaces_mat[0];
-    rhs_space[1] = spaces_mat[0];
-
-    rhs_array[0] = s.rhs.block(0);
-    rhs_array[1] = s.rhs.block(1);
-
-    std::vector<std::shared_ptr<FEMatrix>> blocks;
-    blocks = s.matrix.get_blocks_uniquely();
-
-    std::vector<std::shared_ptr<FEMatrix>> mass_blocks;
-    mass_blocks = s.mass_matrix.get_blocks_uniquely(true);
-    
-    BoundCondFunct2D* bc[3] = {
-    s.velocity_space->get_boundary_condition(),
-    s.velocity_space->get_boundary_condition(),
-    s.pressure_space->get_boundary_condition()};
-    // boundary values:
-    std::vector<BoundValueFunct2D*>bv(3);
-    bv[0]=example.get_bd(0);
-    bv[1]=example.get_bd(1);
-    bv[2]=example.get_bd(2);
-
-    std::vector<TSquareMatrix2D*> sqMat;
-    std::vector<TMatrix2D*> reMat;
-    sqMat.resize(2);
-    // all 4 A blocks at the first time step
-    // and only the first 2 within the nonlinear loop
-    sqMat[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());//a11
-    sqMat[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(4).get());//a22
-
-    // if the off-diagonal are not changing within the non-linear loop
-    // then dont need to assemble them again
-    if(slip_A_nl)
-    {
-      sqMat.resize(4);
-      sqMat[2] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());//a12
-      sqMat[3] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(3).get());//a21
-    }
-
-    // either at the first time step
-    // or every time step if M and B's are changing
-    reMat.resize(0);
-    if(BT_Mass)
-    {
-      sqMat.resize(8);
-      sqMat[4] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(0).get());//m11
-      sqMat[5] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(4).get());//m22
-      sqMat[6] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(1).get());//m12
-      sqMat[7] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(3).get());//m21
-      reMat.resize(2);
-      reMat[0] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get()); //the standing B blocks
-      reMat[1] = reinterpret_cast<TMatrix2D*>(blocks.at(5).get());
-    }
-
-    // update the matrices and right hand side
-    Assemble2DSlipBC(spaces_mat.size(), spaces_mat.data(),
-                   sqMat.size(), sqMat.data(), reMat.size(), reMat.data(),
-                   rhs_array.size(), rhs_array.data(), rhs_space.data(),
-                   bc, bv.data(), s.u.GetComponent(0), s.u.GetComponent(1));
-
-  }
-
-}
-
-/**************************************************************************** */
-void Time_NSE2D::prepared_postprocessing(TCollection *coll)
-{
-  stream_function_space
-     = std::make_shared<TFESpace2D>(coll, (char*)"stream function space",
-                         (char*)"stream function space", example.get_bc(0), 1);
-  n_psi = stream_function_space->GetN_DegreesOfFreedom();
-  psi.resize(n_psi, 0.);
-  stream_function
-     = std::make_shared<TFEFunction2D>(stream_function_space.get(), (char*)"streamfunction",
-                          (char*)"streamfunction", psi.data(), n_psi);
-  // add to the wrapper
-  outputWriter.add_fe_function(stream_function.get());
-
-  if(db["example"].is(3) || db["example"].is(6))
-  {
-    zero_vorticity = -4711;
-    vorticity_space
-      =std::make_shared<TFESpace2D>(coll, (char*)"vorticity space", (char*)"vorticity space",
-                                example.get_bc(0), ContP_USpace, 1);
-    n_vort_dofs = vorticity_space->GetN_DegreesOfFreedom();
-    vorticity.resize(2*n_vort_dofs, 0.);
-    vorticity_funct 
-      = std::make_shared<TFEFunction2D>(vorticity_space.get(), (char*)"voritcity",
-                              (char*)"vorticity", vorticity.data()+n_vort_dofs, n_vort_dofs);
-    divergence
-      = std::make_shared<TFEFunction2D>(vorticity_space.get(), (char*)"dievergence",
-                            (char*)"divergence", vorticity.data(), n_vort_dofs);
-    outputWriter.add_fe_function(vorticity_funct.get());
-    outputWriter.add_fe_function(divergence.get());
-  }
-}
-
-/**************************************************************************** */
-void Time_NSE2D::assemble_rhs_nonlinear()
-{
-  // initialize the rhs from the time discretization
-  rhs_from_time_disc = this->systems.front().rhs;
-  rhs_from_time_disc.reset();
-  System_per_grid& s = this->systems.front();
-  
-  // copy the right hand side to the "rhs_from_time_disc"
-  rhs_from_time_disc = s.rhs;
-  // all matrices from the previous time step are available
-  unsigned int n_sols = time_stepping_scheme.n_old_solutions();
-  std::vector<BlockVector> oldsolutions(n_sols);
-  oldsolutions[0] = s.solution_m1;
-  if(oldsolutions.size() == 2)
-    oldsolutions[1] = s.solution_m2;
-  // one needs two right hand sides only for the crank-Nicolson
-  // and fractional step theta schemes
-  std::vector<BlockVector> rhs_(2);
-  rhs_[0] = rhs_from_time_disc; // current rhs
-  rhs_[1] = old_rhs; // old right hand side is needed for the Crank-Nicolson time stepping
-
-  // prepare the right hand side for the solver
-  time_stepping_scheme.prepare_rhs_from_time_disc(s.matrix, s.mass_matrix,
-                   rhs_, oldsolutions);
-  rhs_from_time_disc=rhs_[0];
-  old_rhs=s.rhs;
-  // copy the non-actives
-  rhs_from_time_disc.copy_nonactive(s.rhs);
-  s.solution.copy_nonactive(s.rhs);
-}
-
-/**************************************************************************** */
-void Time_NSE2D::update_matrices_lps(System_per_grid &s)
-{
-  std::vector<std::shared_ptr<FEMatrix>> blocks;
-  blocks = s.matrix.get_blocks_uniquely();
-  if(TDatabase::ParamDB->NSTYPE==3 || TDatabase::ParamDB->NSTYPE==4)
-  {
-    //update matrices for local projection stabilization
-    std::vector< TSquareMatrix2D* > sqMat(2);
-    sqMat[0]=reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
-    sqMat[1]=reinterpret_cast<TSquareMatrix2D*>(blocks.at(4).get());
-    UltraLocalProjection(sqMat[0], false);
-    UltraLocalProjection(sqMat[1], false);
-  }
-  else
-  {
-    std::vector< TSquareMatrix2D* > sqMat(1);
-    sqMat[0]=reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
-    UltraLocalProjection(sqMat[0], false);
-  }
-  
 }
 
 /**************************************************************************** */
@@ -1364,6 +1197,24 @@ void Time_NSE2D::output(int m)
 }
 
 /**************************************************************************** */
+double Time_NSE2D::getFullResidual() const
+{
+  return this->oldResidual;
+}
+
+/**************************************************************************** */
+std::array< double, int(6) > Time_NSE2D::get_errors()
+{
+  std::array<double, int(6)> error_at_time_points;
+  error_at_time_points[0] = sqrt(errors[1]); // L2 velocity error
+  error_at_time_points[1] = sqrt(errors[3]); // H1 velocity error
+  error_at_time_points[2] = sqrt(errors[5]); // L2 pressure error
+  error_at_time_points[3] = sqrt(errors[7]); // H1 pressure error
+
+  return error_at_time_points;
+}
+
+/**************************************************************************** */
 void Time_NSE2D::output_problem_size_info() const
 {
   int n_u = this->get_velocity_space().GetN_DegreesOfFreedom();
@@ -1384,20 +1235,169 @@ void Time_NSE2D::output_problem_size_info() const
 }
 
 /**************************************************************************** */
-std::array< double, int(6) > Time_NSE2D::get_errors()
+bool Time_NSE2D::imex_scheme(bool print_info)
 {
-  std::array<double, int(6)> error_at_time_points;
-  error_at_time_points[0] = sqrt(errors[1]); // L2 velocity error
-  error_at_time_points[1] = sqrt(errors[3]); // H1 velocity error
-  error_at_time_points[2] = sqrt(errors[5]); // L2 pressure error
-  error_at_time_points[3] = sqrt(errors[7]); // H1 pressure error
-
-  return error_at_time_points;
+  if((db["imex_scheme_"] && time_stepping_scheme.current_step_ >= 3))
+  {
+    db["nonlinloop_maxit"] = 1;
+    db["extrapolate_velocity"] = true;
+    
+    if(print_info) // condition is here just to print it once
+      Output::info<1>("Nonlinear Loop MaxIteration",
+                      "The parameter 'nonlinloop_maxit' was changed to 1."
+                      " Only one non-linear iteration is done, because the IMEX scheme was chosen.\n");
+    // this is typical for the problem with slip type boundary condition
+    // NOTE: only tested for the mixing layer problem for the moment
+    if(TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION >=1)
+      is_rhs_and_mass_matrix_nonlinear = true;
+    if(db["space_discretization_type"].is("supg"))
+      space_disc_global = -2;
+    return true;
+  }
+  else
+    return false;
 }
+
 /**************************************************************************** */
-
-
-double Time_NSE2D::getFullResidual() const
+void Time_NSE2D::modify_slip_bc(bool BT_Mass, bool slip_A_nl)
 {
-  return this->oldResidual;
+  // modification of the matrices due to the
+  // slip type boundary conditions: If the mass matrices,
+  // the off-diagonal A-blocks , and the BT's block,
+  // are unchanged during the time iteration, then this modification
+  // is done only once in the time loop. However, in the SUPG
+  // and residual based VMS method these matrices are also
+  // updated during the time steps, so modification of all
+  // of them including the right-hand side is necessary.The
+  // modification of the diagonal A-blocks are necessary
+  // in any case.
+  if(TDatabase::ParamDB->NSTYPE < 4)
+  {
+    ErrThrow("Slip with friction b.c. is only implemented for NSTYPE 4 and 14");
+  }
+  std::vector<const TFESpace2D*> spaces_mat(1);
+  std::vector<double*> rhs_array(2);
+  std::vector<const TFESpace2D*> rhs_space(2);
+
+  for(System_per_grid& s: this->systems)
+  {
+    spaces_mat[0] = s.velocity_space.get();
+    rhs_space[0] = spaces_mat[0];
+    rhs_space[1] = spaces_mat[0];
+
+    rhs_array[0] = s.rhs.block(0);
+    rhs_array[1] = s.rhs.block(1);
+
+    std::vector<std::shared_ptr<FEMatrix>> blocks;
+    blocks = s.matrix.get_blocks_uniquely();
+
+    std::vector<std::shared_ptr<FEMatrix>> mass_blocks;
+    mass_blocks = s.mass_matrix.get_blocks_uniquely(true);
+    
+    BoundCondFunct2D* bc[3] = {
+    s.velocity_space->get_boundary_condition(),
+    s.velocity_space->get_boundary_condition(),
+    s.pressure_space->get_boundary_condition()};
+    // boundary values:
+    std::vector<BoundValueFunct2D*>bv(3);
+    bv[0]=example.get_bd(0);
+    bv[1]=example.get_bd(1);
+    bv[2]=example.get_bd(2);
+
+    std::vector<TSquareMatrix2D*> sqMat;
+    std::vector<TMatrix2D*> reMat;
+    sqMat.resize(2);
+    // all 4 A blocks at the first time step
+    // and only the first 2 within the nonlinear loop
+    sqMat[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());//a11
+    sqMat[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(4).get());//a22
+
+    // if the off-diagonal are not changing within the non-linear loop
+    // then dont need to assemble them again
+    if(slip_A_nl)
+    {
+      sqMat.resize(4);
+      sqMat[2] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());//a12
+      sqMat[3] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(3).get());//a21
+    }
+
+    // either at the first time step
+    // or every time step if M and B's are changing
+    reMat.resize(0);
+    if(BT_Mass)
+    {
+      sqMat.resize(8);
+      sqMat[4] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(0).get());//m11
+      sqMat[5] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(4).get());//m22
+      sqMat[6] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(1).get());//m12
+      sqMat[7] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(3).get());//m21
+      reMat.resize(2);
+      reMat[0] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get()); //the standing B blocks
+      reMat[1] = reinterpret_cast<TMatrix2D*>(blocks.at(5).get());
+    }
+
+    // update the matrices and right hand side
+    Assemble2DSlipBC(spaces_mat.size(), spaces_mat.data(),
+                   sqMat.size(), sqMat.data(), reMat.size(), reMat.data(),
+                   rhs_array.size(), rhs_array.data(), rhs_space.data(),
+                   bc, bv.data(), s.u.GetComponent(0), s.u.GetComponent(1));
+
+  }
+
+}
+
+/**************************************************************************** */
+void Time_NSE2D::prepared_postprocessing(TCollection *coll)
+{
+  stream_function_space
+     = std::make_shared<TFESpace2D>(coll, (char*)"stream function space",
+                         (char*)"stream function space", example.get_bc(0), 1);
+  n_psi = stream_function_space->GetN_DegreesOfFreedom();
+  psi.resize(n_psi, 0.);
+  stream_function
+     = std::make_shared<TFEFunction2D>(stream_function_space.get(), (char*)"streamfunction",
+                          (char*)"streamfunction", psi.data(), n_psi);
+  // add to the wrapper
+  outputWriter.add_fe_function(stream_function.get());
+
+  if(db["example"].is(3) || db["example"].is(6))
+  {
+    zero_vorticity = -4711;
+    vorticity_space
+      =std::make_shared<TFESpace2D>(coll, (char*)"vorticity space", (char*)"vorticity space",
+                                example.get_bc(0), ContP_USpace, 1);
+    n_vort_dofs = vorticity_space->GetN_DegreesOfFreedom();
+    vorticity.resize(2*n_vort_dofs, 0.);
+    vorticity_funct 
+      = std::make_shared<TFEFunction2D>(vorticity_space.get(), (char*)"voritcity",
+                              (char*)"vorticity", vorticity.data()+n_vort_dofs, n_vort_dofs);
+    divergence
+      = std::make_shared<TFEFunction2D>(vorticity_space.get(), (char*)"dievergence",
+                            (char*)"divergence", vorticity.data(), n_vort_dofs);
+    outputWriter.add_fe_function(vorticity_funct.get());
+    outputWriter.add_fe_function(divergence.get());
+  }
+}
+
+/**************************************************************************** */
+void Time_NSE2D::update_matrices_lps(System_per_grid &s)
+{
+  std::vector<std::shared_ptr<FEMatrix>> blocks;
+  blocks = s.matrix.get_blocks_uniquely();
+  if(TDatabase::ParamDB->NSTYPE==3 || TDatabase::ParamDB->NSTYPE==4)
+  {
+    //update matrices for local projection stabilization
+    std::vector< TSquareMatrix2D* > sqMat(2);
+    sqMat[0]=reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
+    sqMat[1]=reinterpret_cast<TSquareMatrix2D*>(blocks.at(4).get());
+    UltraLocalProjection(sqMat[0], false);
+    UltraLocalProjection(sqMat[1], false);
+  }
+  else
+  {
+    std::vector< TSquareMatrix2D* > sqMat(1);
+    sqMat[0]=reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
+    UltraLocalProjection(sqMat[0], false);
+  }
+  
 }

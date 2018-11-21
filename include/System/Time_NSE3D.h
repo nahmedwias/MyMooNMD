@@ -28,12 +28,9 @@
 #include <Example_TimeNSE3D.h>
 #include <TimeDiscretizations.h>
 #include "LocalAssembling.h"
-
-
 #include <ParameterDatabase.h>
 #include <Solver.h>
 #include <DataWriter.h>
-
 #include <MainUtilities.h> // FixedSizeQueu
 
 #include <vector>
@@ -193,6 +190,14 @@ class Time_NSE3D
     /// different space discretization in the LocalAssembling2D
     int space_disc_global;
 
+    /** @brief check parameters in database
+    *
+    * This functions checks if the parameters in the database are meaningful.
+    * If some parameters are set to unsupported values, an error occurs and
+    * throws an exception.
+    */
+    void check_and_set_parameters();
+    
     /** @brief set the velocity and pressure orders
      *
      * This function sets the corresponding velocity and
@@ -233,14 +238,6 @@ class Time_NSE3D
     int current_step_;
 
 // ======================================================================
-    /** @brief check parameters in database
-    *
-    * This functions checks if the parameters in the database are meaningful.
-    * If some parameters are set to unsupported values, an error occurs and
-    * throws an exception.
-    */
-    void check_and_set_parameters();
-
     /** @brief Assemble all the matrices and rhs before the time iterations
     *
     * This includes the assembling of the Stiffness matrix, the Mass matrix,
