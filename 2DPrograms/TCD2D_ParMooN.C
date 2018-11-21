@@ -11,7 +11,7 @@
 #include <Domain.h>
 #include <Database.h>
 #include <FEDatabase2D.h>
-#include <Time_CD2D.h>
+#include "TimeConvectionDiffusion.h"
 
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -48,7 +48,7 @@ int main(int argc, char* argv[])
   if(parmoon_db["output_write_ps"])
     Domain.PS("Domain.ps", It_Finest, 0);
   
-  Time_CD2D tcd(Domain, parmoon_db);
+  TimeConvectionDiffusion<2> tcd(Domain, parmoon_db);
   
   TimeDiscretization& tss = tcd.get_time_stepping_scheme();
   tss.current_step_ = 0;

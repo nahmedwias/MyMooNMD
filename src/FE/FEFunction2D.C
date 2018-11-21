@@ -392,7 +392,7 @@ void TFEFunction2D::GetErrors(DoubleFunct2D *Exact, int N_Derivatives,
       hK = -4711;
     }
 #endif
-    double LocError[4];
+    double LocError[N_Errors];
     ErrorMeth(N_QuadPoints, {{X, Y}}, AbsDetjk, weights, hK, Derivatives, 
         ExactVal, AuxArray, LocError);
 

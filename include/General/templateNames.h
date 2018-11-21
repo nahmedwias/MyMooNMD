@@ -7,6 +7,8 @@ class Example_Darcy2D;
 class Example_Darcy3D;
 class Example_NSE2D;
 class Example_NSE3D;
+class Example_TimeCD2D;
+class Example_TimeCD3D;
 class TFEFunction2D;
 class TFEFunction3D;
 class TFESpace2D;
@@ -41,6 +43,7 @@ struct Template_names<2>
   typedef Example_CD2D Example_CD;
   typedef Example_Darcy2D Example_Darcy;
   typedef Example_NSE2D Example_NSE;
+  typedef Example_TimeCD2D Example_TimeCD;
   typedef TFEFunction2D FEFunction;
   typedef TFESpace2D FESpace;
   typedef TFEVectFunct2D FEVectFunct;
@@ -59,6 +62,7 @@ struct Template_names<3>
   typedef Example_CD3D Example_CD;
   typedef Example_Darcy3D Example_Darcy;
   typedef Example_NSE3D Example_NSE;
+  typedef Example_TimeCD3D Example_TimeCD;
   typedef TFEFunction3D FEFunction;
   typedef TFESpace3D FESpace;
   typedef TFEVectFunct3D FEVectFunct;
