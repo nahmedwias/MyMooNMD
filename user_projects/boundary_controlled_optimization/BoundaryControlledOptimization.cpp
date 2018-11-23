@@ -3,7 +3,8 @@
 #include "Database.h"
 #include <algorithm>
 
-ParameterDatabase BoundaryControlledOptimization::default_BCO_database()
+template <int d>
+ParameterDatabase BoundaryControlledOptimization<d>::default_BCO_database()
 {
   // is only needed for the adjoint problem, but there is only one global 
   // parameter for this.
@@ -33,13 +34,14 @@ ParameterDatabase BoundaryControlledOptimization::default_BCO_database()
   return db;
 }
 
-
-ParameterDatabase BoundaryControlledOptimization::get_primal_database(const ParameterDatabase& param_db)
+template <int d>
+ParameterDatabase BoundaryControlledOptimization<d>::get_primal_database(const ParameterDatabase& param_db)
 {
   return param_db;
 }
 
-ParameterDatabase BoundaryControlledOptimization::get_adjoint_database(const ParameterDatabase& param_db)
+template <int d>
+ParameterDatabase BoundaryControlledOptimization<d>::get_adjoint_database(const ParameterDatabase& param_db)
 {
   ParameterDatabase adjoint_db(ParameterDatabase::parmoon_default_database());
   adjoint_db.merge(ParameterDatabase::default_output_database(), true);
@@ -51,8 +53,8 @@ ParameterDatabase BoundaryControlledOptimization::get_adjoint_database(const Par
   return adjoint_db;
 }
 
-
-BoundaryControlledOptimization::BoundaryControlledOptimization(
+template<int d>
+BoundaryControlledOptimization<d>::BoundaryControlledOptimization(
   const TDomain& domain, const ParameterDatabase& param_db)
  : db(default_BCO_database()), n_control(0), control_dofs(),
    nse_primal(domain, get_primal_database (param_db)), 
@@ -74,7 +76,7 @@ BoundaryControlledOptimization::BoundaryControlledOptimization(
   
   // assemble linear (Stokes) parts
   TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE = 0;
-  nse_primal.assemble();
+  nse_primal.assemble_linear_terms();
   // solve a Stokes system once, to store its solution (as 'desired state')
   nse_primal.solve();
   *stokes_fe_vector = nse_primal.get_solution(); // copy
@@ -162,8 +164,8 @@ BoundaryControlledOptimization::BoundaryControlledOptimization(
                    "n_control = ", n_control);
 }
 
-
-double BoundaryControlledOptimization::compute_functional_and_derivative(
+template<int d>
+double BoundaryControlledOptimization<d>::compute_functional_and_derivative(
   unsigned int n, const double* x, double* grad)
 {
   if(n != n_control)
@@ -211,8 +213,8 @@ double BoundaryControlledOptimization::compute_functional_and_derivative(
   return current_J_hat;
 }
 
-
-void BoundaryControlledOptimization::apply_control_and_solve(const double* x)
+template<int d>
+void BoundaryControlledOptimization<d>::apply_control_and_solve(const double* x)
 {
   // apply control x
   auto& rhs = nse_primal.get_rhs();
@@ -231,11 +233,11 @@ void BoundaryControlledOptimization::apply_control_and_solve(const double* x)
   nse_primal.reset_residuals(); // forget previous iterations
   nse_primal.assemble_nonlinear_term();
   // check if solution is already set, compute residuals
-  if(!nse_primal.stopIt(0)) 
+  if(!nse_primal.stop_it(0)) 
   {
     bool stokes = false;
-    nonlinear_info.restart("nonlinear", nse_primal.getFullResidual());
-    nonlinear_info.print(0, nse_primal.getFullResidual());
+    nonlinear_info.restart("nonlinear", nse_primal.get_full_residual());
+    nonlinear_info.print(0, nse_primal.get_full_residual());
     for(unsigned int k = 1;; k++)
     {
       //Output::print(); // new line for a new nonlinear iteration
@@ -247,22 +249,22 @@ void BoundaryControlledOptimization::apply_control_and_solve(const double* x)
       
       nse_primal.assemble_nonlinear_term();
       
-      if( nse_primal.stopIt(k))
+      if( nse_primal.stop_it(k))
       {
-        nonlinear_info.finish(k, nse_primal.getFullResidual());
+        nonlinear_info.finish(k, nse_primal.get_full_residual());
         break;
       }
       else
       {
-        nonlinear_info.print(k, nse_primal.getFullResidual());
+        nonlinear_info.print(k, nse_primal.get_full_residual());
       }
     } // end for k
   }
   nse_primal.output(n_calls);
 }
 
-
-double BoundaryControlledOptimization::compute_functional() const
+template<int d>
+double BoundaryControlledOptimization<d>::compute_functional() const
 {
   auto u = nse_primal.get_velocity();
   auto u1 = u.GetComponent(0);
@@ -348,8 +350,8 @@ double BoundaryControlledOptimization::compute_functional() const
   return functional_value;
 }
 
-
-void BoundaryControlledOptimization::solve_adjoint_equation()
+template<int d>
+void BoundaryControlledOptimization<d>::solve_adjoint_equation()
 {
   auto u = nse_primal.get_velocity();
   auto p = nse_primal.get_pressure();
@@ -363,8 +365,8 @@ void BoundaryControlledOptimization::solve_adjoint_equation()
   nse_adjoint.output(n_calls);
 }
 
-
-void BoundaryControlledOptimization::compute_derivative(const double* x, 
+template<int d>
+void BoundaryControlledOptimization<d>::compute_derivative(const double* x, 
                                                         double* grad) const
 {
   double alpha = db["alpha_cost"];
@@ -390,3 +392,9 @@ void BoundaryControlledOptimization::compute_derivative(const double* x,
 //   }
 }
 
+
+#ifdef __3D__
+//template class BoundaryControlledOptimization<3>;
+#else
+template class BoundaryControlledOptimization<2>;
+#endif

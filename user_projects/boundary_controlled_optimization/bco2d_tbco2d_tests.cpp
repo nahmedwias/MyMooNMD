@@ -82,12 +82,12 @@ void set_ref_sol(int test_case,
 
 
 // this should be done inside the Domain class, but it is not yet.
-void refine_domain(TDomain& domain, bool write_ps_file)
+void refine_domain(TDomain& domain, ParameterDatabase& db, bool write_ps_file)
 {
   size_t n_ref = domain.get_n_initial_refinement_steps();
   for(size_t i = 0; i < n_ref; i++)
   {
-    domain.RegRefineAll();
+    domain.refine_and_get_hierarchy_of_collections(db);
   }
   
   // write grid into an Postscript file
@@ -126,7 +126,7 @@ int main(int argc, char* argv[])
 
    // set variables' value in TDatabase using argv[1] (*.dat file)
   TDomain domain(parmoon_db);
-  refine_domain(domain, false);
+  refine_domain(domain, parmoon_db, false);
   // Expected solution - if the results is equal to this given solution
   // then the test is passed
   std::array<double, 2> reference_solution;
@@ -140,7 +140,7 @@ int main(int argc, char* argv[])
     test_number = 1;
     parmoon_db["max_n_evaluations"] = 22; // force lower iterations because of bug
     set_ref_sol(test_number, reference_solution);
-    BoundaryControlledOptimization bco(domain, parmoon_db);
+    BoundaryControlledOptimization<2> bco(domain, parmoon_db);
     parmoon_opt::optimize(bco, parmoon_db);
     compare(bco,reference_solution,tol);
   }
@@ -157,7 +157,7 @@ int main(int argc, char* argv[])
     Output::print("Test ", test_number, ", Changing algoritm nlopt to: ",
                   parmoon_db["algorithm_nlopt"]);
     set_ref_sol(test_number, reference_solution);
-    BoundaryControlledOptimization bco2(domain, parmoon_db);
+    BoundaryControlledOptimization<2> bco2(domain, parmoon_db);
     parmoon_opt::optimize(bco2, parmoon_db);
     compare(bco2,reference_solution,tol);
   }

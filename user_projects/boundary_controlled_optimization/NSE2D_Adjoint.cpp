@@ -24,13 +24,14 @@ void nse2d_adjoint::zero_solution(double x, double y, double *values)
   values[3] = 0;
 }
 
-NSE2D_Adjoint::NSE2D_Adjoint(const NSE2D& nse2d,
+template <int d>
+NSE2D_Adjoint<d>::NSE2D_Adjoint(const NavierStokes<d>& nse2d,
                              const ParameterDatabase& param_db)
- : NSE2D(nse2d) // copy constructor
+ : NavierStokes<d>(nse2d) // copy constructor
 {
   // copy remaining parts
-  this->NSE2D::db.merge(param_db, false);
-  bool usingMultigrid = this->solver.is_using_multigrid();
+  this->NavierStokes<d>::db.merge(param_db, false);
+  bool usingMultigrid = this->NavierStokes<d>::solver.is_using_multigrid();
   if(usingMultigrid)
   {
     ErrThrow("NSE2D_Adjoint::assemble_additional_terms not yet implemented for "
@@ -38,15 +39,15 @@ NSE2D_Adjoint::NSE2D_Adjoint(const NSE2D& nse2d,
   }
   std::vector<DoubleFunct2D*> adjoint_solutions(3, nse2d_adjoint::zero_solution);
   std::vector<BoundValueFunct2D*> adjoint_bd(3, BoundaryValueHomogenous);
-  this->NSE2D::example = Example_NSE2D(adjoint_solutions,
-                                       this->NSE2D::example.boundary_conditions,
-                                       adjoint_bd,
-                                       this->NSE2D::example.get_coeffs(),
-                                       this->NSE2D::example.get_nu());
-  this->NSE2D::outputWriter = DataWriter2D(param_db);
-  this->NSE2D::outputWriter.add_fe_vector_function(&this->get_velocity());
-  this->NSE2D::outputWriter.add_fe_function(&this->get_pressure());
-  this->NSE2D::solver = Solver<BlockFEMatrix, BlockVector>(param_db);
+//   this->NavierStokes<d>::example = Example_NSE2D(adjoint_solutions,
+//                                        this->NavierStokes<d>::example.boundary_conditions,
+//                                        adjoint_bd,
+//                                        this->NavierStokes<d>::example.get_coeffs(),
+//                                        this->NavierStokes<d>::example.get_nu());
+  this->NavierStokes<d>::outputWriter = DataWriter2D(param_db);
+  this->NavierStokes<d>::outputWriter.add_fe_vector_function(&this->get_velocity());
+  this->NavierStokes<d>::outputWriter.add_fe_function(&this->get_pressure());
+  this->NavierStokes<d>::solver = Solver<BlockFEMatrix, BlockVector>(param_db);
 }
 
 
@@ -54,12 +55,13 @@ NSE2D_Adjoint::NSE2D_Adjoint(const NSE2D& nse2d,
 //                        double***, double**);
 //void params_function(double *in, double *out);
 
-void NSE2D_Adjoint::assemble(const TFEVectFunct2D& u, const TFEFunction2D& p,
+template <int d>
+void NSE2D_Adjoint<d>::assemble(const TFEVectFunct2D& u, const TFEFunction2D& p,
                              const TFEVectFunct2D& stokes_u, 
                              std::vector<double> weights,
                              bool restricted_curl)
 {
-  if(systems.size() > 1)
+  if(this->NavierStokes<d>::systems.size() > 1)
   {
     ErrThrow("NSE2D_Adjoint::assemble_additional_terms not yet implemented for "
              "multigrid");
@@ -69,9 +71,9 @@ void NSE2D_Adjoint::assemble(const TFEVectFunct2D& u, const TFEFunction2D& p,
     ErrThrow("The adjoint problem requires a full matrix structure. Please set "
             "'NSTYPE' to 4");
   }
-  System_per_grid& s = this->systems.front();
-  const TFESpace2D * v_space = s.velocity_space.get();
-  const TFESpace2D * p_space = s.pressure_space.get();
+//   this->System_per_grid& s = this->NavierStokes<d>::systems.front();
+  const TFESpace2D * v_space = this->NavierStokes<d>::systems.front().velocity_space.get();
+  const TFESpace2D * p_space = this->NavierStokes<d>::systems.front().pressure_space.get();
   if(u.GetFESpace2D() != v_space || p.GetFESpace2D() != p_space)
   {
     ErrThrow("primal and adjoint solutions should be defined on the same FE "
@@ -80,19 +82,19 @@ void NSE2D_Adjoint::assemble(const TFEVectFunct2D& u, const TFEFunction2D& p,
   nse2d_adjoint::cost_functional_weights = weights;
   nse2d_adjoint::restricted_curl_functional = restricted_curl;
   // delete the right-hand side and matrix
-  s.rhs.reset();
-  s.matrix.reset();
+  this->NavierStokes<d>::systems.front().rhs.reset();
+  this->NavierStokes<d>::systems.front().matrix.reset();
   // assemble all terms also on the Dirichlet boundary entries.
   TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE = 1;
-  this->NSE2D::assemble(); // the Stokes parts
-  s.rhs.reset();
+  this->NavierStokes<d>::assemble_linear_terms(); // the Stokes parts
+  this->NavierStokes<d>::systems.front().rhs.reset();
   
   // assemble additional terms, which depend on the primal solution (u,p)
   // what follows is basically a wrapper to call Assemble2D
   auto n_fe_spaces = 1;
   const TFESpace2D* fe_spaces[1]{v_space};
   
-  std::vector<std::shared_ptr<FEMatrix>> blocks = s.matrix.get_blocks_uniquely(
+  std::vector<std::shared_ptr<FEMatrix>> blocks = this->NavierStokes<d>::systems.front().matrix.get_blocks_uniquely(
     {{0,0},{0,1},{1,0},{1,1}});
   auto n_sq_mat = 4;
   TSquareMatrix2D* sq_mat[n_sq_mat];
@@ -105,7 +107,7 @@ void NSE2D_Adjoint::assemble(const TFEVectFunct2D& u, const TFEFunction2D& p,
   TMatrix2D** rect_mat = nullptr;
   
   auto n_rhs = 2; // the two velocity components on the right-hand side
-  double *rhs[2] = {s.rhs.block(0), s.rhs.block(1)};
+  double *rhs[2] = {this->NavierStokes<d>::systems.front().rhs.block(0), this->NavierStokes<d>::systems.front().rhs.block(1)};
   const TFESpace2D *fe_rhs[3] = {v_space, v_space};
   
   BoundCondFunct2D * boundary_conditions[2] = {
@@ -120,7 +122,7 @@ void NSE2D_Adjoint::assemble(const TFEVectFunct2D& u, const TFEFunction2D& p,
   std::vector<int> row_space = {0, 0, 0, 0};
   std::vector<int> column_space = {0, 0, 0, 0};
   std::vector<int> rhs_space = {0, 0};
-  CoeffFct2D coeffs = example.get_coeffs();
+  CoeffFct2D coeffs = NavierStokes<d>::example.get_coeffs();
   AssembleFctParam local_assembling_routine = nse2d_adjoint::adjoint_assembling;
   ManipulateFct2D* manipulate_function = nullptr;
   int n_matrices = 4;
@@ -162,13 +164,13 @@ void NSE2D_Adjoint::assemble(const TFEVectFunct2D& u, const TFEFunction2D& p,
     mat->scale_non_active_diagonals(diagonal_scaling);
   }
 }
-
-void NSE2D_Adjoint::solve()
+template <int d>
+void NSE2D_Adjoint<d>::solve()
 {
-  this->NSE2D::solve();
+  this->NavierStokes<d>::solve();
   
-  System_per_grid& s = this->systems.front();
-  std::vector<std::shared_ptr<FEMatrix>> blocks = s.matrix.get_blocks_uniquely(
+//   NavierStokes<d>::System_per_grid& s = this->NavierStokes<d>::systems.front();
+  std::vector<std::shared_ptr<FEMatrix>> blocks = this->NavierStokes<d>::systems.front().matrix.get_blocks_uniquely(
     {{0,0},{1,1}});
   for(auto mat : blocks)
   {
@@ -258,3 +260,10 @@ void nse2d_adjoint::params_function(const double *in, double *out)
   out[8] = in[0]; // x
   out[9] = in[1]; // y
 }
+
+
+#ifdef __3D__
+//template class NSE2D_Adjoint<3>;
+#else
+template class NSE2D_Adjoint<2>;
+#endif

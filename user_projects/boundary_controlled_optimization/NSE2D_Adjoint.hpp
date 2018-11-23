@@ -1,12 +1,14 @@
 #ifndef NSE2D_ADJOINT_H
 #define NSE2D_ADJOINT_H
 
-#include "NSE2D.h"
+#include "NavierStokes.h"
 
-class NSE2D_Adjoint : public NSE2D
+template <int d>
+class NSE2D_Adjoint : public NavierStokes<d>
 {
   public:
-    NSE2D_Adjoint(const NSE2D& nse2d, const ParameterDatabase& param_db);
+    
+    NSE2D_Adjoint(const NavierStokes<d>& nse, const ParameterDatabase& param_db);
   
     /// @brief assemble all terms in the matrix and right-hand side which
     /// contain the primal solutions u or p.

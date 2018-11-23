@@ -2,14 +2,16 @@
 #define BOUNDARYCONTROLLEDOPTIMIZATION_H
 
 #include "ParameterDatabase.h"
-#include "NSE2D.h"
+#include "NavierStokes.h"
 #include "NSE2D_Adjoint.hpp"
 #include "LoopInfo.h"
 
-
+template<int d>
 class BoundaryControlledOptimization
 {
   public:
+    using FEVectFunct = typename Template_names<d>::FEVectFunct;
+    
     BoundaryControlledOptimization(const TDomain& domain,
                                    const ParameterDatabase& param_db);
     
@@ -43,12 +45,12 @@ class BoundaryControlledOptimization
     /// n_control = 2*control_dofs.size();
     std::vector<int> control_dofs;
     /// @brief the Navier--Stokes object representing the primal solve
-    NSE2D nse_primal;
+    NavierStokes<d> nse_primal;
     /// @brief the Navier--Stokes object representing the adjoint solve
-    NSE2D_Adjoint nse_adjoint;
+    NSE2D_Adjoint<d> nse_adjoint;
     /// @brief Stokes solution as a 'desired state'
     std::shared_ptr<BlockVector> stokes_fe_vector;
-    std::shared_ptr<TFEVectFunct2D> stokes_sol;
+    std::shared_ptr<FEVectFunct> stokes_sol;
     
     
     /// variables during the optimization loop
