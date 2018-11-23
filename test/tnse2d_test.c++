@@ -9,16 +9,16 @@
 #include <Domain.h>
 #include <Database.h>
 #include <FEDatabase2D.h>
-#include <Time_NSE2D.h>
+#include "TimeNavierStokes.h"
 #include <TimeDiscRout.h>
 #include <MainUtilities.h>
 #include <FEFunction2D.h>
 #include <Multigrid.h> // newly implemented by clemens
 
-void compare(Time_NSE2D& tnse2d, std::array<double, int(4)> errors, double tol)
+void compare(TimeNavierStokes<2>& tnse2d, std::array<double, int(4)> errors,
+             double tol)
 {
-  std::array<double, int(6)> computed_errors;
-  computed_errors = tnse2d.get_errors();
+  auto computed_errors = tnse2d.get_errors();
 
   // check the L2-error of the velocity
   if( fabs(computed_errors[0]-errors[0]) > tol )
@@ -26,17 +26,17 @@ void compare(Time_NSE2D& tnse2d, std::array<double, int(4)> errors, double tol)
     ErrThrow("L2 norm of velocity: ", computed_errors[0], "  ", errors[0]);
   }
   // check the H1-error of the velocity
-  if( fabs(computed_errors[1] - errors[1]) > tol )
+  if( fabs(computed_errors[2] - errors[1]) > tol )
   {
     ErrThrow("H1 norm of velocity: ", computed_errors[1], "  ", errors[1]);
   }
   // check the L2-error of the pressure
-  if( fabs(computed_errors[2] - errors[2]) > tol)
+  if( fabs(computed_errors[3] - errors[2]) > tol)
   {
     ErrThrow("L2 norm of pressure: ", computed_errors[2], "  ", errors[2]);
   }
   // check the H1-error of the pressure
-  if(fabs(computed_errors[3] - errors[3]) > tol )
+  if(fabs(computed_errors[4] - errors[3]) > tol )
   {
     ErrThrow("H1 norm of pressure: ", computed_errors[3], "  ", errors[3]);
   }
@@ -49,13 +49,14 @@ void compute(TDomain& domain, ParameterDatabase& db,
   TDatabase::TimeDB->TIME_DISC=time_disc;
   TDatabase::TimeDB->CURRENTTIME = db["time_start"];
 
-  Time_NSE2D tnse2d(domain, db);
+  TimeNavierStokes<2> tnse2d(domain, db);
 
   tnse2d.get_time_stepping_scheme().current_step_ = 0;
+  tnse2d.get_time_stepping_scheme().current_time_ = db["time_start"];
   tnse2d.get_time_stepping_scheme().set_time_disc_parameters();
 
   tnse2d.assemble_initial_time();
-  tnse2d.output(tnse2d.get_time_stepping_scheme().current_step_);
+  tnse2d.output();
   double end_time = db["time_end"];
   while(TDatabase::TimeDB->CURRENTTIME < end_time-1e-10)
   {
@@ -66,6 +67,7 @@ void compute(TDomain& domain, ParameterDatabase& db,
     tnse2d.get_time_stepping_scheme().set_time_disc_parameters();
     double tau = db["time_step_length"];
     TDatabase::TimeDB->CURRENTTIME += tau;
+    tnse2d.get_time_stepping_scheme().current_time_ += tau;
 
     Output::print<1>("\nCURRENT TIME: ",
                      TDatabase::TimeDB->CURRENTTIME);
@@ -75,21 +77,20 @@ void compute(TDomain& domain, ParameterDatabase& db,
     // nonlinear iteration
     for(unsigned int i=0;; i++)
     {
-      if(tnse2d.stopIte(i))
+      if(tnse2d.stop_it(i))
         break;
       tnse2d.solve();
-
       tnse2d.assemble_matrices_rhs(i+1);
     }
     // post processing: error computations
     Output::print("TIME DISC FOR ME: ", time_disc);
-    tnse2d.output(tnse2d.get_time_stepping_scheme().current_step_);
+    tnse2d.output();
     // check the errors
-    if(tnse2d.get_time_stepping_scheme().current_step_==1)
+    if(tnse2d.get_time_stepping_scheme().current_step_ == 1)
       compare(tnse2d, errors[0], tol);
-    else if(tnse2d.get_time_stepping_scheme().current_step_ ==2)
+    else if(tnse2d.get_time_stepping_scheme().current_step_ == 2)
       compare(tnse2d, errors[1], tol);
-    else if(tnse2d.get_time_stepping_scheme().current_step_ ==20)
+    else if(tnse2d.get_time_stepping_scheme().current_step_ == 20)
       compare(tnse2d, errors[2], tol);
   }
 }
@@ -225,10 +226,7 @@ int main(int argc, char* argv[])
     TDomain domain(db);
     SetTimeDiscParameters(0);
     
-    size_t n_ref = domain.get_n_initial_refinement_steps();
-    for(unsigned int i=0; i< n_ref; ++i)
-      domain.RegRefineAll();
-
+    domain.refine_and_get_hierarchy_of_collections(db);
 
     // test here
     std::array<std::array<double, int(4)>, 4> errors;

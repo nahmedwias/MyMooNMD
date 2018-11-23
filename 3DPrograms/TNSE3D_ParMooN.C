@@ -8,7 +8,7 @@
 #include <Domain.h>
 #include <Database.h>
 #include <FEDatabase3D.h>
-#include <Time_NSE3D.h>
+#include "TimeNavierStokes.h"
 #include <MeshPartition.h>
 #include <Chrono.h>
 #include <TetGenMeshLoader.h>
@@ -88,7 +88,6 @@ int main(int argc, char* argv[])
   //open OUTFILE, this is where all output is written to (additionally to console)
   if(parmoon_db["problem_type"].is(0))
     parmoon_db["problem_type"] = 6;
-  Output::set_outfile(TDatabase::ParamDB->OUTFILE);
 
   if(my_rank==0) //Only one process should do that.
   {
@@ -103,15 +102,15 @@ int main(int argc, char* argv[])
   domain.print_info("TNSE3D domain");
   // set some parameters for time stepping
   SetTimeDiscParameters(0);
-  // Construct an object of the Time_NSE3D-problem type.
-  Time_NSE3D tnse3d(domain, parmoon_db, example);
+  // Construct an object of the TimeNavierStokes<3>-problem type.
+  TimeNavierStokes<3> tnse3d(domain, parmoon_db, example);
   
   TimeDiscretization& tss = tnse3d.get_time_stepping_scheme();
   tss.current_step_ = 0;
   tss.set_time_disc_parameters();
   
   tnse3d.assemble_initial_time();
-  tnse3d.output(tnse3d.current_step_);
+  tnse3d.output();
 
   int n_substeps = GetN_SubSteps();
 
@@ -139,7 +138,7 @@ int main(int argc, char* argv[])
     {
       // setting the time discretization parameters
       SetTimeDiscParameters(1);
-     if( tnse3d.current_step_ == 1 && my_rank==0) // a few output, not very necessary
+     if( tss.current_step_ == 1 && my_rank==0) // a few output, not very necessary
      {
        Output::print<1>("Theta1: ", TDatabase::TimeDB->THETA1);
        Output::print<1>("Theta2: ", TDatabase::TimeDB->THETA2);
@@ -153,14 +152,7 @@ int main(int argc, char* argv[])
       if (my_rank==0)
         Output::print("\nCURRENT TIME: ", TDatabase::TimeDB->CURRENTTIME);
 
-      // prepare the right hand side vector - needed only once per time step
-      tnse3d.assemble_rhs();
-
-      // assemble the nonlinear matrices
-      tnse3d.assemble_nonlinear_term();
-
-      // prepare the matrices for defect computations and solvers
-      tnse3d.assemble_system();
+      tnse3d.assemble_matrices_rhs(0);
       timer_timeit.restart_and_print("preparation of nonlinear iteration");
 
       // nonlinear iteration
@@ -169,14 +161,10 @@ int main(int argc, char* argv[])
      loop_info.verbosity_threshold = 1; // full verbosity
      for(unsigned int k=0; ; k++)
       {
-        tnse3d.compute_residuals();
-
-        if (my_rank==0) // some outputs
+        if(my_rank==0) // some output
         {
           Output::print<1>("\nNONLINEAR ITERATION :", setw(3), k);
-          Output::print<1>("Residuals :", tnse3d.get_residuals());
         }
-
         // checking residuals and stop conditions
         if(tnse3d.stop_it(k))
         {
@@ -192,12 +180,10 @@ int main(int argc, char* argv[])
  
         tnse3d.solve();
 
-        if(tnse3d.imex_scheme(1))
+        if(tnse3d.imex_scheme())
           continue;
 
-        tnse3d.assemble_nonlinear_term();
-
-        tnse3d.assemble_system();
+        tnse3d.assemble_matrices_rhs(k+1);
 
         timer_timeit.restart_and_print("solving and reassembling in the "
                                         "nonlinear iteration " + 
@@ -208,7 +194,7 @@ int main(int argc, char* argv[])
         "solving the time iteration " +
         std::to_string(TDatabase::TimeDB->CURRENTTIME));
 
-      tnse3d.output(tnse3d.current_step_);
+      tnse3d.output();
       timer_timeit.print_total_time(
         "time step " + std::to_string(TDatabase::TimeDB->CURRENTTIME));
     } // end of subtime loop
