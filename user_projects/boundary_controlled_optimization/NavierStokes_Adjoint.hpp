@@ -9,6 +9,9 @@ class NavierStokes_Adjoint : public NavierStokes<d>
   public:
     using FEFunction = typename Template_names<d>::FEFunction;
     using FEVectFunct = typename Template_names<d>::FEVectFunct;
+    using DoubleFunction = typename Template_names<d>::DoubleFunction;
+    using BoundaryValuesFunction = typename Template_names<d>::BoundaryValuesFunction;
+    using FESpace = typename Template_names<d>::FESpace;
     
     NavierStokes_Adjoint(const NavierStokes<d>& nse, const ParameterDatabase& param_db);
   
