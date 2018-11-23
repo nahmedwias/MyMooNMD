@@ -4,11 +4,11 @@
 #include "NavierStokes.h"
 
 template <int d>
-class NSE2D_Adjoint : public NavierStokes<d>
+class NavierStokes_Adjoint : public NavierStokes<d>
 {
   public:
     
-    NSE2D_Adjoint(const NavierStokes<d>& nse, const ParameterDatabase& param_db);
+    NavierStokes_Adjoint(const NavierStokes<d>& nse, const ParameterDatabase& param_db);
   
     /// @brief assemble all terms in the matrix and right-hand side which
     /// contain the primal solutions u or p.

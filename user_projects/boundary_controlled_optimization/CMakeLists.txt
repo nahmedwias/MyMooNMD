@@ -4,7 +4,7 @@ include_directories(${bco_dir})
 
 # list of sources for boundary controlled optimization
 list(APPEND BCOSRC "${bco_dir}/BoundaryControlledOptimization.cpp" )
-list(APPEND BCOSRC "${bco_dir}/NSE2D_Adjoint.cpp" )
+list(APPEND BCOSRC "${bco_dir}/NavierStokes_Adjoint.cpp" )
 list(APPEND BCOSRC "${bco_dir}/Time_BoundaryControlledOptimization.cpp" )
 list(APPEND BCOSRC "${bco_dir}/Time_NSE2D_Adjoint.cpp" )
 
@@ -25,7 +25,7 @@ if(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL OR ${PARMOON_PARALLEL_TYPE} STRE
   target_compile_definitions(bco2d PUBLIC -D__2D__)
   # Link in the required libraries.
   target_link_libraries(bco2d ${all_bco_libs})
-  set(parmoon_main_programs ${parmoon_main_programs} PARENT_SCOPE)
+  list(APPEND parmoon_main_programs bco2d)
   
   add_executable(tbco2d ${bco_dir}/TBCO2D_ParMooN.cpp)
   set_target_properties(tbco2d PROPERTIES OUTPUT_NAME 
@@ -34,6 +34,8 @@ if(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL OR ${PARMOON_PARALLEL_TYPE} STRE
   target_compile_definitions(tbco2d PUBLIC -D__2D__)
   # Link in the required libraries.
   target_link_libraries(tbco2d ${all_bco_libs})
+  list(APPEND parmoon_main_programs tbco2d)
+  
   set(parmoon_main_programs ${parmoon_main_programs} PARENT_SCOPE)
   
   add_executable(ParMooN_test_bco2d_tbco2d ${bco_dir}/bco2d_tbco2d_tests.cpp)

@@ -8,12 +8,12 @@
 
 
 // this should be done inside the Domain class, but it is not yet.
-void refine_domain(TDomain& domain, bool write_ps_file)
-{
+void refine_domain(TDomain& domain, ParameterDatabase& db, bool write_ps_file)
+{ 
   size_t n_ref = domain.get_n_initial_refinement_steps();
   for(size_t i = 0; i < n_ref; i++)
   {
-    domain.RegRefineAll();
+    domain.refine_and_get_hierarchy_of_collections(db);
   }
   
   // write grid into an Postscript file
@@ -50,10 +50,10 @@ int main(int argc, char* argv[])
   Database.WriteParamDB(argv[0]);
   
    // set variables' value in TDatabase using argv[1] (*.dat file)
-  TDomain domain(parmoon_db, argv[1]);
-  refine_domain(domain, parmoon_db["output_write_ps"]);
+  TDomain domain(parmoon_db);
+  refine_domain(domain, parmoon_db, parmoon_db["output_write_ps"]);
 
-  BoundaryControlledOptimization bco(domain, parmoon_db);
+  BoundaryControlledOptimization<2> bco(domain, parmoon_db);
   
   timer.restart_and_print("all preparations before optimization loop");
   parmoon_opt::print_nlopt_version();
