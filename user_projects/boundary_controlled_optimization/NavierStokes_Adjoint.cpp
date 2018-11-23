@@ -9,7 +9,11 @@
 
 namespace nse_adjoint
 {
-void zero_solution(double x, double y, double *values);
+void zero_solution(double x, double y, 
+#ifdef __3D__
+		   double z,
+#endif
+		   double *values);
 void adjoint_assembling(double, double*, double*, double, double**, int*,
                         double***, double**);
 void params_function(const double *in, double *out);
@@ -20,7 +24,11 @@ bool restricted_curl_functional;
 }
 
 constexpr double diagonal_scaling = 1.e30;
-void nse_adjoint::zero_solution(double x, double y, double *values)
+void nse_adjoint::zero_solution(double x, double y, 
+#ifdef __3D__
+				double z,
+#endif
+				double *values)
 {
   values[0] = 0;
   values[1] = 0;
@@ -29,9 +37,9 @@ void nse_adjoint::zero_solution(double x, double y, double *values)
 }
 
 template <int d>
-NavierStokes_Adjoint<d>::NavierStokes_Adjoint(const NavierStokes<d>& nse2d,
+NavierStokes_Adjoint<d>::NavierStokes_Adjoint(const NavierStokes<d>& nse,
                              const ParameterDatabase& param_db)
- : NavierStokes<d>(nse2d) // copy constructor
+ : NavierStokes<d>(nse) // copy constructor
 {
   // copy remaining parts
   this->NavierStokes<d>::db.merge(param_db, false);
@@ -41,14 +49,14 @@ NavierStokes_Adjoint<d>::NavierStokes_Adjoint(const NavierStokes<d>& nse2d,
     ErrThrow("NavierStokes_Adjoint::assemble_additional_terms not yet implemented for "
              "multigrid");
   }
-  std::vector<DoubleFunct2D*> adjoint_solutions(3, nse_adjoint::zero_solution);
-  std::vector<BoundValueFunct2D*> adjoint_bd(3, BoundaryValueHomogenous);
+  std::vector<DoubleFunction*> adjoint_solutions(d+1, nse_adjoint::zero_solution);
+  std::vector<BoundaryValuesFunction*> adjoint_bd(d+1, BoundaryValueHomogenous);
 //   this->NavierStokes<d>::example = Example_NSE2D(adjoint_solutions,
 //                                        this->NavierStokes<d>::example.boundary_conditions,
 //                                        adjoint_bd,
 //                                        this->NavierStokes<d>::example.get_coeffs(),
 //                                        this->NavierStokes<d>::example.get_nu());
-  this->NavierStokes<d>::outputWriter = DataWriter2D(param_db);
+  this->NavierStokes<d>::outputWriter = DataWriter<d>(param_db);
   this->NavierStokes<d>::outputWriter.add_fe_vector_function(&this->get_velocity());
   this->NavierStokes<d>::outputWriter.add_fe_function(&this->get_pressure());
   this->NavierStokes<d>::solver = Solver<BlockFEMatrix, BlockVector>(param_db);
@@ -63,6 +71,11 @@ void NavierStokes_Adjoint<d>::assemble(const FEVectFunct& u, const FEFunction& p
                              std::vector<double> weights,
                              bool restricted_curl)
 {
+  using SquareMatrixD = typename Template_names<d>::SquareMatrixD;
+  using MatrixD = typename Template_names<d>::MatrixD;
+  using BoundaryConditionFunction 
+    = typename Template_names<d>::BoundaryConditionFunction;
+    
   if(this->NavierStokes<d>::systems.size() > 1)
   {
     ErrThrow("NavierStokes_Adjoint::assemble_additional_terms not yet implemented for "
@@ -74,9 +87,13 @@ void NavierStokes_Adjoint<d>::assemble(const FEVectFunct& u, const FEFunction& p
             "'NSTYPE' to 4");
   }
 //   this->System_per_grid& s = this->NavierStokes<d>::systems.front();
-  const TFESpace2D * v_space = this->NavierStokes<d>::systems.front().velocity_space.get();
-  const TFESpace2D * p_space = this->NavierStokes<d>::systems.front().pressure_space.get();
+  const FESpace * v_space = this->NavierStokes<d>::systems.front().velocity_space.get();
+  const FESpace * p_space = this->NavierStokes<d>::systems.front().pressure_space.get();
+#ifdef __2D__  
   if(u.GetFESpace2D() != v_space || p.GetFESpace2D() != p_space)
+#else
+  if(u.GetFESpace3D() != v_space || p.GetFESpace3D() != p_space)
+#endif
   {
     ErrThrow("primal and adjoint solutions should be defined on the same FE "
              "Space");
@@ -92,32 +109,65 @@ void NavierStokes_Adjoint<d>::assemble(const FEVectFunct& u, const FEFunction& p
   this->NavierStokes<d>::systems.front().rhs.reset();
   
   // assemble additional terms, which depend on the primal solution (u,p)
-  // what follows is basically a wrapper to call Assemble2D
+  // what follows is basically a wrapper to call Assemble2D or 3D
   auto n_fe_spaces = 1;
-  const TFESpace2D* fe_spaces[1]{v_space};
+  const FESpace* fe_spaces[1]{v_space};
   
   std::vector<std::shared_ptr<FEMatrix>> blocks = this->NavierStokes<d>::systems.front().matrix.get_blocks_uniquely(
-    {{0,0},{0,1},{1,0},{1,1}});
-  auto n_sq_mat = 4;
-  TSquareMatrix2D* sq_mat[n_sq_mat];
-  sq_mat[0] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
-  sq_mat[1] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());
-  sq_mat[2] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(2).get());
-  sq_mat[3] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(3).get());
+#ifdef __2D__
+    {{0,0},{0,1},{1,0},{1,1}})
+#else //__3D__
+    {{0,0},{0,1},{0,2},{1,0},{1,1},{1,2},{2,0},{2,1},{2,2}})
+#endif
+  ;
+  auto n_sq_mat = d*d;
+  SquareMatrixD* sq_mat[n_sq_mat];
+#ifdef __2D__
+  sq_mat[0] = reinterpret_cast<SquareMatrixD*>(blocks.at(0).get());
+  sq_mat[1] = reinterpret_cast<SquareMatrixD*>(blocks.at(1).get());
+  sq_mat[2] = reinterpret_cast<SquareMatrixD*>(blocks.at(2).get());
+  sq_mat[3] = reinterpret_cast<SquareMatrixD*>(blocks.at(3).get());
+#else // __3D__
+  ErrThrow("NOT IMPLEMENTED YET!");
+  //   for(int i = 0, j = 0; i < d*d; ++i, ++j)
+//   {
+//     if(i%d == 0 && i > 0)
+//       j++;
+//     sq_mat[i] = reinterpret_cast<SquareMatrixD*>(blocks[j].get());
+//   }
+#endif
   
   auto n_rect_mat = 0;
-  TMatrix2D** rect_mat = nullptr;
+  MatrixD** rect_mat = nullptr;
   
-  auto n_rhs = 2; // the two velocity components on the right-hand side
-  double *rhs[2] = {this->NavierStokes<d>::systems.front().rhs.block(0), this->NavierStokes<d>::systems.front().rhs.block(1)};
-  const TFESpace2D *fe_rhs[3] = {v_space, v_space};
+  auto n_rhs = d; // the two velocity components on the right-hand side
+  double *rhs[d] = {this->NavierStokes<d>::systems.front().rhs.block(0), 
+		    this->NavierStokes<d>::systems.front().rhs.block(1)
+#ifdef __3D__
+		   ,this->NavierStokes<d>::systems.front().rhs.block(2)
+#endif
+  };
+  const FESpace *fe_rhs[d+1] = {v_space, v_space
+#ifdef __3D__
+    ,v_space
+#endif
+  };
   
-  BoundCondFunct2D * boundary_conditions[2] = {
-    v_space->get_boundary_condition(), v_space->get_boundary_condition() };
-  BoundValueFunct2D* non_const_bound_values[2] = 
-    { BoundaryValueHomogenous, BoundaryValueHomogenous };
+  BoundaryConditionFunction * boundary_conditions[d] = {
+    v_space->get_boundary_condition(), v_space->get_boundary_condition() 
+#ifdef __3D__
+    ,v_space->get_boundary_condition()
+#endif
+  };
+  BoundaryValuesFunction* non_const_bound_values[d] = 
+    { BoundaryValueHomogenous, BoundaryValueHomogenous 
+#ifdef __3D__
+    ,BoundaryValueHomogenous
+#endif
+    };
 
-  // set up custom LocalAssembling2D object:
+  // set up custom LocalAssembling object:
+#ifdef __2D__
   int n_terms = 3;
   std::vector<MultiIndex2D> derivatives{D00, D10, D01};
   std::vector<int> FESpaceNumber = { 0, 0, 0 }; // 0: velocity, 1: pressure  
@@ -165,7 +215,11 @@ void NavierStokes_Adjoint<d>::assemble(const FEVectFunct& u, const FEFunction& p
   {
     mat->scale_non_active_diagonals(diagonal_scaling);
   }
+#else //__3D__
+  ErrThrow("NOT IMPLEMENTED YET!!!!");
+#endif
 }
+
 template <int d>
 void NavierStokes_Adjoint<d>::solve()
 {
@@ -173,7 +227,11 @@ void NavierStokes_Adjoint<d>::solve()
   
 //   NavierStokes<d>::System_per_grid& s = this->NavierStokes<d>::systems.front();
   std::vector<std::shared_ptr<FEMatrix>> blocks = this->NavierStokes<d>::systems.front().matrix.get_blocks_uniquely(
-    {{0,0},{1,1}});
+    {{0,0},{1,1}
+#ifdef __3D__
+    ,{2,2}
+#endif
+    });
   for(auto mat : blocks)
   {
     mat->scale_non_active_diagonals(1./diagonal_scaling);
@@ -185,6 +243,7 @@ void nse_adjoint::adjoint_assembling(double Mult, double *coeff, double *param, 
                         double **OrigValues, int *N_BaseFuncts, 
                         double ***LocMatrices, double **LocRhs)
 {
+#ifdef __2D__
   const int N_U = N_BaseFuncts[0];
   const double *Orig0 = OrigValues[0];        // u_x
   const double *Orig1 = OrigValues[1];        // u_y
@@ -246,11 +305,15 @@ void nse_adjoint::adjoint_assembling(double Mult, double *coeff, double *param, 
       MatrixA22[i][j] += Mult * val;
     }                            // endfor j
   }                              // endfor i
+#else
+  ErrThrow("NOT IMPLEMENTED YET!");
+#endif
 }
 
 
 void nse_adjoint::params_function(const double *in, double *out)
 {
+#ifdef __2D__
   out[0] = in[2]; // u1old
   out[1] = in[3]; // u2old
   out[2] = in[4]; // D10(u1old)
@@ -261,6 +324,9 @@ void nse_adjoint::params_function(const double *in, double *out)
   out[7] = in[9]; // u2_stokes
   out[8] = in[0]; // x
   out[9] = in[1]; // y
+#else // __3D__
+  ErrThrow("NOT IMPLEMENTED YET!");
+#endif
 }
 
 
