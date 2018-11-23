@@ -36,7 +36,7 @@
  * @date 2016/05/18
  */
 
-#include <Time_NSE3D.h>
+#include "TimeNavierStokes.h"
 
 #include <Database.h>
 #include <FEDatabase3D.h>
@@ -50,31 +50,31 @@ double bound = 0;
 double timeC = 0;
 #endif
 
-void compare(const Time_NSE3D& tnse3d, std::array<double, int(4)> errors, double tol)
+void compare(const TimeNavierStokes<3>& tnse3d, std::array<double, 4> errors,
+             double tol)
 {
-  std::array<double, int(6)> computed_errors;
-  computed_errors = tnse3d.get_errors();
+  auto computed_errors = tnse3d.get_errors();
 
   // check the L2-error of the velcoity
-  if( fabs(computed_errors[0]-errors[0]) > tol ||
+  if( std::abs(computed_errors[0]-errors[0]) > tol ||
       computed_errors[0] != computed_errors[0]) //check for nan!
   {
     ErrThrow("L2 norm of velocity: ", computed_errors[0], "  ", errors[0]);
   }
   // check the H1-error of the velcoity
-  if( fabs(computed_errors[1] - errors[1]) > tol )
+  if( std::abs(computed_errors[2] - errors[1]) > tol )
   {
-    ErrThrow("H1 norm of velocity: ", computed_errors[1], "  ", errors[1]);
+    ErrThrow("H1 norm of velocity: ", computed_errors[2], "  ", errors[1]);
   }
   // check the L2-error of the pressure
-  if( fabs(computed_errors[2] - errors[2]) > tol)
+  if( std::abs(computed_errors[3] - errors[2]) > tol)
   {
-    ErrThrow("L2 norm of pressure: ", computed_errors[2], "  ", errors[2]);
+    ErrThrow("L2 norm of pressure: ", computed_errors[3], "  ", errors[2]);
   }
   // check the H1-error of the pressure
-  if(fabs(computed_errors[3] - errors[3]) > tol )
+  if(std::abs(computed_errors[4] - errors[3]) > tol )
   {
-    ErrThrow("H1 norm of pressure: ", computed_errors[3], "  ", errors[3]);
+    ErrThrow("H1 norm of pressure: ", computed_errors[4], "  ", errors[3]);
   }
 }
 
@@ -95,16 +95,15 @@ void compute(const TDomain& domain, ParameterDatabase& db,
   TDatabase::TimeDB->CURRENTTIME=  db["time_start"];
   SetTimeDiscParameters(0);
 
-  // Construct example object
-  Example_TimeNSE3D example(db);
   // Construct Time_NSE3D object
-  Time_NSE3D tnse3d(domain, db, example);
+  TimeNavierStokes<3> tnse3d(domain, db);
   
-  tnse3d.get_time_stepping_scheme().current_step_ =0;
+  tnse3d.get_time_stepping_scheme().current_step_ = 0;
+  tnse3d.get_time_stepping_scheme().current_time_ = db["time_start"];
   tnse3d.get_time_stepping_scheme().set_time_disc_parameters();
 
   tnse3d.assemble_initial_time();
-  tnse3d.output(tnse3d.get_time_stepping_scheme().current_step_);
+  tnse3d.output();
   //======================================================================
   // time iteration
   //======================================================================
@@ -117,32 +116,27 @@ void compute(const TDomain& domain, ParameterDatabase& db,
     double tau = tnse3d.get_time_stepping_scheme().get_step_length();
     //TODO: set also the current_time in the main class
     TDatabase::TimeDB->CURRENTTIME += tau;
+    tnse3d.get_time_stepping_scheme().current_time_ += tau;
     if (my_rank==0)
       Output::print("\nCURRENT TIME: ", TDatabase::TimeDB->CURRENTTIME);
-    tnse3d.assemble_rhs();
-    tnse3d.assemble_nonlinear_term();
-    tnse3d.assemble_system();
+    tnse3d.assemble_matrices_rhs(0);
     for(unsigned int k=0; ; k++)
     {
-      tnse3d.compute_residuals();
-      // checking residuals
       if(tnse3d.stop_it(k))
         break;
       tnse3d.solve();
-      tnse3d.assemble_nonlinear_term();
-      tnse3d.assemble_system();
+      tnse3d.assemble_matrices_rhs(k+1);
     }  // end of nonlinear loop
     cout<<" current step : " << tnse3d.get_time_stepping_scheme().current_step_<<endl;
     
-    tnse3d.output(tnse3d.get_time_stepping_scheme().current_step_);
-    cout<<" current step : " << tnse3d.get_time_stepping_scheme().current_step_<<endl;
+    tnse3d.output();
     // check the errors
-    if(tnse3d.get_time_stepping_scheme().current_step_==1)
-      compare(tnse3d, errors[0],tol);
-    else if(tnse3d.get_time_stepping_scheme().current_step_ ==2)
-      compare(tnse3d, errors[1],tol);
-    else if(tnse3d.get_time_stepping_scheme().current_step_ ==20)
-      compare(tnse3d, errors[2],tol);
+    if(tnse3d.get_time_stepping_scheme().current_step_ == 1)
+      compare(tnse3d, errors[0], tol);
+    else if(tnse3d.get_time_stepping_scheme().current_step_ == 2)
+      compare(tnse3d, errors[1], tol);
+    else if(tnse3d.get_time_stepping_scheme().current_step_ == 20)
+      compare(tnse3d, errors[2], tol);
   } // end of time loop
 }
 
@@ -339,12 +333,6 @@ int main(int argc, char* argv[])
   {
     // Construct domain and refine (default = once)
     TDomain domain_hex(db);
-//     size_t n_ref = domain_hex.get_n_initial_refinement_steps();
-//     for(size_t i=0; i< n_ref ; i++)
-//     {
-//       domain_hex.RegRefineAll();
-//     }
-
     domain_hex.refine_and_get_hierarchy_of_collections(db);
 
     //=============================================================================

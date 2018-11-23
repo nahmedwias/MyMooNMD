@@ -19,7 +19,7 @@
 #include <Example_NonStationary3D.h>
 #include <functional>
 
-class Time_NSE3D;
+template <int d> class TimeNavierStokes; //forward declaration
 
 class Example_TimeNSE3D : public Example_NonStationary3D
 {
@@ -47,7 +47,7 @@ public:
   };
   
   /// Apply the function stored as post processing routine.
-  void do_post_processing(Time_NSE3D& tnse3d) const;
+  void do_post_processing(TimeNavierStokes<3>& tnse3d) const;
   
   /// Return kinematic viscosity, if set.
   double get_nu() const;
@@ -73,7 +73,7 @@ private:
   /// Function doing the post processing for a stationary example.
   /// TODO @ULRICH: 
   // put NSE3D argument const as soon as FEFunctions can be copied properly!
-  std::function<void(Time_NSE3D &)> post_processing_stat;
+  std::function<void(TimeNavierStokes<3> &)> post_processing_stat;
   /// TODO @ULRICH Function doing the post processing for a time dependent example.
   
 };
