@@ -157,7 +157,7 @@ BoundaryControlledOptimization<d>::BoundaryControlledOptimization(
 //   {
 //     Output::print("control_dof ", e);
 //   }
-  n_control = 2 * control_dofs.size(); // space dimension 2
+  n_control = d * control_dofs.size(); // space dimension d = 2 or 3
   
   control_old = std::vector<double>(n_control, 0.0);
   Output::print<3>("Created the BoundaryControlledOptimization object, ",
@@ -269,6 +269,9 @@ double BoundaryControlledOptimization<d>::compute_functional() const
   auto u = nse_primal.get_velocity();
   auto u1 = u.GetComponent(0);
   auto u2 = u.GetComponent(1);
+#ifdef __3D__
+  auto u3 = u.GetComponent(2);
+#endif
   //auto p = nse_primal.get_pressure();
   // the id of the component on which the control is to be applied
   int comp = db["controlled_boundary_component"];
@@ -276,8 +279,15 @@ double BoundaryControlledOptimization<d>::compute_functional() const
   std::vector<double> cost_functional = db["cost_functional"];
   auto l2_norm_on_boundary1 = u1->get_L2_norm_on_boundary(comp);
   auto l2_norm_on_boundary2 = u2->get_L2_norm_on_boundary(comp);
+#ifdef __3D__
+  auto l2_norm_on_boundary3 = u3->get_L2_norm_on_boundary(comp);
+#endif
   auto l2_norm_on_boundary = l2_norm_on_boundary1*l2_norm_on_boundary1
-   + l2_norm_on_boundary2*l2_norm_on_boundary2;
+   + l2_norm_on_boundary2*l2_norm_on_boundary2
+#ifdef __3D__
+   + l2_norm_on_boundary3*l2_norm_on_boundary3
+#endif  
+   ;
   
   
   auto compute_L2_norm_of_curl = 
@@ -318,14 +328,27 @@ double BoundaryControlledOptimization<d>::compute_functional() const
     *this->stokes_fe_vector *= -1.;
     auto u1_diff = this->stokes_sol->GetComponent(0);
     auto u2_diff = this->stokes_sol->GetComponent(1);
+#ifdef __3D__
+  auto u3_diff = this->stokes_sol->GetComponent(2);
+#endif
     auto u1_diff_l2_norm = u1_diff->get_L2_norm();
     auto u2_diff_l2_norm = u2_diff->get_L2_norm();
+#ifdef __3D__
+  auto u3_diff_l2_norm = u3_diff->get_L2_norm();
+#endif
     auto l2_norm_diff = u1_diff_l2_norm * u1_diff_l2_norm 
-                      + u2_diff_l2_norm * u2_diff_l2_norm;
+                      + u2_diff_l2_norm * u2_diff_l2_norm
+#ifdef __3D__
+		      + u3_diff_l2_norm * u3_diff_l2_norm
+#endif
+     ;
     *this->stokes_fe_vector *= -1.;
     *this->stokes_fe_vector += primal_sol;
     delete u1_diff;
     delete u2_diff;
+#ifdef __3D__
+    delete u3_diff;
+#endif
     return l2_norm_diff;
   };
   
@@ -347,6 +370,9 @@ double BoundaryControlledOptimization<d>::compute_functional() const
   
   delete u1;
   delete u2;
+#ifdef __3D__
+  delete u3;
+#endif
   return functional_value;
 }
 
@@ -394,7 +420,7 @@ void BoundaryControlledOptimization<d>::compute_derivative(const double* x,
 
 
 #ifdef __3D__
-//template class BoundaryControlledOptimization<3>;
+template class BoundaryControlledOptimization<3>;
 #else
 template class BoundaryControlledOptimization<2>;
 #endif

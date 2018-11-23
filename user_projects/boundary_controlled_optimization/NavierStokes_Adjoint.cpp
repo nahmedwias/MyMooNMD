@@ -1,9 +1,13 @@
 #include "NavierStokes_Adjoint.hpp"
+#ifdef __2D__
 #include "Assemble2D.h"
+#else
+#include "Assemble3D.h"
+#endif
 #include "MainUtilities.h" // BoundaryValueHomogenous
 #include "Database.h" // to check TDatabase::ParamDB->NSTYPE
 
-namespace nse2d_adjoint
+namespace nse_adjoint
 {
 void zero_solution(double x, double y, double *values);
 void adjoint_assembling(double, double*, double*, double, double**, int*,
@@ -16,7 +20,7 @@ bool restricted_curl_functional;
 }
 
 constexpr double diagonal_scaling = 1.e30;
-void nse2d_adjoint::zero_solution(double x, double y, double *values)
+void nse_adjoint::zero_solution(double x, double y, double *values)
 {
   values[0] = 0;
   values[1] = 0;
@@ -37,7 +41,7 @@ NavierStokes_Adjoint<d>::NavierStokes_Adjoint(const NavierStokes<d>& nse2d,
     ErrThrow("NavierStokes_Adjoint::assemble_additional_terms not yet implemented for "
              "multigrid");
   }
-  std::vector<DoubleFunct2D*> adjoint_solutions(3, nse2d_adjoint::zero_solution);
+  std::vector<DoubleFunct2D*> adjoint_solutions(3, nse_adjoint::zero_solution);
   std::vector<BoundValueFunct2D*> adjoint_bd(3, BoundaryValueHomogenous);
 //   this->NavierStokes<d>::example = Example_NSE2D(adjoint_solutions,
 //                                        this->NavierStokes<d>::example.boundary_conditions,
@@ -51,13 +55,11 @@ NavierStokes_Adjoint<d>::NavierStokes_Adjoint(const NavierStokes<d>& nse2d,
 }
 
 
-//void adjoint_assembling(double, double*, double*, double, double**, int*,
-//                        double***, double**);
-//void params_function(double *in, double *out);
+
 
 template <int d>
-void NavierStokes_Adjoint<d>::assemble(const TFEVectFunct2D& u, const TFEFunction2D& p,
-                             const TFEVectFunct2D& stokes_u, 
+void NavierStokes_Adjoint<d>::assemble(const FEVectFunct& u, const FEFunction& p,
+                             const FEVectFunct& stokes_u, 
                              std::vector<double> weights,
                              bool restricted_curl)
 {
@@ -79,8 +81,8 @@ void NavierStokes_Adjoint<d>::assemble(const TFEVectFunct2D& u, const TFEFunctio
     ErrThrow("primal and adjoint solutions should be defined on the same FE "
              "Space");
   }
-  nse2d_adjoint::cost_functional_weights = weights;
-  nse2d_adjoint::restricted_curl_functional = restricted_curl;
+  nse_adjoint::cost_functional_weights = weights;
+  nse_adjoint::restricted_curl_functional = restricted_curl;
   // delete the right-hand side and matrix
   this->NavierStokes<d>::systems.front().rhs.reset();
   this->NavierStokes<d>::systems.front().matrix.reset();
@@ -123,11 +125,11 @@ void NavierStokes_Adjoint<d>::assemble(const TFEVectFunct2D& u, const TFEFunctio
   std::vector<int> column_space = {0, 0, 0, 0};
   std::vector<int> rhs_space = {0, 0};
   CoeffFct2D coeffs = NavierStokes<d>::example.get_coeffs();
-  AssembleFctParam local_assembling_routine = nse2d_adjoint::adjoint_assembling;
+  AssembleFctParam local_assembling_routine = nse_adjoint::adjoint_assembling;
   ManipulateFct2D* manipulate_function = nullptr;
   int n_matrices = 4;
   int N_ParamFct = 1;
-  std::vector<ParamFct*> ParameterFct{nse2d_adjoint::params_function};
+  std::vector<ParamFct*> ParameterFct{nse_adjoint::params_function};
   std::vector<int> BeginParameter{0};
   int N_Parameters = 10;
   TFEFunction2D *FEFunctions2D[4] = { u.GetComponent(0), u.GetComponent(1),
@@ -179,7 +181,7 @@ void NavierStokes_Adjoint<d>::solve()
 }
 
 
-void nse2d_adjoint::adjoint_assembling(double Mult, double *coeff, double *param, double hK,
+void nse_adjoint::adjoint_assembling(double Mult, double *coeff, double *param, double hK,
                         double **OrigValues, int *N_BaseFuncts, 
                         double ***LocMatrices, double **LocRhs)
 {
@@ -199,11 +201,11 @@ void nse2d_adjoint::adjoint_assembling(double Mult, double *coeff, double *param
   const double u2_stokes = param[7];
   const double x = param[8];
   bool restricted_curl = restricted_curl_functional && (x >= 8. || x <= 4.);
-  const double curl_u = restricted_curl ? 0 : (u2x - u1y) * nse2d_adjoint::cost_functional_weights[0] * Mult;
-  const double min_u1_0 = (u1 < 0. ? u1 : 0.) * nse2d_adjoint::cost_functional_weights[1] * Mult;
-  const double max_u2_0 = (u2 > 0. ? u2 : 0.) * nse2d_adjoint::cost_functional_weights[1] * Mult;
-  const double u1_diff = (u1 - u1_stokes) * nse2d_adjoint::cost_functional_weights[2] * Mult;
-  const double u2_diff = (u2 - u2_stokes) * nse2d_adjoint::cost_functional_weights[2] * Mult;
+  const double curl_u = restricted_curl ? 0 : (u2x - u1y) * nse_adjoint::cost_functional_weights[0] * Mult;
+  const double min_u1_0 = (u1 < 0. ? u1 : 0.) * nse_adjoint::cost_functional_weights[1] * Mult;
+  const double max_u2_0 = (u2 > 0. ? u2 : 0.) * nse_adjoint::cost_functional_weights[1] * Mult;
+  const double u1_diff = (u1 - u1_stokes) * nse_adjoint::cost_functional_weights[2] * Mult;
+  const double u2_diff = (u2 - u2_stokes) * nse_adjoint::cost_functional_weights[2] * Mult;
   
   double ** MatrixA11 = LocMatrices[0];
   double ** MatrixA12 = LocMatrices[1];
@@ -247,7 +249,7 @@ void nse2d_adjoint::adjoint_assembling(double Mult, double *coeff, double *param
 }
 
 
-void nse2d_adjoint::params_function(const double *in, double *out)
+void nse_adjoint::params_function(const double *in, double *out)
 {
   out[0] = in[2]; // u1old
   out[1] = in[3]; // u2old
@@ -263,7 +265,7 @@ void nse2d_adjoint::params_function(const double *in, double *out)
 
 
 #ifdef __3D__
-//template class NavierStokes_Adjoint<3>;
+template class NavierStokes_Adjoint<3>;
 #else
 template class NavierStokes_Adjoint<2>;
 #endif
