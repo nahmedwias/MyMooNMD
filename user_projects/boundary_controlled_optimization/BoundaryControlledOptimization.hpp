@@ -3,7 +3,7 @@
 
 #include "ParameterDatabase.h"
 #include "NavierStokes.h"
-#include "NSE2D_Adjoint.hpp"
+#include "NavierStokes_Adjoint.hpp"
 #include "LoopInfo.h"
 
 template<int d>
@@ -47,7 +47,7 @@ class BoundaryControlledOptimization
     /// @brief the Navier--Stokes object representing the primal solve
     NavierStokes<d> nse_primal;
     /// @brief the Navier--Stokes object representing the adjoint solve
-    NSE2D_Adjoint<d> nse_adjoint;
+    NavierStokes_Adjoint<d> nse_adjoint;
     /// @brief Stokes solution as a 'desired state'
     std::shared_ptr<BlockVector> stokes_fe_vector;
     std::shared_ptr<FEVectFunct> stokes_sol;

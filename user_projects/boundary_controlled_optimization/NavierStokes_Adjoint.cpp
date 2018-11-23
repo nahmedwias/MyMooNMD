@@ -1,4 +1,4 @@
-#include "NSE2D_Adjoint.hpp"
+#include "NavierStokes_Adjoint.hpp"
 #include "Assemble2D.h"
 #include "MainUtilities.h" // BoundaryValueHomogenous
 #include "Database.h" // to check TDatabase::ParamDB->NSTYPE
@@ -25,7 +25,7 @@ void nse2d_adjoint::zero_solution(double x, double y, double *values)
 }
 
 template <int d>
-NSE2D_Adjoint<d>::NSE2D_Adjoint(const NavierStokes<d>& nse2d,
+NavierStokes_Adjoint<d>::NavierStokes_Adjoint(const NavierStokes<d>& nse2d,
                              const ParameterDatabase& param_db)
  : NavierStokes<d>(nse2d) // copy constructor
 {
@@ -34,7 +34,7 @@ NSE2D_Adjoint<d>::NSE2D_Adjoint(const NavierStokes<d>& nse2d,
   bool usingMultigrid = this->NavierStokes<d>::solver.is_using_multigrid();
   if(usingMultigrid)
   {
-    ErrThrow("NSE2D_Adjoint::assemble_additional_terms not yet implemented for "
+    ErrThrow("NavierStokes_Adjoint::assemble_additional_terms not yet implemented for "
              "multigrid");
   }
   std::vector<DoubleFunct2D*> adjoint_solutions(3, nse2d_adjoint::zero_solution);
@@ -56,14 +56,14 @@ NSE2D_Adjoint<d>::NSE2D_Adjoint(const NavierStokes<d>& nse2d,
 //void params_function(double *in, double *out);
 
 template <int d>
-void NSE2D_Adjoint<d>::assemble(const TFEVectFunct2D& u, const TFEFunction2D& p,
+void NavierStokes_Adjoint<d>::assemble(const TFEVectFunct2D& u, const TFEFunction2D& p,
                              const TFEVectFunct2D& stokes_u, 
                              std::vector<double> weights,
                              bool restricted_curl)
 {
   if(this->NavierStokes<d>::systems.size() > 1)
   {
-    ErrThrow("NSE2D_Adjoint::assemble_additional_terms not yet implemented for "
+    ErrThrow("NavierStokes_Adjoint::assemble_additional_terms not yet implemented for "
              "multigrid");
   }
   if(TDatabase::ParamDB->NSTYPE != 4)
@@ -165,7 +165,7 @@ void NSE2D_Adjoint<d>::assemble(const TFEVectFunct2D& u, const TFEFunction2D& p,
   }
 }
 template <int d>
-void NSE2D_Adjoint<d>::solve()
+void NavierStokes_Adjoint<d>::solve()
 {
   this->NavierStokes<d>::solve();
   
@@ -263,7 +263,7 @@ void nse2d_adjoint::params_function(const double *in, double *out)
 
 
 #ifdef __3D__
-//template class NSE2D_Adjoint<3>;
+//template class NavierStokes_Adjoint<3>;
 #else
-template class NSE2D_Adjoint<2>;
+template class NavierStokes_Adjoint<2>;
 #endif
