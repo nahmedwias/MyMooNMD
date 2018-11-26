@@ -7,10 +7,12 @@
 #include "Database.h"
 #include "TimeDiscRout.h"
 #include <algorithm>
+#include <BaseCell.h>
 #include <ParMooN_repository_info.h>
 
 const std::string path = parmoon::source_directory;
 const std::string path_to_repo = path + "/user_projects/geothermal_plant_position/";
+constexpr char GeothermalPlantsPositionOptimization::required_database_name_TCD2D_GPPO[];
 
 /** ************************************************************************ */
 ParameterDatabase GeothermalPlantsPositionOptimization::default_GPPO_database()
@@ -64,7 +66,20 @@ ParameterDatabase get_primal_temperature_database(ParameterDatabase param_db)
   basename += std::string("temperature");
   param_db["output_basename"].set(basename, false);
 
-  return param_db;
+
+  // velocity solver database
+    ParameterDatabase tcd2d_GPPO_db = param_db;
+    auto db_name = std::string(GeothermalPlantsPositionOptimization::required_database_name_TCD2D_GPPO);
+    // use the given database or one of its nested databases, depending on which
+    // one has the correct name. Otherwise the default solver database is used.
+    cout << "HIER !!!!!"<< param_db.has_nested_database(db_name) << endl;
+    cout << db_name << endl;
+
+   if(param_db.has_nested_database(db_name))
+    {
+     tcd2d_GPPO_db.merge(param_db.get_nested_database(db_name), false);
+    }
+  return tcd2d_GPPO_db;
 }
 
 /** ************************************************************************ */
@@ -86,12 +101,12 @@ GeothermalPlantsPositionOptimization::GeothermalPlantsPositionOptimization(
 : db(default_GPPO_database()), n_control(0),
   brinkman2d_primal(domain, get_primal_flow_database(param_db),
           get_gppo_flow_example(param_db)),
-          tcd2d_primal(domain, get_primal_temperature_database(param_db),
+  tcd2d_primal(domain, get_primal_temperature_database(param_db),
                   get_gppo_temperature_example(param_db)),
-                  optimization_info("optimization", true, true, 1), // 1 -> full verbosity
-                  current_J_hat(std::numeric_limits<double>::infinity()),
-                  control_old(), n_calls(0),
-                  n_computation_derivative(0)
+  optimization_info("optimization", true, true, 1), // 1 -> full verbosity
+  current_J_hat(std::numeric_limits<double>::infinity()),
+  control_old(), n_calls(0),
+  n_computation_derivative(0)
 {
   Output::print<5>("Creating the GeothermalPlantsPositionOptimization object");
   db.merge(param_db, false);
@@ -105,7 +120,7 @@ GeothermalPlantsPositionOptimization::GeothermalPlantsPositionOptimization(
     brinkman2d_primal.assemble_with_coefficient_fct(nullptr);
   }
 
-  n_control = 1;
+  n_control = 6; //1; //NEW LB 13.11.18
   control_old = std::vector<double>(n_control, 0.0);
   Output::print<3>("Created the GeothermalPlantsPositionOptimization object, ",
           "n_control = ", n_control);
@@ -168,37 +183,105 @@ void approximate_delta_functions(int n_points, double *x, double *y,
   for(int i = 0; i < n_points; ++i)
   {
     //another approx. for domain [0, 10] x [0, 6]
-    double a = 0.05;
+    double a = 5.; //0.05;
     double r_Wells = 5*0.001;
-    double Q_in = 0.03*Pi*r_Wells*r_Wells * 1000;
-    std::array<double, 2> center_source = {{5.0 - distance/2., 3}};
-    std::array<double, 2> center_sink = {{5.0 + distance/2., 3}};
-    double x_distance_to_source = std::pow(std::abs(x[i]-center_source[0]), 2);
-    double y_distance_to_source = std::pow(std::abs(y[i]-center_source[1]), 2);
-    double x_distance_to_sink = std::pow(std::abs(x[i]-center_sink[0]), 2);
-    double y_distance_to_sink = std::pow(std::abs(y[i]-center_sink[1]), 2);
+    double Q_in = 0.03*Pi*r_Wells*r_Wells * 0.1;
+    //cout <<"distance  in brinkman!!!!"<< distance << endl;
+
+    std::array<double, 2> center_source = {{5000.0 - distance/2., 3000.0}}; //{{5.0 - distance/2., 3}};
+    std::array<double, 2> center_sink = {{5000.0 + distance/2., 3000.0}}; //{{5.0 + distance/2., 3}};
+    //cout <<" center_source[0]) in brinkman!!!!"<<  center_source[0] << endl;
+    //cout <<" center_source[1]) in brinkman!!!!"<<  center_source[1]<< endl;
+
+    //cout <<" center_sink[0]) in brinkman!!!!"<<  center_sink[0] << endl;
+    //cout <<" center_sink[1]) in brinkman!!!!"<<  center_sink[1]<< endl;
+
+    double x_distance_to_source = std::pow(std::abs(x[i] - center_source[0]), 2);
+    double y_distance_to_source = std::pow(std::abs(y[i] - center_source[1]), 2);
+    double x_distance_to_sink = std::pow(std::abs(x[i] - center_sink[0]), 2);
+    double y_distance_to_sink = std::pow(std::abs(y[i] - center_sink[1]), 2);
     bool at_source = x_distance_to_source + y_distance_to_source < a*a;
     bool at_sink = x_distance_to_sink + y_distance_to_sink < a*a;
     coeffs[i][0] = 0.;
     coeffs[i][1] = 0.;
     coeffs[i][2] = 0.;
     coeffs[i][3] = 0.;
+
     if(at_source)
     {
       double magnitude = cos(Pi*x_distance_to_source/a) + 1;
       magnitude *= cos(Pi*y_distance_to_source/a) + 1;
       magnitude /= 4.*a*a;
-      coeffs[i][3] += magnitude * Q_in; // source
+      //coeffs[i][3] += magnitude * Q_in; // source
+      coeffs[i][3] += 0.00000530785562633; // =(150/3600)/(Pi*a*a) //0.00008333; //0.08333; //24*50; // 0.001; // source
     }
-    if(at_sink)
+    if(at_sink )
     {
       double magnitude = cos(Pi*x_distance_to_sink/a) + 1;
       magnitude *= cos(Pi*y_distance_to_sink/a) + 1;
       magnitude /= 4.*a*a;
-      coeffs[i][3] -=  magnitude * Q_in; // sink
+      //coeffs[i][3] -=  magnitude * Q_in; // sink
+      coeffs[i][3] -= 0.00000530785562633; //=(150/3600)/(Pi*a*a) //0.00008333; //0.08333; //  24*50; //0.001; // sink
     }
   }
 }
+
+/** ************************************************************************ */
+/*// For 3 wells:
+void approximate_delta_functions_3(int n_points, double *x, double *y,
+        double **parameters, double **coeffs,
+        double x_i, double x_p1, double x_p2, double y_i, double y_p1, double y_p2 )
+{
+  for(int i = 0; i < n_points; ++i)
+  {
+    //another approx. for domain [0, 10] x [0, 6]
+    double a = 0.25;
+    double r_Wells = 5*0.001;
+    double Q_in = 0.03*Pi*r_Wells*r_Wells * 0.1;
+    std::array<double, 2> center_source = {{x_i, y_i}};
+    std::array<double, 2> center_sink_1 = {{x_p1, y_p1}};
+    std::array<double, 2> center_sink_2 = {{x_p2, y_p2}};
+    double x_distance_to_source = std::pow(std::abs(x[i]-center_source[0]), 2);
+    double y_distance_to_source = std::pow(std::abs(y[i]-center_source[1]), 2);
+    double x_distance_to_sink_1 = std::pow(std::abs(x[i]-center_sink_1[0]), 2);
+    double y_distance_to_sink_1 = std::pow(std::abs(y[i]-center_sink_1[1]), 2);
+    double x_distance_to_sink_2 = std::pow(std::abs(x[i]-center_sink_2[0]), 2);
+    double y_distance_to_sink_2 = std::pow(std::abs(y[i]-center_sink_2[1]), 2);
+    bool at_source = x_distance_to_source + y_distance_to_source < a*a;
+    bool at_sink_1 = x_distance_to_sink_1 + y_distance_to_sink_1 < a*a;
+    bool at_sink_2 = x_distance_to_sink_2 + y_distance_to_sink_2 < a*a;
+    coeffs[i][0] = 0.;
+    coeffs[i][1] = 0.;
+    coeffs[i][2] = 0.;
+    coeffs[i][3] = 0.;
+
+    if(at_source)
+    {
+      double magnitude = cos(Pi*x_distance_to_source/a) + 1;
+      magnitude *= cos(Pi*y_distance_to_source/a) + 1;
+      magnitude /= 4.*a*a;
+      //coeffs[i][3] += magnitude * Q_in; // source
+      coeffs[i][3] += 0.001; // source
+    }
+    if(at_sink_1)
+    {
+      double magnitude_1 = cos(Pi*x_distance_to_sink_1/a) + 1;
+      magnitude_1 *= cos(Pi*y_distance_to_sink_1/a) + 1;
+      magnitude_1 /= 4.*a*a;
+      //coeffs[i][3] -=  magnitude_1 * Q_in; // sink
+      coeffs[i][3] -=  0.001; // sink
+    }
+    if(at_sink_2)
+    {
+      double magnitude_2 = cos(Pi*x_distance_to_sink_2/a) + 1;
+      magnitude_2 *= cos(Pi*y_distance_to_sink_2/a) + 1;
+      magnitude_2 /= 4.*a*a;
+      //coeffs[i][3] -=  magnitude_2 * Q_in; // sink
+      coeffs[i][3] -=  0.001; // sink
+    }
+  }
+}
+*/
 
 /** ************************************************************************ */
 void GeothermalPlantsPositionOptimization::apply_control_and_solve(const double* x)
@@ -208,6 +291,14 @@ void GeothermalPlantsPositionOptimization::apply_control_and_solve(const double*
   double distance = x[0];
   Output::print("current control: ", std::setprecision(14), distance);
   using namespace std::placeholders;
+  // For three wells:
+  // double x_i =   ;
+  // double x_p1 =  ;
+  // double x_p2 =  ;
+  // double y_i =  ;
+  // double y_p1 =   ;
+  // double y_p2 =  ;
+  //   CoeffFct2D coeff = std::bind(approximate_delta_functions_3, _1, _2, _3, _4, _5, x_i, x_p1, x_p2, y_i, y_p1, y_p2);
   CoeffFct2D coeff = std::bind(approximate_delta_functions, _1, _2, _3, _4, _5,
           distance);
   std::string disc_type = this->db["space_discretization_type"];
@@ -286,12 +377,72 @@ const
 {
   Output::print("computing current value of functional");
   double distance = x[0];
+  // For three wells:
+  // double x_i =   ;
+  // double x_p1 =  ;
+  // double x_p2 =  ;
+  // double y_i =  ;
+  // double y_p1 =   ;
+  // double y_p2 =  ;
   auto u = brinkman2d_primal.get_velocity();
   auto u1 = u.GetComponent(0);
   auto u2 = u.GetComponent(1);
+  auto pressure = brinkman2d_primal.get_pressure();
   //auto p = brinkman2d_primal.get_pressure();
   auto temperature = tcd2d_primal.get_function();
+
   double alpha = db["alpha_cost"];
+
+
+  //New LB 19.11.18 START
+  double pressure_prod[1], pressure_inj[1], temperature_prod[1];
+  double x_prod = 5000.0 + distance/2.; //5.5;
+  double y_prod = 3000.; //3.;
+  double x_inj = 5000.0 - distance/2.; //4.5;
+  double y_inj = 3000.; //3.;
+
+
+  TBaseCell *cell;
+  TBaseCell *cell_prod, *cell_inj;
+  int cell_prod_num, cell_inj_num;
+
+
+  TCollection *coll_pressure, *coll_temperature;
+  coll_pressure = brinkman2d_primal.get_pressure_space().GetCollection();
+  coll_temperature = tcd2d_primal.get_space().GetCollection();
+
+  for (int j = 0; j < coll_pressure->GetN_Cells(); j++)
+    {
+      cell = coll_pressure->GetCell(j);
+      if (cell->PointInCell(x_prod, y_prod))
+      {
+        cell_prod = cell;
+        cell_prod_num = j;
+      }
+      else if (cell->PointInCell(x_inj, y_inj))
+      {
+       cell_inj = cell;
+       cell_inj_num = j;
+      }
+    }
+
+
+  pressure.FindValueLocal(cell_prod, cell_prod_num, x_prod, y_prod, pressure_prod);
+  pressure.FindValueLocal(cell_inj, cell_inj_num, x_inj, y_inj, pressure_inj);
+
+  temperature.FindValueLocal(cell_prod, cell_prod_num, x_prod, y_prod, temperature_prod);
+  //temperature->FindValueLocal (const TBaseCell *cell, int cell_no, x_inj, inj, values);
+
+
+  double temperature_inj = 303.15; // = 30 + 273.15;
+  double Q = 150/360;//24 * 50; // 50 - 300
+  double dens = 1050;
+  double Cap = 4200; // 4200/(24*3600*24*3600);
+  double functional_value_new = Q/(0.6) * alpha * (pressure_prod[1] - pressure_inj[1])  -  Q * dens * Cap * (temperature_prod[1] - temperature_inj); // Net energy AFTER 50 years
+ //New LB 19.11.18 END
+
+
+
   std::vector<double> cost_functional = db["cost_functional"];
 
 
@@ -301,9 +452,23 @@ const
     return mean;
   };
 
+  /*auto temperature_at_sink1 =
+          [&](){
+    double mean = temperature.compute_mean();
+    return mean;
+  };
+  auto temperature_at_sink2 =
+          [&](){
+    double mean = temperature.compute_mean();
+    return mean;
+  };
+  */
 
-  double functional_value = 0.5 * alpha * distance;
-  functional_value += 0.5 * cost_functional[0] / distance;
+  // 3Wells
+  //  double functional_value = 0.5 * alpha * distance;
+  // functional_value += 0.5 * cost_functional[0] / distance;
+  double functional_value = (1000/1000001)  * alpha * distance; //0.5 * alpha * distance;
+  functional_value +=  (1000/1000001)  * cost_functional[0] / distance; //0.5 * cost_functional[0] / distance;
   if(n_calls > 1)
   {
     Output::print("difference to previous functional ", std::setprecision(14),
@@ -312,7 +477,7 @@ const
 
   delete u1;
   delete u2;
-  return functional_value;
+  return functional_value; //functional_value_new;
 }
 
 /** ************************************************************************ */
