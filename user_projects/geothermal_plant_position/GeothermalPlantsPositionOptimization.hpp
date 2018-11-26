@@ -7,10 +7,15 @@
 #include "TCD2D_Temperature.hpp"
 #include "LoopInfo.h"
 
+
+class ParameterDatabase;
+
 /** ************************************************************************ */
 class GeothermalPlantsPositionOptimization
 {
 public:
+  constexpr static char required_database_name_TCD2D_GPPO[] = "TCD2D parameter database";
+
   GeothermalPlantsPositionOptimization(const TDomain& domain,
           const ParameterDatabase& param_db);
 

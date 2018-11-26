@@ -2,7 +2,7 @@
 #include "Example_NSE2D.h"
 #include "Example_TimeCD2D.h"
 
-constexpr double surrounding_temperature = 150.;
+constexpr double surrounding_temperature = 348.15; //=75 + 273.15; //150.;
 
 void unknown_solution(double, double, double *values)
 {
@@ -44,14 +44,14 @@ void pde_coefficients_flow(int n_points, double *x, double *y, double ** paramet
 
     if (!use_parameters) // initial assembling // if (parameters[i] == nullptr)
     {
-      if (abs(x[i] - 1.5 - y[i] + 0.01) < 0.02)
+      if (abs(x[i] - 1.5 - y[i] + 0.01) < 0.05) // crack through the sink
         {
-        coeffs[i][4] = 1e-11;
+        coeffs[i][4] = sigma; //1e10;
         //cout<< "erste Gerade" <<endl;
         }
-      else if (abs(x[i] - 2.5 - y[i] - 0.01) < 0.02)
+      else if (abs(x[i] - 2.5 - y[i] - 0.01) < 0.05) // crack through the source
         {
-        coeffs[i][4] = 1e-11;
+        coeffs[i][4] = sigma; //1e10;
         //cout<< "zweite Gerade" <<endl;
         }
       else
