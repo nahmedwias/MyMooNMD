@@ -80,6 +80,7 @@ TimeDiscretization::TimeDiscretization(const ParameterDatabase & param_db)
   }
   start_time = db["time_start"];
   current_time_step_length = db["time_step_length"];
+  current_time_ = db["time_start"];
   end_time = db["time_end"];
   TDatabase::TimeDB->TIMESTEPLENGTH = current_time_step_length;
   TDatabase::TimeDB->CURRENTTIMESTEPLENGTH = current_time_step_length;

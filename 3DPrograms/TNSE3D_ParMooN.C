@@ -146,7 +146,9 @@ int main(int argc, char* argv[])
        Output::print<1>("Theta4: ", TDatabase::TimeDB->THETA4);
      }
       // tau may change depending on the time discretization (adaptive time)
-      double tau = TDatabase::TimeDB->CURRENTTIMESTEPLENGTH;
+      double tau = tss.get_step_length();
+      tss.current_time_ += tss.get_step_length();
+      // this is used at several places, e.g., in the example file etc.
       TDatabase::TimeDB->CURRENTTIME += tau;
 
       if (my_rank==0)

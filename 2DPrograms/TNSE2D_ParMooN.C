@@ -68,7 +68,10 @@ int main(int argc, char* argv[])
     TDatabase::TimeDB->INTERNAL_STARTTIME = TDatabase::TimeDB->CURRENTTIME;
     // set the time parameters
     tss.set_time_disc_parameters();
-    double tau = parmoon_db["time_step_length"];
+    // tau may change depending on the time discretization (adaptive time)
+    double tau = tss.get_step_length();
+    tss.current_time_ += tss.get_step_length();
+    // this is used at several places, e.g., in the example file etc.
     TDatabase::TimeDB->CURRENTTIME += tau;
     Output::print("\nCURRENT TIME: ", TDatabase::TimeDB->CURRENTTIME);
     
