@@ -238,7 +238,14 @@ TimeNavierStokes<d>::TimeNavierStokes(const TDomain& domain,
         "from old simulation).");
     }
     std::string file = db["initial_solution_file"];
-    Output::info("Initial Solution", "Reading initial solution from file ", file);
+    Output::root_info("Initial Solution", "Reading initial solution from file ", file);
+#ifdef _MPI
+    int my_rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+    file += ".proc" + std::to_string(my_rank);
+    Output::root_info("Initial Solution", "Appending .proc<RANK> to the "
+        "expected initial solution file name.");
+#endif
     systems.front().solution.read_from_file(file);
   }
   else
@@ -460,11 +467,6 @@ void TimeNavierStokes<d>::assemble_initial_time()
     // copy nonactives
     s.solution.copy_nonactive(s.rhs);
 
-    s.solution_m1 = s.solution;
-    s.solution_m2 = s.solution;
-  }
-  auto s = this->systems.front();
-  
   /** After copy_nonactive, the solution vectors needs to be Comm-updated in 
    * MPI-case in order to be consistently saved. It is necessary that the vector
    * is consistently saved because it is the only way to ensure that its
@@ -477,7 +479,7 @@ void TimeNavierStokes<d>::assemble_initial_time()
    * actually active. That's why we have to update the values so that the vector
    * becomes consistent again.
    */
-  #ifdef _MPI
+#ifdef _MPI
   for(int i = 0; i < d; ++i)
   {
     double *ui = s.solution.block(i);
@@ -485,8 +487,19 @@ void TimeNavierStokes<d>::assemble_initial_time()
   }
   double *p = s.solution.block(d);
   s.pressure_space->get_communicator().consistency_update(p, 3);
-  #endif
+#endif
+    
+    s.solution_m1 = s.solution;
+    s.solution_m2 = s.solution;
+  }
   
+  // the call to assembleslip is necessary here, in order to get
+  // the correct old_rhs, i.e., zeros on the slip dofs
+  if(TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION >=1)
+   this->modify_slip_bc(true, true);
+  
+  auto s = this->systems.front();
+ 
   // copy the current right hand side vector to the old_rhs
   this->old_rhs = s.rhs;
 }
@@ -516,15 +529,17 @@ void TimeNavierStokes<d>::assemble_matrices_rhs(unsigned int it_counter)
     oldsolutions[0] = s.solution_m1;
     if(oldsolutions.size() == 2)
       oldsolutions[1] = s.solution_m2;
+    
+    // modification of the matrices due to slip b.c
+    if(TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION >=1)
+        this->modify_slip_bc(true, true);
+    
     // one needs two right hand sides only for the crank-Nicolson
     // and fractional step theta schemes
     std::vector<BlockVector> all_rhs(2);
-    all_rhs[0] = rhs_from_time_disc; // current rhs
+    all_rhs[0] = s.rhs; // current rhs
     all_rhs[1] = old_rhs;
-    // modification of the matrices due to slip b.c
-    if((time_stepping_scheme.current_step_ == 1 ) 
-      && TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION >=1)
-        this->modify_slip_bc(true, true);
+   
     //NOTE: scale the B blocks only at the first iteration
     for(System_per_grid& sys : this->systems)
       time_stepping_scheme.scale_descale_all_b_blocks(sys.matrix, "scale");
@@ -1031,6 +1046,7 @@ void TimeNavierStokes<d>::set_matrices_rhs(
           if(db["space_discretization_type"].is("smagorinsky"))
           {
             sqMat.resize(d*d);
+	    rhs_array.resize(0);
             for(int i = 0, j = 0; i < d*d; ++i, ++j)
             {
               if(i%d == 0 && i > 0)
@@ -1200,22 +1216,15 @@ bool TimeNavierStokes<d>::stop_it(unsigned int it_counter)
       s.solution_m2 = s.solution_m1;
       s.solution_m1 = s.solution;
     }
-    if(imex_scheme() && it_counter >0)
+    // descale the matrices, since only the diagonal A block will
+    // be reassembled in the next time step
+    for(System_per_grid & s : this->systems)
     {
-      return true;
+      time_stepping_scheme.reset_linear_matrices(s.matrix, s.mass_matrix);
+      // descale if it's rescaled at the next time step for bdf schemes
+      time_stepping_scheme.scale_descale_all_b_blocks(s.matrix, "descale");
     }
-    else
-    {
-      // descale the matrices, since only the diagonal A block will
-      // be reassembled in the next time step
-      for(System_per_grid & s : this->systems)
-      {
-        time_stepping_scheme.reset_linear_matrices(s.matrix, s.mass_matrix);
-        // descale if it's rescaled at the next time step for bdf schemes
-        time_stepping_scheme.scale_descale_all_b_blocks(s.matrix, "descale");
-      }
-      return true;
-    }
+    return true;
   }
   else
     return false;
@@ -1283,10 +1292,18 @@ void TimeNavierStokes<d>::solve()
   std::shared_ptr<BlockVector> old_solution(nullptr);
   if(damping != 1.0)
     old_solution = std::make_shared<BlockVector>(s.solution);
-  
-  Output::print("norm of rhs ", rhs_from_time_disc.norm());
-  Output::print("norm of sol before ", s.solution.norm());
-  Output::print("norm of matrix ", s.matrix.get_combined_matrix()->GetNorm(-2));
+  // DEBUG CODE
+  // #ifdef _MPI
+  //   std::vector<const TParFECommunicator3D*> comms = s.matrix.get_communicators();
+  //   Output::print("norm of rhs ", rhs_from_time_disc.norm(comms));
+  //   Output::print("norm of sol before ", s.solution.norm(comms));
+  //   Output::print("norm of matrix ", s.matrix.get_combined_matrix()->GetNorm(-2));
+  // #else
+  //   Output::print("norm of rhs ", rhs_from_time_disc.norm());
+  //   Output::print("norm of sol before ", s.solution.norm());
+  //   Output::print("norm of matrix ", s.matrix.get_combined_matrix()->GetNorm(-2));
+  // #endif
+  // END DEBUG CODE
   
 #ifdef _MPI
   if(solver.get_db()["solver_type"].is("direct"))
@@ -1299,8 +1316,13 @@ void TimeNavierStokes<d>::solve()
   {
     solver.solve(s.matrix, rhs_from_time_disc, s.solution);
   }
-  
-  Output::print("norm of sol after ", s.solution.norm());
+  // DEBUG CODE
+  // #ifdef _MPI
+  //   Output::print("norm of sol after ", s.solution.norm(comms));
+  // #else
+  //   Output::print("norm of sol after ", s.solution.norm());
+  // #endif
+  // END DEBUG CODE
   
   if(damping != 1.0)
   {
@@ -1564,8 +1586,8 @@ bool TimeNavierStokes<d>::imex_scheme()
     
     // this is typical for the problem with slip type boundary condition
     // NOTE: only tested for the mixing layer problem for the moment
-    if(TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION >= 1)
-      is_rhs_and_mass_matrix_nonlinear = true;
+    //if(TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION >= 1)
+    //  is_rhs_and_mass_matrix_nonlinear = true;
     if(db["space_discretization_type"].is("supg"))
       space_disc_global = -2;
     return true;
@@ -1578,7 +1600,6 @@ bool TimeNavierStokes<d>::imex_scheme()
 template <int d>
 void TimeNavierStokes<d>::modify_slip_bc(bool BT_Mass, bool slip_A_nl)
 {
-#ifdef __2D__
   // modification of the matrices due to the
   // slip type boundary conditions: If the mass matrices,
   // the off-diagonal A-blocks , and the BT's block,
@@ -1629,19 +1650,33 @@ void TimeNavierStokes<d>::modify_slip_bc(bool BT_Mass, bool slip_A_nl)
     std::vector<SquareMatrixD*> sqMat;
     std::vector<MatrixD*> reMat;
     sqMat.resize(d);
-    // all 4 A blocks at the first time step
-    // and only the first 2 within the nonlinear loop
+    
+   /* all d*d A blocks at the first time step
+    * ------------------
+    * a11 a12 a12 b1t
+    * a21 a22 a23 b2t
+    * a31 a32 a33 b3t
+    * b1  b2  b3  c
+    * and only the first 2 within the nonlinear loop */
     for(int i = 0; i < d; ++i)
-      sqMat[i] = reinterpret_cast<SquareMatrixD*>(blocks[i+d+2].get()); // aii
+      sqMat[i] = reinterpret_cast<SquareMatrixD*>(blocks[i*(d+2)].get()); // aii
 
     // if the off-diagonal are not changing within the non-linear loop
     // then dont need to assemble them again
     if(slip_A_nl)
     {
       sqMat.resize(d*d);
-      // order?? what happens in 3D??
+#ifdef __2D__
       sqMat[2] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(1).get());//a12
       sqMat[3] = reinterpret_cast<TSquareMatrix2D*>(blocks.at(3).get());//a21
+#else // __3D__
+      sqMat[3] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(1).get());//a12
+      sqMat[4] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(2).get());//a13
+      sqMat[5] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(4).get());//a21
+      sqMat[6] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(6).get());//a23
+      sqMat[7] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(8).get());//a31
+      sqMat[8] = reinterpret_cast<TSquareMatrix3D*>(blocks.at(9).get());//a32
+#endif   
     }
 
     // either at the first time step
@@ -1649,7 +1684,7 @@ void TimeNavierStokes<d>::modify_slip_bc(bool BT_Mass, bool slip_A_nl)
     reMat.resize(0);
     if(BT_Mass)
     {
-      // order?? what happens in 3D??
+#ifdef __2D__
       sqMat.resize(8);
       sqMat[4] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(0).get());//m11
       sqMat[5] = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(4).get());//m22
@@ -1658,21 +1693,45 @@ void TimeNavierStokes<d>::modify_slip_bc(bool BT_Mass, bool slip_A_nl)
       reMat.resize(2);
       reMat[0] = reinterpret_cast<TMatrix2D*>(blocks.at(2).get()); //the standing B blocks
       reMat[1] = reinterpret_cast<TMatrix2D*>(blocks.at(5).get());
+#else // __3D__
+      sqMat.resize(18);
+      sqMat[9]  = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(0).get()); //m11
+      sqMat[10] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(5).get()); //m22
+      sqMat[11] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(10).get());//m33
+  
+      sqMat[12] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(1).get());//m12
+      sqMat[13] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(2).get());//m13
+      sqMat[14] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(4).get());//m21
+      sqMat[15] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(6).get());//m23
+      sqMat[16] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(8).get());//m31
+      sqMat[17] = reinterpret_cast<TSquareMatrix3D*>(mass_blocks.at(9).get());//m32
+      reMat.resize(3);
+      reMat[0] = reinterpret_cast<TMatrix3D*>(blocks.at(3).get()); // b1t
+      reMat[1] = reinterpret_cast<TMatrix3D*>(blocks.at(7).get()); // b2t
+      reMat[2] = reinterpret_cast<TMatrix3D*>(blocks.at(11).get());// b3t
+#endif  
     }
 
     auto u1 = s.u.GetComponent(0);
     auto u2 = s.u.GetComponent(1);
     // update the matrices and right hand side
-    Assemble2DSlipBC(spaces_mat.size(), spaces_mat.data(),
-                     sqMat.size(), sqMat.data(), reMat.size(), reMat.data(),
-                     rhs_array.size(), rhs_array.data(), rhs_space.data(),
-                     boundCondition.data(), boundValues.data(), u1, u2);
+#ifdef __2D__
+    Assemble2DSlipBC(
+#else // __3D__
+    Assemble3DSlipBC(
+#endif      
+      spaces_mat.size(), spaces_mat.data(), sqMat.size(), sqMat.data(), 
+      reMat.size(), reMat.data(), rhs_array.size(), rhs_array.data(), 
+      rhs_space.data(), boundCondition.data(), boundValues.data()
+#ifdef __2D__
+      , u1, u2);
+#else
+    );
+#endif
+    
     delete u1;
     delete u2;
   }
-#else // 2D->3D
-  ErrThrow("'TimeNavierStokes<d>::modify_slip_bc' is only implemented in 2D");
-#endif
 }
 
 /* ************************************************************************* */

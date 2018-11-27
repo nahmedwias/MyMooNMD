@@ -1145,10 +1145,8 @@ void Assemble3DSlipBC(int n_fespaces, const TFESpace3D **fespaces,
                       int n_sqmatrices, TSquareMatrix3D **sqmatrices,
                       int n_matrices, TMatrix3D **matrices,
                       int n_rhs, double **rhs, const TFESpace3D **ferhs,
-                      TDiscreteForm3D *DiscreteForm3D,
                       BoundCondFunct3D **BoundaryConditions,
-                      BoundValueFunct3D **BoundaryValues,
-                      TAuxParam3D *Parameters)
+                      BoundValueFunct3D **BoundaryValues)
 {
   double hK;
   int N_AllMatrices = n_sqmatrices+n_matrices;
@@ -1272,13 +1270,13 @@ void Assemble3DSlipBC(int n_fespaces, const TFESpace3D **fespaces,
 
   } // endif n_rhs
 
-  N_Parameters = Parameters->GetN_Parameters();
-  if(N_Parameters)
-  {
-    aux = new double [MaxN_QuadPoints_3D*N_Parameters];
-    for(j=0;j<MaxN_QuadPoints_3D;j++)
-      Param[j] = aux + j*N_Parameters;
-  }
+//   N_Parameters = Parameters->GetN_Parameters();
+//   if(N_Parameters)
+//   {
+//     aux = new double [MaxN_QuadPoints_3D*N_Parameters];
+//     for(j=0;j<MaxN_QuadPoints_3D;j++)
+//       Param[j] = aux + j*N_Parameters;
+//   }
 
   // 20 <= number of term in bilinear form
   aux = new double [MaxN_QuadPoints_3D*20]; 
@@ -2058,10 +2056,10 @@ void Assemble3DSlipBC(int n_fespaces, const TFESpace3D **fespaces,
     delete [] RhsGlobalNumbers;
   }
 
-  if(N_Parameters)
-  {
-    delete [] Param[0];
-  }
+//   if(N_Parameters)
+//   {
+//     delete [] Param[0];
+//   }
 
   if(N_AllMatrices)
   {
