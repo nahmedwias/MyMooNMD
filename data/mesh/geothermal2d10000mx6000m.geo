@@ -14,7 +14,7 @@ h_max = 200.; // background size
 
 
 Field[1] = Box;
-//Set the option string of the expression-th field.
+//Set the option string of the expression-th field. small interior box 1
 Field[1].XMin = x_I- h_max/2;
 Field[1].YMin = y_W - h_max/2;
 Field[1].XMax = x_I + h_max/2;
@@ -25,7 +25,7 @@ Field[1].VIn = h_fine;
 Field[1].VOut = h_max;
 
 Field[2] = Box;
-//Set the option string of the expression-th field.
+//Set the option string of the expression-th field.  small interior box 1
 Field[2].XMin = x_E-h_max/2;
 Field[2].YMin = y_W - h_max/2;
 Field[2].XMax = x_E +h_max/2;
@@ -37,30 +37,31 @@ Field[2].VOut = h_max;
 
 Field[3] = Box;
 //Set the option string of the expression-th field.
-Field[3].XMin = x_I-d/4;
-Field[3].YMin = y_W - d/4;
-Field[3].XMax = x_E +d/4;
-Field[3].YMax = y_W + d/4;
+Field[3].XMin = x_I - d*3/4;
+Field[3].YMin = y_W - d*3/4;
+Field[3].XMax = x_E + d*3/4;
+Field[3].YMax = y_W + d*3/4;
 Field[3].ZMin = -1;
 Field[3].ZMax = 1;
 Field[3].VIn = 4*h_fine;
 Field[3].VOut = h_max;
 
 
-Field[4] = Box;
+//Field[4] = Box;
 //Set the option string of the expression-th field.
-Field[4].XMin = x_I-d/2;
-Field[4].YMin = y_W - d/2;
-Field[4].XMax = x_E +d/2;
-Field[4].YMax = y_W + d/2;
-Field[4].ZMin = -1;
-Field[4].ZMax = 1;
-Field[4].VIn = 12*h_fine;
-Field[4].VOut = h_max;
+//Field[4].XMin = x_I-d/2;
+//Field[4].YMin = y_W - d/2;
+//Field[4].XMax = x_E +d/2;
+//Field[4].YMax = y_W + d/2;
+//Field[4].ZMin = -1;
+//Field[4].ZMax = 1;
+//Field[4].VIn = 12*h_fine;
+//Field[4].VOut = h_max;
 
 Field[5] = Min;
 //+
-Field[5].FieldsList = {1, 2, 3, 4};
+//Field[5].FieldsList = {1, 2, 3, 4};
+Field[5].FieldsList = {1, 2, 3};
 
 Background Field = 5;
 
