@@ -4,10 +4,10 @@
 #include "TimeNavierStokes.h"
 
 template<int d>
-class Time_NSE2D_Adjoint : public TimeNavierStokes<d>
+class TimeNavierStokes_Adjoint : public TimeNavierStokes<d>
 {
   public:
-    Time_NSE2D_Adjoint(const TimeNavierStokes<d>& nse, const ParameterDatabase& param_db);
+    TimeNavierStokes_Adjoint(const TimeNavierStokes<d>& nse, const ParameterDatabase& param_db);
   
     /// @brief assemble all terms in the matrix and right-hand side which
     /// contain the primal solutions u or p.

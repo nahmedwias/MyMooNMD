@@ -6,7 +6,7 @@ include_directories(${bco_dir})
 list(APPEND BCOSRC "${bco_dir}/BoundaryControlledOptimization.cpp" )
 list(APPEND BCOSRC "${bco_dir}/NavierStokes_Adjoint.cpp" )
 list(APPEND BCOSRC "${bco_dir}/Time_BoundaryControlledOptimization.cpp" )
-list(APPEND BCOSRC "${bco_dir}/Time_NSE2D_Adjoint.cpp" )
+list(APPEND BCOSRC "${bco_dir}/TimeNavierStokes_Adjoint.cpp" )
 
 add_library(BCO_LIB_2D STATIC ${BCOSRC})
 target_compile_definitions(BCO_LIB_2D PUBLIC -D__2D__)
