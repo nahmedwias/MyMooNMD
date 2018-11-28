@@ -2,14 +2,18 @@
 #define TIMEBOUNDARYCONTROLLEDOPTIMIZATION_H
 
 #include "ParameterDatabase.h"
-#include "Time_NSE2D.h"
+#include "TimeNavierStokes.h"
 #include "Time_NSE2D_Adjoint.hpp"
 #include "LoopInfo.h"
 
-
+template<int d>
 class Time_BoundaryControlledOptimization
 {
   public:
+    using FEVectFunct = typename Template_names<d>::FEVectFunct;
+    using FEFunction = typename Template_names<d>::FEFunction;
+    
+    
     Time_BoundaryControlledOptimization(const TDomain& domain,
                                    const ParameterDatabase& param_db);
     
@@ -46,12 +50,12 @@ class Time_BoundaryControlledOptimization
     /// n_control = 2*control_dofs.size() multiplied by the number of time steps
     std::vector<int> control_dofs;
     /// @brief the Navier--Stokes object representing the primal solve
-    Time_NSE2D tnse_primal;
+    TimeNavierStokes<d> tnse_primal;
     /// @brief the Navier--Stokes object representing the adjoint solve
-    Time_NSE2D_Adjoint tnse_adjoint;
+    Time_NSE2D_Adjoint<d> tnse_adjoint;
     /// @brief Stokes solution as a 'desired state'
     std::shared_ptr<BlockVector> stokes_fe_vector;
-    std::shared_ptr<TFEVectFunct2D> stokes_sol;
+    std::shared_ptr<FEVectFunct> stokes_sol;
 
     /// @brief Number of time steps of the time-dependent primal (and adjoint) NSE
     int n_time_steps_;
@@ -59,15 +63,15 @@ class Time_BoundaryControlledOptimization
     struct tnse_primal_solution{
         BlockVector vector_at_timestep_t_;
         int timestep_t_;
-        TFEVectFunct2D u_at_timestep_t_;
-        TFEFunction2D p_at_timestep_t_;
+        FEVectFunct u_at_timestep_t_;
+        FEFunction p_at_timestep_t_;
 
         /** @brief default constructor*/
         tnse_primal_solution();
 
         /** @brief constructor*/
         tnse_primal_solution(const BlockVector& solution_vector, int step,
-                             const TFEVectFunct2D& u_sol,const TFEFunction2D& p_sol);
+                             const FEVectFunct& u_sol,const FEFunction& p_sol);
     };
     
     /// @brief a collection which stores all the solutions of tnse_primal in time

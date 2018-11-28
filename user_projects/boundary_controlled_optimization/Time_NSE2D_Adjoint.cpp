@@ -25,13 +25,14 @@ void tnse2d_adjoint::zero_solution(double x, double y, double *values)
   values[3] = 0;
 }
 
-Time_NSE2D_Adjoint::Time_NSE2D_Adjoint(const Time_NSE2D& tnse2d,
+template<int d>
+Time_NSE2D_Adjoint<d>::Time_NSE2D_Adjoint(const TimeNavierStokes<d>& tnse2d,
                              const ParameterDatabase& param_db)
- : Time_NSE2D(tnse2d) // copy constructor
+ : TimeNavierStokes<d>(tnse2d) // copy constructor
 {
   // copy remaining parts
-  this->Time_NSE2D::db.merge(param_db, false);
-  bool usingMultigrid = this->solver.is_using_multigrid();
+  this->TimeNavierStokes<d>::db.merge(param_db, false);
+  bool usingMultigrid = this->TimeNavierStokes<d>::solver.is_using_multigrid();
   if(usingMultigrid)
   {
     ErrThrow("Time_NSE2D_Adjoint::assemble_additional_terms not yet implemented for "
@@ -40,19 +41,20 @@ Time_NSE2D_Adjoint::Time_NSE2D_Adjoint(const Time_NSE2D& tnse2d,
   std::vector<DoubleFunct2D*> adjoint_solutions(3, tnse2d_adjoint::zero_solution);
   std::vector<DoubleFunct2D*> initial_conditions(3, tnse2d_adjoint::zero_solution);
   std::vector<BoundValueFunct2D*> adjoint_bd(3, BoundaryValueHomogenous);
-  this->Time_NSE2D::example = Example_TimeNSE2D(adjoint_solutions,
-                                       this->Time_NSE2D::example.boundary_conditions,
+  this->TimeNavierStokes<d>::example = Example_TimeNSE2D(adjoint_solutions,
+                                       this->TimeNavierStokes<d>::example.boundary_conditions,
                                        adjoint_bd,
-                                       this->Time_NSE2D::example.get_coeffs(),
+                                       this->TimeNavierStokes<d>::example.get_coeffs(),
                                        false, true,initial_conditions);
-//                                       this->Time_NSE2D::example.get_nu());
-  this->Time_NSE2D::outputWriter = DataWriter2D(param_db);
-  this->Time_NSE2D::outputWriter.add_fe_vector_function(&this->get_velocity());
-  this->Time_NSE2D::outputWriter.add_fe_function(&this->get_pressure());
-  this->Time_NSE2D::solver = Solver<BlockFEMatrix, BlockVector>(param_db);
+//                                       this->TimeNavierStokes<d>::example.get_nu());
+  this->TimeNavierStokes<d>::outputWriter = DataWriter2D(param_db);
+  this->TimeNavierStokes<d>::outputWriter.add_fe_vector_function(&this->get_velocity());
+  this->TimeNavierStokes<d>::outputWriter.add_fe_function(&this->get_pressure());
+  this->TimeNavierStokes<d>::solver = Solver<BlockFEMatrix, BlockVector>(param_db);
 }
 
-void Time_NSE2D_Adjoint::assemble(const TFEVectFunct2D& u, const TFEFunction2D& p,
+template<int d>
+void Time_NSE2D_Adjoint<d>::assemble(const TFEVectFunct2D& u, const TFEFunction2D& p,
                              const TFEVectFunct2D& stokes_u, 
                              std::vector<double> weights,
                              bool restricted_curl)
@@ -161,12 +163,13 @@ void Time_NSE2D_Adjoint::assemble(const TFEVectFunct2D& u, const TFEFunction2D& 
 //  }
 }
 
-void Time_NSE2D_Adjoint::solve()
+template<int d>
+void Time_NSE2D_Adjoint<d>::solve()
 {
-  this->Time_NSE2D::solve();
+  this->TimeNavierStokes<d>::solve();
   
-  System_per_grid& s = this->systems.front();
-  std::vector<std::shared_ptr<FEMatrix>> blocks = s.matrix.get_blocks_uniquely(
+  //System_per_grid& s = this->TimeNavierStokes<d>.systems.front();
+  std::vector<std::shared_ptr<FEMatrix>> blocks = this->TimeNavierStokes<d>::systems.front().matrix.get_blocks_uniquely(
     {{0,0},{1,1}});
   for(auto mat : blocks)
   {
@@ -256,3 +259,10 @@ void tnse2d_adjoint::params_function(double *in, double *out)
   out[8] = in[0]; // x
   out[9] = in[1]; // y
 }
+
+
+#ifdef __3D__
+template class Time_NSE2D_Adjoint<3>;
+#else
+template class Time_NSE2D_Adjoint<2>;
+#endif

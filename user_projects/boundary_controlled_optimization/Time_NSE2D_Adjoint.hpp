@@ -1,12 +1,13 @@
 #ifndef TIMENSE2D_ADJOINT_H
 #define TIMENSE2D_ADJOINT_H
 
-#include "Time_NSE2D.h"
+#include "TimeNavierStokes.h"
 
-class Time_NSE2D_Adjoint : public Time_NSE2D
+template<int d>
+class Time_NSE2D_Adjoint : public TimeNavierStokes<d>
 {
   public:
-    Time_NSE2D_Adjoint(const Time_NSE2D& nse2d, const ParameterDatabase& param_db);
+    Time_NSE2D_Adjoint(const TimeNavierStokes<d>& nse, const ParameterDatabase& param_db);
   
     /// @brief assemble all terms in the matrix and right-hand side which
     /// contain the primal solutions u or p.

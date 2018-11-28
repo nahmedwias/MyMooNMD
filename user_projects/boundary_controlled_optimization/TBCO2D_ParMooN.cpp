@@ -53,7 +53,7 @@ int main(int argc, char* argv[])
   TDomain domain(parmoon_db);
   refine_domain(domain, parmoon_db, parmoon_db["output_write_ps"]);
 
-  Time_BoundaryControlledOptimization tbco(domain, parmoon_db);
+  Time_BoundaryControlledOptimization<2> tbco(domain, parmoon_db);
   
   timer.restart_and_print("all preparations before optimization loop");
   parmoon_opt::print_nlopt_version();
