@@ -1052,8 +1052,8 @@ void BoundaryAssembling3D::getQuadratureDataIncludingFirstDerivatives(
     break;
   }
   int N_Points;
-  const double* faceWeights;
-  const double *t,*s;
+    const double* faceWeights;
+    const double *t,*s;
   // get a quadrature formula good enough for the velocity FE space
   TQuadFormula2D *qf2 = TFEDatabase3D::GetQuadFormula2D(FaceQuadFormula);
   qf2->GetFormulaData(N_Points, faceWeights, t, s);
