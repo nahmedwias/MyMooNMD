@@ -2,7 +2,7 @@
 #include <Database.h>
 #include <MainUtilities.h>
 #include <FEDatabase2D.h>
-#include <Time_NSE2D.h>
+#include "TimeNavierStokes.h"
 #include "AuxParam2D.h" // used in MixingLayerSlipSmallSquares.h
 #include <string>
 
@@ -249,7 +249,8 @@ Example_TimeNSE2D::Example_TimeNSE2D(std::vector <DoubleFunct2D*> exact,
 
   };
 
-void Example_TimeNSE2D::do_post_processing(Time_NSE2D& tnse2d, double& val) const
+void Example_TimeNSE2D::do_post_processing(TimeNavierStokes<2>& tnse2d,
+                                           double& val) const
 {
   if(post_processing_stat)
   {
@@ -265,6 +266,23 @@ void Example_TimeNSE2D::do_post_processing(Time_NSE2D& tnse2d, double& val) cons
       Output::info<2>("Example_TimeNSE2D","No post processing done for the current example.");
   }
 }
+void Example_TimeNSE2D::do_post_processing(TimeNavierStokes<2>& tnse2d) const
+{
+  if(post_processing_stat_old)
+  {
+    post_processing_stat_old(tnse2d);
+  }
+  else
+  {
+#ifdef _MPI
+    int my_rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+    if (my_rank == 0)
+#endif
+      Output::info<2>("Example_TimeNSE2D","No post processing done for the current example.");
+  }
+}
+
 double Example_TimeNSE2D::get_nu() const
 {
   double inverse_reynolds = this->example_database["reynolds_number"];

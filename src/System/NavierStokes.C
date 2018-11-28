@@ -963,8 +963,9 @@ void NavierStokes<d>::output(int i)
                   nullptr, &aux, 1, &pressure_space, computed_errors[d].data());
     
 #ifdef _MPI
-    double err_red[9]; //memory for global (across all processes) error
-    double err_send[9]; //fill send buffer
+    int n_send = 2*(d+1)+1;
+    double err_red[n_send]; //memory for global (across all processes) error
+    double err_send[n_send]; //fill send buffer
     err_send[0] = computed_errors[0][0];
     err_send[1] = computed_errors[0][1];
     err_send[2] = computed_errors[1][0];
@@ -975,10 +976,10 @@ void NavierStokes<d>::output(int i)
     err_send[7] = computed_errors[d][0];
     err_send[8] = computed_errors[d][1];
 
-    MPI_Allreduce(err_send, err_red, 9, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-    for(i = 0; i < 9; i++)
+    MPI_Allreduce(err_send, err_red, n_send, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+    for(i = 0; i < n_send; i++)
     { //MPI: sqrt was skipped in GetErrors function - do it here globally!
-      err_red[i] = sqrt(err_red[i]);
+      err_red[i] = std::sqrt(err_red[i]);
     }
     //fill the reduced errors back where they belong
     computed_errors[0][0] = err_red[0];
@@ -1009,7 +1010,7 @@ void NavierStokes<d>::output(int i)
     //print errors
     if(my_rank == 0)
     {
-      Output::stat("NSE3D", "Measured errors");
+      Output::stat("NavierStokes", "Measured errors");
       Output::dash("L2(u)     : ", setprecision(14), errors.at(0));
       Output::dash("L2(div(u)): ", setprecision(14), errors.at(1));
       Output::dash("H1-semi(u): ", setprecision(14), errors.at(2));
@@ -1121,7 +1122,7 @@ typename NavierStokes<d>::FEFunction* NavierStokes<d>::get_velocity_component(in
   else if(i == 2 && d == 3)
     return this->systems.front().u.GetComponent(2);
   else
-    throw std::runtime_error("There are only three velocity components!");
+    ErrThrow("There are only ", d, " velocity components!");
 }
 
 /* ************************************************************************* */
