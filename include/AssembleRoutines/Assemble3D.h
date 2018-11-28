@@ -38,10 +38,8 @@ void Assemble3DSlipBC(int n_fespaces, const TFESpace3D **fespaces,
                 int n_sqmatrices, TSquareMatrix3D **sqmatrices,
                 int n_matrices, TMatrix3D **matrices,
                 int n_rhs, double **rhs, const TFESpace3D **ferhs,
-                TDiscreteForm3D *DiscreteForm,
                 BoundCondFunct3D **BoundaryConditions,
-                BoundValueFunct3D **BoundaryValues,
-                TAuxParam3D *parameters);
+                BoundValueFunct3D **BoundaryValues);
 
 void ModifyMatrixSlipBC(TSquareMatrix3D **sqmatrices, TMatrix3D **matrices,
 			int N_U, double *rhs);
