@@ -199,6 +199,14 @@ class TFEFunction3D
     void compute_integral_and_measure(double& integral, double& measure) const;
 
     
+    /**
+     * @brief compute the mean value of this TFEFunction3D
+     *
+     * this functions uses 'compute_integral_and_measure'. Then the mean is the
+     * integral divided by the measure.
+     */
+    double compute_mean() const;
+
     
   /** @brief Set Dirichlet values according to boundary conditions */
     void SetDirichletBC(BoundCondFunct3D *BoundaryCondition,
