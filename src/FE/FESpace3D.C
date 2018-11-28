@@ -2560,15 +2560,6 @@ void TFESpace3D::getFaceQuadratureValue(TBaseCell *cell, int m, QuadFormula2D Fa
   // ====================================
   
 }
-#ifdef _MPI
-void TFESpace3D::initialize_parallel(int maxSubDomainPerDof)
-{
-  MaxSubDomainPerDof = maxSubDomainPerDof;
 
-  // initialize the mapper and communicator for MPI communications
-  mapper_.reset(new TParFEMapper3D(1, this));
-  comm_ .reset(new TParFECommunicator3D(mapper_.get()));
-}
-#endif
 
 
