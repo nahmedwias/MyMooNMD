@@ -3,7 +3,7 @@
 
 #include "ParameterDatabase.h"
 #include "TimeNavierStokes.h"
-#include "Time_NSE2D_Adjoint.hpp"
+#include "TimeNavierStokes_Adjoint.hpp"
 #include "LoopInfo.h"
 
 template<int d>
@@ -52,7 +52,7 @@ class Time_BoundaryControlledOptimization
     /// @brief the Navier--Stokes object representing the primal solve
     TimeNavierStokes<d> tnse_primal;
     /// @brief the Navier--Stokes object representing the adjoint solve
-    Time_NSE2D_Adjoint<d> tnse_adjoint;
+    TimeNavierStokes_Adjoint<d> tnse_adjoint;
     /// @brief Stokes solution as a 'desired state'
     std::shared_ptr<BlockVector> stokes_fe_vector;
     std::shared_ptr<FEVectFunct> stokes_sol;

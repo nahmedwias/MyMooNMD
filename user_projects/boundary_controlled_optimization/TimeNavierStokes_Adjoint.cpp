@@ -1,4 +1,4 @@
-#include "Time_NSE2D_Adjoint.hpp"
+#include "TimeNavierStokes_Adjoint.hpp"
 #include "Assemble2D.h"
 #include "MainUtilities.h" // BoundaryValueHomogenous
 #include "Database.h" // to check TDatabase::ParamDB->NSTYPE
@@ -26,7 +26,7 @@ void tnse2d_adjoint::zero_solution(double x, double y, double *values)
 }
 
 template<int d>
-Time_NSE2D_Adjoint<d>::Time_NSE2D_Adjoint(const TimeNavierStokes<d>& tnse2d,
+TimeNavierStokes_Adjoint<d>::TimeNavierStokes_Adjoint(const TimeNavierStokes<d>& tnse2d,
                              const ParameterDatabase& param_db)
  : TimeNavierStokes<d>(tnse2d) // copy constructor
 {
@@ -54,7 +54,7 @@ Time_NSE2D_Adjoint<d>::Time_NSE2D_Adjoint(const TimeNavierStokes<d>& tnse2d,
 }
 
 template<int d>
-void Time_NSE2D_Adjoint<d>::assemble(const TFEVectFunct2D& u, const TFEFunction2D& p,
+void TimeNavierStokes_Adjoint<d>::assemble(const TFEVectFunct2D& u, const TFEFunction2D& p,
                              const TFEVectFunct2D& stokes_u, 
                              std::vector<double> weights,
                              bool restricted_curl)
@@ -164,7 +164,7 @@ void Time_NSE2D_Adjoint<d>::assemble(const TFEVectFunct2D& u, const TFEFunction2
 }
 
 template<int d>
-void Time_NSE2D_Adjoint<d>::solve()
+void TimeNavierStokes_Adjoint<d>::solve()
 {
   this->TimeNavierStokes<d>::solve();
   
@@ -262,7 +262,7 @@ void tnse2d_adjoint::params_function(double *in, double *out)
 
 
 #ifdef __3D__
-template class Time_NSE2D_Adjoint<3>;
+template class TimeNavierStokes_Adjoint<3>;
 #else
-template class Time_NSE2D_Adjoint<2>;
+template class TimeNavierStokes_Adjoint<2>;
 #endif
