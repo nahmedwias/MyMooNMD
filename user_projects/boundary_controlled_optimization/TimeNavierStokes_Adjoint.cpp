@@ -1,9 +1,13 @@
 #include "TimeNavierStokes_Adjoint.hpp"
+#ifdef ___2D__
 #include "Assemble2D.h"
+#else
+#include "Assemble3D.h"
+#endif
 #include "MainUtilities.h" // BoundaryValueHomogenous
 #include "Database.h" // to check TDatabase::ParamDB->NSTYPE
 
-namespace tnse2d_adjoint
+namespace tnse_adjoint
 {
 void zero_solution(double x, double y, double *values);
 void adjoint_assembling(double, double*, double*, double, double**, int*,
@@ -17,7 +21,7 @@ bool restricted_curl_functional;
 
 
 constexpr double diagonal_scaling = 1.e30;
-void tnse2d_adjoint::zero_solution(double x, double y, double *values)
+void tnse_adjoint::zero_solution(double x, double y, double *values)
 {
   values[0] = 0;
   values[1] = 0;
@@ -38,24 +42,24 @@ TimeNavierStokes_Adjoint<d>::TimeNavierStokes_Adjoint(const TimeNavierStokes<d>&
     ErrThrow("Time_NSE2D_Adjoint::assemble_additional_terms not yet implemented for "
              "multigrid");
   }
-  std::vector<DoubleFunct2D*> adjoint_solutions(3, tnse2d_adjoint::zero_solution);
-  std::vector<DoubleFunct2D*> initial_conditions(3, tnse2d_adjoint::zero_solution);
-  std::vector<BoundValueFunct2D*> adjoint_bd(3, BoundaryValueHomogenous);
+  std::vector<DoubleFunction*> adjoint_solutions(3, tnse_adjoint::zero_solution);
+  std::vector<DoubleFunction*> initial_conditions(3, tnse_adjoint::zero_solution);
+  std::vector<BoundaryValuesFunction*> adjoint_bd(3, BoundaryValueHomogenous);
   this->TimeNavierStokes<d>::example = Example_TimeNSE2D(adjoint_solutions,
                                        this->TimeNavierStokes<d>::example.boundary_conditions,
                                        adjoint_bd,
                                        this->TimeNavierStokes<d>::example.get_coeffs(),
                                        false, true,initial_conditions);
 //                                       this->TimeNavierStokes<d>::example.get_nu());
-  this->TimeNavierStokes<d>::outputWriter = DataWriter2D(param_db);
+  this->TimeNavierStokes<d>::outputWriter = DataWriter<d>(param_db);
   this->TimeNavierStokes<d>::outputWriter.add_fe_vector_function(&this->get_velocity());
   this->TimeNavierStokes<d>::outputWriter.add_fe_function(&this->get_pressure());
   this->TimeNavierStokes<d>::solver = Solver<BlockFEMatrix, BlockVector>(param_db);
 }
 
 template<int d>
-void TimeNavierStokes_Adjoint<d>::assemble(const TFEVectFunct2D& u, const TFEFunction2D& p,
-                             const TFEVectFunct2D& stokes_u, 
+void TimeNavierStokes_Adjoint<d>::assemble(const FEVectFunct& u, const FEFunction& p,
+                             const FEVectFunct& stokes_u, 
                              std::vector<double> weights,
                              bool restricted_curl)
 {
@@ -77,8 +81,8 @@ void TimeNavierStokes_Adjoint<d>::assemble(const TFEVectFunct2D& u, const TFEFun
 //    ErrThrow("primal and adjoint solutions should be defined on the same FE "
 //             "Space");
 //  }
-//  tnse2d_adjoint::cost_functional_weights = weights;
-//  tnse2d_adjoint::restricted_curl_functional = restricted_curl;
+//  tnse_adjoint::cost_functional_weights = weights;
+//  tnse_adjoint::restricted_curl_functional = restricted_curl;
 //  // delete the right-hand side and matrix
 //  s.rhs.reset();
 //  s.matrix.reset();
@@ -121,11 +125,11 @@ void TimeNavierStokes_Adjoint<d>::assemble(const TFEVectFunct2D& u, const TFEFun
 //  std::vector<int> column_space = {0, 0, 0, 0};
 //  std::vector<int> rhs_space = {0, 0};
 //  CoeffFct2D coeffs = example.get_coeffs();
-//  AssembleFctParam2D* local_assembling_routine = tnse2d_adjoint::adjoint_assembling;
+//  AssembleFctParam2D* local_assembling_routine = tnse_adjoint::adjoint_assembling;
 //  ManipulateFct2D* manipulate_function = nullptr;
 //  int n_matrices = 4;
 //  int N_ParamFct = 1;
-//  std::vector<ParamFct*> ParameterFct{tnse2d_adjoint::params_function};
+//  std::vector<ParamFct*> ParameterFct{tnse_adjoint::params_function};
 //  std::vector<int> BeginParameter{0};
 //  int N_Parameters = 10;
 //  TFEFunction2D *FEFunctions2D[4] = { u.GetComponent(0), u.GetComponent(1),
@@ -178,7 +182,7 @@ void TimeNavierStokes_Adjoint<d>::solve()
 }
 
 
-void tnse2d_adjoint::adjoint_assembling(double Mult, double *coeff, double *param, double hK,
+void tnse_adjoint::adjoint_assembling(double Mult, double *coeff, double *param, double hK,
                         double **OrigValues, int *N_BaseFuncts, 
                         double ***LocMatrices, double **LocRhs)
 {
@@ -198,11 +202,11 @@ void tnse2d_adjoint::adjoint_assembling(double Mult, double *coeff, double *para
   const double u2_stokes = param[7];
   const double x = param[8];
   bool restricted_curl = restricted_curl_functional && (x >= 8. || x <= 4.);
-  const double curl_u = restricted_curl ? 0 : (u2x - u1y) * tnse2d_adjoint::cost_functional_weights[0] * Mult;
-  const double min_u1_0 = (u1 < 0. ? u1 : 0.) * tnse2d_adjoint::cost_functional_weights[1] * Mult;
-  const double max_u2_0 = (u2 > 0. ? u2 : 0.) * tnse2d_adjoint::cost_functional_weights[1] * Mult;
-  const double u1_diff = (u1 - u1_stokes) * tnse2d_adjoint::cost_functional_weights[2] * Mult;
-  const double u2_diff = (u2 - u2_stokes) * tnse2d_adjoint::cost_functional_weights[2] * Mult;
+  const double curl_u = restricted_curl ? 0 : (u2x - u1y) * tnse_adjoint::cost_functional_weights[0] * Mult;
+  const double min_u1_0 = (u1 < 0. ? u1 : 0.) * tnse_adjoint::cost_functional_weights[1] * Mult;
+  const double max_u2_0 = (u2 > 0. ? u2 : 0.) * tnse_adjoint::cost_functional_weights[1] * Mult;
+  const double u1_diff = (u1 - u1_stokes) * tnse_adjoint::cost_functional_weights[2] * Mult;
+  const double u2_diff = (u2 - u2_stokes) * tnse_adjoint::cost_functional_weights[2] * Mult;
   
   double ** MatrixA11 = LocMatrices[0];
   double ** MatrixA12 = LocMatrices[1];
@@ -246,7 +250,7 @@ void tnse2d_adjoint::adjoint_assembling(double Mult, double *coeff, double *para
 }
 
 
-void tnse2d_adjoint::params_function(double *in, double *out)
+void tnse_adjoint::params_function(double *in, double *out)
 {
   out[0] = in[2]; // u1old
   out[1] = in[3]; // u2old
