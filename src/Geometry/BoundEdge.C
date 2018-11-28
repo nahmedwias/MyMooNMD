@@ -74,7 +74,7 @@ void TBoundEdge::set_index_in_neighbour(TBaseCell *neigh, int index)
         IndexInNeighbor[0] = index;
     else
     {
-        ErrMsg("ERROR, TInnerInterfaceJoint::SetIndexInNeighbor !!!!!!!!");
+        ErrMsg("ERROR in TBoundEdge::set_index_in_neighbour");
         exit(-4711);
     }
 }
@@ -87,7 +87,7 @@ int TBoundEdge::get_index_in_neighbour(const TBaseCell*const neigh) const
         return IndexInNeighbor[0];
     else
     {
-        ErrMsg("ERROR, TBoundEdge::GetIndexInNeighbor !!!!!!!!");
+        ErrMsg("ERROR in TBoundEdge::get_index_in_neighbour");
         exit(-4711);
     }
 }

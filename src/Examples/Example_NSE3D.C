@@ -41,6 +41,10 @@ namespace simple_coriolis // 6
 {
 #include "NSE_3D/Coriolis_simple.h"
 }
+namespace brinkman3d_poiseuille // 7
+{
+  #include "NSE_3D/Brinkman3D_Poiseuille.h"
+}
 
 //test examples
 namespace test_u_0_p_0 //-1
@@ -280,6 +284,38 @@ Example_NSE3D::Example_NSE3D(const ParameterDatabase& user_input_parameter_db)
       simple_coriolis::ExampleFile();
       break;
     }
+    case 7:
+    {
+      /** exact_solution */
+      exact_solution.push_back( brinkman3d_poiseuille::ExactU1 );
+      exact_solution.push_back( brinkman3d_poiseuille::ExactU2 );
+      exact_solution.push_back( brinkman3d_poiseuille::ExactU3 );
+      exact_solution.push_back( brinkman3d_poiseuille::ExactP );
+
+      /** boundary condition */
+      boundary_conditions.push_back( brinkman3d_poiseuille::BoundCondition );
+      boundary_conditions.push_back( brinkman3d_poiseuille::BoundCondition );
+      boundary_conditions.push_back( brinkman3d_poiseuille::BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+
+      /** boundary values */
+      boundary_data.push_back( brinkman3d_poiseuille::U1BoundValue );
+      boundary_data.push_back( brinkman3d_poiseuille::U2BoundValue );
+      boundary_data.push_back( brinkman3d_poiseuille::U3BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+
+      /** coefficients */
+      problem_coefficients = brinkman3d_poiseuille::LinCoeffs;
+
+      // Set dimensionless viscosity
+      brinkman3d_poiseuille::effective_viscosity = get_nu();
+      brinkman3d_poiseuille::sigma = get_inverse_permeability();
+      brinkman3d_poiseuille::neumann_id = get_neumann_id();
+      brinkman3d_poiseuille::nitsche_id = get_nitsche_id();
+
+      brinkman3d_poiseuille::ExampleFile();
+      break;
+    }
     case -1:
     {
       using namespace test_u_0_p_0;
@@ -403,6 +439,17 @@ Example_NSE3D::Example_NSE3D(const ParameterDatabase& user_input_parameter_db)
   }
 }
 
+
+Example_NSE3D::Example_NSE3D(std::vector<DoubleFunct3D *> exact,
+                             std::vector<BoundCondFunct3D *> bc,
+                             std::vector<BoundValueFunct3D *> bd,
+                             CoeffFct3D coeffs, double nu)
+ : Example3D(exact, bc, bd, coeffs)
+{
+  this->example_database["reynolds_number"] = 1./nu;
+}
+
+
 void Example_NSE3D::do_post_processing(NavierStokes<3>& nse3d) const
 {
   if(post_processing_stat)
@@ -426,3 +473,30 @@ double Example_NSE3D::get_nu() const
   inverse_reynolds = 1/inverse_reynolds;
   return inverse_reynolds;
 }
+
+double Example_NSE3D::get_inverse_permeability() const
+{
+  return this->example_database["inverse_permeability"];
+}
+
+std::vector<size_t> Example_NSE3D::get_neumann_id() const
+{
+  std::vector<size_t> neumann_id;
+  int n_neumann_bd = this->example_database["n_neumann_bd"];
+  if (n_neumann_bd)
+    return this->example_database["neumann_id"];
+  else
+    return neumann_id;
+}
+
+
+std::vector<size_t> Example_NSE3D::get_nitsche_id() const
+{
+  std::vector<size_t> nitsche_id;
+  int n_nitsche_bd = this->example_database["n_nitsche_bd"];
+  if (n_nitsche_bd) 
+    return this->example_database["nitsche_id"];
+  else
+    return nitsche_id;
+}
+

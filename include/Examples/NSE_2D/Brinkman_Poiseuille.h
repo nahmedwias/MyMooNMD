@@ -13,6 +13,8 @@
 // These should be reset when constructing the Example class
 double effective_viscosity = -1;
 double sigma = -1;
+std::vector<size_t> neumann_id;
+std::vector<size_t> nitsche_id;
 
 void ExampleFile()
 {
@@ -82,9 +84,9 @@ void BoundCondition(int i, double Param, BoundCond &cond)
   cond = DIRICHLET; // default
 
   // set Neumann BC
-  for (int j = 0; j < TDatabase::ParamDB->n_neumann_boundary; j++)
+  for (int j = 0; j < neumann_id.size(); j++)
   {
-    if (i == TDatabase::ParamDB->neumann_boundary_id[j])
+    if (i == neumann_id[j])
     {
       cond = NEUMANN;
       return;
@@ -92,11 +94,12 @@ void BoundCondition(int i, double Param, BoundCond &cond)
   }
 
   // set Nitsche BC
-  for (int j = 0; j < TDatabase::ParamDB->n_nitsche_boundary; j++)
+  for (int j = 0; j < nitsche_id.size(); j++)
   {
-    if (i == TDatabase::ParamDB->nitsche_boundary_id[j])
+    if (i == nitsche_id[j])
     {
       cond = DIRICHLET_WEAK;
+      
       return;
     }
   }
@@ -108,17 +111,17 @@ void U1BoundValue(int BdComp, double Param, double &value)
 
   // loop to impose Neumann boundary conditions
   ///@attention we set =0 here, as Neumann BC are imposed using boundary assembling
-  for (int j = 0; j < TDatabase::ParamDB->n_neumann_boundary; j++)
+  for (int j = 0; j < neumann_id.size(); j++)
   {
-    if ( BdComp == TDatabase::ParamDB->neumann_boundary_id[j])
+    if ( BdComp == neumann_id[j])
     {
       switch(BdComp)
       {
       case 1:
-        value = 0.; //TDatabase::ParamDB->neumann_boundary_value[j];
+        value = 0.; 
         break;
       case 3:
-        value = 0.; //-TDatabase::ParamDB->neumann_boundary_value[j];
+        value = 0.; 
         break;
       default:
         Output::print("I cannot impose Neumann boundary condition on component ",

@@ -1,8 +1,5 @@
 /** ************************************************************************
- *
  * @brief     Assemble boundary integrals to the matrix and add their values to the rhs
- *
- *
  * @author    Alfonso Caiazzo & Laura Blank
  * @date      28.10.16
  ************************************************************************  */
@@ -16,26 +13,37 @@
 #include <BlockFEMatrix.h>
 #include <BlockVector.h>
 #include <Point.h>
+#include <BoundFace.h>
 
 class BoundaryAssembling3D
 {
 public:
     
-    /** @brief assemble integral (pressure (given 1D function), v \cdot n)_{L^2([boundary_component_id])}
-     @param[in] boundary_component_id: the boundary component to integrate on
-     @param[in] mult: given multiplicative factor (e.g., viscosity or a penalty)
-     @param[in] given_boundary_data: the boundary pressure (as a finite element function)
+    /** 
+      @brief assemble (g, v \cdot n)_{L^2([boundary_component_id])}
+      @param[in] boundary_component_id: the boundary component to integrate on
+      @param[in] mult: given multiplicative factor (e.g., viscosity or a penalty)
+      @param[in] given_boundary_data: the boundary pressure (as a finite element function)
+      @param[in] boundaryCells: the list of all boundary cells 
      */
-    void rhs_g_v_n(BlockVector &rhs,
-                   const TFESpace3D *U_Space,
-                   BoundValueFunct3D *given_boundary_data,
-                   std::vector<TBaseCell*> &boundaryCells,
-                   int bd_component_id, double mult
-                   );
+  void rhs_g_v_n(BlockVector &rhs,
+		 const TFESpace3D *U_Space,
+		 BoundValueFunct3D *given_boundary_data,
+		 std::vector<TBaseCell*> &boundaryCells,
+		 int bd_component_id, double mult
+		 );
+
+
+  void rhs_g_v_n(BlockVector &rhs,
+		 const TFESpace3D *U_Space,
+		 BoundValueFunct3D *given_boundary_data,
+		 std::vector<TBoundFace*> boundaryFaceList,
+		 int componentID,
+		 double mult);
 
 
 
-    
+  
     /** @brief integral (u, v)_{[boundary_component_id]}
      @param[in] boundary_component_id: the boundary component to integrate on
      @param[in] mult: given multiplicative factor (e.g., viscosity or a penalty)
@@ -44,7 +52,7 @@ public:
      */
     void matrix_u_v(BlockFEMatrix &M,
                     const TFESpace3D *U_Space,
-                    std::vector<TBaseCell*> &boundaryCells,
+                    std::vector<TBoundFace*> boundaryFaceList,
                     int componentID,
                     double mult,
                     bool rescale_by_h);
@@ -62,7 +70,7 @@ public:
                  BoundValueFunct3D *given_boundary_data1,
                  BoundValueFunct3D *given_boundary_data2,
                  BoundValueFunct3D *given_boundary_data3,
-                 std::vector<TBaseCell*> &boundaryCells,
+                 std::vector<TBoundFace*> boundaryFaceList,
                  int componentID,
                  double mult,
                  bool rescale_by_h);
@@ -74,7 +82,7 @@ public:
      */
     void matrix_gradu_n_v(BlockFEMatrix &M,
                           const TFESpace3D *U_Space,
-                          std::vector<TBaseCell*> &boundaryCells,
+                          std::vector<TBoundFace*> boundaryFaceList,
                           int componentID,
                           double mult);
     
@@ -85,7 +93,7 @@ public:
      */
     void matrix_gradv_n_u(BlockFEMatrix &M,
                           const TFESpace3D *U_Space,
-                          std::vector<TBaseCell*> &boundaryCells,
+                          std::vector<TBoundFace*> boundaryFaceList,
                           int componentID,
                           double mult);
     
@@ -99,7 +107,7 @@ public:
                         BoundValueFunct3D *given_boundary_data1,
                         BoundValueFunct3D *given_boundary_data2,
                         BoundValueFunct3D *given_boundary_data3,
-                        std::vector<TBaseCell*> &boundaryCells,
+                        std::vector<TBoundFace*> boundaryFaceList,
                         int componentID,
                         double mult);
 
@@ -111,7 +119,7 @@ public:
     void matrix_p_v_n(BlockFEMatrix &M,
                       const TFESpace3D *U_Space,
                       const TFESpace3D *P_Space,
-                      std::vector<TBaseCell*> &boundaryCells,
+                      std::vector<TBoundFace*> boundaryFaceList,
                       int componentID,
                       double mult);
     
@@ -123,7 +131,7 @@ public:
     void matrix_q_u_n(BlockFEMatrix &M,
                       const TFESpace3D *U_Space,
                       const TFESpace3D *P_Space,
-                      std::vector<TBaseCell*> &boundaryCells,
+                      std::vector<TBoundFace*> boundaryFaceList,
                       int componentID,
                       double mult);
     
@@ -133,11 +141,12 @@ public:
      @param[in] mult: given multiplicative factor (e.g., viscosity or a penalty)
      */
     void rhs_q_uD_n( BlockVector &rhs,
+                    const TFESpace3D *V_Space,
                     const TFESpace3D *P_Space,
                     BoundValueFunct3D *given_boundary_data1,
                     BoundValueFunct3D *given_boundary_data2,
                     BoundValueFunct3D *given_boundary_data3,
-                    std::vector<TBaseCell*> &boundaryCells,
+                    std::vector<TBoundFace*> boundaryFaceList,
                     int componentID,
                     double mult);
 
@@ -202,11 +211,19 @@ public:
 //                   double &h);
     
     
-    /** @brief For a joint in a cell with joint_id=m compute the number of vertices
-     @param[in] *cell: cell
-     @param[in] m: joint ID
-     */
-    int getNumberOfFaceVertices(TBaseCell *cell, int m);
+    /**
+      @brief Assemble the terms needed for Nitsche BC on a given boundary
+    */
+    void nitsche_bc(BlockFEMatrix &s_matrix,BlockVector &s_rhs,
+        const TFESpace3D * v_space, const TFESpace3D *p_space,
+        BoundValueFunct3D * U1, BoundValueFunct3D *U2, BoundValueFunct3D *U3,
+        std::vector<TBoundFace*> boundaryFaceList,
+        int bd_comp, double gamma, double mu,
+        int sym_u, int sym_p);
+
+
+
+    
     
 protected:
     

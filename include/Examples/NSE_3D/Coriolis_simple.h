@@ -429,9 +429,10 @@ void LinCoeffs(int n_points, double * X, double * Y, double * Z, double **,
       coeffs[i][2] += omega * u1[0];
     }
     coeffs[i][4] = u1[1] + u2[2] + u3[3]; // div(u) = g
-    coeffs[i][5] = 0.; // first entry in coriolis force
-    coeffs[i][6] = 0.; // second entry in coriolis force
-    coeffs[i][7] = omega; // third entry in coriolis force
+    coeffs[i][5] = 0.; //sigma
+    coeffs[i][6] = 0.; // first entry in coriolis force
+    coeffs[i][7] = 0.; // second entry in coriolis force
+    coeffs[i][8] = omega; // third entry in coriolis force
   }
 }
 

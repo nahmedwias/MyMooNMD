@@ -79,7 +79,7 @@ class TBoundEdge : public TJoint
       GetXYofT( this->T_1, x1, y1);
       double length =  sqrt((x1-x0)*(x1-x0) + (y1-y0)*(y1-y0));
       nx =  (y1-y0)/length;
-      ny = (x0-x1)/length;
+      ny = (x0-x1)/length; //(x1-x0)/length; //
     }
 
     void get_tangent(double &tx, double &ty)

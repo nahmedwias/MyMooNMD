@@ -111,7 +111,7 @@ int main(int argc, char* argv[])
       timer_sol.stop();
 
       //no nonlinear iteration for Stokes problem
-      if(parmoon_db["problem_type"].is(3))
+      if(parmoon_db["problem_type"].is(3) || parmoon_db["problem_type"].is(7))
         break;
 
       nse3d.assemble_nonlinear_term();

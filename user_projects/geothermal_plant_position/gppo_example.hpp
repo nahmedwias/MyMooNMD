@@ -1,8 +1,8 @@
 #include "ParameterDatabase.h"
 #include "Example_NSE2D.h"
-#include "Example_CD2D.h"
+#include "Example_TimeCD2D.h"
 
-constexpr double surrounding_temperature = 150.;
+constexpr double surrounding_temperature = 348.15; //=75 + 273.15; //150.;
 
 void unknown_solution(double, double, double *values)
 {
@@ -31,8 +31,8 @@ void initial_condition_temperature(double x, double y, double *values)
 {
   values[0] = surrounding_temperature;
 }
-void pde_coefficients_flow(int n_points, double *, double *, double **,
-                           double **coeffs, double nu)
+void pde_coefficients_flow(int n_points, double *x, double *y, double ** parameters,
+        double **coeffs, double nu, double sigma, bool use_parameters = false)
 {
   for(int i = 0; i < n_points; i++)
   {
@@ -41,13 +41,34 @@ void pde_coefficients_flow(int n_points, double *, double *, double **,
     coeffs[i][1] = 0.; // f1
     coeffs[i][2] = 0.; // f2
     coeffs[i][3] = 0.; // divergence
+
+    if (!use_parameters) // initial assembling // if (parameters[i] == nullptr)
+    {
+      if (abs(x[i] - 1.5 - y[i] + 0.01) < 0.05) // crack through the sink
+        {
+        coeffs[i][4] = sigma; //1e10;
+        //cout<< "erste Gerade" <<endl;
+        }
+      else if (abs(x[i] - 2.5 - y[i] - 0.01) < 0.05) // crack through the source
+        {
+        coeffs[i][4] = sigma; //1e10;
+        //cout<< "zweite Gerade" <<endl;
+        }
+      else
+       coeffs[i][4] = sigma;
+    }
+    else
+    {
+      coeffs[i][4] = parameters[i][0];
+      //cout << "parameters set !!!!!!!!!!!!!" <<endl;
+    }
   }
 }
 void pde_coefficients_temperature(int n_points, double *, double *, 
                                   double **parameters, double **coeffs,
                                   double nu)
 {
-  for(int i = 0; i < n_points; i++)
+  for (int i = 0; i < n_points; i++)
   {
     // physical parameters
     coeffs[i][0] = nu;
@@ -74,9 +95,11 @@ Example_NSE2D get_gppo_flow_example(const ParameterDatabase & db)
     all_Dirichlet_boundary_condition, all_Neumann_boundary_condition}};
   std::vector<BoundValueFunct2D *> bd(3, zero_boundary_value); 
   double reynolds_number = db["reynolds_number"];
+  double sigma = db["inverse_permeability"];
   using namespace std::placeholders;
+  bool use_coeff_fct = db["use_coeff_fct"];
   CoeffFct2D coeffs = std::bind(pde_coefficients_flow, _1, _2, _3, _4, _5,
-                                1./reynolds_number);
+                                1./reynolds_number, sigma, use_coeff_fct);
   return Example_NSE2D(exact, bc, bd, coeffs, 1./reynolds_number);
 }
 
@@ -89,7 +112,6 @@ Example_TimeCD2D get_gppo_temperature_example(const ParameterDatabase & db)
   std::vector <DoubleFunct2D*> ic(1, initial_condition_temperature);
   double nu = db["diffusion_coefficient"];
   using namespace std::placeholders;
-  CoeffFct2D coeffs = std::bind(pde_coefficients_temperature, _1, _2, _3, _4,
-                                _5, nu);
+  CoeffFct2D coeffs = std::bind(pde_coefficients_temperature, _1, _2, _3, _4, _5, nu);
   return Example_TimeCD2D(exact, bc, bd, coeffs, false, false, ic);
 }

@@ -67,6 +67,11 @@ class TBoundFace : public TJoint
     void SetParameters(double *param1, double *param2);
 
     double Get_h(int cell_measure);
+
+    void set_index_in_neighbour(TBaseCell *neigh, int index);
+    int get_index_in_neighbour(const TBaseCell*const neigh) const;
+
+
 };
 
 #endif
