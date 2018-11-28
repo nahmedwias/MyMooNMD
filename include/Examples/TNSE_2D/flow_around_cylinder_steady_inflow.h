@@ -178,7 +178,7 @@ void GetCdCl(TFEFunction2D *u1fct, TFEFunction2D *u2fct,
 {
   int i,j,k,l, N_;
   int N_Points,N_Edges,comp;
-  double *weights, *xi, *eta;
+  const double *weights, *xi, *eta;
   double X[MaxN_QuadPoints_2D];
   double Y[MaxN_QuadPoints_2D];
   double AbsDetjk[MaxN_QuadPoints_2D];
@@ -408,7 +408,7 @@ void GetCdCl(TFEFunction2D *u1fct, TFEFunction2D *u2fct,
   delete v;
 }
 
-void compute_drag_lift_pdiff(Time_NSE2D& time_nse2d, double& val)
+void compute_drag_lift_pdiff(TimeNavierStokes<2>& time_nse2d, double& val)
 {
   double drag, lift, dP1[4], dP2[4];
 

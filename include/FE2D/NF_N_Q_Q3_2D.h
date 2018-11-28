@@ -116,8 +116,8 @@ static double NF_N_Q_Q3_CellWeight2[16] = {
         .0781500534973524151648919963067, .146512775236488111756852006936,
         .146512775236488111756852006936, .0781500534973524151648919963067 };
 
-void NF_N_Q_Q3_2D_EvalAll(TCollection *Coll, TBaseCell *Cell, double *PointValues,
-                          double *Functionals)
+void NF_N_Q_Q3_2D_EvalAll(TCollection *Coll, TBaseCell *Cell,
+                          const double *PointValues, double *Functionals)
 {
   int OwnNum, NeighNum;
   TBaseCell *neigh;
@@ -275,7 +275,7 @@ void NF_N_Q_Q3_2D_EvalAll(TCollection *Coll, TBaseCell *Cell, double *PointValue
 }
 
 void NF_N_Q_Q3_2D_EvalEdge(TCollection *Coll, TBaseCell *Cell, int Joint,
-                           double *PointValues, double *Functionals)
+                           const double *PointValues, double *Functionals)
 {
   int OwnNum, NeighNum;
   TBaseCell *neigh;

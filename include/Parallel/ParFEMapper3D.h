@@ -54,11 +54,6 @@ class TParFEMapper3D
     //! The underlying fe space for which the communications are needed.
     TFESpace3D *FESpace;
     
-    /** Global (over all processes) maximum possible number of subdomains per dof.
-     * @note The number should be made known to the FESpace before initializing the ParFEMapper.
-     */
-    int MaxSubDomainPerDof;
-    
     /** array containing the master of the dofs **/ 
     int *Master;
     int* OwnDofs;

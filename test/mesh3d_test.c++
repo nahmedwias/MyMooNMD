@@ -12,7 +12,8 @@
  *
  * @date 2016/08/16
  */
-#include <CD3D.h>
+#include "ConvectionDiffusion.h"
+#include "LocalAssembling.h"
 #include <Solver.h>
 #include <Multigrid.h>
 
@@ -26,20 +27,17 @@ double bound = 0;
 double timeC = 0;
 #endif
 
-void compare(const CD3D& cd3d, std::array<double, int(2)> errors, double tol)
+void compare(const ConvectionDiffusion<3>& cd3d, std::array<double, int(2)> errors, double tol)
 {
-  std::array<double, int(2)> computed_errors;
-  computed_errors = cd3d.get_errors();
-
   // check the L2-error
-  if( fabs(computed_errors.at(0)-errors.at(0)) > tol )
+  if(std::abs(cd3d.get_L2_error() - errors[0]) > tol)
   {
-    ErrThrow("L2 norm: ", computed_errors.at(0), "  ", errors.at(0));
+    ErrThrow("L2 norm: ", cd3d.get_L2_error(), "  ", errors[0]);
   }
   // check the H1-error
-  if( fabs(computed_errors.at(1) - errors.at(1)) > tol )
+  if(std::abs(cd3d.get_H1_semi_error() - errors[1]) > tol)
   {
-    ErrThrow("H1-semi norm: ", computed_errors.at(1), "  ", errors.at(1));
+    ErrThrow("H1-semi norm: ", cd3d.get_H1_semi_error(), "  ", errors.at(1));
   }
 }
 
@@ -62,34 +60,19 @@ void check(ParameterDatabase& db, int ansatz_order,
   TCollection *coll = domain.GetCollection(It_Finest, 0);
   coll->writeMesh("tmp_unicube.mesh");
 
-  // Intial refinement and grabbing of grids for multigrid.
-#ifdef _MPI
-  int maxSubDomainPerDof = 0;
-#endif
-  std::list<TCollection* > gridCollections
-  = domain.refine_and_get_hierarchy_of_collections( db
-  #ifdef _MPI
-      , maxSubDomainPerDof
-  #endif
-      );
-
+  // Intial refinement
+  domain.refine_and_get_hierarchy_of_collections(db);
   // Choose and construct example.
   Example_CD3D example_obj(db);
 
   // Construct the cd3d problem object.
-#ifdef _MPI
-  CD3D cd3d(gridCollections, db, example_obj, maxSubDomainPerDof);
-#else
-  CD3D cd3d(gridCollections, db, example_obj);
-#endif
+  ConvectionDiffusion<3> cd3d(domain, db, example_obj);
 
   cd3d.assemble();
   cd3d.solve();
   cd3d.output();
 
   compare(cd3d, errors, tol);
-
-
 }
 
 // Choose the solver according to the input string and set global database

@@ -1265,39 +1265,6 @@ ParameterDatabase ParameterDatabase::parmoon_default_database()
 }
 
 /* ************************************************************************** */
-// set default parameters for time discretization
-ParameterDatabase ParameterDatabase::default_time_database()
-{
-  // TODO: Remove this database. It's already exists in the TimeDiscretization class
-  ParameterDatabase db("default ParMooN time parameters database");
-  
-//   db.add("time_start", 0.,
-//          "This is the start time of the simulation. The total simulated time "
-//          "interval is [start_time, end_time].", -1000.,1000.);
-//   
-//   db.add("time_end", 1.,
-//          "This is the end time of the simulation. The total simulated time "
-//          "interval is [start_time, end_time].", -1000.,1000.);
-//   
-//   db.add("time_step_length", 0.05,
-//          "This is the time step length. Without time adaptivity, it "
-//          "is the same constant value for all time steps, whereas for "
-//          "time adaptivity, it only corresponds to the initial value.",
-//          0., 0.5);
-//   
-//   db.add("time_discretization", 2u,
-//          "This is the time discretization scheme. The following values are "
-//          "implemented :"
-//          "0 -> Forward Euler, "
-//          "1 -> Backward Euler, "
-//          "2 -> Crank-Nicholson, "
-//          "3 -> Fractional step."
-//          "4 -> Extrapolated Crank_Nicholson (or IMplicit-EXplicit, IMEX)",
-//          0u , 4u );
-  
-  return db;
-}
-
 ParameterDatabase ParameterDatabase::default_nonlinit_database()
 {
   ParameterDatabase db("default ParMooN nonlinear iteration parameters database");
@@ -1383,7 +1350,15 @@ ParameterDatabase ParameterDatabase::default_output_database()
 	  db.add("steps_per_output", (size_t)1,
 	         "This integer specifies how many (time) steps are performed "
 		 "before writing the results ");
-
+	  
+	  db.add("continue_output_after_restart", false,
+		"This parameter, when true, allows the output numbering "
+		"to continue after a simulation restart, which is often a "
+		"desirable behavior. Otherwise, it behaves as if the "
+		"initial time was 0, and starts the numbering at 0, leading "
+		"sometimes to overwritting existing files.", 
+		 {true,false});
+	  
 	  return db;
 }
 

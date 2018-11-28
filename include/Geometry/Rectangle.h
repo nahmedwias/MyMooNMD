@@ -23,16 +23,16 @@ class TRectangle : public TQuadrangle
 
     // Methods
     /** return diameter of a cell */
-    virtual double GetDiameter(TVertex **Verts);
+    virtual double GetDiameter(TVertex **Verts) const override;
 
     /** return shortest edge of a cell */
-    virtual double GetShortestEdge(TVertex **Verts);
+    virtual double GetShortestEdge(TVertex **Verts) const override;
 
     /** return the length of the cell defined with the reference map */
-    virtual double GetLengthWithReferenceMap(TVertex **Verts);
+    virtual double GetLengthWithReferenceMap(TVertex **Verts) const override;
 
     /** return measure of a cell */
-    virtual double GetMeasure(TVertex **Verts);
+    virtual double GetMeasure(TVertex **Verts) const override;
 
 };
 

@@ -96,6 +96,8 @@ class TDomain
       int N_OwnCells;
 #endif
 
+      /** @brief see documentation of refine_and_get_hierarchy_of_collections */
+      std::list<TCollection*> gridCollections;
       /**
        * A Database object which holds parameters which are of a certain
        * interest to this domain object.
@@ -105,15 +107,9 @@ class TDomain
   public:
     /**
      * @brief Constructor.
-     * Eventually reads in data of the old database - this feature is messy,
-     * it is a trait from heritage MooNMD, and should be removed soon.
-     *
-     * @param param_db A database to be merged into the domain's own.
-     * @param ParamFile Path to a ParMooN parameter input textfile, if
-     * given, it is used to fill the old Database.
-     *
+     * @param db A database to be merged into the domain's own.
      */
-     TDomain(const ParameterDatabase& db, const char *ParamFile = nullptr);
+     TDomain(const ParameterDatabase& db);
      
     /** @brief copy constructor, deleted as a precaution */
     TDomain(const TDomain&) = delete;
@@ -178,9 +174,6 @@ class TDomain
     void TriMeshGen(struct triangulateio *In);
 #endif
 
-    /** @brief read parameter file */
-    int ReadParam(const char *ParamFile);
-
     /** @brief Reads in boundary parameterization in ".PRM" file format
      *
      * @param[in] dat Input stream containing the boundary information in
@@ -195,9 +188,6 @@ class TDomain
 #else
     void ReadBdParam(std::istream& dat, bool& sandwich_flag);
 #endif
-
-    /** @brief read mapping information */
-    int ReadMapFile(char *MapFile, TDatabase *database);
 
     /** @brief get boundary part of BdCompID */
     int GetBdPartID(int BdCompID);
@@ -328,15 +318,11 @@ class TDomain
       // auxiliary vector of Joints
       std::vector<TJoint*> meshJoints;
 #endif
-    /** @brief write domain boundary  into a postscript file */
-    int Draw(char *name, Iterators iterator, int arg);
     /** @brief write mesh into a postscript file */
-    int PS(const char *name, Iterators iterator, int arg);
+    void PS(const char *name, Iterators iterator, int arg);
     /** @brief write collection into a postscript file */
-    int PS(const char *name, TCollection *Coll);
-    /** @brief write files for MD-Out format */
-    int MD_raw(const char *name, Iterators iterator, int arg);
-
+    void PS(const char *name, TCollection *Coll);
+    
     /** @brief refine the grid according the cell refinement descriptors */
     int Refine();
     /** @brief refine all cells regular */
@@ -594,19 +580,20 @@ class TDomain
    *   determine_n_refinement_steps_multigrid
    * for a description of the problem.
    * @param[in] parmoon_db The input database.
-   * @param[out] maxSubDomainPerDof A very annoying value, which we must
-   * curetnly drag through the whole program. Is finally used in TParFECommunicator
-   * to determine, how much space to allocate for MPI Communications
    * @return A hierarchy of geometric grids which can be used for multigrid,
    * finest grid first.
    *
    */
-  std::list<TCollection* > refine_and_get_hierarchy_of_collections(
-      const ParameterDatabase& parmoon_db
-  #ifdef _MPI
-      , int& maxSubDomainPerDof
-  #endif
-      );
+  std::list<TCollection*> refine_and_get_hierarchy_of_collections(
+      const ParameterDatabase& parmoon_db);
+
+  const std::list<TCollection*> get_grid_collections() const
+  {
+    if(gridCollections.empty())
+      ErrThrow("There are no collections stored in the TDomain object, you "
+               "need to call 'refine_and_get_hierarchy_of_collections'");
+    return gridCollections;
+  }
 
   /// Get a const reference to the database of this domain object.
   const ParameterDatabase& get_database() const {return this->db;};

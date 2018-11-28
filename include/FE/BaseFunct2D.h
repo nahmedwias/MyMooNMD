@@ -1,23 +1,11 @@
-// =======================================================================
-// @(#)BaseFunct2D.h        1.5 02/08/00
-//
-// Class:      TBaseFunct2D
-//
-// Purpose:    represents the set of base functions for a finite element
-//             in two dimensions
-//
-// Author:     Gunar Matthies
-//
-// History:    08.07.98 restart implementation
-// //     :    10.06.2010 methods for vector basis functions (Sashikumaar Ganesan)
-// =======================================================================
-
 #ifndef __BASEFUNCT2D__
 #define __BASEFUNCT2D__
 
 #include <QuadFormula1D.h>
 #include <QuadFormula2D.h>
-#include <GridCell.h>
+
+class TBaseCell;
+class TGridCell;
 
 
 /** set of all base function on the reference element for a finite 
@@ -33,9 +21,6 @@ class TBaseFunct2D
 
     /** array for all functions and derivatives */
     DoubleFunct2D *Functions[N_MultiIndices2D];
-
-    /** status of changability of entries */
-    bool changable;
 
     /** reference element used for this set of base functions */
     BF2DRefElements RefElement;
@@ -61,22 +46,8 @@ class TBaseFunct2D
     bool SpaceDeptBasis;    
     
   public:
-    /** constructor, fill in all information */
-    TBaseFunct2D(int dimension, BaseFunct2D basefunct,
-                 BF2DRefElements refelement,
-                 DoubleFunct2D* functions, 
-                 DoubleFunct2D* derivativesxi,
-                 DoubleFunct2D* derivativeseta,
-                 DoubleFunct2D* derivativesxixi,
-                 DoubleFunct2D* derivativesxieta,
-                 DoubleFunct2D* derivativesetaeta,
-                 int polynomialdegree,
-                 int accuracy,
-                 int n_bf2change,
-                 int const * const * bf2change
-                );
 
-    /** constructor, fill in all information  with scalar basis function dimension*/
+    /** constructor, fill in all information. */
     TBaseFunct2D(int dimension, BaseFunct2D basefunct,
                  BF2DRefElements refelement,
                  DoubleFunct2D* functions, 
@@ -89,29 +60,8 @@ class TBaseFunct2D
                  int accuracy,
                  int n_bf2change,
                  int const * const * bf2change,
-                 int baseVectDim
-                );
-
-
-    TBaseFunct2D(int dimension, BaseFunct2D basefunct,
-                 BF2DRefElements refelement,
-                 DoubleFunct2D* functions, 
-                 DoubleFunct2D* derivativesxi,
-                 DoubleFunct2D* derivativeseta,
-                 DoubleFunct2D* derivativesxixi,
-                 DoubleFunct2D* derivativesxieta,
-                 DoubleFunct2D* derivativesetaeta,
-                 int polynomialdegree,
-                 int accuracy,
-                 int n_bf2change,
-                 int const * const * bf2change,
-                 bool spaceDeptBasis
-                );
-
-
-
-    /** constructor without filling data structure */
-    TBaseFunct2D(int dimension);
+                 int baseVectDim = 1,
+                 bool spaceDeptBasis = false);
 
     /** return the dimension of local space */
     int GetDimension() const
@@ -123,40 +73,34 @@ class TBaseFunct2D
 
     /** return the values for derivative MultiIndex at (xi,eta) */
     void GetDerivatives(MultiIndex2D MultiIndex, double xi,
-                        double eta, double *values)
+                        double eta, double *values) const
     { Functions[MultiIndex](xi, eta, values); };
 
     /** return the values for derivative MultiIndex at all
         quadrature points */
     void GetDerivatives(MultiIndex2D MultiIndex, 
-                        TQuadFormula2D *formula, double **values);
+                        TQuadFormula2D *formula, double **values) const;
 
     /** return values on joint i */
-    void GetValues(int N_Points, double *zeta, int i, double **Values);
+    void GetValues(int N_Points, const double *zeta, int i, double **Values)
+      const;
 
     /** return derivatives on joint i */
     void GetDerivatives(MultiIndex2D MultiIndex, int N_Points,
-                        double *zeta, int i, double **Values);
+                        const double *zeta, int i, double **Values) const;
 
    /** return values of derivative index on joint */
-   void GetValues(int N_Points, double *zeta, int i, 
-                  MultiIndex2D index, double **Values);
-
-    /** set status to unchangable */
-    void SetUnchangable()
-      { changable = false; };
-
-    /** set function for derivative MultiIndex */
-    void SetFunction(MultiIndex2D MultiIndex, DoubleFunct2D* function);
+   void GetValues(int N_Points, const double *zeta, int i, 
+                  MultiIndex2D index, double **Values) const;
 
     /** make date on reference element */
-    void MakeRefElementData(QuadFormula1D QuadFormula);
+    void MakeRefElementData(QuadFormula1D QuadFormula) const;
 
     /** make date on reference element */
-    void MakeRefElementData(QuadFormula2D QuadFormula);
+    void MakeRefElementData(QuadFormula2D QuadFormula) const;
 
     /** generate reference element */
-    TGridCell *GenerateRefElement();
+    TGridCell *GenerateRefElement() const;
 
     /** return reference element */
     BF2DRefElements GetRefElement() const
@@ -179,16 +123,16 @@ class TBaseFunct2D
       { return BF2Change; }
 
     /** change basis functions on cell if needed */
-    void ChangeBF(TCollection *Coll, TBaseCell *Cell, double *Values);
+    void ChangeBF(TCollection *Coll, const TBaseCell *Cell, double *Values) 
+      const;
 
     /** change basis functions on cell in all points if needed */
-    void ChangeBF(TCollection *Coll, TBaseCell *Cell, int N_Points, double **Values);
+    void ChangeBF(TCollection *Coll, const TBaseCell *Cell, int N_Points,
+                  double **Values) const;
     
     /** return the dimension of the vector basis function */
     int GetBaseVectDim() const
     { return BaseVectDim; }
-    
-
 };
 
 #endif

@@ -63,7 +63,6 @@ class TFESpace2D : public TFESpace
     TFESpace2D(TCollection *coll, std::string name, std::string description);
 
     /** constructor for building a space with elements of order k */
-    // if no mortar is used, the last argument can be set to nullptr
     TFESpace2D(TCollection *coll, std::string name, std::string description,
                BoundCondFunct2D *BoundaryCondition, int k);
 

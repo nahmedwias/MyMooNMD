@@ -75,7 +75,6 @@ TBaseCell::~TBaseCell()
     switch (CurrJoint->GetType())
     {
       case JointEqN:
-      case MortarBaseJoint:
       case InterfaceJoint:
       case IsoInterfaceJoint:
       case InnerInterfaceJoint:
@@ -98,7 +97,7 @@ TBaseCell::~TBaseCell()
   delete[] Joints;
 }
 
-double TBaseCell::Get_hK(int cell_measure)
+double TBaseCell::Get_hK(int cell_measure) const
 {
   switch (cell_measure)
   {

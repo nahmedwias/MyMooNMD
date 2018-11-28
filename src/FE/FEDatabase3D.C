@@ -15,6 +15,7 @@
 #include <AllRefTrans3D.h>
 #include <Database.h>
 #include <string.h>
+#include <GridCell.h>
 
 #include <BoundFace.h>
 #include <IsoInterfaceJoint3D.h>
@@ -1092,8 +1093,8 @@ RefTrans3D TFEDatabase3D::GetOrig(int N_LocalUsedElements,
                           FE3D *LocalUsedElements,
                           TCollection *Coll,
                           TBaseCell *cell, bool *Needs2ndDer,
-                          int &N_Points, double* &xi, double* &eta,
-                          double* &zeta, double* &weights,
+                          int &N_Points, const double* &xi, const double* &eta,
+                          const double* &zeta, const double* &weights,
                           double* X, double* Y, double* Z, double* absdetjk)
 {
   int i,MaxPolynomialDegree, PolynomialDegree, N_Faces, N_terms;
@@ -1456,7 +1457,7 @@ RefTrans3D TFEDatabase3D::GetOrig(int N_LocalUsedElements,
 
 /** calculate points on original element */
 void TFEDatabase3D::GetOrigFromRef(RefTrans3D RefTrans, int n_points,
-                   double *xi, double *eta, double *zeta,
+                   const double *xi, const double *eta, const double *zeta,
                    double *X, double *Y, double *Z, double *absdetjk)
 {
   TRefTrans3D *rt;
@@ -1608,7 +1609,7 @@ double *TFEDatabase3D::GetProlongationMatrix3D (FE3D parent,
   double *ret, *ret2;
   int j,k,l;
   int N_Coarse, N_Points, N_Children; // int N_Fine;
-  double *xi, *eta, *zeta;
+  const double *xi, *eta, *zeta;
   double X[MaxN_PointsForNodal3D], Y[MaxN_PointsForNodal3D];
   double Z[MaxN_PointsForNodal3D];
   double AbsDetjk[MaxN_PointsForNodal3D];
@@ -1618,7 +1619,8 @@ double *TFEDatabase3D::GetProlongationMatrix3D (FE3D parent,
   TRefDesc *RefDesc;
   TBaseFunct3D *BaseFunctions;
   BaseFunct3D Coarse, Fine;
-  TGridCell *RefCell, *cell;
+  TGridCell *RefCell;
+  const TGridCell * cell;
   TNodalFunctional3D *nf;
   BF3DRefElements RefElement;
   RefTrans3D F_K = TetraAffin; //avoid uninit warning
@@ -1706,7 +1708,7 @@ double *TFEDatabase3D::GetProlongationMatrix3D (FE3D parent,
         ret = new double[MaxN_BaseFunctions3D*MaxN_BaseFunctions3D];
         ret2 = new double[MaxN_BaseFunctions3D*MaxN_BaseFunctions3D];
   
-        cell = (TGridCell *)RefCell->GetChild(j);
+        cell = (const TGridCell *)((const TGridCell *)RefCell)->GetChild(j);
         FineElement = TFEDatabase3D::GetFE3D(child);
         Fine = FineElement->GetBaseFunct3D_ID();
 //        N_Fine = FineElement->GetBaseFunct3D()->GetDimension();
@@ -1792,7 +1794,7 @@ double *TFEDatabase3D::GetRestrictionMatrix3D (FE3D parent,
   double **CoarseBFData, **FineBFData, *PointData;
   double *FinePointData;
   int N_QuadPoints;
-  double *xi, *eta, *zeta, *weights, w; // double sum;
+  const double *xi, *eta, *zeta, *weights; // double sum;
   double X[MaxN_QuadPoints_3D], Y[MaxN_QuadPoints_3D];
   double Z[MaxN_QuadPoints_3D];
   double AbsDetjk[MaxN_QuadPoints_3D];
@@ -1826,7 +1828,7 @@ double *TFEDatabase3D::GetRestrictionMatrix3D (FE3D parent,
     for(k=0;k<N_QuadPoints;k++)
     {
       PointData = CoarseBFData[k];
-      w = weights[k];
+      double w = weights[k];
       for(i=0;i<N_Coarse;i++)
       {
         for(j=0;j<N_Coarse;j++)
@@ -1862,7 +1864,7 @@ double *TFEDatabase3D::GetRestrictionMatrix3D (FE3D parent,
       {
         FinePointData = FineBFData[k];
         PointData = CoarseBFData[k];
-        w = weights[k];
+        double w = weights[k];
         for(l1=0;l1<N_Coarse;l1++)
         {
           for(l2=0;l2<N_Fine;l2++)
@@ -1918,19 +1920,20 @@ double *TFEDatabase3D::GetRestrictionMatrix3D (FE3D parent,
   
         F_K = FineElement->GetRefTransID();
   
+        const TBaseCell * child_cell = ((const TGridCell*)RefCell)->GetChild(j);
         switch(F_K)
         {
           case HexaAffin:
           case HexaTrilinear:
           case HexaIsoparametric:
             rt = TFEDatabase3D::GetRefTrans3D(HexaAffin);
-            ((THexaAffin *)rt)->SetCell(RefCell->GetChild(j));
+            ((THexaAffin *)rt)->SetCell(child_cell);
             F_K = HexaAffin;
             break;
           case TetraAffin:
           case TetraIsoparametric:
             rt = TFEDatabase3D::GetRefTrans3D(TetraAffin);
-            ((TTetraAffin *)rt)->SetCell(RefCell->GetChild(j));
+            ((TTetraAffin *)rt)->SetCell(child_cell);
             break;
         }
         TFEDatabase3D::GetOrigFromRef(F_K ,N_QuadPoints, xi, eta, zeta,
@@ -1943,7 +1946,7 @@ double *TFEDatabase3D::GetRestrictionMatrix3D (FE3D parent,
         {
           FinePointData = FineBFData[k];
           PointData = AllPointValues[k];
-          w = weights[k]*AbsDetjk[k];
+          double w = weights[k]*AbsDetjk[k];
           for(l1=0;l1<N_Coarse;l1++)
           {
             for(l2=0;l2<N_Fine;l2++)

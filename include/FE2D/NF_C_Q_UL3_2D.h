@@ -75,8 +75,8 @@ static double NF_C_Q_UL3_2D_W17[] = {
 -0.7409420099637489243144792e-1, 0.7409420099637489243144789e-1
 };
 
-void NF_C_Q_UL3_2D_EvalAll(TCollection *Coll, TBaseCell *Cell, double *PointValues,
-                          double *Functionals)
+void NF_C_Q_UL3_2D_EvalAll(TCollection *Coll, TBaseCell *Cell,
+                           const double *PointValues, double *Functionals)
 {
   Functionals[0] = PointValues[0];
   Functionals[1] = PointValues[1];
@@ -188,8 +188,8 @@ void NF_C_Q_UL3_2D_EvalAll(TCollection *Coll, TBaseCell *Cell, double *PointValu
                    +NF_C_Q_UL3_2D_W17[15]*PointValues[27];
 }
 
-void NF_C_Q_UL3_2D_EvalEdge(TCollection *Coll, TBaseCell *Cell, int Joint, double *PointValues,
-                           double *Functionals)
+void NF_C_Q_UL3_2D_EvalEdge(TCollection *Coll, TBaseCell *Cell, int Joint,
+                            const double *PointValues, double *Functionals)
 {
   memcpy(Functionals, PointValues, 4*SizeOfDouble);
 }

@@ -26,7 +26,7 @@
 #include <Database.h>
 #include <ParameterDatabase.h>
 #include <FEDatabase2D.h>
-#include <NSE2D.h>
+#include "NavierStokes.h"
 #include <Example_NSE2D.h>
 #include <Multigrid.h>
 #include <Chrono.h>
@@ -35,7 +35,7 @@
 
 double accuracy = 1e-6;
 
-void compare(const NSE2D& nse2d, std::array<double, int(5)> errors)
+void compare(const NavierStokes<2>& nse2d, std::array<double, int(5)> errors)
 {
   auto computed_errors = nse2d.get_errors();
   
@@ -69,18 +69,18 @@ void compare(const NSE2D& nse2d, std::array<double, int(5)> errors)
 void compute(TDomain &domain, ParameterDatabase& db,
              std::array<double, int(5)> errors)
 {
-  NSE2D nse2d(domain, db);
-  nse2d.assemble();
+  NavierStokes<2> nse2d(domain, db);
+  nse2d.assemble_linear_terms();
   // check stopping criterion
-  nse2d.stopIt(0);
+  nse2d.stop_it(0);
   for(unsigned int k=1;; k++)
   {
     Output::print<1>("nonlinear step " , setw(3), k-1, "\t",
-                     nse2d.getResiduals());
+                     nse2d.get_residuals());
     nse2d.solve();
     // checking the first nonlinear iteration    
     nse2d.assemble_nonlinear_term();;
-    if(nse2d.stopIt(k))
+    if(nse2d.stop_it(k))
       break;
   }
   nse2d.output();
@@ -161,7 +161,8 @@ void check_one_element(TDomain& domain, ParameterDatabase db,
                        int velocity_order, std::string nonlinear_form,
                        std::array<double, int(5)> errors)
 {
-  if(laplace_type == 0 && nonlinear_form != "rotational")
+  if(laplace_type == 0 && nonlinear_form != "rotational"
+     && nonlinear_form != "emac")
   {
     // NSTYPE = 1
     check(domain, db, velocity_order, 1, laplace_type, nonlinear_form, errors);
@@ -179,6 +180,10 @@ void check_one_element(TDomain& domain, ParameterDatabase db,
 // =======================================================================
 int main(int argc, char* argv[])
 {
+  bool testall = false;
+  if (argv[1])
+    testall = (std::string(argv[1]).compare("testall") == 0);
+
   /** Program 1
    *  This program tests direct solve with galerkin discretization
    * direct solver; Tests for Triangles
@@ -218,39 +223,43 @@ int main(int argc, char* argv[])
     // possibly parameters in the database
     check_parameters_consistency_NSE(db);
     // refine grid
-    size_t n_ref = domain.get_n_initial_refinement_steps();
-    for(unsigned int i=0; i < n_ref; i++)
-    {
-      domain.RegRefineAll();
-    }
+    domain.refine_and_get_hierarchy_of_collections(db);
     std::array<double, int(5)> errors;
     
     //=========================================================================
     Output::print<1>("\nTesting the P2/P1 elements");
-    errors = {{ 0.005005607397208, 0.085596036177161, 0.15666212408257,
-                0.071089608676709, 1.3407900222228 }};
+    errors = {{ 0.005456127622249, 0.085600792927298, 0.15659378093701,
+                0.07108665290335, 1.3407010450111 }};
     // VELOCITY_SPACE = 2 and the pressure space is chosen in the class NSE2D
     check_one_element<0>(domain, db, 2, "convective", errors);
-    errors = {{ 0.0050114106331145, 0.085666162858643, 0.1566815102253,
-                0.071847726858966, 1.3492605707623 }};
+    errors = {{ 0.005461517514555, 0.08567089916679, 0.156613079963,
+                0.071844737124695, 1.3491718656292 }};
     check_one_element<0>(domain, db, 2, "skew_symmetric", errors);
-    errors = {{ 0.0058223133010986, 0.10151294631171, 0.16681755987828,
-                0.96438232852434, 5.9699892417666 }};
+    errors = {{ 0.006214685051306, 0.10151526663975, 0.16675196021083,
+                0.11655892322349, 1.6480675404577 }};
     check_one_element<0>(domain, db, 2, "rotational", errors);
+    errors = {{ 0.0057827846340661, 0.094178019255837, 0.16300544453388,
+                0.1607781642646, 1.664867097309 }};
+    check_one_element<0>(domain, db, 2, "emac", errors);
     
     //=========================================================================
     Output::print<1>("\nTesting the P3/P2 elements");
-    errors = {{ 0.00028020829779642, 0.0061977013305504, 0.011391210186952,
-                0.0053396813413967, 0.20779333160236 }};
+    errors = {{ 0.00028020829779641, 0.0061977013305506, 0.011391210186952,
+                0.0056918081803184, 0.20769679500378 }};
     // VELOCITY_SPACE = 3 and the pressure space is chosen in the class NSE2D
     check_one_element<0>(domain, db, 3, "convective", errors);
     errors = {{ 0.0002801683506044, 0.0061981261043577, 0.011391678805669,
-                0.005343732181067, 0.20790149851372 }};
+                0.0056956176000077, 0.20780500907323 }};
     check_one_element<0>(domain, db, 3, "skew_symmetric", errors);
     errors = {{ 0.00034351517928429, 0.0096256533312287, 0.013780390342581,
-                0.98758071809952, 5.4577802210272 }};
+                0.01555923134715, 0.39131977067853 }};
     check_one_element<0>(domain, db, 3, "rotational", errors);
+    errors = {{ 0.00031706470111175, 0.0086454126016252, 0.012993003704192,
+                0.014463947314389, 0.32790669662401 }};
+    check_one_element<0>(domain, db, 3, "emac", errors);
     
+    if(testall)
+    {
     //=========================================================================
     Output::print<1>("\nTesting the P4/P3 elements");
     errors = {{ 1.1817023010728e-05, 0.00029575269112296, 0.0006435418450572, 
@@ -264,6 +273,7 @@ int main(int argc, char* argv[])
                 2.1824211773585e-05, 0.0016936362911126 }};
     // VELOCITY_SPACE = 5 and the pressure space is chosen in the class NSE2D
     check_one_element<0>(domain, db, 5, "convective", errors);
+    }
     
     //=========================================================================
     Output::print<1>("\nTesting the P2-bubble/P1-disc elements");
@@ -275,13 +285,18 @@ int main(int argc, char* argv[])
                 0.36760565517932, 5.3064844653778 }};
     check_one_element<0>(domain, db, 22, "skew_symmetric", errors);
     errors = {{ 0.0071856730855546, 0.081567156856757, 0.2120767352661,
-                1.0536610704615, 7.51116480206 }};
+                0.37174134839162, 5.4006410196856 }};
     check_one_element<0>(domain, db, 22, "rotational", errors);
+    errors = {{ 0.0071979487572762, 0.082123462115766, 0.21189447518786,
+                0.37027289021106, 5.3911935934541 }};
+    check_one_element<0>(domain, db, 22, "emac", errors);
     
+    if(testall)
+    {
     //=========================================================================
     Output::print<1>("\nTesting the P3-bubble/P2-disc elements");
-    errors = {{ 0.00026037876329326, 0.0057269486642841, 0.010856952083039,
-                0.013201231959059, 0.39888576555041 }};
+    errors = {{ 0.00026037876329682, 0.005726948664285, 0.010856952083041,
+                0.013370326976055, 0.39882948355395 }};
     // VELOCITY_SPACE = 23 and the pressure space is chosen in the class NSE2D
     check_one_element<0>(domain, db, 23, "convective", errors);
     
@@ -291,6 +306,7 @@ int main(int argc, char* argv[])
                 0.00063706731983293, 0.027783948983068 }};
     // VELOCITY_SPACE = 24 and the pressure space is chosen in the class NSE2D
     check_one_element<0>(domain, db, 24, "convective", errors);
+    }
   } // end program 1
   //=========================================================================
   /** Program 2
@@ -332,11 +348,7 @@ int main(int argc, char* argv[])
     check_parameters_consistency_NSE(db);
 
     // refine grid
-    size_t n_ref = domain.get_n_initial_refinement_steps();
-    for(unsigned int i=0; i < n_ref; i++)
-    {
-      domain.RegRefineAll();
-    }
+    domain.refine_and_get_hierarchy_of_collections(db);
     std::array<double, int(5)> errors;
     
     //=========================================================================
@@ -349,9 +361,14 @@ int main(int argc, char* argv[])
                 0.017611281280989, 0.51158180834432 }};
     check_one_element<0>(domain, db, 2, "skew_symmetric", errors);
     errors = {{ 0.0046884833250869, 0.070877525721747, 0.11742828649332,
-                0.98755497621545, 5.7626046159782 }};
+                0.11040259260052, 1.0352007333739 }};
     check_one_element<0>(domain, db, 2, "rotational", errors);
+    errors = {{ 0.0045805109059847, 0.066717957084682, 0.11493220231642,
+                0.11124041590661, 0.94502906380428 }};
+    check_one_element<0>(domain, db, 2, "emac", errors);
     
+    if(testall)
+    {
     //=========================================================================
     Output::print<1>("\nTesting the Q3/Q2 elements");
     errors = {{ 0.00019319433716041, 0.003563918945437, 0.0071078507849009,
@@ -362,8 +379,11 @@ int main(int argc, char* argv[])
                 0.0018454762090097, 0.057115940978707 }};
     check_one_element<0>(domain, db, 3, "skew_symmetric", errors);
     errors = {{ 0.00026177332079517, 0.0079927161285491, 0.010243629124348,
-                0.98774764559983, 5.4327961040808 }};
+                0.0094414547091167, 0.21505945593453 }};
     check_one_element<0>(domain, db, 3, "rotational", errors);
+    errors = {{ 0.00024830802922935, 0.0072493956722643, 0.0096501647507086,
+                0.0094088997257092, 0.18990292685865 }};
+    check_one_element<0>(domain, db, 3, "emac", errors);
     
     //=========================================================================
     Output::print<1>("\nTesting the Q4/Q3 elements");
@@ -378,6 +398,7 @@ int main(int argc, char* argv[])
                 4.9000676557526e-06, 0.00030469183949993 }};
     // VELOCITY_SPACE  = 5
     check_one_element<0>(domain, db, 5, "convective", errors);
+    }
     
     //=========================================================================
     Output::print<1>("\nTesting the Q2/P1-disc elements");
@@ -389,9 +410,14 @@ int main(int argc, char* argv[])
                 0.030954083022779, 0.70858252999859 }};
     check_one_element<0>(domain, db, 22, "skew_symmetric", errors);
     errors = {{ 0.0041643538522174, 0.055554927078881, 0.10980572753403,
-                0.98506275149849, 5.0128441624737 }};
+                0.036275829042111, 0.75595849613121 }};
     check_one_element<0>(domain, db, 22, "rotational", errors);
+    errors = {{ 0.0041393709334753, 0.053107233911226, 0.10760054343883,
+                0.033157637926479, 0.72384438559736 }};
+    check_one_element<0>(domain, db, 22, "emac", errors);
     
+    if(testall)
+    {
     //=========================================================================
     Output::print<1>("\nTesting the Q3/P2-disc elements");
     errors = {{ 0.00020642736694367, 0.0042373143298489, 0.0075794259144329,
@@ -412,6 +438,7 @@ int main(int argc, char* argv[])
                 2.81141239001e-05, 0.0018176331985532 }};
     // VELOCITY_SPACE  = 25
     check_one_element<0>(domain, db, 25, "convective", errors);
+    }
   }
   
   return 0;

@@ -19,7 +19,7 @@
 #include<Example3D.h>
 #include <functional>
 
-class NSE3D; //forward declaration
+template <int d> class NavierStokes; //forward declaration
 
 class Example_NSE3D : public Example3D
 {
@@ -41,7 +41,7 @@ class Example_NSE3D : public Example3D
       : Example3D(exact, bc, bd, coeffs) {};
 
     /// Apply the function stored as post processing routine.
-    void do_post_processing(NSE3D& nse3d) const;
+    void do_post_processing(NavierStokes<3>& nse3d) const;
 
     /// Return kinematic viscosity, if set.
     double get_nu() const;
@@ -75,7 +75,7 @@ class Example_NSE3D : public Example3D
   private:
     /// Function doing the post processing for a stationary example.
     /// TODO put NSE3D argument const as soon as FEFunctions can be copied properly!
-    std::function<void(NSE3D &)> post_processing_stat;
+    std::function<void(NavierStokes<3>&)> post_processing_stat;
     /// TODO Function doing the post processing for a time dependent example.
 };
 

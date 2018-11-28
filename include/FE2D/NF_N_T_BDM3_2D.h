@@ -114,9 +114,8 @@ double NF_N_T_BDM3_2D_iw[19] =
   0.0216417696886446886446886446886446 };
 
 
-void NF_N_T_BDM3_2D_EvalAll(TCollection *Coll, TBaseCell *Cell, double 
-*PointValues,
-                          double *Functionals)
+void NF_N_T_BDM3_2D_EvalAll(TCollection *Coll, TBaseCell *Cell,
+                            const double *PointValues, double *Functionals)
 {
   for(unsigned int i = 0; i < 20; ++i)
     Functionals[i] = 0.;
@@ -280,7 +279,7 @@ void NF_N_T_BDM3_2D_EvalAll(TCollection *Coll, TBaseCell *Cell, double
 }
 
 void NF_N_T_BDM3_2D_EvalEdge(TCollection *Coll, TBaseCell *Cell, int Joint,
-                            double *PointValues, double *Functionals)
+                            const double *PointValues, double *Functionals)
 {
   // this is needed for setting boundary conditions
   #ifdef __2D__

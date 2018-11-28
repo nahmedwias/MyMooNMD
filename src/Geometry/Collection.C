@@ -68,16 +68,14 @@ TCollection::~TCollection()
 }
 
 /** get maximal and minimal diameter */
-int TCollection::GetHminHmax(double *hmin, double *hmax)
+int TCollection::GetHminHmax(double *hmin, double *hmax) const
 {
-  int i;
-  double h_min = 1e10 , h_max= 0, h;
-  TBaseCell *cell;
-    
-  for (i=0;i<N_Cells;i++)
+  double h_min = 1e10;
+  double h_max = 0;
+  for(int i = 0; i < N_Cells; i++)
   {
-    cell = GetCell(i);
-    h = cell->GetDiameter();
+    auto cell = GetCell(i);
+    double h = cell->GetDiameter();
     if (h<h_min)
       h_min = h;
     if (h>h_max)
@@ -89,7 +87,7 @@ int TCollection::GetHminHmax(double *hmin, double *hmax)
 }
 
 /** return Index of cell in SortedCells-array */
-int TCollection::GetSortedIndex(TBaseCell *cell)
+int TCollection::GetSortedIndex(const TBaseCell *cell)
 {
   int Left = 0;
   int Mid;
@@ -119,7 +117,7 @@ int TCollection::GetSortedIndex(TBaseCell *cell)
 }
 
 /** return Index of cell in SortedCells-array */
-int TCollection::GetIndex(TBaseCell *cell)
+int TCollection::GetIndex(const TBaseCell *cell)
 {
   int ret, gsi;
 
@@ -155,77 +153,6 @@ int TCollection::GetIndex(TVertex **Array, int Length, TVertex *Element)
   return m;
 }
 
-
-/** mark the vertices that are on the boundary */
-int TCollection::MarkBoundaryVertices()
-{
-  int i, j, N_, comp;
-  double x0, y0, x2, y2, t0, t1, eps=1e-8;
-  const int *TmpEdVer;  
-  TBaseCell *cell;
-  TVertex *vertex0, *vertex1;
-  TRefDesc *refdesc;
-  TBoundEdge *boundedge;
-  TJoint *joint;
-
-  // initialization 
-  // loop over all mesh cells
-  for (i=0;i<N_Cells;i++)
-  {
-    cell = GetCell(i);
-    N_ = cell->GetN_Vertices();
-    // loop over the vertices
-    for (j=0;j<N_;j++)
-    {
-     vertex1 = cell->GetVertex(j);
-     vertex1->SetClipBoard(-1);
-    }
-  }
-
-  // set ClipBoard for vertices on the boundary
-  for (i=0;i<N_Cells;i++)
-  {
-    cell = GetCell(i);
-    // get refinement descriptor
-    refdesc=cell->GetRefDesc();                   
-    // get information to compute vertices from edges
-    refdesc->GetShapeDesc()->GetEdgeVertex(TmpEdVer);
-    // number of edges
-    N_ = cell->GetN_Edges();
-    for (j=0;j<N_;j++)
-    {
-      joint = cell->GetJoint(j);
-	// if boundary edge
-	if (joint->GetType() == BoundaryEdge ||
-	    joint->GetType() == IsoBoundEdge)
-	{
-	  boundedge=(TBoundEdge *)joint;
-	  auto BoundComp=boundedge->GetBoundComp(); // get boundary component
-	  comp=BoundComp->GetID();                  // boundary id
-	  boundedge->GetParameters(t0, t1);         // parameter interval
-	  vertex0 = cell->GetVertex(TmpEdVer[2*j]);
-	  x0 = vertex0->GetX();
-	  y0 = vertex0->GetY();
-	  vertex1 = cell->GetVertex(TmpEdVer[2*j+1]);
-	  boundedge->GetXYofT(t0,x2,y2);
-	  if ((fabs(x0-x2)<eps)&&(fabs(y0-y2)<eps))
-	    {
-	       vertex0->SetClipBoard(comp+t0);
-	       vertex1->SetClipBoard(comp+t1);
-	    }
-	  else
-	    {
-	       vertex0->SetClipBoard(comp+t1);
-	       vertex1->SetClipBoard(comp+t0);
-	    }
-	  //OutPut(t0 << " " << vertex0->GetClipBoard() << " " << vertex1->GetClipBoard() << endl);
-	}
-    }
-  }
-  
-  return(0);
-  
-}
 
 // methods for TJointCollection, 03.11.09  (Sashi)
 static void Sort(TJoint **Array, int length)

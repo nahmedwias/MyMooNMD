@@ -514,7 +514,7 @@ Iteration_gmres<LinearOperator, Vector>::flexible_gmres(const LinearOperator& A,
 #ifndef _MPI
     beta = r.norm();
 #elif _MPI
-    beta = r.norm_global(comms);
+    beta = r.norm(comms);
 #endif
     
     if(std::abs(beta - resid) > 0.01*beta)

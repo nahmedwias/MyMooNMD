@@ -11,14 +11,14 @@ static double NF_C_Q_M2_2D_Xi[] = { -1.0, 0.0, 1.0, 1.0, 1.0, 0.0, -1.0, -1.0 };
 static double NF_C_Q_M2_2D_Eta[] = { -1.0, -1.0, -1.0, 0.0, 1.0, 1.0, 1.0, 0.0 };
 static double NF_C_Q_M2_2D_T[] = { -1.0, 0.0, 1.0 };
 
-void NF_C_Q_M2_2D_EvalAll(TCollection *Coll, TBaseCell *Cell, double *PointValues,
-                          double *Functionals)
+void NF_C_Q_M2_2D_EvalAll(TCollection *Coll, TBaseCell *Cell,
+                          const double *PointValues, double *Functionals)
 {
   memcpy(Functionals, PointValues, 8*SizeOfDouble);
 }
 
-void NF_C_Q_M2_2D_EvalEdge(TCollection *Coll, TBaseCell *Cell, int Joint, double *PointValues,
-                           double *Functionals)
+void NF_C_Q_M2_2D_EvalEdge(TCollection *Coll, TBaseCell *Cell, int Joint,
+                           const double *PointValues, double *Functionals)
 {
   memcpy(Functionals, PointValues, 3*SizeOfDouble);
 }

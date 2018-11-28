@@ -31,7 +31,8 @@ class TDatabase;
 // forward declaration
 class ParameterDatabase;
 
-struct TParaDB
+// typedef struct Foo { ... } Foo; --> see https://stackoverflow.com/a/612350
+typedef struct TParamDB
 {
   int VERSION;
 
@@ -745,12 +746,13 @@ bool SOURCE_SINK_FUNCTION;
   MPI_Comm Comm;
  #endif
   
-  ~TParaDB();
-};
+  TParamDB() = default;
+  ~TParamDB();
+  
+  void read_parameters(const char *ParamFile);
+} TParamDB;
 
-typedef struct TParaDB TParamDB;
-
-struct TTimDB
+typedef struct TTimeDB
 {
   double CURRENTTIME;
   double CURRENTTIMESTEPLENGTH;
@@ -774,7 +776,6 @@ struct TTimDB
   double TIMESTEPLENGTH_PARA_RTOL;
   int FIRST_SSC_STEP;
   int RESET_CURRENTTIME;
-  double RESET_CURRENTTIME_STARTTIME;
   double STEADY_STATE_TOL;
   double SCALE_DIVERGENCE_CONSTRAINT;
 
@@ -795,9 +796,7 @@ struct TTimDB
   int TIME_DISC;
   int TIME_DISC2;
 
-  // start and end time
-  double STARTTIME;
-  double ENDTIME;
+  // extrapolate
   double EXTRAPOLATE_WEIGHT;
   double EXTRAPOLATE_STEPS;
   int    EXTRAPOLATE_PRESSURE;
@@ -873,9 +872,9 @@ struct TTimDB
   double RK_e[5];
   int RK_ord;   // Ordnung des RK-Verfahrens    mlh
   int RK_ord_e;   // Ordnung des eingebetteten RK-Verfahrens  mlh
-};
-
-typedef struct TTimDB TTimeDB;
+  
+  void read_parameters(const char *ParamFile);
+} TTimeDB;
 
 /** database of needed refinement, mapping and
     shape descriptors as well as iterators */
@@ -902,26 +901,25 @@ class TDatabase
 
   public:
     // Constructors
-    /** initialize the database */
-    TDatabase();
+    /** @brief initialize the database.
+     * 
+     * If ParamFile is nullptr, all parameters are set to their default values
+     * using the method 'SetDefaultParameters'. If a valid file is given as 
+     * 'ParamFile', the respective default values are overwritten.
+     */
+    TDatabase(const char *ParamFile = nullptr);
     
     ~TDatabase();
 
-    // Methods
-#ifdef __MORTAR__
-    /** add descriptor for mortar refinement with base edge 0 */
-    void AddMortar0(int Mortar_Ni, int N);
-    /** add descriptor for mortar refinement with base edge 1 */
-    void AddMortar1(int Mortar_Ni, int N);
-#endif
-
     // set default parameters
-
     static void SetDefaultParameters();
 
     static void WriteParamDB(char *ExecutedFile);
 
     static void WriteTimeDB();
+  
+  protected:
+    void read_parameters(const char *ParamFile);
 };
 
 

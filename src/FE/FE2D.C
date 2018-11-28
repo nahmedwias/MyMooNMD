@@ -57,7 +57,7 @@ void TFE2D::CheckNFandBF() const
   }
   
   int N_Points;
-  double *xi, *eta;
+  const double *xi, *eta;
   this->NodalFunctional->GetPointsForAll(N_Points, xi, eta);
   
   // dimension of the basis function (usually 1, for H(div) elements it is 2)

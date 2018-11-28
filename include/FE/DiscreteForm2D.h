@@ -105,7 +105,7 @@ class TDiscreteForm2D
     { return Description; }
 
     /** return local stiffness matrix */
-    void GetLocalForms(int N_Points, double *weights, double *AbsDetjk,
+    void GetLocalForms(int N_Points, const double *weights, double *AbsDetjk,
                        double hK, double *X, double *Y,
                        int *N_BaseFuncts, BaseFunct2D *BaseFuncts, 
                        double **Parameters, double **AuxArray,
@@ -117,7 +117,7 @@ class TDiscreteForm2D
      * 
      * This is a simplified version of the above GetLocalForms(...).
      */
-    void GetLocalForms(int N_Points, double *weights, double *AbsDetjk,
+    void GetLocalForms(int N_Points, const double *weights, double *AbsDetjk,
                         double hK, double *X, double *Y,
                         int *N_BaseFuncts, BaseFunct2D *BaseFuncts, 
                         TBaseCell *Cell,double ***LocMatrix, double **LocRhs);

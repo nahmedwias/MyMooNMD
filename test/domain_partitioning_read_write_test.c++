@@ -36,9 +36,8 @@ int main(int argc, char **argv)
   TDomain domain_original(db);
 
   // Intial refinement.
-  int maxSubDomainPerDof = 0;
   std::list<TCollection* > grids
-    = domain_original.refine_and_get_hierarchy_of_collections( db , maxSubDomainPerDof );
+    = domain_original.refine_and_get_hierarchy_of_collections(db);
 
   domain_original.print_info("original domain");
 
@@ -48,7 +47,7 @@ int main(int argc, char **argv)
 
   TDomain domain_copycat(db);
   std::list<TCollection* > grids_copy
-    = domain_copycat.refine_and_get_hierarchy_of_collections( db , maxSubDomainPerDof );
+    = domain_copycat.refine_and_get_hierarchy_of_collections(db);
 
   domain_copycat.print_info("copied domain");
 

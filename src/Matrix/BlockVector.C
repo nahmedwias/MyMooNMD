@@ -277,15 +277,13 @@ void BlockVector::add(const double* x, const int i, double a)
 
 
 /** ************************************************************************ */
-double BlockVector::norm(
+double BlockVector::norm(std::vector<unsigned int> blocks
 #ifdef _MPI
-    std::vector<const TParFECommunicator3D*> comms
+   , std::vector<const TParFECommunicator3D*> comms
 #endif
 ) const
 {
-#ifndef _MPI
-  return Dnorm(this->length(), this->get_entries());
-#elif _MPI
+#ifdef _MPI
   if (comms.size()==0)
   {
     //If comms is not provided, a default comm with size 0 is given, and
@@ -296,68 +294,81 @@ double BlockVector::norm(
     Output::warn<1>("BlockVector", "You are calculating the norm of a vector "
         "in the parallel case, without providing the Communicators. This will "
         "definitely give you a WRONG norm value in terms of consistency.");
+#endif
+  if(blocks.empty())
     return Dnorm(this->length(), this->get_entries());
+  else
+  {
+    auto n_considered_blocks = blocks.size();
+    double norm = 0;
+    for(auto i = 0u; i < n_considered_blocks; ++i)
+    {
+      if(blocks[i] >= this->n_blocks())
+        ErrThrow("unable to compute norm for block ", blocks[i],
+                 ". There are only ", this->n_blocks(),
+                 " blocks in this BlockVector");
+      norm += Dnorm(this->length(blocks[i]), this->block(blocks[i]));
+    }
+    return norm;
+  }
+#ifdef _MPI
   }
   else
-    return this->norm_global(comms);
-#endif
-}
-
-/** ************************************************************************ */
-#ifdef _MPI
-double BlockVector::norm_global(std::vector<const TParFECommunicator3D*> comms) const
-{
-  // This MPI method makes only use of values of master dofs, therefore
-  // "this" does not have to be updated, consistency level 0 is enough.
-
-  /// First check if vector and communicators fit
-  if(comms.size() != n_blocks())
   {
-    ErrThrow("Number of blocks does not equal number of communicators.",
-             n_blocks(), " ",comms.size() );
-  }
-  for(size_t i =0; i < n_blocks(); ++i)
-  {
-    if(comms[i]->GetNDof() != (int) length(i))
+    if(blocks.empty())
     {
-      ErrThrow("Length of Block ", i, " and comms", i, " do not match. ",
-               comms[i]->GetNDof(), " ", length(i));
+      blocks.resize(this->n_blocks(), 0);
+      std::iota (std::begin(blocks), std::end(blocks), 0); // {0, 1, 2, ...}
     }
-  }
+    // This MPI method makes only use of values of master dofs, therefore
+    // "this" does not have to be updated, consistency level 0 is enough.
 
-  int my_rank, size;
-  MPI_Comm_size(MPI_COMM_WORLD, &size);
-  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-
-  double sum_local = 0;
-  for(size_t b =0; b < n_blocks(); ++b)
-  {
-    const TParFECommunicator3D* comm = comms[b]; //for convenience
-    const int* masters = comm->GetMaster();
-
-    size_t offset = this->offset(b);
-
-    for(size_t i = 0; i< length(b); ++i )
+    auto n_considered_blocks = blocks.size();
+    /// First check if vector and communicators fit
+    if(comms.size() != n_considered_blocks)
     {
-      if(masters[i] == my_rank)
+      ErrThrow("Number of blocks does not equal number of communicators.",
+               n_considered_blocks, " ",comms.size() );
+    }
+    for(size_t i = 0; i < n_considered_blocks; ++i)
+    {
+      if(comms[i]->GetNDof() != (int) length(blocks[i]))
       {
-        double val = entries[offset + i];
-        sum_local += val * val;
+        ErrThrow("Length of Block ", blocks[i], " and comms ", i,
+                 " do not match. ", comms[i]->GetNDof(), " ",
+                 length(blocks[i]));
       }
     }
+
+    int my_rank, size;
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+    
+    double sum_local = 0;
+    for(size_t i = 0; i < n_considered_blocks; ++i)
+    {
+      const int* masters = comms[i]->GetMaster();
+      size_t offset = this->offset(blocks[i]);
+      size_t length_of_block = length(blocks[i]);
+      for(size_t j = 0; j < length_of_block; ++j)
+      {
+        if(masters[j] == my_rank)
+        {
+          double val = entries[offset + j];
+          sum_local += val * val;
+        }
+      }
+    }
+    // Now add up all local sums via MPI_Allreduce.
+    double sendbf[1] = {sum_local};
+    double recvbf[1];
+    MPI_Allreduce(sendbf, recvbf, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+
+    double norm = sqrt(recvbf[0]); //square root of the global sum
+    return norm;
   }
-
-  // Now add up all local sums via MPI_Allreduce.
-  double sendbf[1] = {sum_local};
-  double recvbf[1];
-  MPI_Allreduce(sendbf,recvbf,1,MPI_DOUBLE,MPI_SUM, MPI_COMM_WORLD);
-
-  double norm = sqrt(recvbf[0]); //square root of the global sum
-  return norm;
-
-}
 #endif
-/** ************************************************************************ */
+}
 
 /** ************************************************************************ */
 void BlockVector::print(const std::string name, const int iB) const

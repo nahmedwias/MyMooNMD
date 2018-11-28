@@ -75,7 +75,7 @@ static double NF_N_H_Q1_3D_T[1] = { 0.5 };
 static double NF_N_H_Q1_3D_S[1] = { 0.5 };
 
 void NF_N_H_Q1_3D_EvalAll(TCollection *Coll, TBaseCell *Cell,
-                          double *PointValues, double *Functionals)
+                          const double *PointValues, double *Functionals)
 {
   Functionals[0] = PointValues[0];
   Functionals[1] = PointValues[1];
@@ -86,7 +86,7 @@ void NF_N_H_Q1_3D_EvalAll(TCollection *Coll, TBaseCell *Cell,
 }
 
 void NF_N_H_Q1_3D_EvalFace(TCollection *Coll, TBaseCell *Cell, int Joint, 
-                        double *PointValues, double *Functionals)
+                           const double *PointValues, double *Functionals)
 {
   Functionals[0] = PointValues[0];
 }

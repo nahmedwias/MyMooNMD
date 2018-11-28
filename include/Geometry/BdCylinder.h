@@ -64,7 +64,7 @@ class TBdCylinder : public TBoundComp3D
     };
 
     /** read parameter from input stream */
-    virtual int ReadIn(std::istream &dat);
+    virtual int ReadIn(std::istream &dat) override;
     
     void SetParams(double r, double px, double py, double pz,
 		   double ax, double ay, double az, double nx, double ny, double nz);

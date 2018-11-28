@@ -163,7 +163,7 @@ int Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
  TBaseCell **CellDel;
  TJoint *Joint, *NewJoint;
  TEdge *edge, **EdgeDel;
- TShapeDesc *ShapeDesc;
+ const TShapeDesc *ShapeDesc;
  TVertex *CurrVert, *NeibCurrVert;
  
  MPI_Status status;
@@ -1142,7 +1142,7 @@ void Domain_Crop(MPI_Comm comm, TDomain *Domain)
  TBaseCell **CellDel;
  TJoint *Joint, *NewJoint;
  TEdge *edge, **EdgeDel;
- TShapeDesc *ShapeDesc;
+ const TShapeDesc *ShapeDesc;
  TVertex *CurrVert, *NeibCurrVert;
 
   MPI_Comm_rank(comm, &rank);
@@ -1276,15 +1276,16 @@ void Domain_Crop(MPI_Comm comm, TDomain *Domain)
   int Nchildren,childn,parentglobalno;
 
  
-  Nchildren = coll->GetCell(0)->GetParent()->GetN_Children();
+  Nchildren = static_cast<const TBaseCell*>(coll->GetCell(0))->GetParent()->GetN_Children();
 
   /** copy the parent MPI_ID and global cell_no to children */
   for(i=0;i<N_Cells;i++)
      {
-      cell = coll->GetCell(i);	
-      cell->SetSubDomainNo((cell->GetParent())->GetSubDomainNo());
-      childn = (cell->GetParent())->GetChildNumber(cell);	
-      parentglobalno = (cell->GetParent())->GetGlobalCellNo();	
+      cell = coll->GetCell(i);
+      auto parent_cell = static_cast<const TBaseCell*>(cell)->GetParent();
+      cell->SetSubDomainNo(parent_cell->GetSubDomainNo());
+      childn = parent_cell->GetChildNumber(cell);	
+      parentglobalno = parent_cell->GetGlobalCellNo();	
       cell->SetGlobalCellNo(parentglobalno*Nchildren+childn);
       cell->SetLocalCellNo(i);
       Cell_Rank[i] = cell->GetSubDomainNo();

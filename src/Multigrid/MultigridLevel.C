@@ -143,7 +143,7 @@ void MultigridLevel::calculate_defect()
   matrix_->apply_scaled_add(solution_, defect_, -1.0);
 
 #ifdef _MPI
-  residual_ = defect_.norm_global(comms);
+  residual_ = defect_.norm(comms);
 #else
   residual_ = sqrt(dot(defect_,defect_));
 #endif

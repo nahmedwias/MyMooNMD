@@ -96,9 +96,6 @@ int main(int argc, char* argv[])
   TFESpace3D fe_space_2(coll, (char*)"second_fe_space",
                         (char*)"second_fe_space",
                         BoundaryConditionNewton, second_ansatz_order); //actives only
-  fe_space_1.initialize_parallel(maxSubDomainPerDof);
-  fe_space_2.initialize_parallel(maxSubDomainPerDof);
-
   //end blackbox
 
   //build ParFECommunicators, -mappers and a BlockFEMatrix for testing

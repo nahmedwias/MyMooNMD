@@ -57,12 +57,12 @@ const TVertex *TGridCell::GetVertex(int Vert_i) const
    return Vertices[Vert_i];
 }
 
-int TGridCell::GetN_Children()
+int TGridCell::GetN_Children() const
 {
   return Children ? RefDesc->GetN_Children() : 0;
 }
 
-int TGridCell::GetN_Parents()
+int TGridCell::GetN_Parents() const
 {
   if ( Parent == nullptr)
     return 0;
@@ -74,8 +74,16 @@ TBaseCell *TGridCell::GetChild(int C_i)
 {
   return Children[C_i];
 }
+const TBaseCell *TGridCell::GetChild(int C_i) const
+{
+  return Children[C_i];
+}
 
 TBaseCell *TGridCell::GetParent()
+{
+  return Parent;
+}
+const TBaseCell *TGridCell::GetParent() const
 {
   return Parent;
 }
@@ -86,28 +94,22 @@ int TGridCell::SetParent(TBaseCell *parent)
   return 0;
 }
 
-int TGridCell::GetChildNumber(TBaseCell *Me)
+int TGridCell::GetChildNumber(TBaseCell *Me) const
 {
-  int i, N_ = GetN_Children();
-  
-  for (i=0;i<N_;i++)
+  int N_ = GetN_Children();
+  for(int i = 0; i < N_; i++)
     if (Children[i] == Me)
       return i;
-
-  cerr << "Error: could not find child" << endl;
-  return -1;
+  ErrThrow("Error: could not find child");
 }
 
-// #define __GRIDCELL_WITH_NUMBERS__
-
-int TGridCell::PS(std::ofstream &dat, double scale, double StartX,
-                  double StartY)
+void TGridCell::PS(std::ofstream& dat, double scale, double StartX,
+                   double StartY, int cell_index) const
 {
+  bool gridcell_with_numbers = cell_index >=0;
   int i;
   double text_x1=0,text_x2=0,text_y1=0,text_y2=0;
-#ifdef __GRIDCELL_WITH_NUMBERS__
   double x, y;
-#endif
   dat<<"newpath"<<endl;
   dat << (30 + (Vertices[0]->GetX() - StartX) * scale + .5) << " " <<
          (30 + (Vertices[0]->GetY() - StartY) * scale + .5) <<
@@ -115,11 +117,9 @@ int TGridCell::PS(std::ofstream &dat, double scale, double StartX,
   text_x1 = Vertices[0]->GetX();
   text_y1 = Vertices[0]->GetY();
 
-#ifdef __GRIDCELL_WITH_NUMBERS__
   x = Vertices[0]->GetX();
   y = Vertices[0]->GetY();
-#endif
-//if(!IsHaloCell() && IsDependentCell())
+  //if(!IsHaloCell() && IsDependentCell())
 
   for (i=1;i<RefDesc->GetN_OrigVertices();i++)
   {
@@ -127,34 +127,31 @@ int TGridCell::PS(std::ofstream &dat, double scale, double StartX,
            (30 + (Vertices[i]->GetY() - StartY) * scale + .5) <<
            " L" << endl;
     if(Vertices[i]->GetX() != text_x1)
-	text_x2 = Vertices[i]->GetX();
+      text_x2 = Vertices[i]->GetX();
     if(Vertices[i]->GetY() != text_y1)
-	text_y2 = Vertices[i]->GetY();
+      text_y2 = Vertices[i]->GetY();
 
-#ifdef __GRIDCELL_WITH_NUMBERS__
     x += Vertices[i]->GetX();
     y += Vertices[i]->GetY(); 
-#endif
   }
 
-text_x1 = (text_x1 + text_x2)/2;
-text_y1 = (text_y1 + text_y2)/2;
+  text_x1 = (text_x1 + text_x2)/2;
+  text_y1 = (text_y1 + text_y2)/2;
 
-#ifdef __GRIDCELL_WITH_NUMBERS__
   x /= RefDesc->GetN_OrigVertices();
   y /= RefDesc->GetN_OrigVertices();
-#endif
 
   dat << (30 + (Vertices[0]->GetX() - StartX) * scale + .5) << " " <<
          (30 + (Vertices[0]->GetY() - StartY) * scale + .5) <<
          " L" << endl;
-dat<<"closepath"<<endl;
-#ifdef __GRIDCELL_WITH_NUMBERS__
-  dat << (30 + (x - StartX) * scale + .5) << " " <<
-         (30 + (y - StartY) * scale + .5);
-  dat << " moveto" << endl;
-  dat << "(" << ClipBoard << ") show" << endl;
-#endif
+  dat<<"closepath"<<endl;
+  if(gridcell_with_numbers)
+  {
+    dat << (30 + (x - StartX) * scale + .5) << " " <<
+           (30 + (y - StartY) * scale + .5);
+    dat << " moveto" << endl;
+    dat << "(" << cell_index << ") show" << endl;
+  }
   
 #ifdef _MPI
 if(IsHaloCell())
@@ -203,54 +200,8 @@ dat << (30 + (text_x1 - StartX) * scale + .5) << " " <<
 //dat <<"("<<CellIndex<<") show"<<endl;
 dat <<"("<<GetSubDomainNo()<<") show"<<endl;
 #endif
-  return 0;
 }
 
-
-int TGridCell::Draw(std::ofstream &dat, double scale, double StartX,
-                  double StartY)
-{
-  int i,j,n;
-
-  n=RefDesc->GetN_OrigVertices();
-  for (i=0;i<n;i++)
-  {
-    j=Joints[i]->GetType();
-    if(j == BoundaryEdge || j == InterfaceJoint || 
-       j == IsoBoundEdge || j == IsoInterfaceJoint)
-    {
-    dat << (int) (300 + (Vertices[i]->GetX() - StartX) * scale + .5) << " " <<
-           (int) (300 + (Vertices[i]->GetY() - StartY) * scale + .5) <<
-           " M" << endl;
-    j=(i+1) % n;
-    dat << (int) (300 + (Vertices[j]->GetX() - StartX) * scale + .5) << " " <<
-           (int) (300 + (Vertices[j]->GetY() - StartY) * scale + .5) <<
-           " L" << endl;
-    }
-  }
-
-  return 0;
-}
-
-int TGridCell::MD_raw(std::ofstream &dat)
-{
-  int i, N_;
-  float OutValues[8];
-
-  N_ = GetN_Vertices();
-  for (i=0;i<N_;i++)
-  {
-    OutValues[2*i] = Vertices[i]->GetX();
-    OutValues[2*i + 1] = Vertices[i]->GetY();
-  }
-
-#ifdef __COMPAQ__
-  SwapFloatArray(OutValues, 2*N_); 
-#endif
-  dat.write((const char *) OutValues, 2*N_*SizeOfFloat);
-  
-  return 0;
-}
 
 #ifdef __2D__
 int TGridCell::Gen1RegGrid()
@@ -258,7 +209,7 @@ int TGridCell::Gen1RegGrid()
   int i, N_, ChildNumber, LocJointNum;
   const int *TmpCE, *TmpnEoE;
   int MaxLen;
-  TRefDesc *ParentRefDesc = Parent->GetRefDesc();
+  const TRefDesc *ParentRefDesc = Parent->GetRefDesc();
   TBaseCell *RefCell;
 
   ParentRefDesc->GetChildEdge(TmpCE, MaxLen);
@@ -302,12 +253,13 @@ int TGridCell::Gen1RegGrid()
 //  int MaxLen;
 //  TRefDesc *ParentRefDesc = Parent->GetRefDesc(), *GrandParentRefDesc;
 //  TBaseCell *RefCell;
-  TBaseCell* Grandfather, *CurrCell;
-  TJoint* LastJoint, *Joint;
+  const TBaseCell* Grandfather;
+  TBaseCell *CurrCell;
+  const TJoint* LastJoint, *Joint;
   const int *TmpEF, *TmpEF2;
   int TmpEFMaxLen, TmpEF2MaxLen;
 
-  if(RefLevel > 1 && (Grandfather = Parent->GetParent()))
+  if(RefLevel > 1 && (Grandfather = ((const TBaseCell*)Parent)->GetParent()))
   {
 //    GrandParentRefDesc = Grandfather->GetRefDesc();
     Grandfather->GetShapeDesc()->GetEdgeFace(TmpEF, TmpEFMaxLen);
@@ -340,7 +292,7 @@ int TGridCell::Gen1RegGrid()
             if(RefLevel>2)
             {
               for(int k=0; k<CurrCell->GetN_Children(); ++k)
-                CurrCell->GetChild(k)->Gen1RegGrid();
+                static_cast<TGridCell*>(CurrCell)->GetChild(k)->Gen1RegGrid();
             }
           }
           
@@ -373,7 +325,7 @@ int TGridCell::Ref1Reg(int LocJointNum, TBaseCell *&RefCell)
   TBaseCell *LocCell;
   const int *TmpCE, *TmpnEoE;
   int MaxLen;
-  TRefDesc *ParentRefDesc = Parent->GetRefDesc();
+  const TRefDesc *ParentRefDesc = Parent->GetRefDesc();
 
   ParentRefDesc->GetChildEdge(TmpCE, MaxLen);
   ParentRefDesc->GetNewEdgeOldEdge(TmpnEoE);
@@ -406,7 +358,7 @@ int TGridCell::Ref1Reg(int LocJointNum, TBaseCell *&RefCell)
   TBaseCell *LocCell;
   const int *TmpCF, *TmpnFoF;
   int MaxLen;
-  TRefDesc *ParentRefDesc = Parent->GetRefDesc();
+  const TRefDesc *ParentRefDesc = Parent->GetRefDesc();
 
   ParentRefDesc->GetChildFace(TmpCF, MaxLen);
   ParentRefDesc->GetNewFaceOldFace(TmpnFoF);
@@ -907,7 +859,7 @@ int TGridCell::SetNoRefinement()
   return 0;
 }
 
-int TGridCell::IsToRefine()
+int TGridCell::IsToRefine() const
 {
   return RefDesc->IsToRefine() ? Children == nullptr ? true : false : false;
 }
@@ -1007,7 +959,7 @@ int TGridCell::LineMidT(int J_i, int SJ_j, double &T_0, double &T_1)
 }
 #endif
 
-bool TGridCell::PointInCell(double X, double Y)
+bool TGridCell::PointInCell(double X, double Y) const
 {
   int i, j, N_ = RefDesc->GetN_OrigEdges();
   bool test = true;
@@ -1049,7 +1001,7 @@ bool TGridCell::PointInCell(double X, double Y)
 }
 
 #ifdef __3D__
-bool TGridCell::PointInCell(double X, double Y, double Z)
+bool TGridCell::PointInCell(double X, double Y, double Z) const
 {
   double xmin = 1e+8,  ymin = 1e+8, zmin = 1e+8;
   double xmax = -1e+8,  ymax = -1e+8, zmax = -1e+8;
@@ -1104,7 +1056,7 @@ bool TGridCell::PointInCell(double X, double Y, double Z)
 int TGridCell::GetGeoLevel()
 {
   int i = 0;
-  TBaseCell *parent = this;
+  const TBaseCell *parent = this;
 
   while ((parent = parent->GetParent()))
     i++;
@@ -1112,74 +1064,29 @@ int TGridCell::GetGeoLevel()
   return i;
 }
 
-int TGridCell::GetSubGridID()
+int TGridCell::GetSubGridID() const
 {
   if (Parent)
     return Parent->GetSubGridID();
   else
     return -1;
 }
-/** compute number of edges at the boundary */
-/** call: ((TGridCell *)cell)->GetN_BoundaryEdges(); */
-int TGridCell::GetN_BoundaryEdges()
-{
-  int bdry_edges = 0, i, N_;
-    
-  N_ = GetN_Edges();
 
-  for (i=0;i<N_;i++)
+int TGridCell::get_n_boundary_joints() const
+{
+  int bdry_joints = 0;
+  int n_joints = GetN_Joints();
+  for(int i = 0; i < n_joints; i++)
   {
     if (Joints[i]->GetType() == BoundaryEdge ||
-        Joints[i]->GetType() == IsoBoundEdge)
-    {
-	bdry_edges++;
-    }
-  }
-   
-  return bdry_edges;    
-}
-#ifdef __3D__
-/** compute number of faces at the boundary */
-int TGridCell::GetN_BoundaryFaces()
-{
-  int bdry_faces = 0, i, N_;
-    
-  N_ = GetN_Faces();
-
-  for (i=0;i<N_;i++)
-  {
-    if (Joints[i]->GetType() ==  BoundaryFace  ||
+        Joints[i]->GetType() == IsoBoundEdge ||
+        Joints[i]->GetType() == BoundaryFace ||
         Joints[i]->GetType() == IsoBoundFace)
     {
-	bdry_faces++;
+      bdry_joints++;
     }
   }
-   
-  return bdry_faces;    
-}
-#endif 
-
-/** compute number of vertices at the boundary */
-/** BEFORE THIS ROUTINE CAN BE CALLED */
-/**    collection->MarkBoundaryVertices(); */
-/** has to be called */
-/** call: ((TGridCell *)cell)->GetN_BoundaryVertices(); */
-int TGridCell::GetN_BoundaryVertices()
-{
-  int bdry_vertices = 0, i, N_;
-  TVertex *vertex;
-    
-  N_ = GetN_Vertices();
-
-  // loop over the edges
-  for (i=0;i<N_;i++)
-  {
-      vertex = GetVertex(i);
-      if (vertex->GetClipBoard())
-	  bdry_vertices++;
-  }
-   
-  return bdry_vertices;    
+  return bdry_joints;
 }
 
 void TGridCell::check() const

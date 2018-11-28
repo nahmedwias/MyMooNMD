@@ -467,18 +467,18 @@ void NSNonlinearTerm_emac(
       double ansatz_x = u_x[j];
       double ansatz_y = u_y[j];
       double ansatz_z = d == 2 ? 0. : u_z[j];
-      MatrixA11[i][j] += (2*u1*ansatz_x + 0.5*(ansatz_y*u2 + ansatz_z*u1))*test;
-      MatrixA12[i][j] += (0.5*ansatz_x*u2 + ansatz_y*u1) * test;
+      MatrixA11[i][j] += (3*u1*ansatz_x + (ansatz_y*u2 + ansatz_z*u3))*test;
+      MatrixA12[i][j] += (ansatz_x*u2 + ansatz_y*u1) * test;
       if(d == 3)
-        MatrixA13[i][j] += (0.5*ansatz_x*u3 + ansatz_z*u1) * test;
-      MatrixA21[i][j] += (0.5*ansatz_y*u1 + ansatz_x*u2) * test;
-      MatrixA22[i][j] += (2*ansatz_y*u2 + 0.5*(ansatz_x*u1 + ansatz_z*u3))*test;
+        MatrixA13[i][j] += (ansatz_x*u3 + ansatz_z*u1) * test;
+      MatrixA21[i][j] += (ansatz_y*u1 + ansatz_x*u2) * test;
+      MatrixA22[i][j] += (3*ansatz_y*u2 + (ansatz_x*u1 + ansatz_z*u3))*test;
       if(d == 3)
       {
-        MatrixA23[i][j] += (0.5*ansatz_y*u3 + ansatz_z*u2) * test;
-        MatrixA31[i][j] += (0.5*ansatz_z*u1 + ansatz_x*u3) * test;
-        MatrixA32[i][j] += (0.5*ansatz_z*u2 + ansatz_y*u3) * test;
-        MatrixA33[i][j] += (2*ansatz_z*u3 + 0.5*(ansatz_x*u1+ansatz_y*u2))*test;
+        MatrixA23[i][j] += (ansatz_y*u3 + ansatz_z*u2) * test;
+        MatrixA31[i][j] += (ansatz_z*u1 + ansatz_x*u3) * test;
+        MatrixA32[i][j] += (ansatz_z*u2 + ansatz_y*u3) * test;
+        MatrixA33[i][j] += (3*ansatz_z*u3 + (ansatz_x*u1+ansatz_y*u2))*test;
       }
     }
   }
@@ -897,7 +897,7 @@ void NS_BrezziPitkaeranta(double Mult, double *coeff, double *param, double hK,
   double * p_y = OrigValues[3+d];
   double * p_z = d == 2 ? nullptr : OrigValues[4+d];
   double nu = coeff[0]; // = 1/reynolds_number
-  double delta = compute_PSPG_delta(0.1, hK, nu);
+  double delta = compute_PSPG_delta(delta0, hK, nu);
   for(int i = 0; i < N_P; i++)
   {
     double test_x = delta * p_x[i];
@@ -915,7 +915,7 @@ void NS_BrezziPitkaeranta(double Mult, double *coeff, double *param, double hK,
 }
 
 template <int d>
-void NSParamsVelocity(double *in, double *out)
+void NSParamsVelocity(const double *in, double *out)
 {
   out[0] = in[d]; // u1old
   out[1] = in[d+1]; // u2old
@@ -1000,7 +1000,7 @@ template void NS_BrezziPitkaeranta<2>(
 // template void NSCoriolis<2>(
 //   double Mult, double *coeff, double *param, double hK, double **OrigValues,
 //   int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
-template void NSParamsVelocity<2>(double *in, double *out);
+template void NSParamsVelocity<2>(const double *in, double *out);
 #endif // 2D
 #ifdef __3D__
 template void NSResistanceMassMatrixSingle<3>(
@@ -1050,7 +1050,7 @@ template void NSNonlinearTerm_emac<3>(
 template void NSCoriolis<3>(
   double Mult, double *coeff, double *param, double hK, double **OrigValues,
   int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
-template void NSParamsVelocity<3>(double *in, double *out);
+template void NSParamsVelocity<3>(const double *in, double *out);
 template void NSGradDiv<3>(
   double Mult, double *coeff, double *param, double hK, double **OrigValues,
   int *N_BaseFuncts, double ***LocMatrices, double **LocRhs, double delta0);
