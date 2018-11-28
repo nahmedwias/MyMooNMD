@@ -28,17 +28,17 @@ void compare(TimeNavierStokes<2>& tnse2d, std::array<double, int(4)> errors,
   // check the H1-error of the velocity
   if( fabs(computed_errors[2] - errors[1]) > tol )
   {
-    ErrThrow("H1 norm of velocity: ", computed_errors[1], "  ", errors[1]);
+    ErrThrow("H1 norm of velocity: ", computed_errors[2], "  ", errors[1]);
   }
   // check the L2-error of the pressure
   if( fabs(computed_errors[3] - errors[2]) > tol)
   {
-    ErrThrow("L2 norm of pressure: ", computed_errors[2], "  ", errors[2]);
+    ErrThrow("L2 norm of pressure: ", computed_errors[3], "  ", errors[2]);
   }
   // check the H1-error of the pressure
   if(fabs(computed_errors[4] - errors[3]) > tol )
   {
-    ErrThrow("H1 norm of pressure: ", computed_errors[3], "  ", errors[3]);
+    ErrThrow("H1 norm of pressure: ", computed_errors[4], "  ", errors[3]);
   }
 }
 
