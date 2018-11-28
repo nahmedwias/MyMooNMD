@@ -2,7 +2,7 @@
 #include <Database.h>
 #include <FEDatabase2D.h>
 #include <Example_TimeNSE2D.h>
-#include <Time_NSE2D.h>
+#include "TimeNavierStokes.h"
 #include <TimeDiscretizations.h>
 #include <TimeDiscRout.h>
 #include <LoopInfo.h>
@@ -39,8 +39,8 @@ int main(int argc, char* argv[])
   // set some parameters for time stepping
   SetTimeDiscParameters(0);
 
-  // create an object of Time_NSE2D class
-  Time_NSE2D tnse2d(Domain, parmoon_db);
+  // create an object of TimeNavierStokes<2> class
+  TimeNavierStokes<2> tnse2d(Domain, parmoon_db);
   
   TimeDiscretization& tss = tnse2d.get_time_stepping_scheme();
   tss.current_step_ = 0;
@@ -51,7 +51,7 @@ int main(int argc, char* argv[])
   // and M's blocks that are necessary
   tnse2d.assemble_initial_time();
 
-  tnse2d.output(tss.current_step_);
+  tnse2d.output();
 
   
   LoopInfo loop_info_time("time loop");
@@ -68,7 +68,10 @@ int main(int argc, char* argv[])
     TDatabase::TimeDB->INTERNAL_STARTTIME = TDatabase::TimeDB->CURRENTTIME;
     // set the time parameters
     tss.set_time_disc_parameters();
-    double tau = parmoon_db["time_step_length"];
+    // tau may change depending on the time discretization (adaptive time)
+    double tau = tss.get_step_length();
+    tss.current_time_ += tss.get_step_length();
+    // this is used at several places, e.g., in the example file etc.
     TDatabase::TimeDB->CURRENTTIME += tau;
     Output::print("\nCURRENT TIME: ", TDatabase::TimeDB->CURRENTTIME);
     
@@ -79,26 +82,26 @@ int main(int argc, char* argv[])
     loop_info.verbosity_threshold = 1;
     for(unsigned int i=0;; i++)
     {
-      if(tnse2d.stopIte(i))
+      if(tnse2d.stop_it(i))
       {
-        loop_info.finish(i,tnse2d.getFullResidual());
+        loop_info.finish(i,tnse2d.get_full_residual());
         linear_iteration +=i;
-        loop_info_time.print(linear_iteration, tnse2d.getFullResidual());
+        loop_info_time.print(linear_iteration, tnse2d.get_full_residual());
         break;
       }
       else
-        loop_info.print(i, tnse2d.getFullResidual());
+        loop_info.print(i, tnse2d.get_full_residual());
 
       tnse2d.solve();
 
-      if(tnse2d.imex_scheme(1))
+      if(tnse2d.imex_scheme())
         continue;
 
       tnse2d.assemble_matrices_rhs(i+1);
     }
-    tnse2d.output(tss.current_step_);
+    tnse2d.output();
   }
-  loop_info_time.finish(linear_iteration, tnse2d.getFullResidual());
+  loop_info_time.finish(linear_iteration, tnse2d.get_full_residual());
   Output::close_file();
   return 0;
 }
