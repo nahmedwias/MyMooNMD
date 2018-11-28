@@ -1,5 +1,5 @@
-#ifndef TIMENSE2D_ADJOINT_H
-#define TIMENSE2D_ADJOINT_H
+#ifndef __SYSTEM_TIMENAVIERSTOKES_ADJOINT_H__
+#define __SYSTEM_TIMENAVIERSTOKES_ADJOINT_H__
 
 #include "TimeNavierStokes.h"
 
@@ -7,12 +7,17 @@ template<int d>
 class TimeNavierStokes_Adjoint : public TimeNavierStokes<d>
 {
   public:
+    using FEFunction = typename Template_names<d>::FEFunction;
+    using FEVectFunct = typename Template_names<d>::FEVectFunct;
+    using DoubleFunction = typename Template_names<d>::DoubleFunction;
+    using BoundaryValuesFunction = typename Template_names<d>::BoundaryValuesFunction;
+    
     TimeNavierStokes_Adjoint(const TimeNavierStokes<d>& nse, const ParameterDatabase& param_db);
   
     /// @brief assemble all terms in the matrix and right-hand side which
     /// contain the primal solutions u or p.
-    void assemble(const TFEVectFunct2D& u, const TFEFunction2D& p,
-                  const TFEVectFunct2D& stokes_u, 
+    void assemble(const FEVectFunct& u, const FEFunction& p,
+                  const FEVectFunct& stokes_u, 
                   std::vector<double> cost_functional_weights, 
                   bool restricted_curl_functional);
     
@@ -22,4 +27,4 @@ class TimeNavierStokes_Adjoint : public TimeNavierStokes<d>
     void solve();
 };
 
-#endif // TIMENSE2D_ADJOINT_H
+#endif // __SYSTEM_TIMENAVIERSTOKES_ADJOINT_H__
