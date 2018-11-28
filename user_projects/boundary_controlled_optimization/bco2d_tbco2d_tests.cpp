@@ -176,7 +176,7 @@ int main(int argc, char* argv[])
                   ", and changing max_n_evaluations to: ",
                   parmoon_db["max_n_evaluations"]);
     set_ref_sol(test_number, reference_solution);
-    Time_BoundaryControlledOptimization tbco(domain, parmoon_db);
+    Time_BoundaryControlledOptimization<2> tbco(domain, parmoon_db);
     parmoon_opt::optimize(tbco, parmoon_db);
     compare(tbco,reference_solution,tol);
   }
@@ -203,7 +203,7 @@ int main(int argc, char* argv[])
     parmoon_db["control_in_x_direction"] = true;
     parmoon_db["control_in_y_direction"] = false;
     set_ref_sol(test_number, reference_solution);
-    Time_BoundaryControlledOptimization tbco2(domain, parmoon_db);
+    Time_BoundaryControlledOptimization<2> tbco2(domain, parmoon_db);
     parmoon_opt::optimize(tbco2, parmoon_db);
     compare(tbco2,reference_solution,tol);
   }

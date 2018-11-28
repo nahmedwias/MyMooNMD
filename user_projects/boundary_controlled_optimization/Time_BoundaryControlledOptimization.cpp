@@ -4,8 +4,8 @@
 #include "Database.h"
 #include <algorithm>
 
-
-ParameterDatabase Time_BoundaryControlledOptimization::default_BCO_database()
+template<int d>
+ParameterDatabase Time_BoundaryControlledOptimization<d>::default_BCO_database()
 {
   // is only needed for the adjoint problem, but there is only one global 
   // parameter for this.
@@ -52,7 +52,8 @@ ParameterDatabase Time_BoundaryControlledOptimization::default_BCO_database()
   return db;
 }
 
-bool Time_BoundaryControlledOptimization::check_input_parameter_consistency(const ParameterDatabase& param_db)
+template<int d>
+bool Time_BoundaryControlledOptimization<d>::check_input_parameter_consistency(const ParameterDatabase& param_db)
 {
   ParameterDatabase db = Time_BoundaryControlledOptimization::default_BCO_database();
   db.merge(param_db, false);
@@ -98,13 +99,14 @@ bool Time_BoundaryControlledOptimization::check_input_parameter_consistency(cons
   return consistent;
 }
 
-
-ParameterDatabase Time_BoundaryControlledOptimization::get_primal_database(const ParameterDatabase& param_db)
+template<int d>
+ParameterDatabase Time_BoundaryControlledOptimization<d>::get_primal_database(const ParameterDatabase& param_db)
 {
   return param_db;
 }
 
-ParameterDatabase Time_BoundaryControlledOptimization::get_adjoint_database(const ParameterDatabase& param_db)
+template<int d>
+ParameterDatabase Time_BoundaryControlledOptimization<d>::get_adjoint_database(const ParameterDatabase& param_db)
 {
   ParameterDatabase adjoint_db(ParameterDatabase::parmoon_default_database());
   adjoint_db.merge(ParameterDatabase::default_output_database(), true);
@@ -116,14 +118,16 @@ ParameterDatabase Time_BoundaryControlledOptimization::get_adjoint_database(cons
   return adjoint_db;
 }
 
-Time_BoundaryControlledOptimization::tnse_primal_solution::tnse_primal_solution()
+template<int d>
+Time_BoundaryControlledOptimization<d>::tnse_primal_solution::tnse_primal_solution()
   {
 
   }
 
-Time_BoundaryControlledOptimization::tnse_primal_solution::tnse_primal_solution(
-    const BlockVector& solution_vector, int step, const TFEVectFunct2D& u_sol,
-    const TFEFunction2D& p_sol)
+template<int d>
+Time_BoundaryControlledOptimization<d>::tnse_primal_solution::tnse_primal_solution(
+    const BlockVector& solution_vector, int step, const FEVectFunct& u_sol,
+    const FEFunction& p_sol)
 : vector_at_timestep_t_(solution_vector),timestep_t_(step)
   {
   // the fe functions must be newly created, because copying would mean
@@ -136,8 +140,8 @@ Time_BoundaryControlledOptimization::tnse_primal_solution::tnse_primal_solution(
                                    vector_at_timestep_t_ .length(2));
   }
 
-
-Time_BoundaryControlledOptimization::Time_BoundaryControlledOptimization(
+template<int d>
+Time_BoundaryControlledOptimization<d>::Time_BoundaryControlledOptimization(
   const TDomain& domain, const ParameterDatabase& param_db)
  : db(default_BCO_database()), n_control(0), control_dofs(),
    tnse_primal(domain, get_primal_database (param_db)),
@@ -279,8 +283,8 @@ Time_BoundaryControlledOptimization::Time_BoundaryControlledOptimization(
                    "n_control = ", n_control);
 }
 
-
-double Time_BoundaryControlledOptimization::compute_functional_and_derivative(
+template<int d>
+double Time_BoundaryControlledOptimization<d>::compute_functional_and_derivative(
   unsigned int n, const double* x, double* grad)
 {
   if(n != n_control)
@@ -348,8 +352,8 @@ double Time_BoundaryControlledOptimization::compute_functional_and_derivative(
   return current_J_hat;
 }
 
-
-void Time_BoundaryControlledOptimization::apply_control_and_solve(const double* x)
+template<int d>
+void Time_BoundaryControlledOptimization<d>::apply_control_and_solve(const double* x)
 {
   // make sure Dirichlet rows are handled as usual (ones on the diagonal)
   TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE = 0;
@@ -387,7 +391,7 @@ void Time_BoundaryControlledOptimization::apply_control_and_solve(const double* 
                                       tnse_primal.get_velocity(),tnse_primal.get_pressure());
 
   tnse_primal.assemble_initial_time();
-  tnse_primal.output(tss.current_step_);
+  tnse_primal.output();
   double end_time = tnse_primal.get_time_stepping_scheme().get_end_time();
   LoopInfo loop_info_time("time loop");
   loop_info_time.print_time_every_step = true;
@@ -416,19 +420,19 @@ void Time_BoundaryControlledOptimization::apply_control_and_solve(const double* 
     loop_info.verbosity_threshold = 1;
     for(unsigned int i=0;; i++)
     {
-      if(tnse_primal.stopIte(i))
+      if(tnse_primal.stop_it(i))
       {
-        loop_info.finish(i,tnse_primal.getFullResidual());
+        loop_info.finish(i,tnse_primal.get_full_residual());
         linear_iteration +=i;
-        loop_info_time.print(linear_iteration, tnse_primal.getFullResidual());
+        loop_info_time.print(linear_iteration, tnse_primal.get_full_residual());
         break;
       }
       else
-        loop_info.print(i, tnse_primal.getFullResidual());
+        loop_info.print(i, tnse_primal.get_full_residual());
 
       tnse_primal.solve();
 
-      if(tnse_primal.imex_scheme(1))
+      if(tnse_primal.imex_scheme())
         continue;
 
       tnse_primal.assemble_matrices_rhs(i+1);
@@ -438,12 +442,13 @@ void Time_BoundaryControlledOptimization::apply_control_and_solve(const double* 
     tnse_primal_solutions_.emplace_back(tnse_primal.get_solution(),tss.current_step_,
                                         tnse_primal.get_velocity(),tnse_primal.get_pressure());
 
-    tnse_primal.output(tss.current_step_); // use this line to output everything
+    tnse_primal.output(); // use this line to output(tss.current_step_) everything
   }
-//  tnse_primal.output(n_calls);  // use this line to output only the last step
+//  tnse_primal.output();  // use this line to output(n_calls) only the last step
 }
 
-void Time_BoundaryControlledOptimization::impose_control_in_rhs_and_sol(const double* x,
+template<int d>
+void Time_BoundaryControlledOptimization<d>::impose_control_in_rhs_and_sol(const double* x,
                                                                         int current_time_step){
   auto& rhs = this->tnse_primal.get_rhs_from_time_disc();
   auto& sol = this->tnse_primal.get_solution();
@@ -492,7 +497,8 @@ void Time_BoundaryControlledOptimization::impose_control_in_rhs_and_sol(const do
    }
 }
 
-double Time_BoundaryControlledOptimization::compute_functional_in_time(int t0, int t1) const
+template<int d>
+double Time_BoundaryControlledOptimization<d>::compute_functional_in_time(int t0, int t1) const
 {
   double functional_value = 0;
   for (int i = t0; i < t1; ++i)
@@ -508,7 +514,8 @@ double Time_BoundaryControlledOptimization::compute_functional_in_time(int t0, i
   return functional_value;
 }
 
-double Time_BoundaryControlledOptimization::compute_functional_at_t(int time_step) const
+template<int d>
+double Time_BoundaryControlledOptimization<d>::compute_functional_at_t(int time_step) const
 {
   if (time_step > n_time_steps_ - 1)
     ErrThrow("The functional can not be computed at t = ", time_step, " > ", n_time_steps_-1);
@@ -593,8 +600,8 @@ double Time_BoundaryControlledOptimization::compute_functional_at_t(int time_ste
   return functional_value;
 }
 
-
-void Time_BoundaryControlledOptimization::solve_adjoint_equation()
+template<int d>
+void Time_BoundaryControlledOptimization<d>::solve_adjoint_equation()
 {
 //  auto u = tnse_primal.get_velocity();
 //  auto p = tnse_primal.get_pressure();
@@ -608,8 +615,8 @@ void Time_BoundaryControlledOptimization::solve_adjoint_equation()
 //  tnse_adjoint.output(n_calls);
 }
 
-
-void Time_BoundaryControlledOptimization::compute_derivative(const double* x,
+template<int d>
+void Time_BoundaryControlledOptimization<d>::compute_derivative(const double* x,
                                                         double* grad) const
 {
 //  double alpha = db["alpha_cost"];
@@ -635,7 +642,8 @@ void Time_BoundaryControlledOptimization::compute_derivative(const double* x,
 //   }
 }
 
-void Time_BoundaryControlledOptimization::write_all_solutions()
+template<int d>
+void Time_BoundaryControlledOptimization<d>::write_all_solutions()
 {
   std::string name;
   if (tnse_primal_solutions_.size()!=n_time_steps_)
@@ -657,3 +665,8 @@ void Time_BoundaryControlledOptimization::write_all_solutions()
 //  exit(0);
 }
 
+#ifdef __3D__
+template class Time_BoundaryControlledOptimization<3>;
+#else
+template class Time_BoundaryControlledOptimization<2>;
+#endif
