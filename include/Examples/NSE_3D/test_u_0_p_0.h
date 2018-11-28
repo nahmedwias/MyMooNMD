@@ -202,5 +202,6 @@ void LinCoeffs(int n_points, double * X, double * Y, double * Z,
     coeffs[i][2] = -eps*u2[4] + ( u1[0]*u2[1] + u2[0]*u2[2] + u3[0]*u2[3] ) + p.at(2) ; // f2
     coeffs[i][3] = -eps*u3[4] + ( u1[0]*u3[1] + u2[0]*u3[2] + u3[0]*u3[3] ) + p.at(3) ; // f3
     coeffs[i][4] = 0; // g watch out that u is divergence free!
+    coeffs[i][5] = 0; // sigma
   }
 }

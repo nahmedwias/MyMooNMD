@@ -2415,28 +2415,62 @@ bool TFESpace3D::CheckMesh() const
   return true;
 } 
 
+// polynomial degree of FE space on a given cell
+int TFESpace3D::getFEDegree(TBaseCell *cell) const
+{
+  FE3D FEId = this->GetFE3D(cell->GetCellIndex(),cell);
+  return TFEDatabase3D::GetPolynomialDegreeFromFE3D(FEId);
+}
+
+QuadFormula2D TFESpace3D::getFaceQuadratureFormula(TBaseCell *cell, int m, int _degree) const
+{
+
+  // set the desired quadrature degree (if = -1 -> 2*fe_degree is taken)
+  int quad_degree = _degree;
+  if (quad_degree == -1)
+    quad_degree = 2*this->getFEDegree(cell);
+         
+  QuadFormula2D FaceQuadFormula; 
+  switch(cell->getNumberOfFaceVertices(m)) {
+  case 3:
+    // triangular face
+    FaceQuadFormula = TFEDatabase3D::GetQFTriaFromDegree(quad_degree);
+    FaceQuadFormula = Gauss3Tria;
+    break;
+  case 4:
+    // quadrilateral face
+    FaceQuadFormula = TFEDatabase3D::GetQFQuadFromDegree(quad_degree);
+    break;
+  }
+  return FaceQuadFormula;
+}
 // ===========================================================================
-void TFESpace3D::getFaceQuadratureData(TBaseCell *cell, int m,
-				  std::vector<double>& qWeights,std::vector<double>& qPointsT,
-				  std::vector<double>& qPointsS,
-				  std::vector< std::vector<double> >& basisFunctionsValues) const
+void TFESpace3D::getFaceQuadratureData(TBaseCell *cell, int m, 
+				       std::vector<double>& qWeights,
+				       std::vector<double>& qPointsT,
+				       std::vector<double>& qPointsS,
+				       std::vector< std::vector<double> >& basisFunctionsValues,
+				       int _degree) const
 {
   int nFaceVertices = cell->getNumberOfFaceVertices(m);
   
   // set quadrature formula and compute quadrature info
   FE3D FEId = this->GetFE3D(cell->GetCellIndex(),cell);
-  int fe_degree = TFEDatabase3D::GetPolynomialDegreeFromFE3D(FEId);
+  int fe_degree = _degree;
+  if (fe_degree == -1) {
+    fe_degree = 2*TFEDatabase3D::GetPolynomialDegreeFromFE3D(FEId);
+  }
                         
   QuadFormula2D FaceQuadFormula; //=BaryCenterTria;
   switch(nFaceVertices) {
   case 3:
     // triangular face
-    FaceQuadFormula = TFEDatabase3D::GetQFTriaFromDegree(2*fe_degree);
+    FaceQuadFormula = TFEDatabase3D::GetQFTriaFromDegree(fe_degree);
     FaceQuadFormula = Gauss3Tria;
     break;
   case 4:
     // quadrilateral face
-    FaceQuadFormula = TFEDatabase3D::GetQFQuadFromDegree(2*fe_degree);
+    FaceQuadFormula = TFEDatabase3D::GetQFQuadFromDegree(fe_degree);
     break;
   }
   
@@ -2477,6 +2511,47 @@ void TFESpace3D::getFaceQuadratureData(TBaseCell *cell, int m,
   
   basisFunctionsValues.resize(qWeights.size());                       
   for (unsigned int l=0; l<qWeights.size(); l++) {
+    basisFunctionsValues[l].resize(N_BaseFunct[FEId]);                          
+    for (unsigned int k=0; k<basisFunctionsValues[l].size(); k++) {
+      basisFunctionsValues[l][k]=JointValues[l][k];
+    }
+  }
+  // ====================================
+  
+}
+
+
+// ===========================================================================
+// analogous to getFaceQuadratureData, but taking as input the quad. points
+void TFESpace3D::getFaceQuadratureValue(TBaseCell *cell, int m, QuadFormula2D FaceQuadFormula,
+				  std::vector< std::vector<double> >& basisFunctionsValues) const
+{                       
+  int N_Points;
+  const double* faceWeights;
+  const double *t,*s;
+  // get a quadrature formula good enough for the velocity FE space
+  TQuadFormula2D *qf2 = TFEDatabase3D::GetQuadFormula2D(FaceQuadFormula);
+  qf2->GetFormulaData(N_Points, faceWeights, t, s);
+ 
+  // ====================================
+  // generate data on reference mesh cell for the 2d face of 3d cell
+  // set quadrature formula and compute quadrature info
+  FE3D FEId = this->GetFE3D(cell->GetCellIndex(),cell);
+  TFEDatabase3D::GetBaseFunct3DFromFE3D(FEId)
+    ->MakeRefElementData(FaceQuadFormula);
+                        
+  BaseFunct3D *BaseFuncts = TFEDatabase3D::GetBaseFunct3D_IDFromFE3D();
+  int* N_BaseFunct = TFEDatabase3D::GetN_BaseFunctFromFE3D();
+                        
+  // values of base functions in all quadrature points on face
+  double **JointValues = TFEDatabase3D::GetJointValues3D
+    (BaseFuncts[FEId], FaceQuadFormula, m);
+                        
+  TFEDatabase3D::GetBaseFunct3D(BaseFuncts[FEId])->ChangeBF(this->GetCollection(),
+							    cell, N_Points, JointValues);
+  
+  basisFunctionsValues.resize(N_Points);                       
+  for (unsigned int l=0; l<N_Points; l++) {
     basisFunctionsValues[l].resize(N_BaseFunct[FEId]);                          
     for (unsigned int k=0; k<basisFunctionsValues[l].size(); k++) {
       basisFunctionsValues[l][k]=JointValues[l][k];

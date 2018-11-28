@@ -7660,6 +7660,8 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
               // everything is done in Freesurfint, see Freesurface2D.C
               break;
             case DIRICHLET_WEAK:
+              // do nothing here
+              // everything is done in BoundaryAssemble2D
               break;
               default :
                 OutPut("Unknown boundary condition !"<< endl);

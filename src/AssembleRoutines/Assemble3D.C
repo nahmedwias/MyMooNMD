@@ -807,9 +807,12 @@ void Assemble3D(int n_fespaces, const TFESpace3D** fespaces, int n_sqmatrices,
 	                break;
 	              }
 	              TFEDatabase3D::GetBaseFunct3D(BaseFuncts[CurrentElement])->ChangeBF(Coll, cell, N_Points, JointValues);
-	            break;
-
-		    default:
+	              break;
+	              case DIRICHLET_WEAK:
+	                // do nothing here
+	                // everything is done in BoundaryAssemble3D
+	                break;
+	              default:
 
 		     break;
 
