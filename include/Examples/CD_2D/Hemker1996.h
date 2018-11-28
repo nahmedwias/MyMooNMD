@@ -655,7 +655,7 @@ void ComputeDifferenceToCoarseLevel(TCollection *Coll_fine,
     int i, j, k, N_Cells, N_Edges, coarse_no;
     double x, y, x_c, y_c, val_fine[4], val_coarse[4], c1err = -1, c1err_coarse = -1;
     double x_err, y_err, x_err_c, y_err_c;
-    TBaseCell *cell, *parent;
+    const TBaseCell *cell, *parent;
     
     // number of cells
     N_Cells = Coll_fine->GetN_Cells();

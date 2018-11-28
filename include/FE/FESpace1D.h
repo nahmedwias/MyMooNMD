@@ -19,31 +19,6 @@
 #include <FESpace.h>
 #include <FE1D.h>
 
-
-
-typedef struct 
-{
-  /** Total No. Dof on the interface */
- int  N_NonMortaDofs;
-
- /** Map of NonMort Dof to Global Dof */
- int *GlobalDof_NonMortaEdgeDof;
-
- /** No. of Dof on each nonmortar edge */ 
- int *N_DofPerEdge;
-
- /**  NonMort Dof  local GlobalNo on the interface*/
- int *EdgeNonMotLocGlobalNo;
-
- /**  NonMort Dof  local GlobalNo on the interface*/
- int *EdgeNonMotGlobalNo;
-
- /**  NonMort Dof  local beginindex on the interface*/
- int *EdgeNonMotBeginIndex;
- 
-} TNonMortarData;
-
-
 /** class for all 1D finite element spaces */
 class TFESpace1D : public TFESpace
 {

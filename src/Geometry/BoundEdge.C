@@ -30,7 +30,7 @@ int TBoundEdge::CheckMatchingRef(TBaseCell *Me, int J_i,
 
 #ifdef __2D__
 /** update parameters according to the new vertex positions */
-void TBoundEdge::UpdateParameters(TVertex *Begin, TVertex *End)
+void TBoundEdge::UpdateParameters(const TVertex *Begin, const TVertex *End)
 {
   double x1, y1, x2, y2;
   double t1, t2;
@@ -50,17 +50,6 @@ void TBoundEdge::UpdateParameters(TVertex *Begin, TVertex *End)
   T_0 = t1;
   T_1 = t2;
 }
-#endif
-
-#ifdef __MORTAR__
-
-int TBoundEdge::CheckMatchingRef(TBaseCell *Me, int J_i,
-                  StoreGeomMortar &Tmp)
-{
-  Tmp.Filled = false;
-  return 0;
-}
-
 #endif
 
 // create a new instance of this class

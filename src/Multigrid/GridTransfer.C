@@ -33,7 +33,7 @@ void GridTransfer::Prolongate(
 )
 {
   int i,j,k,l;
-  TBaseCell *cell, *parent;
+  const TBaseCell *cell, *parent;
   TCollection *CoarseColl, *FineColl;
   FE2D CoarseId, FineId;
   TFE2D *CoarseElement, *FineElement;
@@ -244,7 +244,7 @@ void GridTransfer::DefectRestriction(
     const double* FineFunction, size_t n_fine_dofs)
 {
   int i,j,k,l;
-  TBaseCell *cell, *parent;
+  const TBaseCell *cell, *parent;
   TCollection *CoarseColl, *FineColl;
   FE2D CoarseId, FineId;
   TFE2D *CoarseElement, *FineElement;
@@ -459,7 +459,7 @@ void GridTransfer::RestrictFunction(
     const double* FineFunction, size_t n_fine_dofs)
 {
   int i,j,k,l;
-  TBaseCell *cell, *parent;
+  const TBaseCell *cell, *parent;
   TCollection *CoarseColl, *FineColl;
   FE2D CoarseId, FineId;
   TFE2D *CoarseElement, *FineElement;
@@ -671,7 +671,7 @@ void GridTransfer::Prolongate(
 
 {
   int i,j,k,l;
-  TBaseCell *cell, *parent;
+  const TBaseCell *cell, *parent;
   TCollection *CoarseColl, *FineColl;
   FE3D CoarseId, FineId;
   TFE3D *CoarseElement, *FineElement;
@@ -949,7 +949,7 @@ void GridTransfer::DefectRestriction(
     const double* FineFunction, size_t n_fine_dofs)
 {
   int i,j,k,l;
-  TBaseCell *cell, *parent;
+  const TBaseCell *cell, *parent;
   TCollection *CoarseColl, *FineColl;
   FE3D CoarseId, FineId;
   TFE3D *CoarseElement, *FineElement;
@@ -1225,7 +1225,7 @@ void GridTransfer::RestrictFunction(
     const double* FineFunction, size_t n_fine_dofs)
 {
   int i,j,k,l;
-  TBaseCell *cell, *parent;
+  const TBaseCell *cell, *parent;
   TCollection *CoarseColl, *FineColl;
   FE3D CoarseId, FineId;
   TFE3D *CoarseElement, *FineElement;

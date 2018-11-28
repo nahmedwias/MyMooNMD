@@ -351,7 +351,7 @@ void Solver<L, V>::solve_augmented(const V& rhs, V& solution)
 #elif _MPI
     int my_rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-    double norm = r.norm_global(comms);
+    double norm = r.norm(comms);
     if(my_rank == 0)
       Output::info<4>("Iterative solver", "Absolute residual in Solver class, ",
                       setprecision(16), norm);
@@ -434,7 +434,7 @@ void Solver<L, V>::solve(const V& rhs, V& solution)
 #elif _MPI
     int my_rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-    double norm = r.norm_global(comms);
+    double norm = r.norm(comms);
     if(my_rank == 0)
       Output::info<4>("Iterative solver", "Absolute residual in Solver class, ",
                       setprecision(16), norm);

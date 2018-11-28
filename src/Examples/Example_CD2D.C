@@ -31,11 +31,6 @@ namespace sharp_boundary_layer
   #include "CD_2D/SharpBoundaryLayer.h"
 }
 
-namespace Geothermal_Energy_CD2D
-{
-  #include "CD_2D/Geothermal_Energy_CD2D.h"
-}
-
 Example_CD2D::Example_CD2D(const ParameterDatabase& user_input_parameter_db) 
  : Example2D(user_input_parameter_db)
 {
@@ -104,22 +99,6 @@ Example_CD2D::Example_CD2D(const ParameterDatabase& user_input_parameter_db)
       sharp_boundary_layer::ExampleFile();
       break;
 
-case 4: //Geothermal_Energy_CD2D
-      /** exact_solution */
-      exact_solution.push_back( Geothermal_Energy_CD2D::Exact );
-
-      /** boundary condition */
-      boundary_conditions.push_back( Geothermal_Energy_CD2D::BoundCondition );
-
-      /** boundary values */
-      boundary_data.push_back( Geothermal_Energy_CD2D::BoundValue );
-
-      /** coefficients */
-      problem_coefficients = Geothermal_Energy_CD2D::BilinearCoeffs;
-
-      Geothermal_Energy_CD2D::ExampleFile();
-      break;
-
     default:
       ErrThrow("Unknown name of the convection-diffusion (CD2D) example!", 
                example_code);
@@ -136,7 +115,7 @@ Example_CD2D::Example_CD2D(std::vector<DoubleFunct2D *> exact,
 }
 
 
-void Example_CD2D::do_post_processing(CD2D& cd2d) const
+void Example_CD2D::do_post_processing(ConvectionDiffusion<2>& cd2d) const
 {
   if(post_processing_stat)
   {

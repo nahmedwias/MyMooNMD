@@ -36,11 +36,6 @@ class ParameterDatabase
     /// "problem_type", "base_name", ...
     static ParameterDatabase parmoon_default_database();
     
-    /// @brief construct a database filled with parameters for time
-    /// discretization
-    ///
-    static ParameterDatabase default_time_database();
-
     /// @brief construct a database filled with parameters which holds
     /// controls and stopping criteria for a nonlinear iteration loop
     static ParameterDatabase default_nonlinit_database();

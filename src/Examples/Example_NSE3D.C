@@ -1,5 +1,5 @@
 #include <Example_NSE3D.h>
-#include <NSE3D.h>
+#include "NavierStokes.h"
 
 #include <FEDatabase3D.h>
 #include <Database.h>
@@ -439,7 +439,7 @@ Example_NSE3D::Example_NSE3D(const ParameterDatabase& user_input_parameter_db)
   }
 }
 
-void Example_NSE3D::do_post_processing(NSE3D& nse3d) const
+void Example_NSE3D::do_post_processing(NavierStokes<3>& nse3d) const
 {
   if(post_processing_stat)
   {

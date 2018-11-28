@@ -17,6 +17,8 @@
 #include <FE2DMapper1Reg.h>
 #include <HNDesc.h>
 #include <RefTrans2D.h>
+#include <ShapeDesc.h>
+#include <RefDesc.h>
 
 #include <QuadFormulaQuad.h>
 #include <QuadFormulaTria.h>
@@ -603,7 +605,7 @@ class TFEDatabase2D
 
      /** calculate points on original element */
      static void GetOrigFromRef(RefTrans2D RefTrans, int n_points, 
-                        double *xi, double *eta,
+                        const double *xi, const double *eta,
                         double *X, double *Y, double *absdetjk);
 
      /** calculate base functions with derivatives and coordinates
@@ -611,8 +613,8 @@ class TFEDatabase2D
      static RefTrans2D GetOrig(int N_LocalUsedElements, FE2D *LocalUsedElements,
                          TCollection *Coll,
                          TBaseCell *cell, bool *Needs2ndDer,
-                         int &N_Points, double* &xi, double* &eta, 
-                         double* &weights, double* X, double* Y,
+                         int &N_Points, const double* &xi, const double* &eta, 
+                         const double* &weights, double* X, double* Y,
                          double* absdetjk);
 
      /** calculate points on reference element */

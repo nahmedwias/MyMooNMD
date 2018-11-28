@@ -150,7 +150,7 @@ int main(int argc, char* argv[])
 
 	// Declaration of the ParMooN Database (ParamDB) and FE2D Database
 	// (basis functions etc.), this is obligatory in every program
-	TDatabase Database;
+	TDatabase Database(argv[1]);
 	TFEDatabase2D FEDatabase;
 
 	ParameterDatabase parmoon_db = ParameterDatabase::parmoon_default_database();
@@ -158,8 +158,7 @@ int main(int argc, char* argv[])
 	parmoon_db.read(fs); // all parameters identified (according to read()) in the stream(.dat-file) are saved in parmoon_db
 	fs.close();
 
-	// Set each variables' value in TDatabase using argv[1] (*.dat file)
-	TDomain Domain(parmoon_db, argv[1]);
+	TDomain Domain(parmoon_db);
 
 	// Test the mesh:
 	//TCollection *coll = Domain.GetCollection(It_Finest, 0);
@@ -181,10 +180,8 @@ int main(int argc, char* argv[])
 	{
 	case 3:
 	{
-		for (size_t k = 0; k < n_ref; k++)
-		{
-			Domain.RegRefineAll();
-		}
+		// refine grid
+		Domain.refine_and_get_hierarchy_of_collections(parmoon_db);
 
 		Output::print("===============================================================");
 		Output::print("Level: ", n_ref);

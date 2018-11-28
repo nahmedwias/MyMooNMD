@@ -19,7 +19,7 @@ double ComputePSPGParameterLPS(double hK, bool velocity, double nu,
     case 2:
     // [DGJN17], Section 4, explicit
     case 3:
-      if ( velocity )
+      if(velocity)
         val = delta1;
       else
         val = delta0 * hK * hK / nu;
@@ -28,7 +28,7 @@ double ComputePSPGParameterLPS(double hK, bool velocity, double nu,
     case 4:
     // [DGJN17], Section 6, explicit
     case 5:
-      if ( velocity )
+      if(velocity)
         val = delta1 * hK / nu;
       else
         val = delta0 * hK / nu;
@@ -47,27 +47,16 @@ std::shared_ptr<FEMatrix> LPS_for_pressure_Scott_Zhang(
   std::shared_ptr<const FEMatrix> C, bool velocity, double nu,
   LPS_parameter_set lps_ps)
 {
-  int end, i, index, index_j, index_k, j, jj, k, l, N_, N_Entries, N_P, N_Cells, start;
-  int N_Entries_new, index_jj, N_neigh_j, neigh_no_j, index_ansatz, index_test;
-  int N_neigh_k, neigh_no_k, kk, index_kk, N_Points, N_Edges, N_Active;
-  const int *DOF, *GlobalNumbers, *BeginIndex;
-  int *N_BaseFunct;
-  const int *DOF_neigh_j, *DOF_neigh_k;
-  double *EntriesC_new;
-  double *weights, *xi, *eta, *Orig, **OrigFEValues;
+  int N_Points;
+  const double *weights, *xi, *eta;
   double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D], x[4], y[4];
-  double AbsDetjk[MaxN_QuadPoints_2D], value, value_grad_grad, value_fct_gradx, value_fct_grady, h, delta;
+  double AbsDetjk[MaxN_QuadPoints_2D];
   double val[6];
-  TCollection *coll;
-  FE2D CurrentElement, CurrentElement_neigh_j, CurrentElement_neigh_k;
-  TBaseCell *cell, *neigh_j, *neigh_k;
-  BaseFunct2D *BaseFuncts;
-  BaseFunct2D BaseFunct;
   MultiIndex2D der[3] = {D00, D10, D01};
 
-  int MaxN_EntriesPerRow = 200;
-  int N_MaxBaseFuncts = 25;
-  int N_MaxQuadPoints = 100;
+  constexpr int MaxN_EntriesPerRow = 400;
+  constexpr int N_MaxBaseFuncts = 25;
+  constexpr int N_MaxQuadPoints = 100;
   double values_in_quad_points[N_MaxBaseFuncts][3][N_MaxQuadPoints];
   double integral_fct_fct[N_MaxBaseFuncts][N_MaxBaseFuncts];
   double integral_grad_grad[N_MaxBaseFuncts][N_MaxBaseFuncts];
@@ -75,202 +64,202 @@ std::shared_ptr<FEMatrix> LPS_for_pressure_Scott_Zhang(
   double integral_fct_grady[N_MaxBaseFuncts][N_MaxBaseFuncts];
   double X_dof[N_MaxBaseFuncts], Y_dof[N_MaxBaseFuncts];
 
-  if ( !velocity )
+  if(!velocity)
   {
-    OutPut ( "LPS for pressure (Scott/Zhang)" << endl );
+    Output::print("LPS for pressure (Scott/Zhang)");
   }
   else
   {
-    OutPut ( "LPS for velocity (Scott/Zhang)" << endl );
+    Output::print("LPS for velocity (Scott/Zhang)");
   }
   const TFESpace2D *pressure_space = C->GetFESpace2D();
-  BaseFuncts = TFEDatabase2D::GetBaseFunct2D_IDFromFE2D();
-  N_BaseFunct = TFEDatabase2D::GetN_BaseFunctFromFE2D();
-  // get arrays with the numbering of the dof
-  GlobalNumbers = pressure_space->GetGlobalNumbers();
-  BeginIndex = pressure_space->GetBeginIndex();
+  BaseFunct2D *BaseFuncts = TFEDatabase2D::GetBaseFunct2D_IDFromFE2D();
+  int * N_BaseFunct = TFEDatabase2D::GetN_BaseFunctFromFE2D();
 
   // allocate array for node-to-cell map
-  N_P = pressure_space->GetN_DegreesOfFreedom();
-  N_Active = pressure_space->GetActiveBound();
+  int N_P = pressure_space->GetN_DegreesOfFreedom();
+  int N_Active = pressure_space->GetActiveBound();
   std::vector<int> node_to_cell(N_P, -1);
 
   // get collection and number of cells
-  coll = pressure_space->GetCollection();
-  N_Cells = coll->GetN_Cells();
+  TCollection *coll = pressure_space->GetCollection();
+  int N_Cells = coll->GetN_Cells();
 
-//   OutPut ( "set node-to-cell map" << endl );
+  // Output::print("set node-to-cell map");
   // loop over all cells
-  for ( i = 0; i < N_Cells; i++ )
+  for(int i = 0; i < N_Cells; i++)
   {
-    cell = coll->GetCell ( i );
-    DOF = GlobalNumbers + BeginIndex[i];
-    CurrentElement = pressure_space->GetFE2D ( i, cell );
+    auto cell = coll->GetCell(i);
+    const int *DOF = pressure_space->GetGlobalDOF(i);
+    FE2D CurrentElement = pressure_space->GetFE2D(i, cell);
     // # basis functions
-    N_ = N_BaseFunct[CurrentElement];
-    if ( N_ > N_MaxBaseFuncts )
+    int N_ = N_BaseFunct[CurrentElement];
+    if(N_ > N_MaxBaseFuncts)
     {
-      OutPut ( "LPS_for_pressure_Scott_Zhang: N_MaxBaseFuncts too small !! " << N_ << endl );
-      exit ( 4711 );
+      ErrThrow("LPS_for_pressure_Scott_Zhang: N_MaxBaseFuncts too small !! ",
+               N_);
     }
-    for ( j = 0; j < N_; j++ )
+    for(int j = 0; j < N_; j++)
     {
-      index = DOF[j];
-      if ( node_to_cell[index] < 0 )
+      int index = DOF[j];
+      if(node_to_cell[index] < 0)
         // assign the cell number
         node_to_cell[index] = i;
     }
   }
-// for (i=0;i<N_P;i++)
-//   OutPut("ntc " << i << " " << node_to_cell[i] << endl);
+  // for (int i = 0; i < N_P; i++)
+  //   Output::print("ntc ", i, " ", node_to_cell[i]);
 
   std::vector<int> RowPtr = C->get_row_array();
-  N_Entries = C->GetN_Entries();
-//   OutPut ( "original matrix " << N_Entries << endl )
+  // Output::print("original matrix ", C->GetN_Entries());
 
   // compute new sparsity pattern
   // allocate array for storage
   std::vector<int> EntriesPerRow(N_P * MaxN_EntriesPerRow, -1);
-  N_Entries_new = 0;
+  int N_Entries_new = 0;
 
-  for ( i = 0; i < N_Cells; i++ )
+  for(int i = 0; i < N_Cells; i++)
   {
-    cell = coll->GetCell ( i );
-    DOF = GlobalNumbers + BeginIndex[i];
-    CurrentElement = pressure_space->GetFE2D ( i, cell );
+    auto cell = coll->GetCell(i);
+    const int * DOF = pressure_space->GetGlobalDOF(i);
+    auto CurrentElement = pressure_space->GetFE2D(i, cell);
     // # basis functions
-    N_ = N_BaseFunct[CurrentElement];
+    int N_ = N_BaseFunct[CurrentElement];
     // loop over the dofs
-    for ( j = 0; j < N_; j++ )
+    for(int j = 0; j < N_; j++)
     {
-      index_j = DOF[j];
+      int index_j = DOF[j];
       // the corresponding row
-      start = index_j * MaxN_EntriesPerRow;
+      int start = index_j * MaxN_EntriesPerRow;
       // loop over all dofs of same cell
-      for ( k = 0; k < N_; k++ )
+      for(int k = 0; k < N_; k++)
       {
-        index_k = DOF[k];
+        int index_k = DOF[k];
         // check whether the index index_j*MaxN_EntriesPerRow;is already in the list
-        for ( l = start; l < start + MaxN_EntriesPerRow; l++ )
+        int l;
+        for(l = start; l < start + MaxN_EntriesPerRow; l++)
         {
-          if ( EntriesPerRow[l] == -1 )
+          if(EntriesPerRow[l] == -1)
           {
             EntriesPerRow[l] = index_k;
             N_Entries_new++;
             break;
           }
-          if ( EntriesPerRow[l] == index_k )
+          if(EntriesPerRow[l] == index_k)
             break;
         }
-        if ( l == start + MaxN_EntriesPerRow )
+        if(l == start + MaxN_EntriesPerRow)
         {
-          OutPut ( "LPS_for_pressure_Scott_Zhang: MaxN_EntriesPerRow too small !!!" << endl );
-          exit ( 4711 );
+          ErrThrow("LPS_for_pressure_Scott_Zhang: MaxN_EntriesPerRow too "
+                   "small !!!");
         }
       }
 
       // take the cell that is assigned to index_j
-      neigh_no_j = node_to_cell[index_j];
-      neigh_j = coll->GetCell ( neigh_no_j );
-      DOF_neigh_j = GlobalNumbers + BeginIndex[neigh_no_j];
-      CurrentElement_neigh_j = pressure_space->GetFE2D ( neigh_no_j, neigh_j );
-      N_neigh_j = N_BaseFunct[CurrentElement_neigh_j];
+      int neigh_no_j = node_to_cell[index_j];
+      auto neigh_j = coll->GetCell(neigh_no_j);
+      const int *DOF_neigh_j = pressure_space->GetGlobalDOF(neigh_no_j);
+      FE2D CurrentElement_neigh_j = pressure_space->GetFE2D(neigh_no_j,
+                                                            neigh_j);
+      int N_neigh_j = N_BaseFunct[CurrentElement_neigh_j];
       // loop over the neighbor dofs
       // this loop is just for safety, it should not give new entries
-      for ( jj = 0; jj < N_neigh_j; jj++ )
+      for(int jj = 0; jj < N_neigh_j; jj++)
       {
-        index_jj = DOF_neigh_j[jj];
+        int index_jj = DOF_neigh_j[jj];
         // the indices of this cell might be coupled to index_k
-        for ( k = 0; k < N_; k++ )
+        for(int k = 0; k < N_; k++)
         {
-          index_k = DOF[k];
-          start = index_k * MaxN_EntriesPerRow;
+          int index_k = DOF[k];
+          int start = index_k * MaxN_EntriesPerRow;
           // check whether the index is already in the list
-          for ( l = start; l < start + MaxN_EntriesPerRow; l++ )
+          int l;
+          for(l = start; l < start + MaxN_EntriesPerRow; l++)
           {
-            if ( EntriesPerRow[l] == -1 )
+            if(EntriesPerRow[l] == -1)
             {
               EntriesPerRow[l] = index_jj;
               N_Entries_new++;
               break;
             }
-            if ( EntriesPerRow[l] == index_jj )
+            if(EntriesPerRow[l] == index_jj)
               break;
           }
-          if ( l == start + MaxN_EntriesPerRow )
+          if(l == start + MaxN_EntriesPerRow)
           {
-            OutPut ( "LPS_for_pressure_Scott_Zhang: MaxN_EntriesPerRow too small !!!" << endl );
-            exit ( 4711 );
+            ErrThrow("LPS_for_pressure_Scott_Zhang: MaxN_EntriesPerRow too "
+                     "small !!!");
           }
 
           // now check the transposed entry
           start = index_jj * MaxN_EntriesPerRow;
           // check whether the index is already in the list
-          for ( l = start; l < start + MaxN_EntriesPerRow; l++ )
+          for(l = start; l < start + MaxN_EntriesPerRow; l++)
           {
-            if ( EntriesPerRow[l] == -1 )
+            if(EntriesPerRow[l] == -1)
             {
               EntriesPerRow[l] = index_k;
               N_Entries_new++;
               break;
             }
-            if ( EntriesPerRow[l] == index_k )
+            if(EntriesPerRow[l] == index_k)
               break;
           }
-          if ( l == start + MaxN_EntriesPerRow )
+          if(l == start + MaxN_EntriesPerRow)
           {
-            OutPut ( "LPS_for_pressure_Scott_Zhang: MaxN_EntriesPerRow too small !!!" << endl );
-            exit ( 4711 );
+            ErrThrow("LPS_for_pressure_Scott_Zhang: MaxN_EntriesPerRow too "
+                     "small !!!");
           }
         }
       } // end jj
 
-//       start =8*MaxN_EntriesPerRow;
-//       for (l=start;l<start+MaxN_EntriesPerRow;l++)
-//  OutPut(EntriesPerRow[l] << " " );
-//       OutPut(endl);
+      // start =8*MaxN_EntriesPerRow;
+      // for (int l=start;l<start+MaxN_EntriesPerRow;l++)
+      //   Output::print(EntriesPerRow[l]);
 
       // check the far connections
-      for ( k = 0; k < N_; k++ )
+      for(int k = 0; k < N_; k++)
       {
         // take the cell that is assigned to index_k
-        index_k = DOF[k];
-        neigh_no_k = node_to_cell[index_k];
-        neigh_k = coll->GetCell ( neigh_no_k );
-        DOF_neigh_k = GlobalNumbers + BeginIndex[neigh_no_k];
-        CurrentElement_neigh_k = pressure_space->GetFE2D ( neigh_no_k, neigh_k );
-        N_neigh_k = N_BaseFunct[CurrentElement_neigh_k];
+        int index_k = DOF[k];
+        int neigh_no_k = node_to_cell[index_k];
+        auto neigh_k = coll->GetCell(neigh_no_k);
+        const int *DOF_neigh_k = pressure_space->GetGlobalDOF(neigh_no_k);
+        FE2D CurrentElement_neigh_k = pressure_space->GetFE2D(neigh_no_k,
+                                                              neigh_k);
+        int N_neigh_k = N_BaseFunct[CurrentElement_neigh_k];
         // loop over the dofs assigned to index_j and index_k
-        for ( jj = 0; jj < N_neigh_j; jj++ )
+        for(int jj = 0; jj < N_neigh_j; jj++)
         {
-          index_jj = DOF_neigh_j[jj];
-          start = index_jj * MaxN_EntriesPerRow;
-          for ( kk = 0; kk < N_neigh_k; kk++ )
+          int index_jj = DOF_neigh_j[jj];
+          int start = index_jj * MaxN_EntriesPerRow;
+          for(int kk = 0; kk < N_neigh_k; kk++)
           {
-            index_kk = DOF_neigh_k[kk];
+            int index_kk = DOF_neigh_k[kk];
             // check whether the index is already in the list
-            for ( l = start; l < start + MaxN_EntriesPerRow; l++ )
+            int l;
+            for(l = start; l < start + MaxN_EntriesPerRow; l++)
             {
-              if ( EntriesPerRow[l] == -1 )
+              if(EntriesPerRow[l] == -1)
               {
                 EntriesPerRow[l] = index_kk;
                 N_Entries_new++;
                 break;
               }
-              if ( EntriesPerRow[l] == index_kk )
+              if(EntriesPerRow[l] == index_kk)
                 break;
             }
-            if ( l == start + MaxN_EntriesPerRow )
+            if(l == start + MaxN_EntriesPerRow)
             {
-              OutPut ( "LPS_for_pressure_Scott_Zhang: MaxN_EntriesPerRow too small !!!" << endl );
-              exit ( 4711 );
+              ErrThrow("LPS_for_pressure_Scott_Zhang: MaxN_EntriesPerRow too "
+                       "small !!!");
             }
           } // end kk
         } // end jj
       } // end k
     } // end j
   } // end i
-//   OutPut("modified matrix " << N_Entries_new << endl)
+  // Output::print("modified matrix ", N_Entries_new);
 
   ////////////////////////////////////////////
   // new column pointer and entry pointer
@@ -279,15 +268,15 @@ std::shared_ptr<FEMatrix> LPS_for_pressure_Scott_Zhang(
   //memset(EntriesC_new, 0.0, N_Entries_new*SizeOfDouble);
   // reset and fill the pointers
   // loop over all dofs
-  l = 0;
+  int l = 0;
   RowPtr[0] = 0;
-  for ( i = 0; i < N_P; i++ )
+  for(int i = 0; i < N_P; i++)
   {
-    start = i * MaxN_EntriesPerRow;
-    k = 0;
-    for ( j = start; j < start + MaxN_EntriesPerRow; j++ )
+    int start = i * MaxN_EntriesPerRow;
+    int k = 0;
+    for(int j = start; j < start + MaxN_EntriesPerRow; j++)
     {
-      if ( EntriesPerRow[j] > -1 )
+      if(EntriesPerRow[j] > -1)
       {
         ColInd_new[l] = EntriesPerRow[j];
         l++;
@@ -299,15 +288,13 @@ std::shared_ptr<FEMatrix> LPS_for_pressure_Scott_Zhang(
     RowPtr[i + 1] = RowPtr[i] + k;
   }
 
-// for (i=0;i<=N_P;i++)
-//    OutPut(RowPtr[i] << " ");
-//  OutPut(endl);
-//  OutPut(N_Entries_new << endl );
-//   for (i=0;i<=N_Entries_new;i++)
-//     OutPut(ColInd_new[i] << " ");
-//   OutPut(endl);
-// OutPut(l << endl);
-// define new matrix
+  // for (int i = 0; i <= N_P; i++)
+  //   Output::print(RowPtr[i] << " ");
+  // Output::print(N_Entries_new);
+  // for (int i=0;i<=N_Entries_new;i++)
+  //   Output::print(ColInd_new[i] << " ");
+  // Output::print(l);
+  // define new matrix
 
   auto sqstructureC = std::make_shared<TStructure>(N_P, N_Entries_new,
                                                    ColInd_new.data(),
@@ -315,7 +302,7 @@ std::shared_ptr<FEMatrix> LPS_for_pressure_Scott_Zhang(
   ColInd_new = sqstructureC->get_columns();
   //sqstructureC = new TSquareStructure2D(N_P, N_Entries_new, ColInd_new, RowPtr, NULL);
   auto C_new = std::make_shared<FEMatrix>(pressure_space, sqstructureC);
-  EntriesC_new = C_new->GetEntries();
+  double *EntriesC_new = C_new->GetEntries();
 
   char PString[] = "pressure";
   std::vector<double> tmp_pres(N_P, 0.);
@@ -325,19 +312,20 @@ std::shared_ptr<FEMatrix> LPS_for_pressure_Scott_Zhang(
   // compute matrix entries
   std::vector<double> FEFunctValues(MaxN_EntriesPerRow);
 
-  for ( i = 0; i < N_Cells; i++ )
+  for(int i = 0; i < N_Cells; i++)
   {
-    cell = coll->GetCell ( i );
-    h = cell->GetDiameter();
-    delta = ComputePSPGParameterLPS(h, velocity, 1, lps_ps.lps_coeff_type,
-                                    lps_ps.delta0, lps_ps.delta1);
+    auto cell = coll->GetCell(i);
+    double h = cell->GetDiameter();
+    double delta = ComputePSPGParameterLPS(h, velocity, 1,
+                                           lps_ps.lps_coeff_type, lps_ps.delta0,
+                                           lps_ps.delta1);
     //delta = compute_PSPG_delta(0.1, h, 0.001);
-    DOF = GlobalNumbers + BeginIndex[i];
-    CurrentElement = pressure_space->GetFE2D ( i, cell );
+    const int *DOF = pressure_space->GetGlobalDOF(i);
+    FE2D CurrentElement = pressure_space->GetFE2D(i, cell);
     // # basis functions
-    N_ = N_BaseFunct[CurrentElement];
+    int N_ = N_BaseFunct[CurrentElement];
     // basis functions
-    BaseFunct = BaseFuncts[CurrentElement];
+    BaseFunct2D BaseFunct = BaseFuncts[CurrentElement];
 
     bool SecondDer[1];
     SecondDer[0] = false;
@@ -345,22 +333,22 @@ std::shared_ptr<FEMatrix> LPS_for_pressure_Scott_Zhang(
     TFEDatabase2D::GetOrig(1, &CurrentElement, coll, cell, SecondDer, N_Points,
                            xi, eta, weights, X, Y, AbsDetjk);
 
-    if ( N_Points > N_MaxQuadPoints )
+    if(N_Points > N_MaxQuadPoints)
     {
-      OutPut ( "LPS_for_pressure_Scott_Zhang: N_MaxQuadPoints too small !! " << N_Points << endl );
-      exit ( 4711 );
+      ErrThrow("LPS_for_pressure_Scott_Zhang: N_MaxQuadPoints too small !! ",
+               N_Points);
     }
 
     // assign geometric positions to the dofs
     // compute vertices
-    N_Edges = cell->GetN_Edges();
-    for ( j = 0; j < N_Edges; j++ )
+    int N_Edges = cell->GetN_Edges();
+    for(int j = 0; j < N_Edges; j++)
     {
-      x[j] = cell->GetVertex ( j )->GetX();
-      y[j] = cell->GetVertex ( j )->GetY();
+      x[j] = cell->GetVertex(j)->GetX();
+      y[j] = cell->GetVertex(j)->GetY();
     }
 
-    switch ( CurrentElement )
+    switch(CurrentElement)
     {
       case C_P1_2D_T_A:
         X_dof[0] = x[0];
@@ -373,14 +361,14 @@ std::shared_ptr<FEMatrix> LPS_for_pressure_Scott_Zhang(
       case C_P2_2D_T_A:
         X_dof[0] = x[0];
         Y_dof[0] = y[0];
-        X_dof[1] = ( x[0] + x[1] ) / 2.0;
-        Y_dof[1] = ( y[0] + y[1] ) / 2.0;
+        X_dof[1] = (x[0] + x[1]) / 2.0;
+        Y_dof[1] = (y[0] + y[1]) / 2.0;
         X_dof[2] = x[1];
         Y_dof[2] = y[1];
-        X_dof[3] = ( x[0] + x[2] ) / 2.0;
-        Y_dof[3] = ( y[0] + y[2] ) / 2.0;
-        X_dof[4] = ( x[1] + x[2] ) / 2.0;
-        Y_dof[4] = ( y[1] + y[2] ) / 2.0;
+        X_dof[3] = (x[0] + x[2]) / 2.0;
+        Y_dof[3] = (y[0] + y[2]) / 2.0;
+        X_dof[4] = (x[1] + x[2]) / 2.0;
+        Y_dof[4] = (y[1] + y[2]) / 2.0;
         X_dof[5] = x[2];
         Y_dof[5] = y[2];
         break;
@@ -395,8 +383,8 @@ std::shared_ptr<FEMatrix> LPS_for_pressure_Scott_Zhang(
         Y_dof[3] = y[1];
         X_dof[4] = 2.0 * x[0] / 3.0 + x[2] / 3.0;
         Y_dof[4] = 2.0 * y[0] / 3.0 + y[2] / 3.0;
-        X_dof[5] = ( x[0] + x[1] + x[2] ) / 3.0;
-        Y_dof[5] = ( y[0] + y[1] + y[2] ) / 3.0;
+        X_dof[5] = (x[0] + x[1] + x[2]) / 3.0;
+        Y_dof[5] = (y[0] + y[1] + y[2]) / 3.0;
         X_dof[6] = 2.0 * x[1] / 3.0 + x[2] / 3.0;
         Y_dof[6] = 2.0 * y[1] / 3.0 + y[2] / 3.0;
         X_dof[7] = x[0] / 3.0 + 2.0 * x[2] / 3.0;
@@ -410,59 +398,70 @@ std::shared_ptr<FEMatrix> LPS_for_pressure_Scott_Zhang(
         ErrThrow("LPS_for_pressure_Scott_Zhang: element not implemented!");
     }
 
-    for ( l = 0; l < N_; l++ )
-      for ( j = 0; j < N_; j++ )
+    for(int l = 0; l < N_; l++)
+      for(int j = 0; j < N_; j++)
         integral_grad_grad[l][j] = integral_fct_fct[l][j] = integral_fct_gradx[l][j] = integral_fct_grady[l][j] = 0.0;
 
-    for ( l = 0; l < N_; l++ )
-      for ( j = 0; j < 3; j++ )
-        for ( k = 0; k < N_Points; k++ )
+    for(int l = 0; l < N_; l++)
+      for(int j = 0; j < 3; j++)
+        for(int k = 0; k < N_Points; k++)
           values_in_quad_points[l][j][k] = 0.0;
 
     // loop over each basis function
-    for ( j = 0; j < N_; j++ )
+    for(int j = 0; j < N_; j++)
     {
       // reset the function values
-      for ( k = 0; k < N_; k++ )
+      for(int k = 0; k < N_; k++)
         FEFunctValues[k] = 0;
       FEFunctValues[j] = 1.0;
 
       // compute values for all derivatives
       // in all quadrature points
       // in original mesh cell
-      for ( k = 0; k < 3; k++ )         // for all derivatives
+      for(int k = 0; k < 3; k++)         // for all derivatives
       {
         // get values in original cell
-        OrigFEValues = TFEDatabase2D::GetOrigElementValues ( BaseFunct, der[k] );
-        for ( jj = 0; jj < N_Points; jj++ )            // for all quadrature points
+        auto OrigFEValues = TFEDatabase2D::GetOrigElementValues(BaseFunct,
+                                                                der[k]);
+        for(int jj = 0; jj < N_Points; jj++) // for all quadrature points
         {
-          Orig = OrigFEValues[jj];                   // value in original cell
-          value = 0;
-          for ( l = 0; l < N_; l++ )                // for all basis functions
-            value += FEFunctValues[l] * Orig[l];    // accumulate value of derivative in point j
+          double * Orig = OrigFEValues[jj]; // value in original cell
+          double value = 0;
+          for(int l = 0; l < N_; l++) // for all basis functions
+            // accumulate value of derivative in point j
+            value += FEFunctValues[l] * Orig[l];
           values_in_quad_points[j][k][jj] = value;
-          //OutPut(i << " " << j <<" " << k << " " << value<<" :: ");
+          //Output::print(i, " ", j, " ", k, " ", value, " :: ");
         }  // endfor jj
-        //OutPut(endl);
       }                                             // endfor k
     }
     // values in the quad points are stored
     // compute integrals
 
     // loop over each basis function
-    for ( j = 0; j < N_; j++ ) // test fct
+    for(int j = 0; j < N_; j++) // test fct
     {
-      for ( k = 0; k < N_; k++ )
+      for(int k = 0; k < N_; k++)
       {
-        value = value_grad_grad = value_fct_gradx = value_fct_grady = 0.0;
+        double value = 0.;
+        double value_grad_grad = 0.;
+        double value_fct_gradx = 0.;
+        double value_fct_grady = 0.;
         // loop over quad points
-        for ( jj = 0; jj < N_Points; jj++ )
+        for(int jj = 0; jj < N_Points; jj++)
         {
           value += values_in_quad_points[j][0][jj] * values_in_quad_points[k][0][jj] * weights[jj] * AbsDetjk[jj];
-          value_grad_grad += ( values_in_quad_points[j][1][jj] * values_in_quad_points[k][1][jj]
-                               + values_in_quad_points[j][2][jj] * values_in_quad_points[k][2][jj] ) * weights[jj] * AbsDetjk[jj];
-          value_fct_gradx += values_in_quad_points[j][0][jj] * values_in_quad_points[k][1][jj] * weights[jj] * AbsDetjk[jj];
-          value_fct_grady += values_in_quad_points[j][0][jj] * values_in_quad_points[k][2][jj] * weights[jj] * AbsDetjk[jj];
+          value_grad_grad += (values_in_quad_points[j][1][jj]
+                                *values_in_quad_points[k][1][jj]
+                              +values_in_quad_points[j][2][jj]
+                                *values_in_quad_points[k][2][jj])
+                             * weights[jj] * AbsDetjk[jj];
+          value_fct_gradx += values_in_quad_points[j][0][jj]
+                            *values_in_quad_points[k][1][jj]
+                            *weights[jj] * AbsDetjk[jj];
+          value_fct_grady += values_in_quad_points[j][0][jj]
+                            *values_in_quad_points[k][2][jj]
+                            *weights[jj] * AbsDetjk[jj];
         }
         integral_grad_grad[j][k] += value_grad_grad;
         integral_fct_fct[j][k] += value;
@@ -471,29 +470,28 @@ std::shared_ptr<FEMatrix> LPS_for_pressure_Scott_Zhang(
       }
     }
 
-//    for (j=0;j<N_;j++)
-//     {
-//       for (k=0;k<N_;k++)
-//  OutPut(j << " " << k << " " << integral_grad_grad[j][k] << " :: ")
-//     }
-//     OutPut(endl);
+    // for (int j = 0; j < N_; j++)
+    // {
+    //   for (int k = 0; k < N_; k++)
+    //     Output::print(j, " ", k, " ", integral_grad_grad[j][k], " :: ");
+    // }
 
     // fill the matrix with standard Brezzi-Pitkaeranta term
-    for ( j = 0; j < N_; j++ ) // test fct.
+    for(int j = 0; j < N_; j++) // test fct.
     {
-      index_test = DOF[j];
+      int index_test = DOF[j];
 //      if (index_test >= N_Active)
 //  continue;
-      start = RowPtr[index_test];
-      end = RowPtr[index_test + 1];
-      for ( k = 0; k < N_; k++ )
+      int start = RowPtr[index_test];
+      int end = RowPtr[index_test + 1];
+      for(int k = 0; k < N_; k++)
       {
-        index_ansatz = DOF[k];
+        int index_ansatz = DOF[k];
 //  if (index_ansatz >=  N_Active)
 //    continue;
-        for ( l = start; l < end; l++ )
+        for(int l = start; l < end; l++)
         {
-          if ( index_ansatz == ColInd_new[l] )
+          if(index_ansatz == ColInd_new[l])
           {
             EntriesC_new[l] -= delta * integral_grad_grad[j][k];
             break;
@@ -503,43 +501,46 @@ std::shared_ptr<FEMatrix> LPS_for_pressure_Scott_Zhang(
     } //  standard Brezzi-Pitkaeranta term done
 
     // medium far entries
-    for ( j = 0; j < N_; j++ ) // this is c in Badia (2012)
+    for(int j = 0; j < N_; j++) // this is c in Badia (2012)
     {
-      index_j = DOF[j];
-//      if (index_j >= N_Active)
-//  continue;
+      int index_j = DOF[j];
+      // if(index_j >= N_Active)
+      //   continue;
       // take the cell that is assigned to index_j
-      neigh_no_j = node_to_cell[index_j];
-      neigh_j = coll->GetCell ( neigh_no_j );
-      DOF_neigh_j = GlobalNumbers + BeginIndex[neigh_no_j];
-      CurrentElement_neigh_j = pressure_space->GetFE2D ( neigh_no_j, neigh_j );
-      N_neigh_j = N_BaseFunct[CurrentElement_neigh_j];
+      int neigh_no_j = node_to_cell[index_j];
+      auto neigh_j = coll->GetCell(neigh_no_j);
+      const int *DOF_neigh_j = pressure_space->GetGlobalDOF(neigh_no_j);
+      FE2D CurrentElement_neigh_j = pressure_space->GetFE2D(neigh_no_j,
+                                                            neigh_j);
+      int N_neigh_j = N_BaseFunct[CurrentElement_neigh_j];
       // loop over the neighbor dofs
-      for ( jj = 0; jj < N_neigh_j; jj++ ) // this is a in Badia (2012)
+      for(int jj = 0; jj < N_neigh_j; jj++) // this is a in Badia (2012)
       {
-        index_jj = DOF_neigh_j[jj];
-//        if (index_jj >= N_Active)
-//    continue;
+        int index_jj = DOF_neigh_j[jj];
+        //  if(index_jj >= N_Active)
+        //    continue;
         // memset(tmp_pres,0.0,N_P*SizeOfDouble);
         // set the basis fct. in jj
         tmp_pres[index_jj] = 1.0;
-        tmp_pressure.FindGradientLocal ( neigh_j, neigh_no_j, X_dof[j], Y_dof[j], val );
+        tmp_pressure.FindGradientLocal(neigh_j, neigh_no_j, X_dof[j], Y_dof[j],
+                                       val);
         tmp_pres[index_jj] = 0.0;
 
         // the indices of this cell might be coupled to index_k
-        for ( k = 0; k < N_; k++ ) // this is d in Badia (2012)
+        for(int k = 0; k < N_; k++) // this is d in Badia (2012)
         {
-          index_k = DOF[k];
-//         if (index_k >= N_Active)
-//      continue;
-          value = delta * ( val[1] * integral_fct_gradx[j][k] + val[2] * integral_fct_grady[j][k] );
+          int index_k = DOF[k];
+          // if(index_k >= N_Active)
+          //   continue;
+          double value = delta * (val[1] * integral_fct_gradx[j][k]
+                                 +val[2] * integral_fct_grady[j][k]);
 
-          start = RowPtr[index_k];
-          end = RowPtr[index_k + 1];
+          int start = RowPtr[index_k];
+          int end = RowPtr[index_k + 1];
           // check whether the index is already in the list
-          for ( l = start; l < end; l++ )
+          for(int l = start; l < end; l++)
           {
-            if ( index_jj == ColInd_new[l] )
+            if(index_jj == ColInd_new[l])
             {
               EntriesC_new[l] += value;
               break;
@@ -549,9 +550,9 @@ std::shared_ptr<FEMatrix> LPS_for_pressure_Scott_Zhang(
           start = RowPtr[index_jj];
           end = RowPtr[index_jj + 1];
           // check whether the index is already in the list
-          for ( l = start; l < end; l++ )
+          for(int l = start; l < end; l++)
           {
-            if ( index_k == ColInd_new[l] )
+            if(index_k == ColInd_new[l])
             {
               EntriesC_new[l] += value;
               break;
@@ -562,65 +563,73 @@ std::shared_ptr<FEMatrix> LPS_for_pressure_Scott_Zhang(
     } // end j
 
     // far entries
-    for ( j = 0; j < N_; j++ ) // this is c in Badia (2012)
+    for(int j = 0; j < N_; j++) // this is c in Badia (2012)
     {
-      index_j = DOF[j];
-//    if (index_j >= N_Active)
-//      continue;
+      int index_j = DOF[j];
+      // if(index_j >= N_Active)
+      //   continue;
       // take the cell that is assigned to index_j
-      neigh_no_j = node_to_cell[index_j];
-      neigh_j = coll->GetCell ( neigh_no_j );
-      DOF_neigh_j = GlobalNumbers + BeginIndex[neigh_no_j];
-      CurrentElement_neigh_j = pressure_space->GetFE2D ( neigh_no_j, neigh_j );
-      N_neigh_j = N_BaseFunct[CurrentElement_neigh_j];
+      int neigh_no_j = node_to_cell[index_j];
+      auto neigh_j = coll->GetCell(neigh_no_j);
+      const int *DOF_neigh_j = pressure_space->GetGlobalDOF(neigh_no_j);
+      FE2D CurrentElement_neigh_j = pressure_space->GetFE2D(neigh_no_j,
+                                                            neigh_j);
+      int N_neigh_j = N_BaseFunct[CurrentElement_neigh_j];
       // loop over the neighbor dofs
-      for ( jj = 0; jj < N_neigh_j; jj++ ) // this is a in Badia (2012)
+      for(int jj = 0; jj < N_neigh_j; jj++) // this is a in Badia (2012)
       {
-        index_jj = DOF_neigh_j[jj];
-//        if (index_jj >= N_Active)
-//    continue;
+        int index_jj = DOF_neigh_j[jj];
+        // if(index_jj >= N_Active)
+        //   continue;
         //memset(tmp_pres,0.0,N_P*SizeOfDouble);
         // set the basis fct. in jj
         tmp_pres[index_jj] = 1.0;
-        tmp_pressure.FindGradientLocal ( neigh_j, neigh_no_j, X_dof[j], Y_dof[j], val );
+        tmp_pressure.FindGradientLocal(neigh_j, neigh_no_j, X_dof[j], Y_dof[j],
+                                       val);
         tmp_pres[index_jj] = 0.0;
 
         // the indices of this cell might be coupled to index_k
-        for ( k = 0; k < N_; k++ ) // this is d in Badia (2012)
+        for(int k = 0; k < N_; k++) // this is d in Badia (2012)
         {
           // take the cell that is assigned to index_k
-          index_k = DOF[k];
-//          if (index_k >= N_Active)
-//          continue;
-          neigh_no_k = node_to_cell[index_k];
-          neigh_k = coll->GetCell ( neigh_no_k );
-          DOF_neigh_k = GlobalNumbers + BeginIndex[neigh_no_k];
-          CurrentElement_neigh_k = pressure_space->GetFE2D ( neigh_no_k, neigh_k );
-          N_neigh_k = N_BaseFunct[CurrentElement_neigh_k];
+          int index_k = DOF[k];
+          // if (index_k >= N_Active)
+          // continue;
+          int neigh_no_k = node_to_cell[index_k];
+          auto neigh_k = coll->GetCell(neigh_no_k);
+          const int *DOF_neigh_k = pressure_space->GetGlobalDOF(neigh_no_k);
+          FE2D CurrentElement_neigh_k = pressure_space->GetFE2D(neigh_no_k,
+                                                                neigh_k);
+          int N_neigh_k = N_BaseFunct[CurrentElement_neigh_k];
           // loop over the neighbor dofs
-          for ( kk = 0; kk < N_neigh_k; kk++ ) // the b in Badia (2012)
+          for(int kk = 0; kk < N_neigh_k; kk++) // the b in Badia (2012)
           {
-            index_kk = DOF_neigh_k[kk];
-//            if (index_kk >= N_Active)
-//              continue;
+            int index_kk = DOF_neigh_k[kk];
+            // if(index_kk >= N_Active)
+            //   continue;
             //memset(tmp_pres,0.0,N_P*SizeOfDouble);
             //tmp_pres[index_set_in_tmp_pres] = 0.0;
             // set the basis fct. in kk
             tmp_pres[index_kk] = 1.0;
-            tmp_pressure.FindGradientLocal ( neigh_k, neigh_no_k, X_dof[k], Y_dof[k], val + 3 );
+            tmp_pressure.FindGradientLocal(neigh_k, neigh_no_k, X_dof[k],
+                                           Y_dof[k], val + 3);
             tmp_pres[index_kk] = 0.0;
             // the value to add
-            value = delta * ( val[1] * val[4] + val[2] * val[5] ) * integral_fct_fct[j][k];
-            //if ((index_j==0) && (index_k==1))
-            //{OutPut(neigh_no_j<< " " << X_dof[j] << " "  << Y_dof[j]<<  " " << neigh_no_k << " " <<  X_dof[k] << " "  << Y_dof[k] << endl);
-            //OutPut(val[1] << " " << val[2] <<  " " << val[4] <<  " " << val[5] <<  " " << integral_fct_fct[j][k] << " " << value << endl);
+            double value = delta * (val[1] * val[4] + val[2] * val[5])
+                          * integral_fct_fct[j][k];
+            //if(index_j == 0 && index_k == 1)
+            //{
+            //  Output::print(neigh_no_j, " ", X_dof[j], " ", Y_dof[j], " ",
+            //                neigh_no_k, " ", X_dof[k], " ", Y_dof[k]);
+            //  OutPut(val[1], " ", val[2], " ", val[4], " ", val[5], " ",
+            //         integral_fct_fct[j][k], " ", value);
             //}
-            start = RowPtr[index_jj];
-            end = RowPtr[index_jj + 1];
+            int start = RowPtr[index_jj];
+            int end = RowPtr[index_jj + 1];
             // check whether the index is already in the list
-            for ( l = start; l < end; l++ )
+            for(int l = start; l < end; l++)
             {
-              if ( index_kk == ColInd_new[l] )
+              if(index_kk == ColInd_new[l])
               {
                 EntriesC_new[l] -= value;
                 break;
@@ -633,42 +642,39 @@ std::shared_ptr<FEMatrix> LPS_for_pressure_Scott_Zhang(
   } // end i
 
   // correct Diriclet boundary conditions
-  if ( ( velocity ) && ( 0 ) )
+  if(velocity && (0))
   {
-    OutPut ( "dof " << N_P << " active " << N_Active << endl );
+    Output::print("dof ", N_P, " active ", N_Active);
     int *row_ptr = C_new->GetRowPtr();
-    /*for (i=0;i<N_Active;i++)
+    /*for(int i=0;i<N_Active;i++)
     {
-       start = row_ptr[i];
-       end = row_ptr[i+1];
-       for(j=start;j<end;j++)
+       int start = row_ptr[i];
+       int end = row_ptr[i+1];
+       for(int j=start;j<end;j++)
        {
-    if (ColInd_new[j] >= N_Active)
-    {
-     EntriesC_new[j] = 0.0;
-    }
+         if (ColInd_new[j] >= N_Active)
+         {
+          EntriesC_new[j] = 0.0;
+         }
        }
-
     }*/
-    for ( i = N_Active; i < N_P; i++ )
+    for(int i = N_Active; i < N_P; i++)
     {
-      start = row_ptr[i];
-      end = row_ptr[i + 1];
-      for ( j = start; j < end; j++ )
+      int start = row_ptr[i];
+      int end = row_ptr[i + 1];
+      for(int j = start; j < end; j++)
         EntriesC_new[j] = 0.0;
     }
   }
-//   OutPut ( "modified matrix " << N_Entries_new << endl )
-//   int *row_ptr = C_new->GetRowPtr();
-//   for (i=0;i<C->GetN_Rows();i++)
-//   //for (i=0;i<10;i++)
-//     {
-//        start = row_ptr[i];
-//        end = row_ptr[i+1];
-//        for(j=start;j<end;j++)
-//          Output::print(i, " ", ColInd_new[j], " ", EntriesC_new[j], " :: ");
-//     }
-//   OutPut(endl);
-
+  // Output::print("modified matrix ", N_Entries_new)
+  // int *row_ptr = C_new->GetRowPtr();
+  // for(int i=0;i<C->GetN_Rows();i++)
+  // //for(int i=0;i<10;i++)
+  // {
+  //   start = row_ptr[i];
+  //   end = row_ptr[i+1];
+  //   for(int j = start; j < end; j++)
+  //     Output::print(i, " ", ColInd_new[j], " ", EntriesC_new[j], " :: ");
+  // }
   return C_new;
 }

@@ -75,92 +75,92 @@ void ComputeVorticityDivergence(const TFESpace2D *velo, TFEFunction2D *u1, TFEFu
                       const TFESpace2D *vorticity, double *vort, double *div);
 
 // determine L2 and H1 error
-void L2H1Errors(int N_Points, double *X, double *Y, double *AbsDetjk, 
-                double *Weights, double hK, 
+void L2H1Errors(int N_Points, std::array<double*, 2> xy, double *AbsDetjk, 
+                const double *Weights, double hK, 
                 double **Der, double **Exact,
                 double **coeffs, double *LocError);
 
 // determine L2-error, divergence error and H1 error, 2D
-void L2DivH1Errors(int N_Points, double *X, double *Y, double *AbsDetjk, 
-                   double *Weights, double hK, 
+void L2DivH1Errors(int N_Points, std::array<double*, 2> xy, double *AbsDetjk, 
+                   const double *Weights, double hK, 
                    double **Der, double **Exact,
                    double **coeffs, double *LocError);
 
 // determine L1 error, 2D
-void L1Error(int N_Points, double *X, double *Y, double *AbsDetjk, 
-	     double *Weights, double hK, 
+void L1Error(int N_Points, std::array<double*, 2> xy, double *AbsDetjk, 
+	     const double *Weights, double hK, 
 	     double **Der, double **Exact,
 	     double **coeffs, double *LocError);
 
 // determine L2, H1 and SDFEM error
-void SDFEMErrors(int N_Points, double *X, double *Y, double *AbsDetjk, 
-                 double *Weights, double hK, double **Der, double **Exact,
+void SDFEMErrors(int N_Points, std::array<double*, 2> xy, double *AbsDetjk, 
+                 const double *Weights, double hK, double **Der, double **Exact,
                  double **coeffs, double *LocError);
 
 // determine L2, H1 and SDFEM error, in (0,P6)^2
 void SDFEMErrorsSmooth(int N_Points, double *X, double *Y, double *AbsDetjk, 
-                 double *Weights, double hK, double **Der, double **Exact,
+                 const double *Weights, double hK, double **Der, double **Exact,
                  double **coeffs, double *LocError);
 
 // determine L2, H1 and SDFEM error for smooth region in the
 // example JohnMaubachTobiska1997 (x-0.5)^2+(y-0.5)^2 > r^2 
 void SDFEMErrorsSmooth_JohnMaubachTobiska1997
 (int N_Points, double *X, double *Y, double *AbsDetjk, 
- double *Weights, double hK, double **Der, double **Exact,
+ const double *Weights, double hK, double **Der, double **Exact,
  double **coeffs, double *LocError);
 
 // determine errors to interpolant
 // paper with Julia Novo
  void SDFEMErrorsInterpolant(int N_Points, double *X, double *Y, double *AbsDetjk, 
-                 double *Weights, double hK, double **Der, double **Exact,
+                 const double *Weights, double hK, double **Der, double **Exact,
                  double **coeffs, double *LocError);
      
  // determine L2, H1 and SDFEM error for NSE
 void SPGErrorsOseen(int N_Points, double *X, double *Y, double *AbsDetjk, 
-                 double *Weights, double hK, double **Der, double **Exact,
+                 const double *Weights, double hK, double **Der, double **Exact,
                  double **coeffs, double *LocError);
 
 // determine L2, H1 and pressure part of SUPG error for Oseen
 void SPGErrorsOseenPressure(int N_Points, double *X, double *Y, double *AbsDetjk, 
-                 double *Weights, double hK, double **Der, double **Exact,
+                 const double *Weights, double hK, double **Der, double **Exact,
                  double **coeffs, double *LocError);
 
 // determine deformation tensor error
 void DeformationTensorError(int N_Points, double *X, double *Y, double *AbsDetjk, 
-                double *Weights, double hK, 
+                const double *Weights, double hK, 
                 double **Der, double **Exact,
                 double **coeffs, double *LocError);
 // compute the subgrid dissipation 
 void SubGridDissipation(int N_Points, double *X, double *Y, double *AbsDetjk, 
-                double *Weights, double hK, 
+                const double *Weights, double hK, 
                 double **Der, double **Exact,
                 double **coeffs, double *LocError);
 
 // determine H1 norm
 void H1Norm(int N_Points, double *X, double *Y, double *AbsDetjk, 
-            double *Weights, double hK, 
+            const double *Weights, double hK, 
             double **Der, double **Exact,
             double **coeffs, double *LocError);
 
 // compute the error in the divergence
 void DivergenceError(int N_Points, double *X, double *Y,
-		     double *AbsDetjk, double *Weights, double hK, 
+		     double *AbsDetjk, const double *Weights, double hK, 
 		     double **Der, double **Exact,
 		     double **coeffs, double *LocError);
 
 // mesh cell parameters for shock capturing scheme DC_CD
 void Parameters_DC_CD(int N_Points, double *X, double *Y, double *AbsDetjk, 
-           double *Weights, double hK, 
+           const double *Weights, double hK, 
            double **Der, double **Exact,
            double **coeffs, double *LocError);
 
 void DivergenceErrorGradDivOseen(int N_Points, double *X, double *Y,
-         double *AbsDetjk, double *Weights, double hK, 
+         double *AbsDetjk, const double *Weights, double hK, 
          double **Der, double **Exact,
          double **coeffs, double *LocError);
          
 void Parameters_Gradient_Residual(int N_Points, double *X, double *Y, double *AbsDetjk,
-           double *Weights, double hK,
+           const double *Weights, double hK,
            double **Der, double **Exact,
            double **coeffs, double *LocError);
 #endif
@@ -176,53 +176,53 @@ void ComputeVorticityDivergence(TFESpace3D *velo, TFEFunction3D *u1,
                                 double *div);
 
 // determine L2 and H1 error
-void L2H1Errors(int N_Points, double *X, double *Y, double *Z,
+void L2H1Errors(int N_Points, std::array<double*, 3> xyz,
                 double *AbsDetjk, 
-                double *Weights, double hK, 
+                const double *Weights, double hK, 
                 double **Der, double **Exact,
                 double **coeffs, double *LocError);
 void L2H1ErrorsSmooth(int N_Points, double *X, double *Y, double *Z,
                 double *AbsDetjk, 
-                double *Weights, double hK, 
+                const double *Weights, double hK, 
                 double **Der, double **Exact,
                 double **coeffs, double *LocError);
 
 // compute L2 error, L2 error of divergence, and H1 error for vector valued
 // basis functions (Raviart-Thomas or Brezzi-Douglas-Marini)
-void L2DivH1Errors(int N_Points, double *X, double *Y, double *Z, 
-                   double *AbsDetjk, double *Weights, double hK, double **Der,
+void L2DivH1Errors(int N_Points, std::array<double*, 3> xyz,
+                   double *AbsDetjk, const double *Weights, double hK, double **Der,
                    double **Exact, double **coeffs, double *LocError);
 
 // determine L1 error
-void L1Error(int N_Points, double *X, double *Y,  double *Z, double *AbsDetjk, 
-	     double *Weights, double hK, 
+void L1Error(int N_Points, std::array<double*, 3> xyz, double *AbsDetjk, 
+	     const double *Weights, double hK, 
 	     double **Der, double **Exact,
 	     double **coeffs, double *LocError);
 
 // determine deformation tensor error
 void DeformationTensorError(int N_Points, double *X, double *Y, double *Z, 
                             double *AbsDetjk, 
-                            double *Weights, double hK, 
+                            const double *Weights, double hK, 
                             double **Der, double **Exact,
                             double **coeffs, double *LocError);
 // compute the subgrid dissipation 
 void SubGridDissipation(int N_Points, double *X, double *Y, double *Z, 
                         double *AbsDetjk, 
-                        double *Weights, double hK, 
+                        const double *Weights, double hK, 
                         double **Der, double **Exact,
                         double **coeffs, double *LocError);
 
 
 // compute the error in the divergence
 void DivergenceError(int N_Points, double *X, double *Y, double *Z,
-		     double *AbsDetjk, double *Weights, double hK, 
+		     double *AbsDetjk, const double *Weights, double hK, 
 		     double **Der, double **Exact,
 		     double **coeffs, double *LocError);
 
 // mesh cell parameters for shock capturing scheme DC_CD
 void Parameters_DC_CD(int N_Points, double *X, double *Y, double *Z,
                       double *AbsDetjk, 
-                      double *Weights, double hK, 
+                      const double *Weights, double hK, 
                       double **Der, double **Exact,
                       double **coeffs, double *LocError);
 
@@ -249,7 +249,6 @@ void LInfU(int N_Points, double **Coeffs, double **Params,
 
 void ExactNull(double x, double y, double z, double *values);
 void ExactNull(double x, double y, double *values);
-int ComputeNewTimeStep(double err); 
 void BoundConditionNoBoundCondition(int BdComp, double t, BoundCond &cond);
 void BoundConditionNoBoundCondition(double x, double y, double z, BoundCond &cond);
 void BoundaryValueNoBoundaryValue(int BdComp, double Param, double &value);

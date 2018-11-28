@@ -53,16 +53,15 @@ class TBdWall : public TBoundComp3D
                             double &T, double &S) const override;
 
     /** read parameter from input file */
-    virtual int ReadIn(std::istream &dat);
+    virtual int ReadIn(std::istream &dat) override;
 
     virtual void get_normal_vector(double x, double y, double z,
 				   double& nx, double& ny, double &nz) const override{
-      Output::print(" ** ERROR: get_normal_vector() not yet implemented for BdWall ");
-      exit(1);
+      ErrThrow(" ** ERROR: get_normal_vector() not yet implemented for BdWall ");
     };
     
     /** return BdComp2D */
-    TBoundComp2D* GetBdComp2D()
+    TBoundComp2D* GetBdComp2D() const
     { return BdComp2D; }
 };
 

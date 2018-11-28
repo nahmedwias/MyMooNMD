@@ -1541,7 +1541,7 @@ void BoundaryAssembling2D::get_quadrature_formula_data(std::vector<double> &P,
   TQuadFormula1D *qf1 = TFEDatabase2D::GetQuadFormula1D(LineQuadFormula);
 
   int nQuadPoints;
-  double *quadWeights, *quadPoints;
+  const double *quadWeights, *quadPoints;
   qf1->GetFormulaData(nQuadPoints, quadWeights, quadPoints);
   P.resize(nQuadPoints);
   W.resize(nQuadPoints);

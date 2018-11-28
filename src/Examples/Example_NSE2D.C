@@ -1,6 +1,5 @@
 #include <Example_NSE2D.h>
-#include <NSE2D.h>
-
+#include "NavierStokes.h"
 #include <Database.h>
 #include <Example_NSE2D.h>
 #include <FEDatabase2D.h>
@@ -315,7 +314,7 @@ Example_NSE2D::Example_NSE2D(std::vector<DoubleFunct2D *> exact,
 }
 
 
-void Example_NSE2D::do_post_processing(NSE2D& nse2d) const
+void Example_NSE2D::do_post_processing(NavierStokes<2 >& nse2d) const
 {
   if(post_processing_stat)
   {

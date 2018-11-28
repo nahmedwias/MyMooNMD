@@ -7653,7 +7653,7 @@ void TimeNS_VMS_SmallRhs3D(double Mult, double *coeff,
 // used for : GALERKIN
 //            COLETTI (non linear steps)
 // ========================================================================
-void TimeNSParamsVelo3D(double *in, double *out)
+void TimeNSParamsVelo3D(const double *in, double *out)
 {
   out[0] = in[3]; // u1old
   out[1] = in[4]; // u2old
@@ -7664,7 +7664,7 @@ void TimeNSParamsVelo3D(double *in, double *out)
 // parameters: u1old, u2old,
 // used for : COLETTI, Smagorinsky
 // ========================================================================
-void TimeNSParamsVelo_GradVelo3D(double *in, double *out)
+void TimeNSParamsVelo_GradVelo3D(const double *in, double *out)
 {
   out[0] = in[3]; // u1old
   out[1] = in[4]; // u2old
@@ -7708,7 +7708,7 @@ void TimeNSParamsGradVelo3D(double *in, double *out)
 // all partial derivatives
 // convolution of u1old, u2old, u3old
 // ========================================================================
-void TimeNSParamsVelo_GradVelo_ConvVelo3D(double *in, double *out)
+void TimeNSParamsVelo_GradVelo_ConvVelo3D(const double *in, double *out)
 {
   out[0] = in[3]; // u1old
   out[1] = in[4]; // u2old
@@ -7841,7 +7841,7 @@ void TimeNSParamsGL00AuxProblemNuT4_3D(double *in, double *out)
 // ========================================================================
 // used for VMS, assembling of rhs for small scale equation 
 // ========================================================================
-void TimeNSParams_VMS_SmallRhs3D(double *in, double *out)
+void TimeNSParams_VMS_SmallRhs3D(const double *in, double *out)
 {
   // large scales
   out[0] = in[3]; // u1old
@@ -7879,7 +7879,7 @@ void TimeNSParams_VMS_SmallRhs3D(double *in, double *out)
 // parameters: u1old, u2old, G^H
 // used for : projection-based VMS
 // ========================================================================
-void TimeNSParamsVelo_GradVelo_LargeScale3D(double *in, double *out)
+void TimeNSParamsVelo_GradVelo_LargeScale3D(const double *in, double *out)
 {
   out[0] = in[3]; // u1old
   out[1] = in[4]; // u2old

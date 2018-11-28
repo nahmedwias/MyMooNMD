@@ -63,7 +63,7 @@ double Mesh_size_in_convection_direction_without_storing<2>(
     for (i=0;i<3;i++)
     {
       // value of gradient basis fct. in bary centre is a constant
-      den += fabs(convection[0]*b[3*i+1] + convection[1]*b[3*i+2]);
+      den += std::abs(convection[0]*b[3*i+1] + convection[1]*b[3*i+2]);
     }
     // return the mesh size in convection direction
     if (den<1e-10)
@@ -108,7 +108,7 @@ double Mesh_size_in_convection_direction_without_storing<2>(
       // value of gradient basis fct. in bary centre
       val = convection[0]*(b[4*i+1] + b[4*i+3] * sy);
       val += convection[1]*(b[4*i+2] + b[4*i+3] * sx);
-      den += fabs(val);
+      den += std::abs(val);
     }
     // return the mesh size in convection direction
     if (den<1e-10)
@@ -281,7 +281,7 @@ double Compute_SDFEM_delta(double hK, double eps,
   double theta1 = TDatabase::TimeDB->THETA1;
   int i;
   
-  if (fabs(eps)<1e-20)
+  if(std::abs(eps)<1e-20)
     eps = 1e-20;
 
   // compute cell diameter in convection direction
@@ -603,12 +603,12 @@ double Compute_SOLD_sigma(double hK, double eps,
       b2_orth = value * u_y/ norm_der_u2;
       b3_orth = value * u_z/ norm_der_u2;
       // ||b_orth||_\infty
-      if (fabs(b2_orth)< fabs (b1_orth))
-        linfb_orth = fabs(b1_orth);
+      if (std::abs(b2_orth)< std::abs (b1_orth))
+        linfb_orth = std::abs(b1_orth);
       else
-        linfb_orth = fabs(b2_orth);
-      if (linfb_orth < fabs(b3_orth))
-        linfb_orth = fabs(b3_orth);
+        linfb_orth = std::abs(b2_orth);
+      if (linfb_orth < std::abs(b3_orth))
+        linfb_orth = std::abs(b3_orth);
       // \tau(\b_orth)
 #ifdef __2D__
       value = Compute_SDFEM_delta<2>(hK, eps, {{b1_orth, b2_orth}}, c, linfb_orth);
@@ -705,12 +705,12 @@ double Compute_SOLD_sigma(double hK, double eps,
         z2 *= theta1*time_step;
         z3 *= theta1*time_step;
       }
-      if (fabs(z2)< fabs (z1))
-        linfz = fabs(z1);
+      if (std::abs(z2)< std::abs (z1))
+        linfz = std::abs(z1);
       else
-        linfz = fabs(z2);
-      if (linfz < fabs(z3))
-        linfz = fabs(z3);
+        linfz = std::abs(z2);
+      if (linfz < std::abs(z3))
+        linfz = std::abs(z3);
 #ifdef __2D__
       value = Compute_SDFEM_delta<2>(hK, eps, {{z1, z2}}, c, linfz);
 #endif
@@ -769,12 +769,12 @@ double Compute_SOLD_sigma(double hK, double eps,
         z2 *= theta1*time_step;
         z3 *= theta1*time_step;
       }
-      if (fabs(z2)< fabs (z1))
-        linfz = fabs(z1);
+      if (std::abs(z2)< std::abs (z1))
+        linfz = std::abs(z1);
       else
-        linfz = fabs(z2);
-      if (linfz < fabs(z3))
-        linfz = fabs(z3);
+        linfz = std::abs(z2);
+      if (linfz < std::abs(z3))
+        linfz = std::abs(z3);
 #ifdef __2D__
       value = Compute_SDFEM_delta<2>(hK, eps, {{z1, z2}}, c, linfz);
 #endif
@@ -804,7 +804,7 @@ double Compute_SOLD_sigma(double hK, double eps,
 #ifdef __3D__
       hK_project = Mesh_size_in_convection_direction<3>(hK, b);
 #endif
-      beta = pow(hK_project,1-alpha*alpha);
+      beta = std::pow(hK_project,1-alpha*alpha);
       if (beta > 1)
         beta = 1;
 
@@ -812,31 +812,31 @@ double Compute_SOLD_sigma(double hK, double eps,
       if (gamma > beta)
         gamma = beta;
 
-      if (alpha > fabs (res))
+      if (alpha > std::abs (res))
         value = alpha;
       else
-        value = fabs(res);
-      lambda = pow(value,3+alpha/2+alpha*alpha);
+        value = std::abs(res);
+      lambda = std::pow(value,3+alpha/2+alpha*alpha);
       if (0.25+alpha>0.5)
         value = 0.25+alpha;
       else
         value = 0.5;
-      lambda /= pow(gamma, value);
+      lambda /= std::pow(gamma, value);
       if (lambda >= 1)
       {
         rho = 1;
       }
 
       value = (1-lambda)/(1+lambda);
-      kappa = pow(fabs(2-lambda),value);
+      kappa = std::pow(std::abs(2-lambda),value);
       kappa -= 1;
 
-      value = pow(gamma,2-alpha*alpha);
+      value = std::pow(gamma,2-alpha*alpha);
       omega = alpha*alpha * value/deltaK;
 
       if ((alpha < 1) && (lambda < 1))
       {
-        rho = pow(omega*sigma,kappa);
+        rho = std::pow(omega*sigma,kappa);
       }
       sigma *= rho;
       sigma *= res*res/norm_der_u2;
@@ -901,7 +901,7 @@ double Compute_SOLD_sigma(double hK, double eps,
         sigma = 0;
         break;
       }
-      sigma *= hK * fabs(res)/(2*sqrt(norm_der_u2));
+      sigma *= hK * std::abs(res)/(2*sqrt(norm_der_u2));
       break;
 
     case KLR02_1:                                 // Knopp, Lube, Rapin (2002)
@@ -934,7 +934,7 @@ double Compute_SOLD_sigma(double hK, double eps,
         sigma = 0;
         break;
       }
-      sigma =  TDatabase::ParamDB->SOLD_CONST * hK *fabs(res)/(2*sqrt(norm_der_u2)) - eps;
+      sigma =  TDatabase::ParamDB->SOLD_CONST * hK *std::abs(res)/(2*sqrt(norm_der_u2)) - eps;
       if (sigma<0)
         sigma = 0;
       break;
@@ -946,7 +946,7 @@ double Compute_SOLD_sigma(double hK, double eps,
         sigma = 0;
         break;
       }
-      sigma =  TDatabase::ParamDB->SOLD_CONST * hK *fabs(res)/(2*(TDatabase::ParamDB->SOLD_S +
+      sigma =  TDatabase::ParamDB->SOLD_CONST * hK *std::abs(res)/(2*(TDatabase::ParamDB->SOLD_S +
         sqrt(norm_der_u2))) - eps;
       if (sigma<0)
         sigma = 0;
@@ -962,7 +962,7 @@ double Compute_SOLD_sigma(double hK, double eps,
         break;
       }
       // Q = res/|b|
-      alpha = fabs(res) / value;
+      alpha = std::abs(res) / value;
       // C - (2 eps)/(h Q)
       sigma = TDatabase::ParamDB->SOLD_CONST - 2*eps/(alpha*hK);
       if (sigma < 0)
@@ -976,7 +976,7 @@ double Compute_SOLD_sigma(double hK, double eps,
     case J90:                                     // Johnson (1990)
       alpha = TDatabase::ParamDB->SOLD_CONST;
       kappa = TDatabase::ParamDB->SOLD_POWER;
-      sigma = alpha * pow(hK,kappa)*fabs(res)-eps;
+      sigma = alpha * std::pow(hK,kappa)*std::abs(res)-eps;
       if (sigma < 0)
         sigma = 0;
       break;
@@ -984,9 +984,9 @@ double Compute_SOLD_sigma(double hK, double eps,
     case BE02_1:                                  // Burman, Ern 2002
       alpha = Pi/6;
       res = res*tanh(res/2.0);
-      value = sqrt(norm_b2)*sqrt(norm_der_u2)+fabs(res);
+      value = sqrt(norm_b2)*sqrt(norm_der_u2)+std::abs(res);
       if (value > 0)
-        sigma = deltaK * norm_b2*fabs(res)/value;
+        sigma = deltaK * norm_b2*std::abs(res)/value;
       else
       {
         sigma = 0;
@@ -1003,7 +1003,7 @@ double Compute_SOLD_sigma(double hK, double eps,
         sigma = 0;
         break;
       }
-      value = fabs(res)+tan(alpha)*sqrt(norm_b2)*sqrt(z1*z1+z2*z2+z3*z3);
+      value = std::abs(res)+tan(alpha)*sqrt(norm_b2)*sqrt(z1*z1+z2*z2+z3*z3);
       if (value > 0)
         sigma *= (sqrt(norm_b2)*sqrt(norm_der_u2) + value)/value;
       else
@@ -1013,9 +1013,9 @@ double Compute_SOLD_sigma(double hK, double eps,
       break;
 
     case BE02_2:                                  // modified Burman, Ern 2002
-      value = sqrt(norm_b2)*sqrt(norm_der_u2)+fabs(res);
+      value = sqrt(norm_b2)*sqrt(norm_der_u2)+std::abs(res);
       if (value > 0)
-        sigma = deltaK * norm_b2*fabs(res)/value;
+        sigma = deltaK * norm_b2*std::abs(res)/value;
       else
         sigma = 0;
       break;
@@ -1036,13 +1036,13 @@ double Compute_SOLD_sigma(double hK, double eps,
       }
       value = sqrt(res*res + tan(alpha)*tan(alpha)*norm_b2 * (z1*z1+z2*z2+z3*z3));
       if (value > 0)
-        sigma = deltaK * norm_b2*fabs(res)/value;
+        sigma = deltaK * norm_b2*std::abs(res)/value;
       else
         sigma = 0;
       break;
 
     case Y_Z_BETA:                                // Tezduyar
-      y = fabs(TDatabase::ParamDB->SOLD_U0);
+      y = std::abs(TDatabase::ParamDB->SOLD_U0);
       beta = TDatabase::ParamDB->SOLD_POWER;
       if (y==0)
       {
@@ -1054,16 +1054,16 @@ double Compute_SOLD_sigma(double hK, double eps,
         sigma = 0;
         break;
       }
-      z = fabs(res)/y;
+      z = std::abs(res)/y;
       norm_der_u2 /= (y*y);
-      norm_der_u2 = pow(norm_der_u2,beta/2.0-1);
+      norm_der_u2 = std::pow(norm_der_u2,beta/2.0-1);
 #ifdef __2D__
       hK_project = Mesh_size_in_convection_direction_without_storing<2>(hK, {{u_x, u_y}})/2.0;
 #endif
 #ifdef __3D__
       hK_project = Mesh_size_in_convection_direction_without_storing<3>(hK, {{u_x, u_y, u_z}})/2.0;
 #endif
-      sigma = TDatabase::ParamDB->SOLD_CONST * z * norm_der_u2 * pow(hK_project,beta);
+      sigma = TDatabase::ParamDB->SOLD_CONST * z * norm_der_u2 * std::pow(hK_project,beta);
       //OutPut(sigma << " ");
       break;
 
@@ -1092,7 +1092,7 @@ double Compute_SOLD_sigma(double hK, double eps,
     case GENERAL_SOLD:
       // TDatabase::ParamDB->SOLD_CONST is the eta from the SOLD2-paper
       if (norm_der_u2>0)
-        sigma = TDatabase::ParamDB->SOLD_CONST*hK*fabs(res)/(2*sqrt(norm_der_u2));
+        sigma = TDatabase::ParamDB->SOLD_CONST*hK*std::abs(res)/(2*sqrt(norm_der_u2));
       else
         sigma = 0.0;
       break;
@@ -1329,7 +1329,7 @@ void EdgeStabilization(TFESpace2D *fespace, TFEFunction2D *u,
   TCollection *coll;
   FE2D CurrentElement;
   TJoint *joint;
-  TRefDesc *refdesc;
+  const TRefDesc *refdesc;
   TVertex *ver0,*ver1;
   const int *TmpEdVer;
 
@@ -1481,7 +1481,7 @@ void EdgeStabilization(TFESpace2D *fespace, TFEFunction2D *u,
           val_neigh[0] = val_neigh[1] = val_neigh[2] = 0;
         }
         jump = (n1 * val[1] + n2 * val[2]) - (n1 * val_neigh[1] + n2 * val_neigh[2]);
-        jump = fabs(jump);
+        jump = std::abs(jump);
         if (jump > maxjump)
           maxjump = jump;
       }
@@ -1569,7 +1569,7 @@ void EdgeStabilization(TFESpace2D *fespace, TFEFunction2D *u,
           //OutPut("conv " << fac1 << " " << h << endl);
           fac1 *= h*h;
           // reaction term
-          fac2 = rho * fabs(coeff[3]);
+          fac2 = rho * std::abs(coeff[3]);
           if (time_dependent)
           {
             fac2 *= time_step[0];
@@ -1655,7 +1655,7 @@ void EdgeStabilization(TFESpace2D *fespace, TFEFunction2D *u,
               - time_step[3] * coeff[4];
           }
 
-          fac1 = TDatabase::ParamDB->SOLD_CONST * fabs(fac1)/6.0;
+          fac1 = TDatabase::ParamDB->SOLD_CONST * std::abs(fac1)/6.0;
           break;
         default :
           OutPut("Edge stabilization " << sold_parameter_type
@@ -1774,7 +1774,7 @@ double ComputeAlpha(double hK) // copy from TCD2D.C
   double alpha;
   
   alpha = TDatabase::ParamDB->ARTIFICIAL_VISCOSITY_CONSTANT*
-     pow(hK, TDatabase::ParamDB->ARTIFICIAL_VISCOSITY_POWER);
+     std::pow(hK, TDatabase::ParamDB->ARTIFICIAL_VISCOSITY_POWER);
   return(alpha);
 
   // this is just for the response to the referee and the special example 
@@ -2129,3 +2129,69 @@ void BilinearAssemble_GLS<3>(double Mult, double *coeff, double* param,
   }
 }
 
+template<int d>
+void conv_diff_l2_h1_linf_error(int N_Points, std::array<double*, d> xyz,
+                                double *AbsDetjk, const double *Weights,
+                                double hK, double **Der, double **Exact,
+                                double **coeffs, double *LocError)
+{
+  LocError[0] = 0.0;
+  LocError[1] = 0.0;
+  LocError[2] = 0.0;
+  LocError[3] = 0.0;
+  for(int i=0;i<N_Points;i++)
+  {
+    double nu = coeffs[i][0];
+    std::array<double, d> convection;
+    for(int j = 0; j < d; ++j)
+      convection[j] = coeffs[i][1+j];
+    double c = coeffs[i][d+1];
+    double b_norm = std::max(std::abs(convection[0]), std::abs(convection[1]));
+    if(d == 3)
+      b_norm = std::max(b_norm, std::abs(convection[2]));
+    // SUPG parameter
+    double delta = Compute_SDFEM_delta<d>(hK, nu, convection, c, b_norm);
+    
+    double * deriv = Der[i];
+    double * exactval = Exact[i];
+    double w = Weights[i]*AbsDetjk[i];
+
+    // error in solution
+    double e0 = deriv[0]-exactval[0];
+    // for l2 norm
+    LocError[0] += w*e0*e0;
+    // for l_inf norm
+    if(std::abs(e0) > LocError[3])
+      LocError[3] = std::abs(e0);
+    
+    // error in x-derivative of solution
+    double e1 = deriv[1]-exactval[1];
+    LocError[1] += w*e1*e1;
+    // error in y-derivative of solution
+    double e2 = deriv[2]-exactval[2];
+    LocError[1] += w*e2*e2;
+    // error in z-derivative of solution
+    double e3 = d == 2 ? 0. : (deriv[3] - exactval[3]);
+    LocError[1] += w*e3*e3;
+    
+    // sd error
+    // THIS IS ONLY CORRECT IF DIV(b) = 0
+    double e4 = convection[0]*e1 + convection[1]*e2;
+    if(d == 3)
+      e4 += convection[2]*e3;
+    LocError[2] += w*(nu*(e1*e1 + e2*e2 + e3*e3) + c*e0*e0 + delta*e4*e4);
+  } // endfor i
+}
+
+#ifdef __2D__
+template void conv_diff_l2_h1_linf_error<2>(
+  int N_Points, std::array<double*, 2> xyz, double *AbsDetjk,
+  const double *Weights, double hK, double **Der, double **Exact,
+  double **coeffs, double *LocError);
+#endif // 2D
+#ifdef __3D__
+template void conv_diff_l2_h1_linf_error<3>(
+  int N_Points, std::array<double*, 3> xyz, double *AbsDetjk,
+  const double *Weights, double hK, double **Der, double **Exact,
+  double **coeffs, double *LocError);
+#endif // 3D

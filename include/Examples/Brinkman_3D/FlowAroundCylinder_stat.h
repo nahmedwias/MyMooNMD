@@ -162,7 +162,7 @@ void get_cdrag_clift(TFEFunction3D *u1fct, TFEFunction3D *u2fct,
 {
   int i,j,k,l, N_;
   int N_Points,N_Faces,comp;
-  double *weights, *xi, *eta, *zeta;
+  const double *weights, *xi, *eta, *zeta;
   double X[MaxN_QuadPoints_3D];
   double Y[MaxN_QuadPoints_3D];
   double Z[MaxN_QuadPoints_3D];

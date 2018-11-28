@@ -240,11 +240,6 @@ void SolveMultipleSystemsNew(double *a, double *b, int N_Eqn,
 void SolveMultipleSystemsLapack(double *a, double *b, int N_Eqn,
                        int LDA, int LDB, int N_Rhs);
 
-/** matrix * vector for coupled Stokes / Navier-Stokes system */
-void CoupledMatVectMortar(TSquareMatrix *A, TMatrix *B1, TMatrix *B2,
-        TMatrix *B1T, TMatrix *B2T, TMatrix *matrix_mortar, 
-        double *x, double *y);
-
 /** calculate the eigenvalue of the system using Lapack routines*/
 void FindEigenValues(double *ap, int N_Eqn, char &COMPZ, double *d, double *z);
 

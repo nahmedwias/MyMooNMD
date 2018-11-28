@@ -54,11 +54,7 @@ ParameterDatabase get_default_Brinkman3D_parameters()
 Brinkman3D::System_per_grid::System_per_grid (const Example_Brinkman3D& example,
                                               TCollection& coll,
                                               std::pair<int,int> velocity_pressure_orders,
-                                              Brinkman3D::Matrix type
-#ifdef _MPI
-, int maxSubDomainPerDof
-#endif
-)
+                                              Brinkman3D::Matrix type)
 : velocity_space(&coll, "u", "Brinkman3D velocity", example.get_bc(0), //bd cond at 0 is x velo bc
                  velocity_pressure_orders.first),
   pressure_space(&coll, "p", "Brinkman3D pressure", example.get_bc(3), //bd condition at 3 is pressure bc
@@ -94,10 +90,6 @@ Brinkman3D::System_per_grid::System_per_grid (const Example_Brinkman3D& example,
       solution.length(3));
 
 #ifdef _MPI
-    
-    velocity_space.initialize_parallel(maxSubDomainPerDof);
-    pressure_space.initialize_parallel(maxSubDomainPerDof);
-    
     //print some information
     velocity_space.get_communicator().print_info();
     pressure_space.get_communicator().print_info();
@@ -155,12 +147,7 @@ void Brinkman3D::output_problem_size_info() const
 Brinkman3D::Brinkman3D(const TDomain & domain,
                        const ParameterDatabase& param_db,
                        const Example_Brinkman3D& e,
-                       
-#ifdef _MPI
-                       int maxSubDomainPerDof,
-#endif
-int reference_id
-)
+                       int reference_id)
 : systems(), example(e), brinkman3d_db(get_default_Brinkman3D_parameters()),
 solver(param_db), defect(), initial_residual(1e10), norms_of_old_residuals(),
 errors(), outputWriter(param_db)
@@ -197,37 +184,16 @@ errors(), outputWriter(param_db)
     switch(TDatabase::ParamDB->NSTYPE)
     {
         case 4:
-#ifdef _MPI
-            this->systems.emplace_back(e,
-                                       *coll,
-                                       velocity_pressure_orders,
-                                       Brinkman3D::Matrix::Type4,
-                                       maxSubDomainPerDof);
-           
-#else
             this->systems.emplace_back(e,
                                        *coll,
                                        velocity_pressure_orders,
                                        Brinkman3D::Matrix::Type4);
-#endif
             break;
         case 14:
-#ifdef _MPI
-            
-            
-            this->systems.emplace_back(e,
-                                       *coll,
-                                       velocity_pressure_orders,
-                                       Brinkman3D::Matrix::Type14,
-                                       maxSubDomainPerDof);
-            
-      
-#else
             this->systems.emplace_back(e,
                                        *coll,
                                        velocity_pressure_orders,
                                        Brinkman3D::Matrix::Type14);
-#endif
             break;
     }
     
@@ -244,10 +210,7 @@ errors(), outputWriter(param_db)
 Brinkman3D::Brinkman3D(std::list<TCollection* > collections,
                        const ParameterDatabase& param_db,
                        const Example_Brinkman3D& e,
-#ifdef _MPI
-                        int maxSubDomainPerDoF,
-#endif
-                        int reference_id
+                       int reference_id
                        )
 : systems(), example(e), brinkman3d_db(get_default_Brinkman3D_parameters()),
 solver(param_db), defect(), initial_residual(1e10), norms_of_old_residuals(),
@@ -278,32 +241,16 @@ errors(), outputWriter(param_db)
     switch(TDatabase::ParamDB->NSTYPE)
     {
         case 4:
-#ifdef _MPI
-            this->systems.emplace_back(example,
-                                       *coll,
-                                       velocity_pressure_orders,
-                                       Brinkman3D::Matrix::Type4,
-                                       maxSubDomainPerDoF);
-#else
             this->systems.emplace_back(example,
                                        *coll,
                                        velocity_pressure_orders,
                                        Brinkman3D::Matrix::Type4);
-#endif
             break;
         case 14:
-#ifdef _MPI
-            this->systems.emplace_back(example,
-                                       *coll,
-                                       velocity_pressure_orders,
-                                       Brinkman3D::Matrix::Type14,
-                                       maxSubDomainPerDoF);
-#else
             this->systems.emplace_back(example,
                                        *coll,
                                        velocity_pressure_orders,
                                        Brinkman3D::Matrix::Type14);
-#endif
     }
     
     output_problem_size_info();

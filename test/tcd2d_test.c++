@@ -4,9 +4,11 @@
 #include <Domain.h>
 #include <Database.h>
 #include <FEDatabase2D.h>
-#include <Time_CD2D.h>
+#include "TimeConvectionDiffusion.h"
 #include <TimeDiscRout.h>
+#include <TimeDiscretizations.h>
 #include <MainUtilities.h>
+#include <ConvDiff.h>
 #include <AuxParam2D.h>
 #include <list>
 
@@ -16,63 +18,67 @@ void testBE()
   
 }
 
-void testCN(Time_CD2D &tcd, int m)
+void testCN(TimeConvectionDiffusion<2> &tcd, int m)
 {
   double errors[5];
-  errors[0]=errors[1]=errors[2]=errors[3]=0.;
+  errors[0]=errors[1]=errors[2]=errors[3]=errors[4]=0.;
   TAuxParam2D aux;
   MultiIndex2D AllDerivatives[3] = {D00, D10, D01};
   const TFEFunction2D& function = tcd.get_function();
+  tcd.output();
+  
   const TFESpace2D* space = function.GetFESpace2D();
   
   function.GetErrors(tcd.get_example().get_exact(0), 3, AllDerivatives, 4,
-                       SDFEMErrors, tcd.get_example().get_coeffs(), &aux, 1,
-                       &space, errors);
+                     conv_diff_l2_h1_linf_error<2>,
+                     tcd.get_example().get_coeffs(), &aux, 1, &space, errors);
+  if(m==1){cout << errors[0] << "  "<<
+  errors[1]<< "  " <<endl;}
   double eps = 1E-6;
   if(m==0)
-  {
+  {cout << "M: " << m << endl;
     if( fabs(errors[0] - 3.360188e-03) > eps )
       ErrThrow("test Crank-Nicolson: L2 norm not correct. ", errors[0]);
     if( fabs(errors[1] - 2.521492e-01) > eps )
       ErrThrow("test Crank-Nicolson: H1 norm not correct.");
   }
   else if(m==1)
-  {
+  {cout << "M: " << m << endl;
     if( fabs(errors[0] - 1.541462e-03) > eps )
       ErrThrow("test Crank-Nicolson: L2 norm not correct.");
     if( fabs(errors[1] - 2.647214e-01) > eps )
       ErrThrow("test Crank-Nicolson: H1 norm not correct.");
   }
   else if(m==2)
-  {
+  {cout << "M: " << m << endl;
     if( fabs(errors[0] - 2.207736e-03) > eps )
       ErrThrow("test Crank-Nicolson: L2 norm not correct.");
     if( fabs(errors[1] - 2.782276e-01) > eps )
       ErrThrow("test Crank-Nicolson: H1 norm not correct.");
   }
   else if(m==3)
-  {
+  {cout << "M: " << m << endl;
     if( fabs(errors[0] - 2.116156e-03) > eps )
       ErrThrow("test Crank-Nicolson: L2 norm not correct.");
     if( fabs(errors[1] - 2.924973e-01) > eps )
       ErrThrow("test Crank-Nicolson: H1 norm not correct.");
   } 
   else if(m==18)
-  {
+  {cout << "M: " << m << endl;
     if( fabs(errors[0] - 4.577653e-03) > eps )
       ErrThrow("test Crank-Nicolson: L2 norm not correct.");
     if( fabs(errors[1] - 6.192082e-01) > eps )
       ErrThrow("test Crank-Nicolson: H1 norm not correct.");
   }
   else if(m==19)
-  {
+  {cout << "M: " << m << endl;
     if( fabs(errors[0] - 4.812381e-03) > eps )
       ErrThrow("test Crank-Nicolson: L2 norm not correct.");
     if( fabs(errors[1] - 6.509557e-01) > eps )
       ErrThrow("test Crank-Nicolson: H1 norm not correct.");
   }
   else if(m==20)
-  {
+  {cout << "M: " << m << endl;
     if( fabs(errors[0] - 5.059094e-03) > eps )
       ErrThrow("test Crank-Nicolson: L2 norm not correct.");
     if( fabs(errors[1] - 6.843309e-01) > eps )
@@ -80,43 +86,36 @@ void testCN(Time_CD2D &tcd, int m)
   }
 }
 
-void time_integration(int td, Time_CD2D& tcd)
+void time_integration(int td, TimeConvectionDiffusion<2>& tcd, TimeDiscretization& tss)
 {
   TDatabase::TimeDB->TIME_DISC = td;
-  
-  TDatabase::TimeDB->CURRENTTIME = TDatabase::TimeDB->STARTTIME;
-  
+    
   tcd.assemble_initial_time();
   
-  int step=0;
-  testCN(tcd, step);
-  
-  while(TDatabase::TimeDB->CURRENTTIME < 
-    TDatabase::TimeDB->ENDTIME-1e-10)
+  tss.current_step_=0;
+  testCN(tcd, tss.current_step_);
+
+  while(tss.current_time_ < tss.get_end_time()-1e-10)
   {
-    step ++;
+    tss.current_step_++;
     TDatabase::TimeDB->INTERNAL_STARTTIME 
-       = TDatabase::TimeDB->CURRENTTIME;
+       = tss.current_time_;
+    tss.set_time_disc_parameters();
     SetTimeDiscParameters(1);
     
-    double tau = TDatabase::TimeDB->TIMESTEPLENGTH;
-    TDatabase::TimeDB->CURRENTTIME += tau;
+    tss.current_time_ += tss.get_step_length();;
+    TDatabase::TimeDB->CURRENTTIME += tss.get_step_length();
     
-    Output::print<1>("\nCURRENT TIME: ", 
-		     TDatabase::TimeDB->CURRENTTIME);
+    Output::print<1>("\nCURRENT TIME: ", tss.current_time_);
     tcd.assemble();
     tcd.solve();
-    
-    tcd.descale_stiffness(tau, TDatabase::TimeDB->THETA1);
-
-    testCN(tcd, step);
+    testCN(tcd, tss.current_step_);
   }
   
 }
 
 int main(int argc, char* argv[])
 {
-  
   // test with Crank Nicolson euler 
   {
     TDatabase Database;
@@ -124,28 +123,34 @@ int main(int argc, char* argv[])
     ParameterDatabase db = ParameterDatabase::parmoon_default_database();
     db.merge(Example2D::default_example_database());
     db.merge(LocalAssembling2D::default_local_assembling_database());
+    db.merge(TimeDiscretization::default_TimeDiscretization_database());
     db["example"] = 0;
     db["reynolds_number"] = 1;
 
     db["space_discretization_type"] = "galerkin";
+    db["time_discretization"] = "crank_nicolson";
+    db["time_step_length"] = 0.05;
     TDatabase::ParamDB->ANSATZ_ORDER=1;
     
-    TDatabase::TimeDB->STARTTIME=0;
-    TDatabase::TimeDB->ENDTIME=1;
+    db["time_end"]=1.;
     TDatabase::TimeDB->TIMESTEPLENGTH = 0.05;
     //  declaration of databases
     db.add("boundary_file", "Default_UnitSquare", "");
     db.add("geo_file", "UnitSquare", "", {"UnitSquare", "TwoTriangles"});
+    db.add("refinement_n_initial_steps", (size_t) 5,"");
     TDomain domain(db);
     SetTimeDiscParameters(0);
-    // some parameters
-       
-    for(int i=0; i< 5; ++i)
-    domain.RegRefineAll();
+    // refine grid
+    domain.refine_and_get_hierarchy_of_collections(db);
     
     db.add("solver_type", "direct", "", {"direct", "petsc"});
-    Time_CD2D tcd(domain, db);
-    time_integration(2, tcd);
+    TDatabase::TimeDB->CURRENTTIME = db["time_start"];
+    TimeConvectionDiffusion<2> tcd(domain, db);
+    TimeDiscretization& tss = tcd.get_time_stepping_scheme();
+    tss.current_step_ = 0;
+    tss.current_time_ = db["time_start"];
+    
+    time_integration(2, tcd, tss);
     
     // I don't know what has changed but with setting the default parameters in
     // the old database here, it does not work.
@@ -155,8 +160,13 @@ int main(int argc, char* argv[])
     
     Output::print("\n\nTesting PETSc\n");
     db["solver_type"] = "petsc";
-    Time_CD2D tcd_petsc(domain, db);
-    time_integration(2, tcd_petsc);
+    TDatabase::TimeDB->CURRENTTIME = db["time_start"];
+    TimeConvectionDiffusion<2> tcd_petsc(domain, db);
+    TimeDiscretization& tss_petsc = tcd_petsc.get_time_stepping_scheme();
+    tss_petsc.current_time_ = db["time_start"];
+    tss_petsc.current_step_ = 0;
+    tss_petsc.set_time_disc_parameters();
+    time_integration(2, tcd_petsc, tss_petsc);
   }
   return 0;
 }
