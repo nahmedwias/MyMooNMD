@@ -68,6 +68,10 @@ class NavierStokes
      */
     void assemble_linear_terms();
 
+    /** @brief Assemble terms on boundary edges (2D) or faces (3D).
+     */
+    void assemble_boundary_terms();
+
     /** @brief Assemble the nonlinear term. Need not be used when this is
      * a Stokes or Brinkman problem. Call this once per nonlinear iteration if
      * this is a Navier-Stokes problem.

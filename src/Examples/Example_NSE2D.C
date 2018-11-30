@@ -295,6 +295,10 @@ problem_coefficients = brinkman_radial_flow_with_hole::LinCoeffs;
 // Set dimensionless viscosity
 brinkman_radial_flow_with_hole::effective_viscosity = get_effective_viscosity();
 brinkman_radial_flow_with_hole::sigma = get_inverse_permeability();
+
+// boundary conditions
+ brinkman_radial_flow_with_hole::neumann_id = get_neumann_id();
+ brinkman_radial_flow_with_hole::nitsche_id = get_nitsche_id();
 brinkman_radial_flow_with_hole::ExampleFile();
 break;
 
@@ -351,11 +355,23 @@ double Example_NSE2D::get_inverse_permeability() const
 
 std::vector<size_t> Example_NSE2D::get_neumann_id() const
 {
-  return this->example_database["neumann_id"];
+  std::vector<size_t> empty_vector;
+  int n_neumann_bd = this->example_database["n_neumann_bd"];
+  if (n_neumann_bd){
+    return this->example_database["neumann_id"];
+  } else {
+    return empty_vector;
+  }
 }
 
 
 std::vector<size_t> Example_NSE2D::get_nitsche_id() const
 {
-  return this->example_database["nitsche_id"];
+  std::vector<size_t> empty_vector;
+  int n_nitsche_bd = this->example_database["n_nitsche_bd"];
+  if (n_nitsche_bd){
+    return this->example_database["nitsche_id"];
+  } else {
+    return empty_vector;
+  }
 }
