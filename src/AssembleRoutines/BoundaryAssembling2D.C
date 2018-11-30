@@ -488,18 +488,22 @@ void BoundaryAssembling2D::matrix_u_n_v_n(BlockFEMatrix &M,
 }
 // ToDo: implement the rhs of this term
 
+
 //===============================================================================
-void BoundaryAssembling2D::matrix_cornerjump_u_n_cornerjump_v_n(BlockFEMatrix &M,
-								const TFESpace2D *U_Space,
-								std::vector<size_t> nitsche_id,
-								double mult)
+void BoundaryAssembling2D::matrix_and_rhs_corner_stabilization(BlockFEMatrix &M,
+        BlockVector &rhs,
+        const TFESpace2D *U_Space,
+        BoundValueFunct2D *given_boundary_data1,
+        BoundValueFunct2D *given_boundary_data2,
+        std::vector<size_t> nitsche_id,
+        double mult)
 { 
-  
+
   std::vector<TBoundEdge*> boundaryEdgeList;
   TCollection *coll = U_Space->GetCollection();
   coll->get_boundary_edge_list(boundaryEdgeList);
-  matrix_cornerjump_u_n_cornerjump_v_n(M, U_Space,  boundaryEdgeList, nitsche_id, mult);
-  
+  matrix_and_rhs_corner_stabilization(M,rhs, U_Space, given_boundary_data1, given_boundary_data2, boundaryEdgeList, nitsche_id, mult);
+
 }
 
 /**
@@ -509,11 +513,14 @@ void BoundaryAssembling2D::matrix_cornerjump_u_n_cornerjump_v_n(BlockFEMatrix &M
  * for A11, A12, A21, A22
  **/
 
-void BoundaryAssembling2D::matrix_cornerjump_u_n_cornerjump_v_n(BlockFEMatrix &M,
-								const TFESpace2D *U_Space,
-								std::vector<TBoundEdge*> &boundaryEdgeList,
-								std::vector<size_t> nitsche_id,
-								double mult)
+void BoundaryAssembling2D::matrix_and_rhs_corner_stabilization(BlockFEMatrix &M,
+        BlockVector &rhs,
+        const TFESpace2D *U_Space,
+        BoundValueFunct2D *given_boundary_data1,
+        BoundValueFunct2D *given_boundary_data2,
+        std::vector<TBoundEdge*> &boundaryEdgeList,
+        std::vector<size_t> nitsche_id,
+        double mult)
 {
   int *BeginIndex = U_Space->GetBeginIndex();
   int *GlobalNumbers = U_Space->GetGlobalNumbers();
@@ -531,61 +538,48 @@ void BoundaryAssembling2D::matrix_cornerjump_u_n_cornerjump_v_n(BlockFEMatrix &M
     TBoundEdge *boundedge_1 = boundaryEdgeList[m];
 
     // Check if boundary edge is on boundary components of Nitsche type
-    for (int km = 0; km < nitsche_id.size(); km++)           
+    for (int km = 0; km < nitsche_id.size(); km++)
     {
       if (boundedge_1->GetBoundComp()->GetID() == nitsche_id[km])
       {
         TBoundEdge *boundedge_2;
 
         for (size_t k = m+1; k < boundaryEdgeList.size(); k++)
-        { 
-          boundedge_2 = boundaryEdgeList[k]; 
+        {
+          boundedge_2 = boundaryEdgeList[k];
 
-          for (int kl = 0; kl < nitsche_id.size(); kl++)           
+          for (int kl = 0; kl < nitsche_id.size(); kl++)
           {
             // Check if boundary edge is on boundary components of Nitsche type
             if (boundedge_2->GetBoundComp()->GetID() == nitsche_id[kl])
             {
 
-	      // get normals
-	      double n1_E1, n1_E2, n2_E1, n2_E2;
-	      boundedge_1->get_normal(n1_E1, n1_E2);
+              // get normals
+              double n1_E1, n1_E2, n2_E1, n2_E2;
+              boundedge_1->get_normal(n1_E1, n1_E2);
               boundedge_2->get_normal(n2_E1, n2_E2);
-	      double abs_n1_cdot_n2 = fabs(n1_E1 * n2_E1 + n1_E2 * n2_E2);
-	      
+              double abs_n1_cdot_n2 = fabs(n1_E1 * n2_E1 + n1_E2 * n2_E2);
+
               if ( fabs( abs_n1_cdot_n2-1.)>1e-12 )  // a.b=|a||b|cos(alpha)
               {
-		// edges are not parallel
+                // edges are not parallel
 
                 // get coordinates of relevant (Nitsche) corners xc,yc
                 double x0_E1, y0_E1, x1_E1, y1_E1, x0_E2, y0_E2, x1_E2, y1_E2;
                 boundedge_1->get_vertices(x0_E1, y0_E1, x1_E1, y1_E1);
                 boundedge_2->get_vertices(x0_E2, y0_E2, x1_E2, y1_E2);
 
-		/*Output::print(" Edge1 = (", x0_E1, ", ", y0_E1, ") -- (",
-			      x1_E1, ", ", y1_E1 ,")");
-		Output::print(" Edge2 = (", x0_E2, ", ", y0_E2, ") -- (",
-			      x1_E2, ", ", y1_E2,")");
-		*/	      
                 //Check if the edges E1 and E2 share a vertex
                 std::vector<double> xc, yc;
-                if ( ( (fabs(x0_E1-x0_E2)<=1e-12) & (fabs(y0_E1-y0_E2)<=1e-12)) ||
-		     ( (fabs(x0_E1-x1_E2)<=1e-12) & (fabs(y0_E1-y1_E2)<=1e-12) )) 
-		  //               if ( ( (x0_E1 == x0_E2) & (y0_E1 == y0_E2)) || (( x0_E1 == x1_E2) & (y0_E1 == y1_E2) ) ) 
+                if ( ( (fabs(x0_E1-x0_E2)<=1e-12) & (fabs(y0_E1-y0_E2)<=1e-12) ) ||
+                        ( (fabs(x0_E1-x1_E2)<=1e-12) & (fabs(y0_E1-y1_E2)<=1e-12) ) )
                 {
                   xc.push_back(x0_E1);
                   yc.push_back(y0_E1);
-                  //Output::print("HIER!!!!!!");
-                  //Output::print("lenght xc: ", xc.size());
-                  Output::print("(xc,yc)= ", xc[0], ", ", yc[0]);
-                  Output::print("Detected a pair of corner edges.");
-                  //Output::print("num boundary edges: ", boundaryEdgeList.size());
-                  //Output::print("OK, (m,k) = ", m ,",",k);
+                  Output::print("Detected a pair of corner edges with corner (xc,yc) = (", xc[0], ", ", yc[0],").");
 
                   int locdof_corner_1, locdof_corner_2;
                   find_cornerDofs_in_boundarycells(xc, yc, U_Space, boundedge_1, boundedge_2, locdof_corner_1, locdof_corner_2);
-
-                  //Output::print("locdof_corner_1, locdof_corner_2: ", locdof_corner_1, locdof_corner_2);
 
                   // mapping from local(cell) DOF to global DOF
                   TBaseCell *cell_1 = boundedge_1->GetNeighbour(0);
@@ -593,7 +587,6 @@ void BoundaryAssembling2D::matrix_cornerjump_u_n_cornerjump_v_n(BlockFEMatrix &M
                   int test_DOF = DOF[locdof_corner_1];
                   int ansatz_DOF = test_DOF;
 
-                  //Output::print("test_Dof: ", test_DOF);
                   //see the note about blocks at the beginning of the function)
                   // In each corner point, there is exactly one basis function which is nonzero at (xc,yc).
                   // In fact it has the value (1,1) in (xc,yc).
@@ -601,25 +594,41 @@ void BoundaryAssembling2D::matrix_cornerjump_u_n_cornerjump_v_n(BlockFEMatrix &M
                   blocks[1]->add( test_DOF, ansatz_DOF, mult * (n2_E1 - n2_E2) * (n1_E1 - n1_E2) ); // A12
                   blocks[3]->add( test_DOF, ansatz_DOF, mult * (n1_E1 - n1_E2) * (n2_E1 - n2_E2) ); // A21
                   blocks[4]->add( test_DOF, ansatz_DOF, mult * (n2_E1 - n2_E2) * (n2_E1 - n2_E2)  ); // (0,1)^T * (n_E1-n_E2) --> A22
-                  Output::print("Here, something was added due to corner stabilization.");
+
+                  double value1= 0.0, value2= 0.0, T = 0.0;
+                  if (given_boundary_data1 != nullptr)
+                  {
+                    boundedge_1->GetBoundComp()->GetTofXY(xc[0], yc[0], T);
+                    given_boundary_data1(boundedge_1->GetBoundComp()->GetID(), T, value1);
+                  }
+                  else
+                  {
+                    value1 = 1;
+                  }
+
+                  if (given_boundary_data2 != nullptr)
+                  {
+                    boundedge_1->GetBoundComp()->GetTofXY(xc[0], yc[0], T);
+                    given_boundary_data2(boundedge_1->GetBoundComp()->GetID(), T, value2);
+                  }
+                  else
+                  {
+                    value2 = 1;
+                  }
+
+                  // add to both velocity components of the rhs
+                  rhs.block(0)[test_DOF] += mult * ( value1*(n1_E1 - n1_E2) + value2* (n2_E1 - n2_E2) ) * (n1_E1 - n1_E2);
+                  rhs.block(1)[test_DOF] += mult * ( value1*(n1_E1 - n1_E2) + value2* (n2_E1 - n2_E2) ) * (n2_E1 - n2_E2);
                 }
                 else if ( ( (fabs(x1_E1-x1_E2)<=1e-12) & (fabs(y1_E1-y1_E2)<=1e-12)) ||
-		     ( (fabs(x1_E1-x0_E2)<=1e-12) & (fabs(y1_E1-y0_E2)<=1e-12) ))
-		  //if ( ( (x1_E1 == x1_E2) & (y1_E1 == y1_E2)) || (( x1_E1 == x0_E2) & (y1_E1 == y0_E2) ) )
+                        ( (fabs(x1_E1-x0_E2)<=1e-12) & (fabs(y1_E1-y0_E2)<=1e-12) ))
                 {
                   xc.push_back(x1_E1);
                   yc.push_back(y1_E1);
-                  //Output::print("HIER!!!!!!");
-                  //Output::print("lenght xc: ", xc.size());
-                  Output::print("(xc,yc)= ", xc[0], ", ", yc[0]);
-                  Output::print("Detected a pair of corner edges.");
-                  //Output::print("num boundary edges: ", boundaryEdgeList.size());
-                  //Output::print("OK, (m,k) = ", m ,",",k);
+                  Output::print<5>("Detected a pair of corner edges with corner (xc,yc) = (", xc[0], ", ", yc[0],")");
 
                   int locdof_corner_1, locdof_corner_2;
                   find_cornerDofs_in_boundarycells(xc, yc, U_Space, boundedge_1, boundedge_2, locdof_corner_1, locdof_corner_2);
-
-                  //Output::print("locdof_corner_1, locdof_corner_2: ", locdof_corner_1, locdof_corner_2);
 
                   // mapping from local(cell) DOF to global DOF
                   TBaseCell *cell_1 = boundedge_1->GetNeighbour(0);
@@ -627,7 +636,6 @@ void BoundaryAssembling2D::matrix_cornerjump_u_n_cornerjump_v_n(BlockFEMatrix &M
                   int test_DOF = DOF[locdof_corner_1];
                   int ansatz_DOF = test_DOF;
 
-                  //Output::print("test_Dof: ", test_DOF);
                   //see the note about blocks at the beginning of the function)
                   // In each corner point, there is exactly one basis function which is nonzero at (xc,yc).
                   // In fact it has the value (1,1) in (xc,yc).
@@ -635,12 +643,37 @@ void BoundaryAssembling2D::matrix_cornerjump_u_n_cornerjump_v_n(BlockFEMatrix &M
                   blocks[1]->add( test_DOF, ansatz_DOF, mult * (n2_E1 - n2_E2) * (n1_E1 - n1_E2) ); // A12
                   blocks[3]->add( test_DOF, ansatz_DOF, mult * (n1_E1 - n1_E2) * (n2_E1 - n2_E2) ); // A21
                   blocks[4]->add( test_DOF, ansatz_DOF, mult * (n2_E1 - n2_E2) * (n2_E1 - n2_E2) ); // (0,1)^T * (n_E1-n_E2) --> A22
-                  Output::print("Here, something was added due to corner stabilization.");
+
+                  double value1 = 0.0, value2 = 0.0, T = 0.0;
+
+                  if (given_boundary_data1 != nullptr)
+                  {
+                    boundedge_1->GetBoundComp()->GetTofXY(xc[0], yc[0], T);
+                    given_boundary_data1(boundedge_1->GetBoundComp()->GetID(), T, value1);
+                  }
+                  else
+                  {
+                    value1 = 1;
+                  }
+
+                  if (given_boundary_data2 != nullptr)
+                  {
+                    boundedge_1->GetBoundComp()->GetTofXY(xc[0], yc[0], T);
+                    given_boundary_data2(boundedge_1->GetBoundComp()->GetID(), T, value2);
+                  }
+                  else
+                  {
+                    value2 = 1;
+                  }
+
+                  // add to both velocity components of the rhs
+                  rhs.block(0)[test_DOF] += mult * ( value1*(n1_E1 - n1_E2) + value2*(n2_E1 - n2_E2) ) * (n1_E1 - n1_E2);
+                  rhs.block(1)[test_DOF] += mult * ( value1*(n1_E1 - n1_E2) + value2*(n2_E1 - n2_E2) ) * (n2_E1 - n2_E2);
                 }
                 else
-                { 
-                  //Output::print("x0_E1, y0_E1, x1_E1, y1_E1: ", x0_E1 ,",", y0_E1,",", x1_E1,",", y1_E1);
-                  //Output::print("x0_E2, y0_E2, x1_E2, y1_E2: ", x0_E2 ,",", y0_E2,",", x1_E2,",", y1_E2);
+                {
+                  //Output::print<5>("x0_E1, y0_E1, x1_E1, y1_E1: ", x0_E1 ,",", y0_E1,",", x1_E1,",", y1_E1);
+                  //Output::print<5>("x0_E2, y0_E2, x1_E2, y1_E2: ", x0_E2 ,",", y0_E2,",", x1_E2,",", y1_E2);
                 }
               }
             }
@@ -650,6 +683,7 @@ void BoundaryAssembling2D::matrix_cornerjump_u_n_cornerjump_v_n(BlockFEMatrix &M
     }
   }
 }
+
 
 //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 void BoundaryAssembling2D::find_cornerDofs_in_boundarycells(std::vector<double> xc, std::vector<double> yc, 

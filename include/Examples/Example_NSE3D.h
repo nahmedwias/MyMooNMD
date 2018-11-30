@@ -46,6 +46,9 @@ class Example_NSE3D : public Example3D
     /// Return kinematic viscosity, if set.
     double get_nu() const;
   
+    /// Return effective viscosity, if set.
+    double get_effective_viscosity() const;
+
     /// Return permeability, if set.
     double get_inverse_permeability() const;
 
