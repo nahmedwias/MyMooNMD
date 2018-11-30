@@ -1212,6 +1212,8 @@ void NavierStokes<d>::assemble_boundary_terms()
 
   for(System_per_grid& s : this->systems)
   {
+
+#ifdef __2D__
     if (n_neumann_bd)
     {
       // Neumann BC
@@ -1223,18 +1225,36 @@ void NavierStokes<d>::assemble_boundary_terms()
         Output::print<1>(" Neumann BC on boundary: ", neumann_id[k]);
         const FESpace* v_space = s.velocity_space.get();
 
-#ifdef __2D__
         BoundaryAssembling2D::rhs_g_v_n(s.rhs, v_space,
                 nullptr,neumann_id[k],
                 -1.*neumann_value[k]);
-//#else
-//        BoundaryAssembling3D::rhs_g_v_n(s.rhs, v_space,
-//                nullptr,neumann_id[k],
-//                -1.*neumann_value[k]);
-#endif
       }
     }
+#else
+    TCollection* coll = s.velocity_space.get()->GetCollection();
+    BoundaryAssembling3D ba;
+    if (n_neumann_bd)
+    {
+      // Neumann BC
+      std::vector<TBoundFace*> boundaryFaceList;
+      boundaryFaceList.clear();
+      std::vector<size_t> neumann_id = e_db["neumann_id"];
+      std::vector<double> neumann_value = e_db["neumann_value"];
 
+      std::vector<TBaseCell*> dummy;
+      for (int k = 0; k < neumann_id.size(); k++)
+      {
+        Output::print<1>(" Neumann BC on boundary: ", neumann_id[k]);
+        coll->get_face_list_on_component(neumann_id[k], boundaryFaceList);
+        const TFESpace3D * v_space = s.velocity_space.get();
+        ba.rhs_g_v_n(s.rhs, v_space, nullptr, boundaryFaceList,
+                (int) neumann_id[k], -1.*neumann_value[k]);
+        //ba.rhs_g_v_n(s.rhs_, v_space, nullptr, dummy, (int) neumann_id[k], -1.*neumann_value[k]);
+      }
+    }
+#endif
+
+#ifdef __2D__
     if (n_nitsche_bd)
     {
       // Nitsche penalty for weak essential BC
@@ -1250,23 +1270,14 @@ void NavierStokes<d>::assemble_boundary_terms()
         int sym_u = e_db["symmetric_nitsche_u"];
         int sym_p = e_db["symmetric_nitsche_p"];
 
-#ifdef __2D__
         BoundaryAssembling2D::nitsche_bc(s.matrix, s.rhs,
                 v_space, p_space,
                 this->example.get_bd(0), this->example.get_bd(1),
                 nitsche_id[k], nitsche_penalty[k], effective_viscosity,
                 sym_u, sym_p);
-// TODO: get code from old BoundaryAssembling3D
-//#else
-//        BoundaryAssembling3D::nitsche_bc(s.matrix, s.rhs,
-//                v_space, p_space,
-//                this->example.get_bd(0), this->example.get_bd(1), this->example.get_bd(2)
-//                nitsche_id[k], nitsche_penalty[k], effective_viscosity,
-//                sym_u, sym_p);
-#endif
+
       }
 
-#ifdef __2D__
       double corner_stab = e_db["corner_stab"];
       if (corner_stab)
       {
@@ -1282,10 +1293,49 @@ void NavierStokes<d>::assemble_boundary_terms()
                 nitsche_id,
                 corner_stab);
       }
-#endif
     }
+#else
+    if (n_nitsche_bd)
+    {
+      // Nitsche penalty for weak essential BC
+      std::vector<TBoundFace*> boundaryFaceList;
+      boundaryFaceList.clear();
+      std::vector<size_t> nitsche_id = e_db["nitsche_id"];
+      std::vector<double> nitsche_penalty = e_db["nitsche_penalty"];
+
+      for (int k = 0; k < nitsche_id.size(); k++)
+      {
+        Output::print<1>(" Nitsche BC on boundary: ", nitsche_id[k]);
+        coll->get_face_list_on_component(nitsche_id[k], boundaryFaceList);
+        Output::print<5>("boundaryFaceList.size(): ", boundaryFaceList.size() );
+        const TFESpace3D * v_space = s.velocity_space.get();
+        const TFESpace3D * p_space = s.pressure_space.get();
+
+        double effective_viscosity = this->example.get_nu();
+        int sym_u = e_db["symmetric_nitsche_u"];
+        int sym_p = e_db["symmetric_nitsche_p"];
+
+        Output::print<5>("this->example_.get_bd(0): ", this->example.get_bd()[0]);
+        Output::print<5>("this->example_.get_bd(1): ", this->example.get_bd(1));
+        Output::print<5>("this->example_.get_bd(2): ", this->example.get_bd(2));
+
+        Output::print<5>("nitsche_id[k]: ", nitsche_id[k]);
+        Output::print<5>("nitsche_penalty[k]: ", nitsche_penalty[k]);
+        Output::print<5>("effective_viscosity: ", effective_viscosity);
+        Output::print<5>("sym_u: ", sym_u);
+        Output::print<5>("sym_p: ", sym_p);
+
+        ba.nitsche_bc(s.matrix, s.rhs, v_space, p_space,
+                nullptr, nullptr, nullptr,
+                boundaryFaceList,
+                nitsche_id[k], nitsche_penalty[k], effective_viscosity,
+                sym_u, sym_p);
+      }
+    }
+#endif
   }
 }
+
 
 
 /* ************************************************************************* */
