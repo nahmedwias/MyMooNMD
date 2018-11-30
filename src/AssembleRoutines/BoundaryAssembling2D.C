@@ -490,23 +490,16 @@ void BoundaryAssembling2D::matrix_u_n_v_n(BlockFEMatrix &M,
 
 //===============================================================================
 void BoundaryAssembling2D::matrix_cornerjump_u_n_cornerjump_v_n(BlockFEMatrix &M,
-    const TFESpace2D *U_Space,
-    //int boundary_component_id,
-    int nBoundaryParts,
-    double mult)
+								const TFESpace2D *U_Space,
+								std::vector<size_t> nitsche_id,
+								double mult)
 { 
-  //Check if there is only one connected boundary (i.e., e.g., no holes)
-  if (nBoundaryParts != 1)
-  {
-    Output::print("WARNING BoundaryAssembling2D::matrix_cornerjump_u_n_cornerjump_v_n() is defined for one single Boundary Part only. In your example you have ", nBoundaryParts , " many boundary parts. Note that nBoundaryParts refers to the number of connected boundary paths. ");
-  }
-  else
-  { 
-    std::vector<TBoundEdge*> boundaryEdgeList;
-    TCollection *coll = U_Space->GetCollection();
-    coll->get_boundary_edge_list(boundaryEdgeList);
-    matrix_cornerjump_u_n_cornerjump_v_n(M, U_Space, boundaryEdgeList, mult);
-  }
+  
+  std::vector<TBoundEdge*> boundaryEdgeList;
+  TCollection *coll = U_Space->GetCollection();
+  coll->get_boundary_edge_list(boundaryEdgeList);
+  matrix_cornerjump_u_n_cornerjump_v_n(M, U_Space,  boundaryEdgeList, nitsche_id, mult);
+  
 }
 
 /**
@@ -517,9 +510,10 @@ void BoundaryAssembling2D::matrix_cornerjump_u_n_cornerjump_v_n(BlockFEMatrix &M
  **/
 
 void BoundaryAssembling2D::matrix_cornerjump_u_n_cornerjump_v_n(BlockFEMatrix &M,
-    const TFESpace2D *U_Space,
-    std::vector<TBoundEdge*> &boundaryEdgeList,
-    double mult)
+								const TFESpace2D *U_Space,
+								std::vector<TBoundEdge*> &boundaryEdgeList,
+								std::vector<size_t> nitsche_id,
+								double mult)
 {
   int *BeginIndex = U_Space->GetBeginIndex();
   int *GlobalNumbers = U_Space->GetGlobalNumbers();
@@ -537,42 +531,54 @@ void BoundaryAssembling2D::matrix_cornerjump_u_n_cornerjump_v_n(BlockFEMatrix &M
     TBoundEdge *boundedge_1 = boundaryEdgeList[m];
 
     // Check if boundary edge is on boundary components of Nitsche type
-    for (int km = 0; km < TDatabase::ParamDB->n_nitsche_boundary; km++)           
+    for (int km = 0; km < nitsche_id.size(); km++)           
     {
-      if (boundedge_1->GetBoundComp()->GetID() == TDatabase::ParamDB->nitsche_boundary_id[km])
+      if (boundedge_1->GetBoundComp()->GetID() == nitsche_id[km])
       {
         TBoundEdge *boundedge_2;
-        double n1_E1, n1_E2, n2_E1, n2_E2;
-        boundedge_1->get_normal(n1_E1, n1_E2);
 
         for (size_t k = m+1; k < boundaryEdgeList.size(); k++)
         { 
           boundedge_2 = boundaryEdgeList[k]; 
 
-          for (int kl = 0; kl < TDatabase::ParamDB->n_nitsche_boundary; kl++)           
+          for (int kl = 0; kl < nitsche_id.size(); kl++)           
           {
             // Check if boundary edge is on boundary components of Nitsche type
-            if (boundedge_2->GetBoundComp()->GetID() == TDatabase::ParamDB->nitsche_boundary_id[kl])
+            if (boundedge_2->GetBoundComp()->GetID() == nitsche_id[kl])
             {
-              boundedge_2->get_normal(n2_E1, n2_E2);
 
-              if ( fabs(n1_E1 * n2_E1 + n1_E2 * n2_E2) != 1 )  // a.b=|a||b|cos(alpha)
+	      // get normals
+	      double n1_E1, n1_E2, n2_E1, n2_E2;
+	      boundedge_1->get_normal(n1_E1, n1_E2);
+              boundedge_2->get_normal(n2_E1, n2_E2);
+	      double abs_n1_cdot_n2 = fabs(n1_E1 * n2_E1 + n1_E2 * n2_E2);
+	      
+              if ( fabs( abs_n1_cdot_n2-1.)>1e-12 )  // a.b=|a||b|cos(alpha)
               {
+		// edges are not parallel
+
                 // get coordinates of relevant (Nitsche) corners xc,yc
                 double x0_E1, y0_E1, x1_E1, y1_E1, x0_E2, y0_E2, x1_E2, y1_E2;
                 boundedge_1->get_vertices(x0_E1, y0_E1, x1_E1, y1_E1);
                 boundedge_2->get_vertices(x0_E2, y0_E2, x1_E2, y1_E2);
 
+		/*Output::print(" Edge1 = (", x0_E1, ", ", y0_E1, ") -- (",
+			      x1_E1, ", ", y1_E1 ,")");
+		Output::print(" Edge2 = (", x0_E2, ", ", y0_E2, ") -- (",
+			      x1_E2, ", ", y1_E2,")");
+		*/	      
                 //Check if the edges E1 and E2 share a vertex
                 std::vector<double> xc, yc;
-                if ( ( (x0_E1 == x0_E2) & (y0_E1 == y0_E2)) || (( x0_E1 == x1_E2) & (y0_E1 == y1_E2) ) ) 
+                if ( ( (fabs(x0_E1-x0_E2)<=1e-12) & (fabs(y0_E1-y0_E2)<=1e-12)) ||
+		     ( (fabs(x0_E1-x1_E2)<=1e-12) & (fabs(y0_E1-y1_E2)<=1e-12) )) 
+		  //               if ( ( (x0_E1 == x0_E2) & (y0_E1 == y0_E2)) || (( x0_E1 == x1_E2) & (y0_E1 == y1_E2) ) ) 
                 {
                   xc.push_back(x0_E1);
                   yc.push_back(y0_E1);
                   //Output::print("HIER!!!!!!");
                   //Output::print("lenght xc: ", xc.size());
-                  //Output::print("(xc,yc)= ", xc[0], ", ", yc[0]);
-                  //Output::print("Detected a pair of corner edges.");
+                  Output::print("(xc,yc)= ", xc[0], ", ", yc[0]);
+                  Output::print("Detected a pair of corner edges.");
                   //Output::print("num boundary edges: ", boundaryEdgeList.size());
                   //Output::print("OK, (m,k) = ", m ,",",k);
 
@@ -597,14 +603,16 @@ void BoundaryAssembling2D::matrix_cornerjump_u_n_cornerjump_v_n(BlockFEMatrix &M
                   blocks[4]->add( test_DOF, ansatz_DOF, mult * (n2_E1 - n2_E2) * (n2_E1 - n2_E2)  ); // (0,1)^T * (n_E1-n_E2) --> A22
                   Output::print("Here, something was added due to corner stabilization.");
                 }
-                else if ( ( (x1_E1 == x1_E2) & (y1_E1 == y1_E2)) || (( x1_E1 == x0_E2) & (y1_E1 == y0_E2) ) )
+                else if ( ( (fabs(x1_E1-x1_E2)<=1e-12) & (fabs(y1_E1-y1_E2)<=1e-12)) ||
+		     ( (fabs(x1_E1-x0_E2)<=1e-12) & (fabs(y1_E1-y0_E2)<=1e-12) ))
+		  //if ( ( (x1_E1 == x1_E2) & (y1_E1 == y1_E2)) || (( x1_E1 == x0_E2) & (y1_E1 == y0_E2) ) )
                 {
                   xc.push_back(x1_E1);
                   yc.push_back(y1_E1);
                   //Output::print("HIER!!!!!!");
                   //Output::print("lenght xc: ", xc.size());
-                  //Output::print("(xc,yc)= ", xc[0], ", ", yc[0]);
-                  //Output::print("Detected a pair of corner edges.");
+                  Output::print("(xc,yc)= ", xc[0], ", ", yc[0]);
+                  Output::print("Detected a pair of corner edges.");
                   //Output::print("num boundary edges: ", boundaryEdgeList.size());
                   //Output::print("OK, (m,k) = ", m ,",",k);
 

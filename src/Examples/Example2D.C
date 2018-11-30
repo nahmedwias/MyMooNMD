@@ -97,6 +97,11 @@ ParameterDatabase Example2D::default_example_database()
 	 " Coefficient for the term (u.n,q) "
 	 " Symmetric version (symmetric_nitsche_p = 1): assemble (p,v.n)+(u.n,q), "
 	 " non-sym (symmetric_nitsche_u = -1): assemble (p,v.n)-(u.n,q)");
+
+  db.add("corner_stab",0.,
+	 " Coefficient for the corner stablization for penalty-free Nitsche (Darcy limit) "
+	 );
+  
   return db;
 }
 
@@ -114,3 +119,4 @@ Example2D::Example2D(std::vector <DoubleFunct2D*> exact,
   boundary_conditions(bc), boundary_data(bd), problem_coefficients(coeffs)
 { 
 }
+
