@@ -6,10 +6,12 @@
 #include "Example_NSE2D.h"
 #include "FEFunction2D.h"
 #include "FEVectFunct2D.h"
+#include "BoundaryAssembling2D.h"
 #else
 #include "Example_NSE3D.h"
 #include "FEFunction3D.h"
 #include "FEVectFunct3D.h"
+#include "BoundaryAssembling3D.h"
 #endif
 #include "BlockVector.h"
 #include "ParameterDatabase.h"
@@ -78,6 +80,10 @@ class NavierStokes
      *
      * Nonlinear loop is outside of this class. 
      */
+
+   void assemble_boundary_terms();
+
+
     void solve();
 
     /**

@@ -1197,6 +1197,93 @@ void natural_error_norm_infsup_stabilizations(int N_Points,
   }
 }
 
+template <int d>
+void NavierStokes<d>::assemble_boundary_terms()
+{
+  int n_neumann_bd = db["n_neumann_bd"];
+  int n_nitsche_bd = db["n_nitsche_bd"];
+
+  for(System_per_grid& s : this->systems)
+  {
+    if (n_neumann_bd)
+    {
+      // Neumann BC
+      std::vector<size_t> neumann_id = db["neumann_id"];
+      std::vector<double> neumann_value = db["neumann_value"];
+
+      for (int k = 0; k < neumann_id.size(); k++)
+      {
+        Output::print<1>(" Neumann BC on boundary: ", neumann_id[k]);
+        const FESpace* v_space = s.velocity_space.get();
+
+#ifdef __2D__
+        BoundaryAssembling2D::rhs_g_v_n(s.rhs, v_space,
+            nullptr, neumann_id[k],
+            -1.*neumann_value[k]);
+#else
+     /*   BoundaryAssembling3D::rhs_g_v_n(s.rhs, v_space,
+            nullptr, nullptr neumann_id[k],
+            -1.*neumann_value[k]);
+            */
+#endif
+
+      }
+    }
+
+    if (n_nitsche_bd)
+    {
+      // Nitsche penalty for weak essential BC
+      std::vector<size_t> nitsche_id = db["nitsche_id"];
+      std::vector<double> nitsche_penalty = db["nitsche_penalty"];
+
+      for (int k = 0; k < nitsche_id.size(); k++)
+      {
+        const FESpace* v_space = s.velocity_space.get();
+        const FESpace* p_space = s.pressure_space.get();
+        Output::print<1>(" Nitsche BC on boundary: ", nitsche_id[k]);
+        double effective_viscosity = this->example.get_nu();
+        int sym_u = db["symmetric_nitsche_u"];
+        int sym_p = db["symmetric_nitsche_p"];
+
+#ifdef __2D__
+        BoundaryAssembling2D::nitsche_bc(s.matrix,s.rhs,
+                v_space, p_space,
+                this->example.get_bd(0),this->example.get_bd(1),
+                nitsche_id[k], nitsche_penalty[k],effective_viscosity,
+                sym_u,sym_p);
+#else
+      /*  BoundaryAssembling3D::nitsche_bc( s.matrix,s.rhs,
+                v_space, p_space,
+                this->example.get_bd(0),this->example.get_bd(1),
+                nitsche_id[k], nitsche_penalty[k],effective_viscosity,
+                sym_u,sym_p);
+                */
+#endif
+
+      }
+    }
+
+    double corner_stab = db["corner_stab"];
+    if (corner_stab)
+    {
+      const FESpace * v_space = s.velocity_space.get();
+      Output::print<1>(" Corner stabilization is applied. ");
+      double effective_viscosity = this->example.get_nu();
+      double sigma = this->example.get_inverse_permeability();
+      double L_0 = TDatabase::ParamDB->L_0; //db["L_0"];
+
+#ifdef __2D__
+      BoundaryAssembling2D::matrix_cornerjump_u_n_cornerjump_v_n(
+              s.matrix, v_space, // TDatabase::ParamDB->nitsche_boundary_id[k],
+          1, // nBoundaryParts
+          corner_stab * effective_viscosity + sigma * L_0 * L_0 );
+#endif
+
+    }
+  }
+}
+
+
 
 #ifdef __3D__
 template class NavierStokes<3>;
