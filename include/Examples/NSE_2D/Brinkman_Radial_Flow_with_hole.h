@@ -47,20 +47,20 @@ void ExampleFile()
 // ========================================================================
 void ExactU1(double x, double y, double *values)
 {
-    values[0] = u0 * r_0 * x/(x*x+y*y);        
-    values[1] = u0 * r_0 * ( (-x*x+y*y)/((x*x+y*y)*(x*x+y*y)) );
-    values[2] = u0 * r_0 * ( -2*x*y/((x*x+y*y)*(x*x+y*y)) );    
-    values[3] = 0.; 
-// values[3] = u0 * r_0 * (  2*x*(x*x-3*y*y)/((x*x + y*y)*(x*x + y*y)*(x*x + y*y)) + 2*x*(3*y*y-x*x)/((x*x + y*y)*(x*x + y*y)*(x*x + y*y))  );  
+  double r2 = x*x + y*y;
+  values[0] = u0 * r_0 * x/r2;        
+  values[1] = u0 * r_0 * ( (-x*x+y*y)/(r2*r2) );
+  values[2] = u0 * r_0 * ( -2*x*y/(r2*r2) );    
+  values[3] = 0.; 
 }
 
 void ExactU2(double x, double y, double *values)
 {
-  values[0] = u0 * r_0 * y/(x*x + y*y);
-  values[1] = u0 * r_0 * (-2*y*x/((x*x+y*y)*(x*x+y*y)));
-  values[2] = u0 * r_0 * (y*y - x*x)/((x*x+y*y)*(x*x+y*y));
+  double r2 = x*x + y*y;
+  values[0] = u0 * r_0 * y/r2;
+  values[1] = u0 * r_0 * (-2*y*x/(r2*r2));
+  values[2] = u0 * r_0 * (-y*y + x*x)/( r2*r2);
   values[3] = 0.; 
-// values[3] = u0 * r_0 * (  2*y*(3*x*x-y*y)/((x*x+y*y)*(x*x+y*y)*(x*x+y*y)) + 2*y*(y*y-3*x*x)/((x*x+y*y)*(x*x+y*y)*(x*x+y*y))  );
 }
 
 /*
@@ -72,11 +72,11 @@ void ExactU2(double x, double y, double *values)
 
 void ExactP(double x, double y, double *values)
 {
-  values[0] = -sigma * u0 * r_0 * 0.5 * log( (x*x + y*y)/(r_1*r_1) );     
-  values[1] = -sigma * u0 * r_0 * 0.5 * 2*x/(x*x+y*y);
-  values[2] = -sigma * u0 * r_0 * 0.5 * 2*y/(x*x+y*y);
+  double r2 = x*x + y*y;
+  values[0] = -sigma * u0 * r_0 * 0.5 * log( r2/(r_1*r_1) );     
+  values[1] = -sigma * u0 * r_0 * x/r2;
+  values[2] = -sigma * u0 * r_0 * y/r2;
   values[3] = 0.;
-// values[3] = -sigma * u0 * r_0 * 0.5 * (  2*(-x*x+y*y)/((x*x+y*y)*(x*x+y*y)) + 2*(-y*y+x*x)/((x*x+y*y)*(x*x+y*y)) );
 }
 
 // ========================================================================
@@ -86,63 +86,46 @@ void BoundCondition(int i, double Param, BoundCond &cond)
 {
   cond = DIRICHLET; // default
 
-  // set Neumann BC
-  for (int j = 0; j < neumann_id.size(); j++)
+  if (i == 0)
   {
-    if (i == neumann_id[j])
-    {
-      cond = NEUMANN;
-      return;
-    }
+    cond = NEUMANN;
+    return;
   }
 
   // set Nitsche BC
-  for (int j = 0; j < nitsche_id.size(); j++)
+  if (nitsche_id.size())
   {
-    if (i == nitsche_id[j])
+    if (i == nitsche_id[0])
     {
       cond = DIRICHLET_WEAK;
-      
       return;
     }
   }
+  
 }
 
 void U1BoundValue(int BdComp, double Param, double &value)
 {
-  double t = fabs(sqrt(effective_viscosity/sigma));
-
-  // loop to impose Neumann boundary conditions
-  ///@attention we set =0 here, as Neumann BC are imposed using boundary assembling
-  for (int j = 0; j < neumann_id.size(); j++)
-  {
-    if ( BdComp == neumann_id[j])
-    {
-      switch(BdComp)
-      {
-      case 0:
-        value = 0.;  //p(r=R1) = 0
-        break;
-        default:
-        Output::print("I cannot impose Neumann boundary condition on component ",
-            BdComp);
-        exit(1);
-        break;
-      }
-      return;
-    }
-  }
-
-
-
-
-  // loop to impose (strong or weak) Dirichlet
+  
   switch(BdComp)
   {
-  case 1: value = u0;  //u(r=r0) = u0
-  break;
+  case 0:
+    {
+      value = 0.;  //p(r=R1) = 0
+      break;
+    }
+  case 1:
+    {
+      // we assume that Param=0 corresponds to (x,y) = (r0,0) and
+      // Param=0.5 corresponds to (x,y) = (-r0,0)
+      // (inner ring clockwise)
+      double angle_of_Param = -Param * 6.283185307179586;
+      double x_of_Param = cos(angle_of_Param);
+      value = u0 * x_of_Param; // u.n = u0
+      break;
+    }
   default: cout << "No boundary component with this number." << endl;
-  break;
+    break;
   }
 }
 
@@ -150,7 +133,26 @@ void U1BoundValue(int BdComp, double Param, double &value)
 
 void U2BoundValue(int BdComp, double Param, double &value)
 {
-  value = 0;
+  switch(BdComp)
+  {
+  case 0:
+    {
+      value = 0.;  //p(r=R1) = 0
+      break;
+    }
+  case 1:
+    {
+      // we assume that Param=0 corresponds to (x,y) = (r0,0) and
+      // Param=0.5 corresponds to (x,y) = (-r0,0)
+      // (inner ring clockwise)
+      double angle_of_Param = -Param * 6.283185307179586;
+      double y_of_Param = sin(angle_of_Param);
+      value = u0 * y_of_Param ; // u.n = u0
+     break;
+    }
+  default: cout << "No boundary component with this number." << endl;
+    break;
+  }
 }
 
 
@@ -166,13 +168,11 @@ void LinCoeffs(int n_points, double *x, double *y,
 {
   double val_u1[4];
   double val_u2[4];
-  //double val_p[4];
-
   for(int i = 0; i < n_points; i++)
   {
     ExactU1(x[i], y[i], val_u1);
     ExactU2(x[i], y[i], val_u2);
-    //ExactP(x[i], y[i], val_p);
+    
 
     // physical parameters
     coeffs[i][0] = effective_viscosity;

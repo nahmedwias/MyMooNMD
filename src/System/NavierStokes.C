@@ -15,6 +15,7 @@
 #include "SquareMatrix2D.h"
 #include "Upwind.h"
 #include "AuxParam2D.h"
+#include "BoundaryAssembling2D.h"
 #endif
 #ifdef _MPI
 #include "ParFECommunicator3D.h"
@@ -498,6 +499,9 @@ void NavierStokes<d>::assemble_linear_terms()
                n_rectangular_matrices, re_matrices.data(), 
                n_rhs, rhs_array.data(), rhs_spaces.data(),
                boundCondition.data(), boundValues.data(), la);
+
+    // assemble on the boundary if needed
+    assemble_boundary_terms();
     
     // copy Dirichlet values from right hand side into solution
     s.solution.copy_nonactive(s.rhs);
@@ -1195,6 +1199,76 @@ void natural_error_norm_infsup_stabilizations(int N_Points,
       LocError[0] += w*t*t;
     }
   }
+}
+
+
+template <int d>
+void NavierStokes<d>::assemble_boundary_terms()
+{
+  #ifdef __2D__
+  const ParameterDatabase e_db = example.get_database();
+  int n_neumann_bd = e_db["n_neumann_bd"];
+  int n_nitsche_bd = e_db["n_nitsche_bd"];
+
+  for(System_per_grid& s : this->systems)
+  {
+    if (n_neumann_bd)
+    {
+      // Neumann BC
+      std::vector<size_t> neumann_id = e_db["neumann_id"];
+      std::vector<double> neumann_value = e_db["neumann_value"];
+    
+      for (int k = 0; k < neumann_id.size(); k++)
+      {
+        Output::print<1>(" Neumann BC on boundary: ", neumann_id[k]);
+        const TFESpace2D * v_space = s.velocity_space.get();
+        BoundaryAssembling2D::rhs_g_v_n(s.rhs, v_space,
+            nullptr,neumann_id[k],
+            -1.*neumann_value[k]);
+      }
+    }
+    
+    if (n_nitsche_bd)
+    {
+      // Nitsche penalty for weak essential BC
+      std::vector<size_t> nitsche_id = e_db["nitsche_id"];
+      std::vector<double> nitsche_penalty = e_db["nitsche_penalty"];
+      double effective_viscosity = this->example.get_nu();
+        
+      for (int k = 0; k < nitsche_id.size(); k++)
+      {
+        const TFESpace2D * v_space = s.velocity_space.get();
+        const TFESpace2D * p_space = s.pressure_space.get();
+        Output::print<1>(" Nitsche BC on boundary: ", nitsche_id[k]);
+        int sym_u = e_db["symmetric_nitsche_u"];
+        int sym_p = e_db["symmetric_nitsche_p"];
+
+        BoundaryAssembling2D::nitsche_bc(s.matrix,s.rhs,
+            v_space, p_space,
+            this->example.get_bd(0),this->example.get_bd(1),
+            nitsche_id[k], nitsche_penalty[k],effective_viscosity,
+            sym_u,sym_p);
+      }
+      
+      double corner_stab = e_db["corner_stab"];
+      if (corner_stab)
+      {
+	const TFESpace2D * v_space = s.velocity_space.get();
+	Output::print<1>(" Corner stabilization is applied. ");
+	double sigma = this->example.get_inverse_permeability();
+	double L_0 = 0.1;// TDatabase::ParamDB->L_0; //db["L_0"];
+	corner_stab = corner_stab * effective_viscosity + sigma * L_0 * L_0;
+	BoundaryAssembling2D::matrix_cornerjump_u_n_cornerjump_v_n(s.matrix, v_space,
+								   nitsche_id,
+								   corner_stab);
+	
+      }
+
+
+    }
+
+  }
+  #endif
 }
 
 

@@ -942,7 +942,7 @@ void TCollection::get_boundary_edge_list(std::vector<TBoundEdge*> &edges)
           ///@todo set the boundedge properties in the function MakeGrid
           boundedge->SetNeighbour(cell);
           boundedge->set_index_in_neighbour(cell,j);
-          edges.push_back(boundedge);                 
+          edges.push_back(boundedge);
       }
     }
   }

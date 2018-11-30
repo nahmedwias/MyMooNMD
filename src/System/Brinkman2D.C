@@ -661,11 +661,12 @@ la_list.push_back(la_P2P2stab);
           TDatabase::ParamDB->nitsche_penalty[k]* ((double) brinkman2d_db["viscosity"]/(double) brinkman2d_db["permeability"]) * TDatabase::ParamDB->L_0 * TDatabase::ParamDB->L_0, true);
       //LB TEST 19.01.18^
     }
-    //New LB 15.01.18
+    /*
+      // This should be adapted to the new version of corner jump 
     BoundaryAssembling2D::matrix_cornerjump_u_n_cornerjump_v_n(s.matrix, v_space, // TDatabase::ParamDB->nitsche_boundary_id[k], 
         1, // nBoundaryParts
         (double) brinkman2d_db["corner_stab_weight"] * ((double) brinkman2d_db["effective_viscosity"] + ((double) brinkman2d_db["viscosity"]/(double) brinkman2d_db["permeability"]) * ( TDatabase::ParamDB->L_0 * TDatabase::ParamDB->L_0 )));
-
+    */
     //NewLB 15.01.18^
 
     //--------------------------------------------------------------------------------------------------
