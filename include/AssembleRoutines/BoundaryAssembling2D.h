@@ -55,21 +55,13 @@ namespace BoundaryAssembling2D
       double mult,
       bool rescale_by_h);
 
-  /** @brief assemble sum_{x_c in corner nodes}  jump(u \cdot n)(x_c) * jump(v \cdot n)](x_c) with jump(u \cdot n)(x_c):= (u \cdot n_E - u \cdot n_E')(x_c)
+
+  /** @brief assemble sum_{x_c in corner nodes}  jump(u \cdot n)(x_c) * jump(v \cdot n)](x_c)
+   * with jump(u \cdot n)(x_c):= (u \cdot n_E - u \cdot n_E')(x_c) and the according rhs
+   * sum_{x_c in corner nodes}  jump(u_E \cdot n)(x_c) * jump(v \cdot n)](x_c),
+   * where u_E denoted the essential b.c. of the velocity
     @param[in] mult: given multiplicative factor (e.g., viscosity or a penalty)
    */
-/*  void matrix_cornerjump_u_n_cornerjump_v_n(BlockFEMatrix &M,
-					    const TFESpace2D *U_Space,
-					    std::vector<size_t> nitsche_id,
-					    double mult
-      );
-
-
-  void matrix_cornerjump_u_n_cornerjump_v_n(BlockFEMatrix &M,
-      const TFESpace2D *U_Space,
-      std::vector<TBoundEdge*> &edge,std::vector<size_t> nitsche_id,	    
-      double mult);
-      */
   void matrix_and_rhs_corner_stabilization(BlockFEMatrix &M,
           BlockVector &rhs,
           const TFESpace2D *U_Space,
@@ -78,8 +70,6 @@ namespace BoundaryAssembling2D
           std::vector<size_t> nitsche_id,
           double mult
   );
-
-
   void matrix_and_rhs_corner_stabilization(BlockFEMatrix &M,
           BlockVector &rhs,
           const TFESpace2D *U_Space,
@@ -87,7 +77,6 @@ namespace BoundaryAssembling2D
           BoundValueFunct2D *given_boundary_data2,
           std::vector<TBoundEdge*> &edge,std::vector<size_t> nitsche_id,
           double mult);
-
 
 
   void find_cornerDofs_in_boundarycells(std::vector<double> xc, std::vector<double> yc,

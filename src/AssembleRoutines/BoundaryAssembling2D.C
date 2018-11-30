@@ -69,7 +69,7 @@ void BoundaryAssembling2D::rhs_g_v_n(BlockVector &rhs,
 
     std::vector< std::vector<double> > uorig, u_dx_orig, u_dy_orig;
     get_original_values(FEId, joint_id, cell, quadPoints, BaseVectDim,
-        uorig, u_dx_orig, u_dy_orig,	LineQuadFormula);
+        uorig, u_dx_orig, u_dy_orig,  LineQuadFormula);
 
     // get normal and edge length
     double x_0, x_1, y_0, y_1;
@@ -1681,10 +1681,10 @@ void BoundaryAssembling2D::get_original_values(FE2D FEId, int joint_id,
 
 // =================================================================================
 void BoundaryAssembling2D::nitsche_bc(BlockFEMatrix &s_matrix,BlockVector &s_rhs,
-				      const TFESpace2D * v_space, const TFESpace2D *p_space,
-				      BoundValueFunct2D * U1, BoundValueFunct2D *U2,
-				      int bd_comp, double gamma, double mu,
-				      int sym_u, int sym_p)
+              const TFESpace2D * v_space, const TFESpace2D *p_space,
+              BoundValueFunct2D * U1, BoundValueFunct2D *U2,
+              int bd_comp, double gamma, double mu,
+              int sym_u, int sym_p)
 {
   //============================== PENALTY TERMS ===================================
   // mueff * gamma/h * (u,v)
