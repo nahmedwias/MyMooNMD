@@ -1,4 +1,4 @@
-#include "GeothermalPlantsPositionOptimization3D.hpp"
+#include "GeothermalPlantsPositionOptimization.hpp"
 #include "parmoon_optimization_routines.hpp"
 #include "Chrono.h"
 #include "Database.h"
@@ -33,7 +33,7 @@ int main(int argc, char* argv[])
   TDatabase Database;
   TFEDatabase3D FEDatabase; 
   ParameterDatabase db
-    = GeothermalPlantsPositionOptimization3D::default_3D_GPPO_database();
+    = GeothermalPlantsPositionOptimization<3>::default_GPPO_database();
   if(argc < 2)
   {
     Output::print("Please provide an input file with parameters to run the "
@@ -58,13 +58,16 @@ int main(int argc, char* argv[])
   // write all Parameters to the OUTFILE (not to console) for later reference
   db.write(Output::get_outfile());
   Database.WriteParamDB(argv[0]);
+  Database.WriteTimeDB();
   
    // set variables' value in TDatabase using argv[1] (*.dat file)
-  TDomain domain(db, argv[1]);
-  refine_domain(domain, db["output_write_ps"]);
+  TDomain domain(db);  // OLD: TDomain domain(db, argv[1]);
+  // refine grid
+    domain.refine_and_get_hierarchy_of_collections(db); // OLD:   refine_domain(domain, db["output_write_ps"]);
+
 
   cout << "Started creating a gppo object."<< endl;
-  GeothermalPlantsPositionOptimization3D gppo(domain, db);
+  GeothermalPlantsPositionOptimization<3> gppo(domain, db);
   cout << "Finished creating a gppo object."<< endl;
   timer.restart_and_print("all preparations before optimization loop");
   parmoon_opt::print_nlopt_version();

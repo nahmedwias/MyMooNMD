@@ -3,21 +3,29 @@
 
 #include "Domain.h"
 #include "ParameterDatabase.h"
-#include "NSE2D_GPPO.hpp"
-#include "TCD2D_Temperature.hpp"
+#include "TCD_Temperature.hpp"
 #include "LoopInfo.h"
+
+#include "NSE_GPPO.hpp"
 
 
 class ParameterDatabase;
 
 /** ************************************************************************ */
+template <int d>
 class GeothermalPlantsPositionOptimization
 {
-public:
-  constexpr static char required_database_name_TCD2D_GPPO[] = "TCD2D parameter database";
 
+public:
+  constexpr static char required_database_name_TCD_GPPO[] = "TCD parameter database";
+
+#ifdef __2D__
   GeothermalPlantsPositionOptimization(const TDomain& domain,
           const ParameterDatabase& param_db);
+#else
+  GeothermalPlantsPositionOptimization( TDomain& domain,
+                                       const ParameterDatabase& param_db);
+#endif
 
   /// @brief compute the functional \f$ \hat J \f$ and, if necessary, its
   /// gradient.
@@ -30,15 +38,27 @@ public:
 
   static ParameterDatabase default_GPPO_database();
 
+  ParameterDatabase get_primal_flow_database(ParameterDatabase param_db);
+  ParameterDatabase get_primal_temperature_database(ParameterDatabase param_db);
+
 protected:
 
   /// @brief keep all parameters for this optimization in one database
   ParameterDatabase db;
   /// @brief the size (dimension) of the control space
   unsigned n_control;
+
+#ifdef __2D__
   /// @brief the Brinkman and TCD2D  objects representing the primal solve
-  NSE2D_GPPO brinkman2d_primal;
-  TCD2D_Temperature tcd2d_primal;
+  NSE_GPPO<d> brinkman2d_primal;
+  TCD_Temperature<d> tcd2d_primal;
+#else
+  /// @brief the Brinkman and CD2D  objects representing the primal solve
+  NSE_GPPO<d> brinkman3d_primal;
+  TCD_Temperature<d> tcd3d_primal;
+
+#endif
+
   /// @brief the Brinkman2D and TCD2D objects representing the adjoint solve
   //Brinkman2D_Adjoint brinkman2d_adjoint;
   //TCD2D_Adjoint tcd2d_adjoint;
@@ -68,6 +88,7 @@ protected:
 
   /// @brief compute \f$ \hat J' \f$ using the adjoint solution and control
   void compute_derivative(const double * x, double* grad) const;
+
 };
 
 #endif // GEOTHERMALPLANTSPOSITIONOPTIMIZATION_H

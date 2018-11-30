@@ -33,7 +33,7 @@ int main(int argc, char* argv[])
   //  declaration of database, you need this in every program
   TDatabase Database;
   TFEDatabase2D FEDatabase; 
-  ParameterDatabase db = GeothermalPlantsPositionOptimization::default_GPPO_database();
+  ParameterDatabase db = GeothermalPlantsPositionOptimization<2>::default_GPPO_database();
 
   if(argc < 2)
   {
@@ -60,13 +60,16 @@ int main(int argc, char* argv[])
   // write all Parameters to the OUTFILE (not to console) for later reference
   db.write(Output::get_outfile());
   Database.WriteParamDB(argv[0]);
+  Database.WriteTimeDB();
 
-  // set variables' value in TDatabase using argv[1] (*.dat file)
-  TDomain domain(db, argv[1]);
-  refine_domain(domain, db["output_write_ps"]);
+   // set variables' value in TDatabase using argv[1] (*.dat file)
+  TDomain domain(db);  // OLD: TDomain domain(db, argv[1]);
+  // refine grid
+    domain.refine_and_get_hierarchy_of_collections(db); // OLD:   refine_domain(domain, db["output_write_ps"]);
+
 
   timer.restart_and_print("Started all preparations before optimization loop.");
-  GeothermalPlantsPositionOptimization gppo(domain, db);
+  GeothermalPlantsPositionOptimization<2> gppo(domain, db);
   timer.restart_and_print("Finished all preparations before optimization loop.");
 
   parmoon_opt::print_nlopt_version();

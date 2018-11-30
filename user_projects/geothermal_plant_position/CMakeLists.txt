@@ -3,12 +3,17 @@ include_directories(${gppo_dir})
 
 # list of sources for boundary controlled optimization
 list(APPEND GTPSRC "${gppo_dir}/GeothermalPlantsPositionOptimization.cpp" )
-list(APPEND GTPSRC "${gppo_dir}/TCD2D_Temperature.cpp" )
-list(APPEND GTPSRC "${gppo_dir}/NSE2D_GPPO.cpp" )
+#list(APPEND GTPSRC "${gppo_dir}/TCD2D_Temperature.cpp" )
+list(APPEND GTPSRC "${gppo_dir}/TCD_Temperature.cpp" )
+#list(APPEND GTPSRC "${gppo_dir}/NSE2D_GPPO.cpp" )
+list(APPEND GTPSRC "${gppo_dir}/NSE_GPPO.cpp" )
 
-list(APPEND GPPOSRC_3D "${gppo_dir}/GeothermalPlantsPositionOptimization3D.cpp" )
-list(APPEND GPPOSRC_3D "${gppo_dir}/CD3D_Temperature.cpp" )
-list(APPEND GPPOSRC_3D "${gppo_dir}/NSE3D_GPPO.cpp" )
+#list(APPEND GPPOSRC_3D "${gppo_dir}/GeothermalPlantsPositionOptimization3D.cpp" )
+list(APPEND GPPOSRC_3D "${gppo_dir}/GeothermalPlantsPositionOptimization.cpp" )
+#list(APPEND GPPOSRC_3D "${gppo_dir}/CD3D_Temperature.cpp" )
+list(APPEND GPPOSRC_3D "${gppo_dir}/TCD_Temperature.cpp" )
+#list(APPEND GPPOSRC_3D "${gppo_dir}/NSE3D_GPPO.cpp" )
+list(APPEND GPPOSRC_3D "${gppo_dir}/NSE_GPPO.cpp" )
 
 
 add_library(GTP_LIB_2D STATIC ${GTPSRC})
@@ -44,5 +49,5 @@ target_compile_definitions(gppo3d PUBLIC -D__3D__)
 target_link_libraries(gppo3d ${all_gppo_libs_3D})
 list(APPEND parmoon_main_programs gppo3d)
 
-#set(parmoon_main_programs ${parmoon_main_programs} PARENT_SCOPE)
+set(parmoon_main_programs ${parmoon_main_programs} PARENT_SCOPE)
 
