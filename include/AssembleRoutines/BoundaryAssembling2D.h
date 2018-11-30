@@ -59,14 +59,14 @@ namespace BoundaryAssembling2D
     @param[in] mult: given multiplicative factor (e.g., viscosity or a penalty)
    */
   void matrix_cornerjump_u_n_cornerjump_v_n(BlockFEMatrix &M,
-      const TFESpace2D *U_Space,
-      int nBoundaryParts,
-      double mult
+					    const TFESpace2D *U_Space,
+					    std::vector<size_t> nitsche_id,
+					    double mult
       );
 
   void matrix_cornerjump_u_n_cornerjump_v_n(BlockFEMatrix &M,
       const TFESpace2D *U_Space,
-      std::vector<TBoundEdge*> &edge,
+      std::vector<TBoundEdge*> &edge,std::vector<size_t> nitsche_id,	    
       double mult);
 
   void find_cornerDofs_in_boundarycells(std::vector<double> xc, std::vector<double> yc,
