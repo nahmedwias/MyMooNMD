@@ -102,7 +102,7 @@ LocalAssembling<d>::LocalAssembling(ParameterDatabase param_db,
   Output::print<5>("Constructor of LocalAssembling3D: using type ", type);
   db.merge(param_db, false);
   Parameter disc_type{this->db["space_discretization_type"]};
-  
+
   // the values below only matter if you need an existing finite element
   // function during your assembly. Change them in such a case
   this->N_Parameters = 0;
@@ -112,7 +112,7 @@ LocalAssembling<d>::LocalAssembling(ParameterDatabase param_db,
   this->FEValue_FctIndex = {};
   this->FEValue_MultiIndex = {};
   this->BeginParameter = {};
-  
+
   this->N_Spaces=0; // is unused for built-in discretization types anyway
 
   // set all member variables according to type
@@ -153,6 +153,8 @@ LocalAssembling<d>::LocalAssembling(ParameterDatabase param_db,
           this->local_assemblings_routines.push_back(
             Brinkman3DType1Galerkin);
           break;
+        default:
+          ErrThrow("Unknown parameter TDatabase::ParamDB->NSTYPE in LocalAssembling3D_type::Brinkman3D_Galerkin case.");
       }
       break;
     }
@@ -189,8 +191,11 @@ LocalAssembling<d>::LocalAssembling(ParameterDatabase param_db,
           this->Manipulate = nullptr;
           break;
         }
+        default:
+          ErrThrow("Unknown parameter TDatabase::ParamDB->NSTYPE in LocalAssembling3D_type::ResidualStabPkPk_for_Brinkman3D_Galerkin1 case.");
       }
       break;
+
     }
     case LocalAssembling_type::GradDivStab_for_Brinkman3D_Galerkin1:
     {
@@ -225,6 +230,8 @@ LocalAssembling<d>::LocalAssembling(ParameterDatabase param_db,
           this->Manipulate = nullptr;
           break;
         }
+        default:
+          ErrThrow("Unknown parameter TDatabase::ParamDB->NSTYPE in LocalAssembling3D_type::GradDivStab_for_Brinkman3D_Galerkin1 case.");
       }
       break;
     }
@@ -373,6 +380,7 @@ LocalAssembling<d>::LocalAssembling(ParameterDatabase param_db,
       this->Derivatives = indices_up_to_order<d>(1);
       this->Needs2ndDerivatives = new bool[1];
       this->Needs2ndDerivatives[0] = false;
+      this->FESpaceNumber = std::vector<int>(d+1, 0);
       this->Manipulate = nullptr;
       this->local_assemblings_routines.push_back(BilinearAssembleGalerkin<d>);
       if((disc_type.is("supg") || disc_type.is("gls")))
@@ -380,6 +388,7 @@ LocalAssembling<d>::LocalAssembling(ParameterDatabase param_db,
         this->Derivatives = indices_up_to_order<d>(2);
         this->N_Terms = this->Derivatives.size();
         this->Needs2ndDerivatives[0] = true;
+        this->FESpaceNumber = std::vector<int>(d+d+1, 0);
         if(disc_type.is("supg"))
           this->local_assemblings_routines.push_back(
                     BilinearAssemble_SD<d>);
@@ -392,7 +401,6 @@ LocalAssembling<d>::LocalAssembling(ParameterDatabase param_db,
         ErrThrow("currently the discretization type ", disc_type,
                  " is not supported by the class CD3D");
       }
-      this->FESpaceNumber = std::vector<int>(this->Derivatives.size(), 0);
       break; // break for the type LocalAssembling3D_type::CD3D 
     }
     case LocalAssembling_type::TCDStiffMassRhs:
@@ -1071,14 +1079,17 @@ void LocalAssembling<d>::set_parameters_for_nse( LocalAssembling_type type)
           std::bind(NSDivergenceBlocks<d>,
               _1, _2, _3, _4, _5, _6,
               _7, _8, -1));
+      this->local_assemblings_routines.push_back(std::bind(NSRightHandSide<d>, _1, _2, _3, _4, _5, _6,
+							   _7, _8, -1));
     }
     else
     {
       this->local_assemblings_routines.push_back(
           std::bind(NSDivergenceBlocks<d>, _1, _2, _3, _4, _5, _6, _7, _8, 1));
+      this->local_assemblings_routines.push_back(std::bind(NSRightHandSide<d>, _1, _2, _3, _4, _5, _6,
+							   _7, _8, 1));
     }
-    this->local_assemblings_routines.push_back(std::bind(NSRightHandSide<d>, _1, _2, _3, _4, _5, _6,
-        _7, _8, -1));
+    
     if(nstype == 2 || nstype == 4 || nstype == 14)
     {
       this->local_assemblings_routines.push_back(NSGradientBlocks<d>);
