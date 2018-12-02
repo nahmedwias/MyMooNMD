@@ -32,13 +32,14 @@ class Example_NSE3D : public Example3D
     Example_NSE3D(const ParameterDatabase& user_input_parameter_db);
 
     /** @brief initialize your own example
-     * 
+     *
      * Create an example with all vectors already defined.
      */
     Example_NSE3D(std::vector <DoubleFunct3D*> exact,
                   std::vector <BoundCondFunct3D*> bc,
-                  std::vector <BoundValueFunct3D*> bd, CoeffFct3D coeffs)
-      : Example3D(exact, bc, bd, coeffs) {};
+                  std::vector <BoundValueFunct3D*> bd,
+                  CoeffFct3D coeffs,
+                  double nu = 1.);
 
     /// Apply the function stored as post processing routine.
     void do_post_processing(NavierStokes<3>& nse3d) const;
