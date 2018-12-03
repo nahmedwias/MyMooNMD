@@ -44,12 +44,10 @@ class Example_NSE2D : public Example2D
     /// Apply the function stored as post processing routine.
     void do_post_processing(NavierStokes<2>& nse2d) const;
 
-    /// Return kinematic viscosity, if set.
+    /// Return kinematic or effective viscosity, if set (depending on example code)
     double get_nu() const;
 
-    /// Return effective viscosity, if set.
-    double get_effective_viscosity() const;
-
+ 
     /// Return permeability, if set.
     double get_inverse_permeability() const;
 
