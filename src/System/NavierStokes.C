@@ -1212,8 +1212,10 @@ void NavierStokes<d>::assemble_boundary_terms()
 
   for(System_per_grid& s : this->systems)
   {
-
+    
+    ///@todo this part of the code needs still to be implemented dimension-independent
 #ifdef __2D__
+    
     if (n_neumann_bd)
     {
       // Neumann BC
@@ -1230,37 +1232,13 @@ void NavierStokes<d>::assemble_boundary_terms()
                 -1.*neumann_value[k]);
       }
     }
-#else
-    TCollection* coll = s.velocity_space.get()->GetCollection();
-    BoundaryAssembling3D ba;
-    if (n_neumann_bd)
-    {
-      // Neumann BC
-      std::vector<TBoundFace*> boundaryFaceList;
-      boundaryFaceList.clear();
-      std::vector<size_t> neumann_id = e_db["neumann_id"];
-      std::vector<double> neumann_value = e_db["neumann_value"];
 
-      std::vector<TBaseCell*> dummy;
-      for (int k = 0; k < neumann_id.size(); k++)
-      {
-        Output::print<1>(" Neumann BC on boundary: ", neumann_id[k]);
-        coll->get_face_list_on_component(neumann_id[k], boundaryFaceList);
-        const TFESpace3D * v_space = s.velocity_space.get();
-        ba.rhs_g_v_n(s.rhs, v_space, nullptr, boundaryFaceList,
-                (int) neumann_id[k], -1.*neumann_value[k]);
-        //ba.rhs_g_v_n(s.rhs_, v_space, nullptr, dummy, (int) neumann_id[k], -1.*neumann_value[k]);
-      }
-    }
-#endif
-
-#ifdef __2D__
     if (n_nitsche_bd)
     {
       // Nitsche penalty for weak essential BC
       std::vector<size_t> nitsche_id = e_db["nitsche_id"];
       std::vector<double> nitsche_penalty = e_db["nitsche_penalty"];
-      double effective_viscosity = this->example.get_effective_viscosity();
+      double effective_viscosity = this->example.get_nu();
 
       for (int k = 0; k < nitsche_id.size(); k++)
       {
@@ -1282,7 +1260,7 @@ void NavierStokes<d>::assemble_boundary_terms()
       if (corner_stab)
       {
         const TFESpace2D * v_space = s.velocity_space.get();
-        Output::print<1>(" Corner stabilization is applied. ");
+        Output::print<1>(" Corner stabilization is applied, stab = ",corner_stab);
         double sigma = this->example.get_inverse_permeability();
         double L_0 = 0.1;// TDatabase::ParamDB->L_0; // TODO: db["L_0"];
         corner_stab = corner_stab * (effective_viscosity + sigma * L_0 * L_0);
@@ -1294,7 +1272,30 @@ void NavierStokes<d>::assemble_boundary_terms()
                 corner_stab);
       }
     }
+    
 #else
+
+    TCollection* coll = s.velocity_space.get()->GetCollection();
+    BoundaryAssembling3D ba;
+    if (n_neumann_bd)
+    {
+      // Neumann BC
+      std::vector<TBoundFace*> boundaryFaceList;
+      boundaryFaceList.clear();
+      std::vector<size_t> neumann_id = e_db["neumann_id"];
+      std::vector<double> neumann_value = e_db["neumann_value"];
+
+      std::vector<TBaseCell*> dummy;
+      for (int k = 0; k < neumann_id.size(); k++)
+      {
+        Output::print<1>(" Neumann BC on boundary: ", neumann_id[k]);
+        coll->get_face_list_on_component(neumann_id[k], boundaryFaceList);
+        const TFESpace3D * v_space = s.velocity_space.get();
+        ba.rhs_g_v_n(s.rhs, v_space, nullptr, boundaryFaceList,
+                (int) neumann_id[k], -1.*neumann_value[k]);
+        //ba.rhs_g_v_n(s.rhs_, v_space, nullptr, dummy, (int) neumann_id[k], -1.*neumann_value[k]);
+      }
+    }
     if (n_nitsche_bd)
     {
       // Nitsche penalty for weak essential BC
@@ -1332,7 +1333,9 @@ void NavierStokes<d>::assemble_boundary_terms()
                 sym_u, sym_p);
       }
     }
+    
 #endif
+    
   }
 }
 
