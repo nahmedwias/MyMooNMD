@@ -49,6 +49,10 @@ namespace brinkman_radial_flow_with_hole
 {
 #include "NSE_2D/Brinkman_Radial_Flow_with_hole.h"
 }
+namespace brinkman_circle_with_immersed_hole
+{
+#include "NSE_2D/Brinkman_circle_with_immersed_hole.h"
+}
 
 //============================================================================
 
@@ -248,7 +252,7 @@ case 7:
       brinkman_sincos_darcyflow::sigma = get_inverse_permeability();
       brinkman_sincos_darcyflow::ExampleFile();
       break;
-case 8:
+  case 8:
       /** exact_solution */
       exact_solution.push_back( brinkman_discacciatiflow::ExactU1 );
       exact_solution.push_back( brinkman_discacciatiflow::ExactU2 );
@@ -273,38 +277,64 @@ case 8:
       brinkman_discacciatiflow::ExampleFile();
       break;
 
-case 9:
-/** exact_solution */
-exact_solution.push_back( brinkman_radial_flow_with_hole::ExactU1 );
-exact_solution.push_back( brinkman_radial_flow_with_hole::ExactU2 );
-exact_solution.push_back( brinkman_radial_flow_with_hole::ExactP );
-      
-/** boundary condition */
-boundary_conditions.push_back( brinkman_radial_flow_with_hole::BoundCondition );
-boundary_conditions.push_back( brinkman_radial_flow_with_hole::BoundCondition );
-boundary_conditions.push_back( BoundConditionNoBoundCondition );
-      
-/** boundary values */
-boundary_data.push_back( brinkman_radial_flow_with_hole::U1BoundValue );
-boundary_data.push_back( brinkman_radial_flow_with_hole::U2BoundValue );
-boundary_data.push_back( BoundaryValueHomogenous );
+  case 9:
+    /** exact_solution */
+    exact_solution.push_back( brinkman_radial_flow_with_hole::ExactU1 );
+    exact_solution.push_back( brinkman_radial_flow_with_hole::ExactU2 );
+    exact_solution.push_back( brinkman_radial_flow_with_hole::ExactP );
     
-/** coefficients */
-problem_coefficients = brinkman_radial_flow_with_hole::LinCoeffs;
-     
-// Set dimensionless viscosity
-brinkman_radial_flow_with_hole::effective_viscosity = get_nu();
-brinkman_radial_flow_with_hole::sigma = get_inverse_permeability();
-
-// boundary conditions
- brinkman_radial_flow_with_hole::neumann_id = get_neumann_id();
- brinkman_radial_flow_with_hole::nitsche_id = get_nitsche_id();
-brinkman_radial_flow_with_hole::ExampleFile();
-break;
-
-
-default:
-      ErrThrow("Unknown Navier-Stokes example!");
+    /** boundary condition */
+    boundary_conditions.push_back( brinkman_radial_flow_with_hole::BoundCondition );
+    boundary_conditions.push_back( brinkman_radial_flow_with_hole::BoundCondition );
+    boundary_conditions.push_back( BoundConditionNoBoundCondition );
+    
+    /** boundary values */
+    boundary_data.push_back( brinkman_radial_flow_with_hole::U1BoundValue );
+    boundary_data.push_back( brinkman_radial_flow_with_hole::U2BoundValue );
+    boundary_data.push_back( BoundaryValueHomogenous );
+    
+    /** coefficients */
+    problem_coefficients = brinkman_radial_flow_with_hole::LinCoeffs;
+    
+    // Set dimensionless viscosity
+    brinkman_radial_flow_with_hole::effective_viscosity = get_nu();
+    brinkman_radial_flow_with_hole::sigma = get_inverse_permeability();
+    
+    // boundary conditions
+    brinkman_radial_flow_with_hole::neumann_id = get_neumann_id();
+    brinkman_radial_flow_with_hole::nitsche_id = get_nitsche_id();
+    brinkman_radial_flow_with_hole::ExampleFile();
+    break;
+    
+  case 10:
+    /** exact_solution */
+    exact_solution.push_back( brinkman_circle_with_immersed_hole::ExactU1 );
+    exact_solution.push_back( brinkman_circle_with_immersed_hole::ExactU2 );
+    exact_solution.push_back( brinkman_circle_with_immersed_hole::ExactP );
+    
+    /** boundary condition */
+    boundary_conditions.push_back( brinkman_circle_with_immersed_hole::BoundCondition );
+    boundary_conditions.push_back( brinkman_circle_with_immersed_hole::BoundCondition );
+    boundary_conditions.push_back( BoundConditionNoBoundCondition );
+    
+    /** boundary values */
+    boundary_data.push_back( brinkman_circle_with_immersed_hole::U1BoundValue );
+    boundary_data.push_back( brinkman_circle_with_immersed_hole::U2BoundValue );
+    boundary_data.push_back( BoundaryValueHomogenous );
+    
+    /** coefficients */
+    problem_coefficients = brinkman_circle_with_immersed_hole::LinCoeffs;
+    
+    // Set dimensionless viscosity
+    brinkman_circle_with_immersed_hole::effective_viscosity = get_nu();
+    brinkman_circle_with_immersed_hole::sigma = get_inverse_permeability();
+    
+    // boundary conditions
+    brinkman_circle_with_immersed_hole::ExampleFile();
+    break;
+    
+  default:
+    ErrThrow("Unknown Navier-Stokes example!");
   }
 }
 
@@ -356,6 +386,7 @@ double Example_NSE2D::get_nu() const
   case 7:
   case 8:
   case 9:
+  case 10:
     {
       nu = this->example_database["effective_viscosity"];
       break;
