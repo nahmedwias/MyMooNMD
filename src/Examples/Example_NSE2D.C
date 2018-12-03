@@ -217,7 +217,7 @@ Example_NSE2D::Example_NSE2D(const ParameterDatabase& user_input_parameter_db)
       problem_coefficients = brinkman_poiseuille::LinCoeffs;
       
       // Set dimensionless viscosity
-      brinkman_poiseuille::effective_viscosity = get_effective_viscosity();
+      brinkman_poiseuille::effective_viscosity = get_nu();
       brinkman_poiseuille::sigma = get_inverse_permeability();
       brinkman_poiseuille::neumann_id = get_neumann_id();
       brinkman_poiseuille::nitsche_id = get_nitsche_id();
@@ -244,7 +244,7 @@ case 7:
       problem_coefficients = brinkman_sincos_darcyflow::LinCoeffs;
       
       // Set dimensionless viscosity
-      brinkman_sincos_darcyflow::effective_viscosity = get_effective_viscosity();
+      brinkman_sincos_darcyflow::effective_viscosity = get_nu();
       brinkman_sincos_darcyflow::sigma = get_inverse_permeability();
       brinkman_sincos_darcyflow::ExampleFile();
       break;
@@ -268,7 +268,7 @@ case 8:
       problem_coefficients = brinkman_discacciatiflow::LinCoeffs;
       
       // Set dimensionless viscosity
-      brinkman_discacciatiflow::effective_viscosity = get_effective_viscosity();
+      brinkman_discacciatiflow::effective_viscosity = get_nu();
       brinkman_discacciatiflow::sigma = get_inverse_permeability();
       brinkman_discacciatiflow::ExampleFile();
       break;
@@ -293,7 +293,7 @@ boundary_data.push_back( BoundaryValueHomogenous );
 problem_coefficients = brinkman_radial_flow_with_hole::LinCoeffs;
      
 // Set dimensionless viscosity
-brinkman_radial_flow_with_hole::effective_viscosity = get_effective_viscosity();
+brinkman_radial_flow_with_hole::effective_viscosity = get_nu();
 brinkman_radial_flow_with_hole::sigma = get_inverse_permeability();
 
 // boundary conditions
@@ -337,16 +337,35 @@ void Example_NSE2D::do_post_processing(NavierStokes<2 >& nse2d) const
 
 double Example_NSE2D::get_nu() const
 {
-  double inverse_reynolds = this->example_database["reynolds_number"];
-  inverse_reynolds = 1/inverse_reynolds;
-  return inverse_reynolds;
+  int example_code = this->example_database["example"];
+  double nu=-1.;
+  switch( example_code )
+  {
+  case 0:
+  case 1:
+  case 2:
+  case 3:
+  case 4:
+  case 5:
+    {
+      nu = this->example_database["reynolds_number"];
+      nu = 1./nu;
+      break;
+    }
+  case 6:
+  case 7:
+  case 8:
+  case 9:
+    {
+      nu = this->example_database["effective_viscosity"];
+      break;
+    }
+  default:
+    ErrThrow("Unknown Navier-Stokes example!");
+  }
+  return nu;
 }
 
-double Example_NSE2D::get_effective_viscosity() const
-{
-double effective_viscosity = this->example_database["effective_viscosity"];
-return effective_viscosity;
-}
 
 double Example_NSE2D::get_inverse_permeability() const
 {

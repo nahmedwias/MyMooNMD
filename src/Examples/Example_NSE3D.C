@@ -308,7 +308,7 @@ Example_NSE3D::Example_NSE3D(const ParameterDatabase& user_input_parameter_db)
       problem_coefficients = brinkman3d_poiseuille::LinCoeffs;
 
       // Set dimensionless viscosity
-      brinkman3d_poiseuille::effective_viscosity = get_nu();
+      brinkman3d_poiseuille::effective_viscosity = get_effective_viscosity();
       brinkman3d_poiseuille::sigma = get_inverse_permeability();
       brinkman3d_poiseuille::neumann_id = get_neumann_id();
       brinkman3d_poiseuille::nitsche_id = get_nitsche_id();
@@ -472,6 +472,12 @@ double Example_NSE3D::get_nu() const
   double inverse_reynolds = this->example_database["reynolds_number"];
   inverse_reynolds = 1/inverse_reynolds;
   return inverse_reynolds;
+}
+
+double Example_NSE3D::get_effective_viscosity() const
+{
+double effective_viscosity = this->example_database["effective_viscosity"];
+return effective_viscosity;
 }
 
 double Example_NSE3D::get_inverse_permeability() const
