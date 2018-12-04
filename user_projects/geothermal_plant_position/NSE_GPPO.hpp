@@ -53,19 +53,16 @@ public:
 
 
 
-#ifdef __2D__
+
   NSE_GPPO(const TDomain &domain, const ParameterDatabase& param_db, const Example_NSE& example);
 
-  void assemble_with_coefficient_fct(TFEFunction2D* coefficient_function = nullptr);
+#ifdef __2D__
+  void assemble_with_coefficient_fct(bool variable_fct=false);
 
   FEFunction & get_coefficient_function()
   {
     return this->coefficient_function;
   }
-
-#else
-  NSE_GPPO(TDomain &domain, const ParameterDatabase& param_db, Example_NSE example);
-
 #endif
 
 

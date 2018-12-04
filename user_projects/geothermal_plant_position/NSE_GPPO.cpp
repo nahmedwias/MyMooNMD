@@ -20,7 +20,7 @@ NSE_GPPO<d>::NSE_GPPO(const TDomain &domain, const ParameterDatabase& param_db, 
  coefficient_function_FEspace(new FESpace(this->get_pressure_space().GetCollection(),
          "coefficient_function_FEspace", "s",  BoundConditionNoBoundCondition, 1))
 {
-  if (param_db["use_coeff_fct"])
+  if (param_db["variable_sigma_fct_type"])
   {
     cout <<" ***** coefficient_function_type 2 detected **** "<< endl;
     Output::print("It is assumed that a mesh and a fitting TFEFunction ReadSol() file are provided.");
@@ -55,7 +55,7 @@ void mapping_local_parameters_NSE(const double *in, double *out)
 
 /** ************************************************************************ */
 template<int d>
-void NSE_GPPO<d>::assemble_with_coefficient_fct(TFEFunction2D* coefficient_function)
+void NSE_GPPO<d>::assemble_with_coefficient_fct(bool read_coeff_fct)
 {
   if(this->NavierStokes<d>::systems.size() > 1)
     {
@@ -63,7 +63,11 @@ void NSE_GPPO<d>::assemble_with_coefficient_fct(TFEFunction2D* coefficient_funct
                "multigrid");
     }
 
-
+  TFEFunction2D* coefficient_function =nullptr;
+  if (read_coeff_fct) {
+    coefficient_function = &(this->get_coefficient_function());
+  }
+  
   cout << "coefficient_function: "<< coefficient_function << endl;
   const TFESpace2D *coefficient_function_space;
 

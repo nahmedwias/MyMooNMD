@@ -48,20 +48,9 @@ protected:
   /// @brief the size (dimension) of the control space
   unsigned n_control;
 
-#ifdef __2D__
-  /// @brief the Brinkman and TCD2D  objects representing the primal solve
-  NSE_GPPO<d> brinkman2d_primal;
-  TCD_Temperature<d> tcd2d_primal;
-#else
-  /// @brief the Brinkman and CD2D  objects representing the primal solve
-  NSE_GPPO<d> brinkman3d_primal;
-  TCD_Temperature<d> tcd3d_primal;
-
-#endif
-
-  /// @brief the Brinkman2D and TCD2D objects representing the adjoint solve
-  //Brinkman2D_Adjoint brinkman2d_adjoint;
-  //TCD2D_Adjoint tcd2d_adjoint;
+  /// @brief the Brinkman and TCD  objects representing the primal solve
+  NSE_GPPO<d> brinkman_mixed;
+  TCD_Temperature<d> tcd_primal;
 
   /// variables during the optimization loop
   /// @brief keeping track of the optimization loop:
