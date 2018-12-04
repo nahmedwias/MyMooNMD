@@ -21,4 +21,8 @@
 # will compile your project. The executable will be called parMooN_project_X
 # where 'X' is the build type, e.g. SEQUENTIAL.
 
+include(parmoon_optimization/CMakeLists.txt)
+add_subdirectory(boundary_controlled_optimization)
+add_subdirectory(geothermal_plant_position)
+set(parmoon_main_programs ${parmoon_main_programs} PARENT_SCOPE)
 set(parmoon_tests ${parmoon_tests} PARENT_SCOPE)

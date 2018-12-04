@@ -1612,7 +1612,7 @@ void TFEFunction2D::ReadSol(std::string BaseName)
   }
 
   dat.getline (line, 99);
-  OutPut("Reading nodal values of the FE saclar function !"<<endl);
+  OutPut("Reading nodal values of the FE scalar function !"<<endl);
 
   for(i=0;i<Length;i++)
   {
