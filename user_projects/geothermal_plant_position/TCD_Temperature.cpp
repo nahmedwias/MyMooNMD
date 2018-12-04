@@ -26,7 +26,7 @@
 // see https://stackoverflow.com/a/8016853
 //constexpr char TCD2D_Temperature::required_database_name[];
 
-  #ifdef __2D__
+#ifdef __2D__
 
 /** ************************************************************************ */
 template <int d>
