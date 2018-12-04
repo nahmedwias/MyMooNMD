@@ -161,8 +161,30 @@ void LinCoeffs(int n_points, double *x, double *y,
     coeffs[i][1] = 0;
     coeffs[i][2] = 0;
 
-    //g(x,y):  RHS for mass conservation equation
-    coeffs[i][3] = 0.;//val_u1[1] + val_u2[2];
+    // source data
+    
+    double epsilon = .01; //0.05;
+    
+    double Q_in = u0*2*Pi*r_0;
+
+    
+    // approximated delta function centered in (0,0)
+    double x_center_source = 0.;
+    double y_center_source = 0.;
+    double x_distance_to_source = std::pow(std::abs(x[i] - x_center_source), 2);
+    double y_distance_to_source = std::pow(std::abs(y[i] - y_center_source), 2);
+    bool at_source = (x_distance_to_source < epsilon*epsilon) *
+      (y_distance_to_source < epsilon*epsilon);
+
+    coeffs[i][3] = 0.;
+    if(at_source)
+    {
+      double delta_h = cos(Pi*(x[i] - x_center_source)/epsilon) + 1;
+      delta_h *= cos(Pi*(y[i] - y_center_source)/epsilon) + 1;
+      delta_h /= 4.*epsilon*epsilon;
+      //g(x,y):  RHS for mass conservation equation
+      coeffs[i][3] = delta_h * Q_in;
+    }
   }
 }
 
