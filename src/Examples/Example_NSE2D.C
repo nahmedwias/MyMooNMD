@@ -53,6 +53,10 @@ namespace brinkman_circle_with_immersed_hole
 {
 #include "NSE_2D/Brinkman_circle_with_immersed_hole.h"
 }
+namespace brinkman_two_wells
+{
+#include "NSE_2D/Brinkman_two_wells.h"
+}
 
 //============================================================================
 
@@ -332,6 +336,34 @@ case 7:
     // boundary conditions
     brinkman_circle_with_immersed_hole::ExampleFile();
     break;
+
+  case 11:
+    /** exact_solution */
+    exact_solution.push_back( brinkman_two_wells::ExactU1 );
+    exact_solution.push_back( brinkman_two_wells::ExactU2 );
+    exact_solution.push_back( brinkman_two_wells::ExactP );
+    
+    /** boundary condition */
+    boundary_conditions.push_back( brinkman_two_wells::BoundCondition );
+    boundary_conditions.push_back( brinkman_two_wells::BoundCondition );
+    boundary_conditions.push_back( BoundConditionNoBoundCondition );
+    
+    /** boundary values */
+    boundary_data.push_back( brinkman_two_wells::U1BoundValue );
+    boundary_data.push_back( brinkman_two_wells::U2BoundValue );
+    boundary_data.push_back( BoundaryValueHomogenous );
+    
+    /** coefficients */
+    problem_coefficients = brinkman_two_wells::LinCoeffs;
+    
+    // Set dimensionless viscosity
+    brinkman_two_wells::effective_viscosity = get_nu();
+    brinkman_two_wells::sigma = get_inverse_permeability();
+    
+    // boundary conditions
+    brinkman_two_wells::neumann_id = get_neumann_id();
+    brinkman_two_wells::ExampleFile();
+    break;
     
   default:
     ErrThrow("Unknown Navier-Stokes example!");
@@ -387,6 +419,7 @@ double Example_NSE2D::get_nu() const
   case 8:
   case 9:
   case 10:
+  case 11:
     {
       nu = this->example_database["effective_viscosity"];
       break;
