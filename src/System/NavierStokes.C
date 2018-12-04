@@ -1224,7 +1224,8 @@ void NavierStokes<d>::assemble_boundary_terms()
 
       for (int k = 0; k < neumann_id.size(); k++)
       {
-        Output::print<1>(" Neumann BC on boundary: ", neumann_id[k]);
+        Output::print<1>(" Neumann BC on boundary: ", neumann_id[k],
+			 " value = ",neumann_value[k] );
         const FESpace* v_space = s.velocity_space.get();
 
         BoundaryAssembling2D::rhs_g_v_n(s.rhs, v_space,
