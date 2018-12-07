@@ -17,6 +17,7 @@ class GeothermalPlantsPositionOptimization
 {
 
 public:
+
   constexpr static char required_database_name_TCD_GPPO[] = "TCD parameter database";
 
 #ifdef __2D__

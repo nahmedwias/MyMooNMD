@@ -28,9 +28,10 @@ public:
   using Example_TimeCD = typename Template_names<d>::Example_TimeCD;
   using BoundaryValuesFunction = typename Template_names<d>::BoundaryValuesFunction;
 
-  #ifdef __2D__
+  //constexpr static char required_database_name[] = "TCD parameter database";
 
- // constexpr static char required_database_name[] = "TCD2D parameter database";
+#ifdef __2D__
+
 
   TCD_Temperature(const TDomain& domain, const ParameterDatabase& param_db,
           Example_TimeCD example);

@@ -15,12 +15,14 @@
 #ifdef __2D__
 ///************************************************************************** */
 template<int d>
-NSE_GPPO<d>::NSE_GPPO(const TDomain &domain, const ParameterDatabase& param_db, const Example_NSE& example)
-:NavierStokes<d>(domain, param_db, example),
+NSE_GPPO<d>::NSE_GPPO(const TDomain &domain,
+		      const ParameterDatabase& param_db,
+		      const Example_NSE& example)
+  :NavierStokes<d>(domain, param_db, example),
  coefficient_function_FEspace(new FESpace(this->get_pressure_space().GetCollection(),
          "coefficient_function_FEspace", "s",  BoundConditionNoBoundCondition, 1))
 {
-  if (param_db["variable_sigma_fct_type"])
+  if (false) //param_db["variable_sigma_fct_type"])
   {
     cout <<" ***** coefficient_function_type 2 detected **** "<< endl;
     Output::print("It is assumed that a mesh and a fitting TFEFunction ReadSol() file are provided.");

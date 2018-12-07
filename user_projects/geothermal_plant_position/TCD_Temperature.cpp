@@ -24,9 +24,10 @@
 #endif
 
 // see https://stackoverflow.com/a/8016853
-//constexpr char TCD2D_Temperature::required_database_name[];
 
 #ifdef __2D__
+
+//constexpr char TCD_Temperature<2>::required_database_name[];
 
 /** ************************************************************************ */
 template <int d>
@@ -41,9 +42,10 @@ TCD_Temperature<d>::TCD_Temperature(const TDomain& domain,
             "implemented for multigrid");
   }
 
-  /*// velocity solver database
+  /*
+  // velocity solver database
   ParameterDatabase tcd2d_db = param_db;
-  auto db_name = std::string(TCD2D_Temperature::required_database_name);
+  //auto db_name = std::string(TCD_Temperature<2>::required_database_name);
   // use the given database or one of its nested databases, depending on which
   // one has the correct name. Otherwise the default solver database is used.
   cout << "HIER !!!!!"<< param_db.has_nested_database(db_name) << endl;
@@ -53,7 +55,8 @@ TCD_Temperature<d>::TCD_Temperature(const TDomain& domain,
     tcd2d_db.merge(param_db.get_nested_database(db_name), false);
     cout << "HELLO" << endl;
     exit(0);
-  }*/
+  }
+  */
 }
 
 /** ************************************************************************ */
@@ -72,17 +75,18 @@ void temperature_coefficients(int n_points, double *x, double *y,
   for(int i = 0; i < n_points; ++i)
   {
     //another approx. for domain [0, 10] x [0, 6]
-    double a = 5.; //0.05;
-    double T_in = 303.15; //= 30 + 273.15; //50;
-    //cout <<"distance  in temperature!!!!"<< distance << endl;
-    std::array<double, 2> center_source = {{5000.0 - distance/2., 3000.0}}; //{{5.0 - distance/2., 3}};
+    double r_well = 0.2; // 20cm
+    double epsDelta = 100*r_well;
+    double T_in = 303.15; //injection temperature  = 30 + 273.15; 
 
-    //cout <<" center_source[0] in temperature!!!!"<<  center_source[0] << endl;
-    //cout <<" center_source[1] in temperature!!!!"<<  center_source[1] << endl;
-
+    
+    //std::array<double, 2> center_source = {{5000.0 - distance/2., 3000.0}};
+    std::array<double, 2> center_source = {{4500.0, 3000.0}}; 
+    
     double x_distance_to_source = std::pow(std::abs(x[i] - center_source[0]), 2);
     double y_distance_to_source = std::pow(std::abs(y[i] - center_source[1]), 2);
-    bool at_source = x_distance_to_source + y_distance_to_source < a*a;
+    bool at_source =(x_distance_to_source < epsDelta*epsDelta) *
+	(y_distance_to_source < epsDelta*epsDelta);
 
 
     coeffs[i][0] = nu; // diffusion
@@ -93,14 +97,17 @@ void temperature_coefficients(int n_points, double *x, double *y,
 
     if(at_source)
     {
-      //double magnitude = cos(Pi*x_distance_to_source/a) + 1;
-      //magnitude *= cos(Pi*y_distance_to_source/a) + 1;
-      //magnitude /= 4.*a*a;
-      //coeffs[i][3] += magnitude; // reaction
-      //coeffs[i][4] -= magnitude * T_in; // source
+      
+      double magnitude = cos(Pi*(x[i] - center_source[0])/epsDelta) + 1;
+      magnitude *= cos(Pi*(y[i] - center_source[1])/epsDelta) + 1;
+      magnitude /= 4.*epsDelta*epsDelta;
+
+      //coeffs[i][3] = magnitude; // reaction
+      //coeffs[i][4] = magnitude * T_in; // right-hand side
+      
       double penalty_factor = 1000.;
       coeffs[i][3] = 1 * penalty_factor; // reaction
-      coeffs[i][4] = T_in * penalty_factor; // right-hand side
+      coeffs[i][4] = T_in * penalty_factor; // right-hand side*/
     }
   }
 }
@@ -115,6 +122,7 @@ void TCD_Temperature<d>::assemble(const FEVectFunct& convection,
     ErrThrow("SUPG is not yet supported");
   }
 
+  
   double distance = x[0];
   auto u1 = convection.GetComponent(0);
   auto u2 = convection.GetComponent(1);
@@ -236,9 +244,10 @@ void TCD_Temperature<d>::reset_for_output()
   s.rhs.reset();
 }
 
+/* ****************************** 3D ***************************************** */
 #else
 
-/* ****************************** 3D ***************************************** */
+
 template <int d>
 TCD_Temperature<d>::TCD_Temperature(TDomain& domain,
                                    const ParameterDatabase& param_db,
