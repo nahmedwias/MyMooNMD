@@ -40,15 +40,16 @@ ParameterDatabase GeothermalPlantsPositionOptimization<d>::default_GPPO_database
 {
   // is only needed for the adjoint problem, but there is only one global 
   // parameter for this.
-  TDatabase::ParamDB->NSTYPE = 4;
+  //TDatabase::ParamDB->NSTYPE = 4;
   auto db = ParameterDatabase::parmoon_default_database();
   db.merge(TDomain::default_domain_parameters());
 
-  #ifdef __2D__
+#ifdef __2D__
   db.merge(Example2D::default_example_database());
-  #else
+#else
   db.merge(Example3D::default_example_database());
-  #endif
+#endif
+  db.merge(TimeConvectionDiffusion<d>::default_tcd_database());
   
   db.merge(LocalAssembling<d>::default_local_assembling_database());
 
@@ -79,6 +80,7 @@ get_primal_flow_database(ParameterDatabase param_db)
 
   ParameterDatabase NSE_GPPO_db =  NavierStokes<d>::default_nse_database();
 
+  /*
   NSE_GPPO_db.add("variable_sigma_fct_type", false,
 		  "Assemble the Brinkman/Darcy problem with space dependent"
 		  " permeability.",
@@ -89,49 +91,47 @@ get_primal_flow_database(ParameterDatabase param_db)
 		  "Provide inverse of permeability from an input file. "
 		  "Note: The File has to fit with the mesh (refinement level). "
 		  "A default file  is contained in input_files/ .");
-
+  */
+  
   NSE_GPPO_db.merge(param_db, false);
 
   return  NSE_GPPO_db;
 }
 
 
-#ifdef __2D__
+
 /** ************************************************************************ */
 template <int d>
 ParameterDatabase GeothermalPlantsPositionOptimization<d>::
 get_primal_temperature_database(ParameterDatabase param_db)
 {
   std::string basename = param_db["output_basename"];
-  basename += std::string("temperature");
+  basename += std::string("_temperature");
   param_db["output_basename"].set(basename, false);
 
+  
+  ParameterDatabase tcd_GPPO_db = TimeConvectionDiffusion<d>::default_tcd_database();
+
+  //param_db.add("space_discretization_type_tcd", "galerkin",
+  //	       " Discretization type for TCD problem");
   // velocity solver database
-  ParameterDatabase tcd_GPPO_db = param_db;
-  auto db_name = std::string(GeothermalPlantsPositionOptimization<d>::required_database_name_TCD_GPPO);
+  //ParameterDatabase tcd_GPPO_db = param_db;
+  auto db_name = std::string(GeothermalPlantsPositionOptimization<d>::
+			     required_database_name_TCD_GPPO);
   // use the given database or one of its nested databases, depending on which
   // one has the correct name. Otherwise the default solver database is used.
-  cout << "HIER !!!!!"<< param_db.has_nested_database(db_name) << endl;
-  cout << db_name << endl;
-  
+  cout << "Nested database, name: " << db_name << endl;
+
+  tcd_GPPO_db.merge(param_db,false);
+  // replace parameter values if some parameter is specific for tcd problem
   if(param_db.has_nested_database(db_name))
     {
-      tcd_GPPO_db.merge(param_db.get_nested_database(db_name), false);
+      tcd_GPPO_db.merge(param_db.get_nested_database(db_name), false);      
     }
-  return tcd_GPPO_db;
-}
-#else
-/** ************************************************************************ */
-template <int d>
-ParameterDatabase GeothermalPlantsPositionOptimization<d>::get_primal_temperature_database(ParameterDatabase param_db)
-{
-  std::string basename = param_db["output_basename"];
-  basename += std::string("temperature");
-  param_db["output_basename"].set(basename, false);
 
-  return param_db;
+  return tcd_GPPO_db;
+  
 }
-#endif
 
 /** ************************************************************************ */
 ParameterDatabase get_adjoint_database(const ParameterDatabase& param_db)
@@ -149,20 +149,13 @@ ParameterDatabase get_adjoint_database(const ParameterDatabase& param_db)
 /** ************************************************************************ */
 template <int d>
 GeothermalPlantsPositionOptimization<d>::
-GeothermalPlantsPositionOptimization(
-				     const TDomain& domain, const ParameterDatabase& param_db)
+GeothermalPlantsPositionOptimization(const TDomain& domain,
+				     const ParameterDatabase& param_db)
   : db(default_GPPO_database()), n_control(0),
-#ifdef __2D__
     brinkman_mixed(domain, get_primal_flow_database(param_db),
-		      get_gppo_flow_example(param_db)),
+		   get_gppo_flow_example(param_db)),
     tcd_primal(domain, get_primal_temperature_database(param_db),
-		 get_gppo_temperature_example(param_db)),
-#else
-    brinkman_mixed(domain, get_primal_flow_database(param_db),
-		      get_3D_gppo_flow_example(param_db)),
-    tcd3d_primal(domain, get_primal_temperature_database(param_db),
-		 get_3D_gppo_temperature_example(param_db)),
-#endif
+	       get_gppo_temperature_example(param_db)),
     optimization_info("optimization", true, true, 1), // 1 -> full verbosity
     current_J_hat(std::numeric_limits<double>::infinity()),
     control_old(), n_calls(0),
@@ -170,9 +163,10 @@ GeothermalPlantsPositionOptimization(
 {
   Output::print<5>("Creating the GeothermalPlantsPositionOptimization object");
   db.merge(param_db, false);
+  
 
 #ifdef __2D__
-  bool variable_sigma = get_primal_flow_database(param_db)["variable_sigma_fct_type"];
+  bool variable_sigma = false; //get_primal_flow_database(param_db)["variable_sigma_fct_type"];
   brinkman_mixed.assemble_with_coefficient_fct(variable_sigma);
 #else
   brinkman_mixed.assemble_linear_terms();
@@ -257,6 +251,11 @@ void approximate_delta_functions(int n_points, double *x, double *y,
         double **parameters, double **coeffs,
         double distance)
 {
+  /**
+     @todo this function should be adapted to make delta-fct depending on input parameter 
+     (e.g. distance or position of sources)
+  */
+
   for(int i = 0; i < n_points; ++i)
   {
 
@@ -268,12 +267,12 @@ void approximate_delta_functions(int n_points, double *x, double *y,
     // Note: this function should be consistent with the used domain/mesh
     double r_well = 0.2; // 20cm
     double epsDelta = 25*r_well;
-    double Qin = 150./3600.;
+    double Qin = 10*150./3600.;
 
-
+    
     std::vector<double> singular_x,singular_y,singular_sign;
     // source in (xi,yi)
-    singular_x.push_back(4500.);
+    singular_x.push_back(4500.); 
     singular_y.push_back(3000.);
     singular_sign.push_back(1.);
     // sink in (xe,ye)    
@@ -281,22 +280,6 @@ void approximate_delta_functions(int n_points, double *x, double *y,
     singular_y.push_back(3000.);
     singular_sign.push_back(-1.);
     
-    /*
-    //another approx. for domain [0, 10] x [0, 6]
-    double a = 5.; //0.05;
-    double r_Wells = 5*0.001;
-    double Q_in = 0.03*Pi*r_Wells*r_Wells * 0.1;
-    //cout <<"distance  in brinkman!!!!"<< distance << endl;
-    */
-    
-    //std::array<double, 2> center_source = {{5000.0 - distance/2., 3000.0}}; //{{5.0 - distance/2., 3}};
-    //std::array<double, 2> center_sink = {{5000.0 + distance/2., 3000.0}}; //{{5.0 + distance/2., 3}};
-    //cout <<" center_source[0]) in brinkman!!!!"<<  center_source[0] << endl;
-    //cout <<" center_source[1]) in brinkman!!!!"<<  center_source[1]<< endl;
-
-    //cout <<" center_sink[0]) in brinkman!!!!"<<  center_sink[0] << endl;
-    //cout <<" center_sink[1]) in brinkman!!!!"<<  center_sink[1]<< endl;
-
     for (unsigned int m=0; m<singular_x.size(); m++) {
       double x_center_source = singular_x[m];
       double y_center_source = singular_y[m];
@@ -306,74 +289,21 @@ void approximate_delta_functions(int n_points, double *x, double *y,
 	(y_distance_to_source < epsDelta*epsDelta);
     
 
-	if(at_source)
-	  {
-	    Output::print<4>(" adding a singular source/sink - point ", m);
-	    double magnitude = cos(Pi*(x[i] - x_center_source)/epsDelta) + 1;
-	    magnitude *= cos(Pi*(y[i] - y_center_source)/epsDelta) + 1;
-	    magnitude /= 4.*epsDelta*epsDelta;
-	    coeffs[i][3] += singular_sign[m] * magnitude * Qin;
-	  }
+      if(at_source)
+      {
+	double magnitude = cos(Pi*(x[i] - x_center_source)/epsDelta) + 1;
+	magnitude *= cos(Pi*(y[i] - y_center_source)/epsDelta) + 1;
+	magnitude /= 4.*epsDelta*epsDelta;
+	coeffs[i][3] += singular_sign[m] * magnitude * Qin;
+	Output::print<4>(" adding a singular source/sink - point ", m,
+			 " coeff[3] = ", coeffs[i][3]);
+	
+      }
     }
   }
 }
 
-/** ************************************************************************ */
-/*// For 3 wells:
-void approximate_delta_functions_3(int n_points, double *x, double *y,
-        double **parameters, double **coeffs,
-        double x_i, double x_p1, double x_p2, double y_i, double y_p1, double y_p2 )
-{
-  for(int i = 0; i < n_points; ++i)
-  {
-    //another approx. for domain [0, 10] x [0, 6]
-    double a = 0.25;
-    double r_Wells = 5*0.001;
-    double Q_in = 0.03*Pi*r_Wells*r_Wells * 0.1;
-    std::array<double, 2> center_source = {{x_i, y_i}};
-    std::array<double, 2> center_sink_1 = {{x_p1, y_p1}};
-    std::array<double, 2> center_sink_2 = {{x_p2, y_p2}};
-    double x_distance_to_source = std::pow(std::abs(x[i]-center_source[0]), 2);
-    double y_distance_to_source = std::pow(std::abs(y[i]-center_source[1]), 2);
-    double x_distance_to_sink_1 = std::pow(std::abs(x[i]-center_sink_1[0]), 2);
-    double y_distance_to_sink_1 = std::pow(std::abs(y[i]-center_sink_1[1]), 2);
-    double x_distance_to_sink_2 = std::pow(std::abs(x[i]-center_sink_2[0]), 2);
-    double y_distance_to_sink_2 = std::pow(std::abs(y[i]-center_sink_2[1]), 2);
-    bool at_source = x_distance_to_source + y_distance_to_source < a*a;
-    bool at_sink_1 = x_distance_to_sink_1 + y_distance_to_sink_1 < a*a;
-    bool at_sink_2 = x_distance_to_sink_2 + y_distance_to_sink_2 < a*a;
-    coeffs[i][0] = 0.;
-    coeffs[i][1] = 0.;
-    coeffs[i][2] = 0.;
-    coeffs[i][3] = 0.;
 
-    if(at_source)
-    {
-      double magnitude = cos(Pi*x_distance_to_source/a) + 1;
-      magnitude *= cos(Pi*y_distance_to_source/a) + 1;
-      magnitude /= 4.*a*a;
-      //coeffs[i][3] += magnitude * Q_in; // source
-      coeffs[i][3] += 0.001; // source
-    }
-    if(at_sink_1)
-    {
-      double magnitude_1 = cos(Pi*x_distance_to_sink_1/a) + 1;
-      magnitude_1 *= cos(Pi*y_distance_to_sink_1/a) + 1;
-      magnitude_1 /= 4.*a*a;
-      //coeffs[i][3] -=  magnitude_1 * Q_in; // sink
-      coeffs[i][3] -=  0.001; // sink
-    }
-    if(at_sink_2)
-    {
-      double magnitude_2 = cos(Pi*x_distance_to_sink_2/a) + 1;
-      magnitude_2 *= cos(Pi*y_distance_to_sink_2/a) + 1;
-      magnitude_2 /= 4.*a*a;
-      //coeffs[i][3] -=  magnitude_2 * Q_in; // sink
-      coeffs[i][3] -=  0.001; // sink
-    }
-  }
-}
-*/
 
 /** ************************************************************************ */
 template <int d>
@@ -384,7 +314,8 @@ void GeothermalPlantsPositionOptimization<d>::apply_control_and_solve(const doub
   // apply control x
   double distance = x[0];
   Output::print("current control: ", std::setprecision(14), distance);
-  using namespace std::placeholders;  
+  using namespace std::placeholders;
+  
 #ifdef __2D__
   CoeffFct2D coeff = std::bind(approximate_delta_functions,
 			       _1, _2, _3, _4, _5,distance);
@@ -405,18 +336,19 @@ void GeothermalPlantsPositionOptimization<d>::apply_control_and_solve(const doub
   }
 
 #ifdef __2D__
-  LocalAssembling<d> la(2, {D00, D00}, {0, 1}, {}, {},
-			{0, 0, 1}, coeff,
-			std::bind(NSRightHandSide<2>, _1, _2, _3, _4, _5, _6, _7, _8,
-				  rhs_div_sign),nullptr,
-			0, 3, 0, {}, {}, 0, nullptr,
-			0, {}, {});
+  LocalAssembling<d> la(2, {D00, D00},
+			{0, 1}, {}, {},
+			{0, 0, 1},
+			coeff,std::bind(NSRightHandSide<d>, _1, _2, _3, _4, _5, _6, _7, _8,
+					rhs_div_sign),nullptr,
+			0, d+1, 0, {}, {}, 0, nullptr, 0, {}, {});
 #else
-  LocalAssembling<d> la(2, {D000, D000},  {0, 1},  {},  {},
-			{0, 0, 0, 1}, coeff,
-			std::bind(NSRightHandSide<3>, _1, _2, _3, _4, _5, _6, _7, _8,
-				  rhs_div_sign),nullptr,
-			0, 4, 0,  {},  {},   0,   nullptr,  0,  {}, {});
+  LocalAssembling<d> la(2, {D000, D000},
+			{0, 1},  {},  {},
+			{0, 0, 0, 1},
+			coeff,std::bind(NSRightHandSide<d>, _1, _2, _3, _4, _5, _6, _7, _8,
+					rhs_div_sign),nullptr,
+			0, d+1, 0,  {},  {},   0,   nullptr,  0,  {}, {});
 #endif
 
   auto& v_space = brinkman_mixed.get_velocity_space();
@@ -459,21 +391,23 @@ void GeothermalPlantsPositionOptimization<d>::apply_control_and_solve(const doub
 	     2, fespaces.data()+1, 0, nullptr, 0, nullptr, 3, rhs_pointers,
 	     fespaces.data(), boundary_conditions,
 	     non_const_bound_values.data(), la);
-  
-#ifdef __2D__
+
+
   double mat_norm 
   = brinkman_mixed.get_matrix().get_combined_matrix()->GetNorm();
   double rhs_norm = rhs.norm();
   Output::print("---- norms: ", mat_norm, "  ", rhs_norm);
-  
-  Output::print<2>("primal solve: flow");
-  // solve the primal system
+
+  // solve the flow system
+  Output::print<2>(" ******   flow   *******");
+
   brinkman_mixed.solve();
   // brinkman_mixed.get_pressure().WriteSol("/Users/blank/ParMooN/Tests/Geothermal_Plants_Position_Optimization/", "written_fe_function_pressure");
-  
   brinkman_mixed.output(n_calls);
   time.restart_and_print("solving the stationary flow problem");
-  Output::print<2>("primal solve: temperature");
+
+
+  Output::print<2>(" ****** temperature *******");
   
   TDatabase::TimeDB->TIME_DISC = 2; // Crank-Nicolson
   //double end_time = TDatabase::TimeDB->ENDTIME;
@@ -482,70 +416,39 @@ void GeothermalPlantsPositionOptimization<d>::apply_control_and_solve(const doub
   TimeDiscretization& tss = tcd_primal.get_time_stepping_scheme();
   tss.current_step_ = 0;
   tss.set_time_disc_parameters();
+  Output::print<2>("  --> assemble ");
   tcd_primal.assemble_initial_time();
-  
-  double start_time = this->db["time_start"];
-  double end_time   = this->db["time_end"];
+
+  double start_time = db["time_start"];
+  double end_time   = db["time_end"];
+  Output::print<2>("  --> solve temperature, t0 = ", start_time, ", tEnd = ", end_time);
   TDatabase::TimeDB->CURRENTTIME = start_time; //TDatabase::TimeDB->STARTTIME;
-  
+
+  // output initial condition
   tcd_primal.output();
-
-#else
   
-  double mat_norm
-    = brinkman_mixed.get_matrix().get_combined_matrix()->GetNorm();
-  double rhs_norm = rhs.norm();
-  Output::print("---- norms: ", mat_norm, "  ", rhs_norm);
-
-  Output::print<2>("primal solve: flow");
-  // solve the primal system
-  brinkman_mixed.solve();
-  brinkman_mixed.output(n_calls);
-  time.restart_and_print("solving the stationary flow problem");
-  Output::print<2>("primal solve: temperature");
-
-  cout << "Before reset_for_output()"<<endl;
-  tcd_primal.reset_for_output();
-  TimeDiscretization& tss = tcd_primal.get_time_stepping_scheme();
-     tss.current_step_ = 0;
-     tss.set_time_disc_parameters();
-   tcd_primal.assemble_initial_time();
-
-   double start_time = this->db["time_start"];
-   double end_time   = this->db["time_end"];
-   TDatabase::TimeDB->CURRENTTIME = start_time; //TDatabase::TimeDB->STARTTIME;
-
-   tcd_primal.output();
-#endif
-
-  
-   // ======================================================================
-   // time iteration
-   // ======================================================================
+  // ======================================================================
+  // time iteration
+  // ======================================================================
   while(TDatabase::TimeDB->CURRENTTIME < end_time - 1e-10)
   {
     tss.current_step_++;
     TDatabase::TimeDB->INTERNAL_STARTTIME = TDatabase::TimeDB->CURRENTTIME;
     tss.set_time_disc_parameters();
-    double tau = this->db["time_step_length"];
+    
+    double tau = db["time_step_length"];
+
     TDatabase::TimeDB->CURRENTTIME += tau;
 
     Output::print<1>("\nCURRENT TIME: ", TDatabase::TimeDB->CURRENTTIME);
     SetTimeDiscParameters(1);
 
-#ifdef __2D__
     tcd_primal.assemble(brinkman_mixed.get_velocity(), x,
 			  db["diffusion_coefficient"]);
     tcd_primal.solve();
     if((tss.current_step_-1) % TDatabase::TimeDB->STEPS_PER_IMAGE == 0)
       tcd_primal.output();
-#else
-    tcd_primal.assemble(brinkman_mixed.get_velocity(), x,
-			  db["diffusion_coefficient"]);
-    tcd_primal.solve();
-    if((tss.current_step_-1) % TDatabase::TimeDB->STEPS_PER_IMAGE == 0)
-      tcd_primal.output();
-#endif
+
   }
   // ======================================================================
   Output::print("MEMORY: ", setw(10), GetMemory()/(1048576.0), " MB");
@@ -562,13 +465,6 @@ const
 {
   Output::print("computing current value of functional");
   double distance = x[0];
-  // For three wells:
-  // double x_i =   ;
-  // double x_p1 =  ;
-  // double x_p2 =  ;
-  // double y_i =  ;
-  // double y_p1 =   ;
-  // double y_p2 =  ;
   auto u = brinkman_mixed.get_velocity();
   auto u1 = u.GetComponent(0);
   auto u2 = u.GetComponent(1);
@@ -655,14 +551,15 @@ const
   // 3Wells
   //  double functional_value = 0.5 * alpha * distance;
   // functional_value += 0.5 * cost_functional[0] / distance;
-  double functional_value = (1000/1000001)  * alpha * distance; //0.5 * alpha * distance;
+  /*double functional_value = (1000/1000001)  * alpha * distance; //0.5 * alpha * distance;
   functional_value +=  (1000/1000001)  * cost_functional[0] / distance; //0.5 * cost_functional[0] / distance;
   if(n_calls > 1)
   {
     Output::print("difference to previous functional ", std::setprecision(14),
             current_J_hat - functional_value);
-  }
-
+	    }*/
+  
+  double functional_value = 1.;
   delete u1;
   delete u2;
 #ifdef __3D__

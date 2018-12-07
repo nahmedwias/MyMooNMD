@@ -83,18 +83,24 @@ void pde_coefficients_flow(int n_points, double *x, double *y,
 {
   for(int i = 0; i < n_points; i++)
   {
+    int dimension;
+#ifdef __2D__
+    dimension = 2;
+#else
+    dimension = 3;
+#endif
     // physical parameters
     coeffs[i][0] = nu;
-    coeffs[i][1] = 0.; // f1
-    coeffs[i][2] = 0.; // f2
-#ifdef __2D__
-    coeffs[i][3] = 0.; // divergence
-#else
-    coeffs[i][3] = 0.; // f3
-    coeffs[i][4] = 0.; // div
-#endif
+    coeffs[i][dimension+2] = sigma;
+    // momentum source
+    for (int k=1; k<=dimension; k++)
+      coeffs[i][k] = 0.; // f_k
 
-#ifdef __2D__
+    //divergence soucr
+    coeffs[i][dimension+1] = 0.; // divergence
+
+    /*
+    ///@todo implement space dependent parameters
     if (!use_parameters) // initial assembling // if (parameters[i] == nullptr)
     {
       if (abs(x[i] - 1.5 - y[i] + 0.01) < 0.05) // crack through the sink
@@ -114,9 +120,7 @@ void pde_coefficients_flow(int n_points, double *x, double *y,
       coeffs[i][4] = parameters[i][0];
       
     }
-#else
-    coeffs[i][5] = sigma;
-#endif
+    */
     
   }
 
@@ -163,18 +167,30 @@ void pde_coefficients_temperature(int n_points, double *, double *,
 #ifdef __2D__
 Example_NSE2D get_gppo_flow_example(const ParameterDatabase & db)
 {
-  //int example = db["example"];
-  std::vector<DoubleFunct2D *> exact(3, unknown_solution);
-  std::vector<BoundCondFunct2D *> bc{{all_Dirichlet_boundary_condition,
-    all_Dirichlet_boundary_condition, all_Neumann_boundary_condition}};
-  std::vector<BoundValueFunct2D *> bd(3, zero_boundary_value); 
-  double reynolds_number = db["reynolds_number"];
-  double sigma = db["inverse_permeability"];
-  using namespace std::placeholders;
-  bool use_coeff_fct = false; // db["variable_sigma_fct_type"];
-  CoeffFct2D coeffs = std::bind(pde_coefficients_flow, _1, _2, _3, _4, _5,
-                                1./reynolds_number, sigma, use_coeff_fct);
-  return Example_NSE2D(exact, bc, bd, coeffs, 1./reynolds_number);
+  int example_code = db["example"];
+  Output::print<1>(" Example code: ", example_code);
+  switch (example_code) {
+  case 1:
+  {
+    std::vector<DoubleFunct2D *> exact(3, unknown_solution);
+    std::vector<BoundCondFunct2D *> bc{{all_Neumann_boundary_condition,
+	  all_Neumann_boundary_condition, all_Neumann_boundary_condition}};
+    std::vector<BoundValueFunct2D *> bd(3, zero_boundary_value); 
+    double reynolds_number = db["reynolds_number"];
+    double sigma = db["inverse_permeability"];
+    using namespace std::placeholders;
+    bool use_coeff_fct = false; // db["variable_sigma_fct_type"];
+    CoeffFct2D coeffs = std::bind(pde_coefficients_flow, _1, _2, _3, _4, _5,
+				  1./reynolds_number, sigma, use_coeff_fct);
+    return Example_NSE2D(exact, bc, bd, coeffs, 1./reynolds_number);
+    break;
+  }
+  default:
+  {
+    Output::print(" ** ERROR, example ", example_code , " not implemented");
+    exit(1);
+  }
+  }
 }
 
 Example_TimeCD2D get_gppo_temperature_example(const ParameterDatabase & db)
@@ -189,8 +205,10 @@ Example_TimeCD2D get_gppo_temperature_example(const ParameterDatabase & db)
   CoeffFct2D coeffs = std::bind(pde_coefficients_temperature, _1, _2, _3, _4, _5, nu);
   return Example_TimeCD2D(exact, bc, bd, coeffs, false, false, ic);
 }
+ 
 #else
-Example_NSE3D get_3D_gppo_flow_example(const ParameterDatabase & db)
+
+ Example_NSE3D get_gppo_flow_example(const ParameterDatabase & db)
 {
   //int example = db["example"];
   std::vector<DoubleFunct3D *> exact(4, unknown_solution_3D);
@@ -208,7 +226,7 @@ Example_NSE3D get_3D_gppo_flow_example(const ParameterDatabase & db)
 }
 
 
-Example_TimeCD3D get_3D_gppo_temperature_example(const ParameterDatabase & db)
+Example_TimeCD3D get_gppo_temperature_example(const ParameterDatabase & db)
 {
   //int example = db["example"];
   std::vector<DoubleFunct3D *> exact(1, unknown_solution_3D);
