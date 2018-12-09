@@ -153,6 +153,11 @@ class NavierStokes
     { return this->systems.front().p; }
     FEFunction & get_pressure()
     { return this->systems.front().p; }
+
+    const FEFunction & get_exact_pressure() const
+    { return this->systems.front().p_exact; }
+    FEFunction & get_exact_pressure()
+    { return this->systems.front().p_exact; }
     
     const FESpace & get_velocity_space() const
     { return *this->systems.front().velocity_space.get(); }
@@ -238,6 +243,9 @@ class NavierStokes
       FEVectFunct u;
       /** @brief Finite Element function for pressure */
       FEFunction p;
+
+      /** @brief Finite Element function for exact pressure (if available)*/
+      FEFunction p_exact;
       
       /** @brief constructor in mpi case
        * @param[in] example The current example.
