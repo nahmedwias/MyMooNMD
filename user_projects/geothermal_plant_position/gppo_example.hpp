@@ -8,6 +8,98 @@
 
 constexpr double surrounding_temperature = 348.15; //=75 + 273.15; //150.;
 
+#ifdef __2D__
+// we consider an approximated exact solution for the 2D case
+void doublet_ux_solution(double x, double y, double *values)
+{
+
+  double r_0 = 50.; // epsilon used for approximate delta function
+  double r_1 = 3000.; // minimal distance well-boundary
+  double sigma = 10000.;
+  double Qin = 150./3600.;
+  double u0 = Qin/(2.*Pi*r_0);
+  double xi = 4500.;
+  double yi = 3000.;
+  double xe = 5500.;
+  double ye = 3000.;
+  
+  double x_1 = x - xi;
+  double y_1 = y - yi;
+  double r2_1 = x_1*x_1 + y_1*y_1;
+  values[0] = u0 * r_0 * x_1/r2_1; 
+  values[1] = u0 * r_0 * ( (-x_1*x_1+y_1*y_1)/(r2_1 * r2_1) );
+  values[2] = u0 * r_0 * ( -2*x_1*y_1/(r2_1 * r2_1) );
+
+  double x_2 = x - xe;
+  double y_2 = y - ye;
+  double r2_2 = x_2*x_2 + y_2*y_2;
+  values[0] -= u0 * r_0 * x_2/r2_2; 
+  values[1] -= u0 * r_0 * ( (-x_2*x_2+y_2*y_2)/(r2_2*r2_2) );
+  values[2] -= u0 * r_0 * ( -2*x_2*y_2/(r2_2*r2_2) );
+
+  values[3] = 0.;
+}
+
+void doublet_uy_solution(double x, double y, double *values)
+{
+  double r_0 = 50.; // epsilon used for approximate delta function
+  double r_1 = 3000.; // minimal distance well-boundary
+  double sigma = 10000.;
+  double Qin = 150./3600.;
+  double u0 = Qin/(2.*Pi*r_0);
+  double xi = 4500.;
+  double yi = 3000.;
+  double xe = 5500.;
+  double ye = 3000.;
+  
+  double x_1 = x - xi;
+  double y_1 = y - yi;
+  double r2_1 = x_1*x_1 + y_1*y_1;
+  values[0] = u0 * r_0 * y_1/r2_1; 
+  values[1] = u0 * r_0 * (-2*y_1*x_1/(r2_1*r2_1));
+  values[2] = u0 * r_0 * (-y_1*y_1 + x_1*x_1)/( r2_1*r2_1);
+    
+  double x_2 = x - xe;
+  double y_2 = y - ye;
+  double r2_2 = x_2*x_2 + y_2*y_2;
+  values[0] = u0 * r_0 * y_2/r2_2; 
+  values[1] = u0 * r_0 * (-2*y_2*x_2/(r2_2*r2_2));
+  values[2] = u0 * r_0 * (-y_2*y_2 + x_2*x_2)/( r2_2*r2_2);
+
+  values[3] = 0.;
+}
+
+void doublet_p_solution(double x, double y, double *values)
+{
+  double r_0 = 50.; // epsilon used for approximate delta function
+  double r_1 = 3000.; // minimal distance well-boundary
+  double sigma = 10000.;
+  double Qin = 150./3600.;
+  double u0 = Qin/(2.*Pi*r_0);
+  double xi = 4500.;
+  double yi = 3000.;
+  double xe = 5500.;
+  double ye = 3000.;
+  
+  double x_1 = x - xi;
+  double y_1 = y - yi;
+  double r2_1 = x_1*x_1 + y_1*y_1;
+  values[0] = -sigma * u0 * r_0 * 0.5 * log( r2_1/(r_1*r_1) );     
+  values[1] = -sigma * u0 * r_0 * x_1/r2_1;
+  values[2] = -sigma * u0 * r_0 * y_1/r2_1;
+
+    
+  double x_2 = x - xe;
+  double y_2 = y - ye;
+  double r2_2 = x_2*x_2 + y_2*y_2;
+  values[0] -= -sigma * u0 * r_0 * 0.5 * log( r2_2/(r_1*r_1) );     
+  values[1] -= -sigma * u0 * r_0 * x_2/r2_2;
+  values[2] -= -sigma * u0 * r_0 * y_2/r2_2;
+
+  values[3] = 0.;
+}
+#endif
+
 void unknown_solution(double, double, double *values)
 {
   values[0] = 0.;
@@ -172,7 +264,12 @@ Example_NSE2D get_gppo_flow_example(const ParameterDatabase & db)
   switch (example_code) {
   case 1:
   {
-    std::vector<DoubleFunct2D *> exact(3, unknown_solution);
+    //std::vector<DoubleFunct2D *> exact(3, unknown_solution);
+    std::vector<DoubleFunct2D *> exact;
+    exact.push_back(doublet_ux_solution);
+    exact.push_back(doublet_uy_solution);
+    exact.push_back(doublet_p_solution);
+    
     std::vector<BoundCondFunct2D *> bc{{all_Neumann_boundary_condition,
 	  all_Neumann_boundary_condition, all_Neumann_boundary_condition}};
     std::vector<BoundValueFunct2D *> bd(3, zero_boundary_value); 
