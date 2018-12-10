@@ -118,7 +118,7 @@ NavierStokes<d>::System_per_grid::System_per_grid (
 
 
   // initialize variables for storing exact solution (FE functions)
-  double values_exact_p[solution.length(d)];
+  values_exact_p = new double[solution.length(d)];
   p_exact = FEFunction(pressure_space.get(), "p_exact", "p_exact",
 		       values_exact_p,solution.length(d));
 

@@ -246,6 +246,7 @@ class NavierStokes
 
       /** @brief Finite Element function for exact pressure (if available)*/
       FEFunction p_exact;
+      double *values_exact_p;
       
       /** @brief constructor in mpi case
        * @param[in] example The current example.
