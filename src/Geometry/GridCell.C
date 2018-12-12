@@ -1045,9 +1045,6 @@ bool TGridCell::PointInCell(double X, double Y, double Z) const
     {
       ret = true;
     }
-    // cout << "ref: " << xi << "  " << eta << "  " << zeta << endl;
-    rt->GetRefFromOrig(xi, eta, zeta, X, Y, Z);
-    // cout << "orig: " << X << "  " << Y << "  " << Z << endl;
   }
   return ret;
 }
