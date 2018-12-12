@@ -1,7 +1,7 @@
 set(gppo_dir "${PROJECT_SOURCE_DIR}/user_projects/geothermal_plant_position")
 include_directories(${gppo_dir})
 
-# list of sources for boundary controlled optimization
+# list of sources for geothermal plant position optimization
 list(APPEND GTPSRC "${gppo_dir}/GeothermalPlantsPositionOptimization.cpp" )
 #list(APPEND GTPSRC "${gppo_dir}/TCD2D_Temperature.cpp" )
 list(APPEND GTPSRC "${gppo_dir}/TCD_Temperature.cpp" )
@@ -15,6 +15,8 @@ list(APPEND GPPOSRC_3D "${gppo_dir}/TCD_Temperature.cpp" )
 #list(APPEND GPPOSRC_3D "${gppo_dir}/NSE3D_GPPO.cpp" )
 list(APPEND GPPOSRC_3D "${gppo_dir}/NSE_GPPO.cpp" )
 
+# ONLY IN SEQ CASE
+if(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL OR ${PARMOON_PARALLEL_TYPE} STREQUAL OMPONLY)
 
 add_library(GTP_LIB_2D STATIC ${GTPSRC})
 target_compile_definitions(GTP_LIB_2D PUBLIC -D__2D__)
@@ -50,4 +52,6 @@ target_link_libraries(gppo3d ${all_gppo_libs_3D})
 list(APPEND parmoon_main_programs gppo3d)
 
 set(parmoon_main_programs ${parmoon_main_programs} PARENT_SCOPE)
+
+endif(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL OR ${PARMOON_PARALLEL_TYPE} STREQUAL OMPONLY)
 
