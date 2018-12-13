@@ -31,8 +31,10 @@ int main(int argc, char* argv[])
   Chrono timer;
 
   //  declaration of database, you need this in every program
-  TDatabase Database;
-  TFEDatabase2D FEDatabase; 
+  TDatabase Database(argv[1]);
+  TFEDatabase2D FEDatabase;
+
+  // create a default database
   ParameterDatabase db = GeothermalPlantsPositionOptimization<2>::default_GPPO_database();
 
   if(argc < 2)
@@ -49,6 +51,7 @@ int main(int argc, char* argv[])
             default_name);
     return 0;
   }
+  // read parameters
   db.read(argv[1]);
 
   // open OUTFILE, this is where all output is written to (additionally to console)

@@ -43,6 +43,7 @@ void ExactU1(double x, double y, double *values)
   values[1] = Q/(2*Pi) * ( (-(x-xi)*(x-xi)+(y-yi)*(y-yi))/(r2*r2) );
   values[2] = Q/(2*Pi) * ( -2*(x-xi)*(y-yi)/(r2*r2) );
 
+  r2 = (x-xe)*(x-xe) + (y-ye)*(y-ye);
   values[0] -= Q/(2*Pi) * (x-xe)/r2;        
   values[1] -= Q/(2*Pi) * ( (-(x-xe)*(x-xe)+(y-ye)*(y-ye))/(r2*r2) );
   values[2] -= Q/(2*Pi) * ( -2*(x-xe)*(y-ye)/(r2*r2) );
@@ -58,6 +59,7 @@ void ExactU2(double x, double y, double *values)
   values[1] = Q/(2*Pi) * (-2*(y-yi)*(x-xi)/(r2*r2));
   values[2] = Q/(2*Pi) * (-(y-yi)*(y-yi) + (x-xi)*(x-xi))/( r2*r2);
 
+  r2 = (x-xe)*(x-xe) + (y-ye)*(y-ye);
   values[0] -= Q/(2*Pi) * (y-ye)/r2;
   values[1] -= Q/(2*Pi) * (-2*(y-ye)*(x-xe)/(r2*r2));
   values[2] -= Q/(2*Pi) * (-(y-ye)*(y-ye) + (x-xe)*(x-xe))/( r2*r2);
@@ -75,12 +77,13 @@ void ExactU2(double x, double y, double *values)
 void ExactP(double x, double y, double *values)
 {
   double r2 = (x-xi)*(x-xi) + (y-yi)*(y-yi);
-  double r_1 = 3.; // min(L1-xi,L2-yi)/2
+  double r_1 = 6000.; // max(L1-xi,L2-yi)/2
 
   values[0] = -sigma * Q/(2*Pi) * 0.5 * log( r2/(r_1*r_1) );     
   values[1] = -sigma * Q/(2*Pi) * (x-xi)/r2;
   values[2] = -sigma * Q/(2*Pi) * (y-yi)/r2;
 
+  r2 = (x-xe)*(x-xe) + (y-ye)*(y-ye);
   values[0] -= -sigma * Q/(2*Pi) * 0.5 * log( r2/(r_1*r_1) );     
   values[1] -= -sigma * Q/(2*Pi) * (x-xe)/r2;
   values[2] -= -sigma * Q/(2*Pi) * (y-ye)/r2;
