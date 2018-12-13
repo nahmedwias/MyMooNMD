@@ -11,7 +11,6 @@
 #include "TimeNavierStokes.h"
 #include <MeshPartition.h>
 #include <Chrono.h>
-#include <TetGenMeshLoader.h>
 #include <LoopInfo.h>
 #include <TimeDiscretizations.h>
 
@@ -60,7 +59,6 @@ int main(int argc, char* argv[])
   // Construct the ParMooN Databases.
   TDatabase Database(argv[1]);
   ParameterDatabase parmoon_db = ParameterDatabase::parmoon_default_database();
-  parmoon_db.merge(ParameterDatabase::default_tetgen_database(), true);
   parmoon_db.read(argv[1]);
   
   //open OUTFILE, this is where all output is written to (additionally to console)

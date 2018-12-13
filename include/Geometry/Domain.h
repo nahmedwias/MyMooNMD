@@ -21,7 +21,6 @@ class TDomain;
 #include <Iterator.h>
 #include <Mesh.h>
 #include <ParameterDatabase.h>
-class TTetGenMeshLoader;
 
 /** contains the boundary description, the virtual cell
     tree and macro grid */
@@ -86,8 +85,6 @@ class TDomain
     /** @brief current refinment level */
     int RefLevel;
     
-    friend class TTetGenMeshLoader;
-
 #ifdef  _MPI
       /** @brief array contains the global cell number of local cells (including Halo cells) */
       int *GlobalCellIndex;
@@ -169,9 +166,6 @@ class TDomain
     /** @brief set boundary parameters and cell shape according to
         possibly moving vertices */
     void CorrectParametersAndShapes();
-    
-    /** @brief mesh genration using Triangle for give IN */
-    void TriMeshGen(struct triangulateio *In);
 #endif
 
     /** @brief Reads in boundary parameterization in ".PRM" file format
@@ -221,10 +215,6 @@ class TDomain
       N_OwnCells = 0;
       #endif 
     }
-
-    /** @brief generate initial grid using external mesh generator */
-    int GenInitGrid();
-
 
     /**
       * @brief Chooses in what way to construct the domain's geometry
@@ -280,36 +270,13 @@ class TDomain
       void InitFromMesh(std::string PRM, std::string m);
       
 #ifdef __3D__
-      /**
-       * @brief Initialize the domain starting from a tetgen generated mesh
-       *
-       * This function will read the mesh file ".smesh, or .." 
-       * and modiefy the domain to ressemble the mesh, 
-       * the boundary, and build the mesh which will be 
-       * used within ParMooN.
-       * @param[in] tgml an object of the class TTetGenMeshLoader
-       * @todo this function is work in progress (08.2016)
-       */
-      void GenerateFromTetgen(TTetGenMeshLoader& tgml);
+
       void GenerateFromMesh(Mesh& m);
       void buildBoundary(Mesh& m);
       void buildParMooNMesh(Mesh& m);
       void setVertices(Mesh& m);
       void allocRootCells(Mesh& m);
-      void distributeJoints(Mesh& m);
-      /**
-       * @brief build the boundary of a tetrahedral mesh
-       *
-       * All the (triangular) faces are considered to be
-       * different boundary components (planes) belonging
-       * to the same BdPart.
-       */
-      void buildBoundary(TTetGenMeshLoader& tgml);
-      void buildParMooNMesh(TTetGenMeshLoader& tgml);
-      void setVertices(TTetGenMeshLoader& tgml);
-      void allocRootCells(TTetGenMeshLoader& tgml);
-      void distributeJoints(TTetGenMeshLoader& tgml);
-      
+      void distributeJoints(Mesh& m);      
 
       // auxiliary vector of boundary components 
       std::vector<TBoundComp3D*> meshBoundComps;
@@ -536,8 +503,6 @@ class TDomain
     
 #ifdef __3D__
   public: 
-
-//      int Tetgen(const char*);
 
      /** @brief generate edge info in 3D mesh **/
      // TODO CB Add documentation. This method does mark certain Vertices as boundary vertices

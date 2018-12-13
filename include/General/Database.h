@@ -605,11 +605,6 @@ bool SOURCE_SINK_FUNCTION;
   int    INTERNAL_DISC_FLAG;
   int    INTERNAL_START_PARAM;
   
-  // parameter for tetgen
-  double TETGEN_QUALITY;
-  double TETGEN_VOLUMEN;
-  int 	 TETGEN_STEINER;
-
   //======================================================================
   /** parameters for individual use in parallel computations */
   //======================================================================

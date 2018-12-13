@@ -29,8 +29,6 @@ int main(int argc, char* argv[])
 
   // read input file 
   ParameterDatabase parmoon_db = ParameterDatabase::parmoon_default_database();
-  // merge with default tetgen parameters
-  parmoon_db.merge(ParameterDatabase::default_tetgen_database(), true);
   std::ifstream fs(argv[1]);
   parmoon_db.read(fs);
   fs.close();

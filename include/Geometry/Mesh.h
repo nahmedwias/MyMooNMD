@@ -23,8 +23,6 @@
 #ifndef __MESH__
 #define __MESH__
 
-class tetgenio;
-
 struct meshNode
 {
   double x,y,z;
@@ -145,7 +143,6 @@ class Mesh
   Mesh();
   Mesh(std::string f);
   Mesh(std::string filename,std::string filenameBoundary);
-  Mesh(tetgenio& tgio);
   // Destructor
   ~Mesh(){};
 
@@ -154,11 +151,6 @@ class Mesh
      @note supported formats: .mesh
   */
   void readFromFile(std::string filename);
-
-  /**
-     @brief read a tetgenio object (Tetgen output) and create the mesh
-  */
-  void readFromTetgen(tetgenio& tgio);
 
   ///@brief write mesh to a file .mesh
   void writeToMesh(std::string filename);
@@ -186,7 +178,6 @@ class Mesh
       Once the "hash" array has been created, given three vertices (a,b,c), 
       we can search the ID of the corresponding face by looking up only the 
       faces with the same hash (a+b+c).
-      This function has been moved here from the class TTetGenMeshLoader.
   */
   void hashTriFaces();
 

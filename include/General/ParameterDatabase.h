@@ -54,10 +54,6 @@ class ParameterDatabase
     /// the same feature in MPI.
     static ParameterDatabase default_solution_in_out_database();
 
-    /// construct a database filled with parameters for 
-    /// mesh generation using TetGen
-    static ParameterDatabase default_tetgen_database();
-
 
     /// @brief delete all parameters from this database
     ~ParameterDatabase() = default;
