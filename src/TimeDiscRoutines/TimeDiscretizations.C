@@ -263,6 +263,7 @@ void TimeDiscretization::scale_descale_all_b_blocks(BlockFEMatrix& matrix,
     {
       cells = {{0,2},{1,2},
                {2,0},{2,1}};
+      factor *= SCALE_DIVERGENCE_CONSTRAINT;
     }
 #endif
 #ifdef __3D__ 
@@ -271,6 +272,7 @@ void TimeDiscretization::scale_descale_all_b_blocks(BlockFEMatrix& matrix,
     {
       cells = {{0,3},{1,3},{2,3},
                {3,0},{3,1},{3,2}};
+      factor *= SCALE_DIVERGENCE_CONSTRAINT;
     }
 #endif  
   }
