@@ -61,7 +61,6 @@ list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/Vertex.C")
 
 # Source files only used in 2D
 list(APPEND GEO_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/Geometry/InnerInterfaceJoint.C")
-#list(APPEND GEO_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/Geometry/MeshGen.C") #CB why not?
 list(APPEND GEO_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/Geometry/Parallelogram.C")
 
 # Source files only used in 3D
@@ -80,7 +79,6 @@ list(APPEND GEO_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/Geometry/InterfaceJoint3D.
 list(APPEND GEO_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/Geometry/IsoBoundFace.C")
 list(APPEND GEO_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/Geometry/IsoEdge3D.C")
 list(APPEND GEO_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/Geometry/IsoInterfaceJoint3D.C")
-list(APPEND GEO_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/Geometry/TetGenMeshLoader.C")
 list(APPEND GEO_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/Geometry/Tetrahedron.C")
 list(APPEND GEO_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/Geometry/Parallelogram.C")
 

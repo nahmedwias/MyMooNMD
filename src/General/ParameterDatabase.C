@@ -1404,29 +1404,4 @@ ParameterDatabase ParameterDatabase::default_solution_in_out_database()
   return db;
 }
 
-ParameterDatabase ParameterDatabase::default_tetgen_database()
-{
-  ParameterDatabase db("default ParMooN mesh generation using TetGen "
-                        "parameters database");
-
-  // maximum can be infnity
-  db.add("tetgen_quality", 1.4, " This value is for the aspect ratio", 
-         1.0, 1000.);
-  
-  db.add("tetgen_steiner", 0u,
-         "this parameter 'preserve the mesh on the exterior boundary' ", 
-         0u, 1u);
-  
-  // maximum can be anything depending on geometry
-  db.add("tetgen_volume", 1.0, "this parameter is for the maximum volume "
-          "that depends on the geometry", 0.0, 1000.);
-  
-  db.add("tetgen_merge_colplaner", 0u, 
-         "This parameter is for the coplanar facets to be merge "
-         "or very close vertices", 0u, 1u);
-  
-  db.add("tetgen_quiet", 1u, "Quiet: No terminal output except errors ",
-         0u, 1u);
-  return db;
-}
 

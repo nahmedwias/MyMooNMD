@@ -2,7 +2,7 @@
 
 #include "Mesh.h"
 #include "MooNMD_Io.h"
-#include <tetgen.h>
+#include <assert.h>
 
 // default initialization of the mesh (dimension = 0, no elements)
 Mesh::Mesh() {
@@ -55,23 +55,6 @@ Mesh::Mesh(std::string filename,std::string filenameBoundary) {
   
   readFromFile(filename);
   setBoundary(filenameBoundary);
-}
-
-Mesh::Mesh(tetgenio& tgio) {
-  dimension = 3;
-  vertex.resize(0);
-  edge.resize(0);
-  triangle.resize(0);
-  quad.resize(0);
-  tetra.resize(0);
-  hexa.resize(0);
-  meshTrifaceHash.resize(0);
-  faceToTetra.resize(0);
-  hasBothTriaAndQuads = false;
-  n_boundary_faces = 0;
-  boundaryFacesMarker.resize(0);
-  
-  readFromTetgen(tgio);
 }
 
 
@@ -276,39 +259,6 @@ void Mesh::readFromFile(std::string filename)
   }
 }
 
-
-// read a tetgenio object (Tetgen output) and create the mesh
-void Mesh::readFromTetgen(tetgenio& meshTetGenOut)
-{
-  dimension = 3; 
-  Output::print("Read dimension: ",dimension);
-
-  vertex.resize(meshTetGenOut.numberofpoints);
-
-  for (unsigned int i=0; i<vertex.size(); i++) {
-    vertex[i].x = meshTetGenOut.pointlist[3*i  ];
-    vertex[i].y = meshTetGenOut.pointlist[3*i+1];
-    vertex[i].z = meshTetGenOut.pointlist[3*i+2];
-  }
-
-  triangle.resize(meshTetGenOut.numberoftrifaces);
-  for (unsigned int i=0; i<triangle.size(); i++) {
-    // add + 1 since the list in Mesh starts from 1, while the Tetgen list starts from 0
-    triangle[i].nodes[0] = meshTetGenOut.trifacelist[3*i  ]+1;
-    triangle[i].nodes[1] = meshTetGenOut.trifacelist[3*i+1]+1;
-    triangle[i].nodes[2] = meshTetGenOut.trifacelist[3*i+2]+1;
-    triangle[i].reference =  meshTetGenOut.trifacemarkerlist[i];
-  }
-
-  tetra.resize(meshTetGenOut.numberoftetrahedra);
-  for (unsigned int i=0; i<tetra.size(); i++) {
-    for (unsigned int k=0; k<4; k++) {
-      tetra[i].nodes[k] = meshTetGenOut.tetrahedronlist[4*i+k]+1;
-    }
-    tetra[i].reference = 0;
-  }
-  
-}
 
 /** 
     This function creates a map between

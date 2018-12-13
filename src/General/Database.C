@@ -164,24 +164,6 @@ void TParamDB::read_parameters(const char* ParamFile)
       N_Param++;
     }
 
-    if (!strcmp(line, "TETGEN_QUALITY:"))
-    {
-      dat >> TETGEN_QUALITY;
-      N_Param++;
-    }
-
-    if (!strcmp(line, "TETGEN_VOLUMEN:"))
-    {
-      dat >> TETGEN_VOLUMEN;
-      N_Param++;
-    }
-
-    if (!strcmp(line, "TETGEN_STEINER:"))
-    {
-      dat >> TETGEN_STEINER;
-      N_Param++;
-    }
-
     if (!strcmp(line, "MESHGEN_ALLOW_EDGE_REF:"))
     {
       dat >> MESHGEN_ALLOW_EDGE_REF;
@@ -2879,10 +2861,6 @@ void TDatabase::SetDefaultParameters()
   ParamDB-> s2 = 0;
 
   
-  ParamDB->TETGEN_QUALITY = 0.0;
-  ParamDB->TETGEN_VOLUMEN = 0.0;
-  ParamDB->TETGEN_STEINER = 0;
-
   ParamDB->CHAR_L0=1.;
   ParamDB->D_VISCOSITY=1.0;
   ParamDB->SURF_TENSION=0.;
