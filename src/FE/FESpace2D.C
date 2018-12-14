@@ -16,7 +16,6 @@
 #  include "mpi.h"
 #endif
 
-#include <DefineParams.h>
 #include <Constants.h>
 #include <FESpace2D.h>
 #include <Joint.h>
@@ -1201,7 +1200,7 @@ const TFE2D& TFESpace2D::get_fe(unsigned int cell_number) const
   if((int)cell_number >= this->N_Cells)
     ErrThrow("unable to find the finite element for cell ", cell_number, 
              ". There are only ", this->N_Cells, " cells");
-  TBaseCell * cell = this->Collection->GetCell(cell_number);
+  const TBaseCell * cell = this->Collection->GetCell(cell_number);
   // find finite element id
   FE2D fe_id = this->GetFE2D(cell_number, cell);
   // get the finite element from the database
@@ -1212,7 +1211,7 @@ const TFE2D& TFESpace2D::get_fe(unsigned int cell_number) const
 
 void TFESpace2D::FindUsedElements()
 {
-  TBaseCell *cell;
+  const TBaseCell *cell;
   int i, j, N_;
   int Used[N_FEs2D];
 
@@ -1254,8 +1253,8 @@ void TFESpace2D::ConstructSpace(BoundCondFunct2D *BoundaryCondition)
 {
   int i, j, k, l, m, n, comp, N_Edges;
   int *v;
-  TBaseCell *cell, *neigh, *child1;
-  TJoint *joint;
+  const TBaseCell *cell, *neigh, *child1;
+  const TJoint *joint;
   const TBoundComp2D *BoundComp;
   TBoundEdge *BoundEdge;
   double t0,t1;
@@ -1284,11 +1283,11 @@ void TFESpace2D::ConstructSpace(BoundCondFunct2D *BoundaryCondition)
 
 #ifndef _MPI //to avoid warnings in MPI case
   int m2, NEdges;
-  TBaseCell *child2;
+  const TBaseCell *child2;
   TFE2DMapper1Reg *mapper1reg;
   const int* TmpoEnE, *TmpLen1, *TmpEC, *TmpLen2, *TmpoEnlE;
   int MaxLen1, MaxLen2;
-  TRefDesc *refdesc;
+  const TRefDesc *refdesc;
   FE2D FEType2;
   TFE2D *FE2;
   TFEDesc2D *FEDesc2_Obj;
@@ -1580,20 +1579,11 @@ void TFESpace2D::ConstructSpace(BoundCondFunct2D *BoundaryCondition)
       {
         // no boundary joint
         neigh = joint->GetNeighbour(cell);
-        if (!neigh || joint->GetType() == MortarJoint ||
-            joint->GetType() == MortarBaseJoint)
+        if (!neigh)
         {
           // there is no neighbour
-          // => either mortar joint
-          //    or finer cell in 1 regular grid
+          // => finer cell in 1 regular grid
           //    will be handle from coarser cell
-          if(joint->GetType() == MortarJoint ||
-             joint->GetType() == MortarBaseJoint)
-          {
-            // do mortar mapping
-            mapper=TFEDatabase2D::GetFE2DMapper(FEDesc0, FEDesc0);
-            mapper->MapBound(GlobalNumbers, I_K0, Indices0, Counter);
-          }
         } // !neigh
         else
         {
@@ -2108,14 +2098,14 @@ TFESpace2D::~TFESpace2D()
 void TFESpace2D::GetDOFPosition(double *x, double *y)
 {
   int i,j,k;
-  TBaseCell *cell;
+  const TBaseCell *cell;
   int N_Joints;
-  TJoint *joint;
+  const TJoint *joint;
   JointType jointtype;
   FE2D FEid;
   int *DOF;
   TNodalFunctional2D *nf;
-  double *xi, *eta;
+  const double *xi, *eta;
   int N_Points;
   RefTrans2D RefTrans, *RefTransArray;
   int IsIsoparametric;
@@ -2229,14 +2219,14 @@ void TFESpace2D::GetDOFPosition(double *x, double *y)
 void TFESpace2D::GetDOFPosition(int dof, double &x, double &y) const
 {
   int i,j,k;
-  TBaseCell *cell;
+  const TBaseCell *cell;
   int N_Joints;
-  TJoint *joint;
+  const TJoint *joint;
   JointType jointtype;
   FE2D FEid;
   int *DOF;
   TNodalFunctional2D *nf;
-  double *xi, *eta;
+  const double *xi, *eta;
   int N_Points;
   RefTrans2D RefTrans, *RefTransArray;
   int IsIsoparametric;

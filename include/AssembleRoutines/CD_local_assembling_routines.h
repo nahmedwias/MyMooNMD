@@ -19,11 +19,17 @@ void TCDRhs(double Mult, double *coeff, double *param, double hK, double**OrigVa
 template <int d>
 void GradGrad(double Mult, double *coeff, double *param, double hK, double**OrigValues, 
              int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
-template <int d>
 void TCDStiffSUPG(double Mult, double *coeff, double *param, double hK, double**OrigValues, 
               int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
 template <int d>
+void TCDStiffSUPG(double Mult, double *coeff, double *param, double hK, double**OrigValues, 
+              int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
 void TCDMassSUPG(double Mult, double *coeff, double *param, double hK, double**OrigValues, 
+             int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
+template <int d>
+void TCDMassSUPG(double Mult, double *coeff, double *param, double hK, double**OrigValues, 
+              int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
+void TCDRhsSUPG(double Mult, double *coeff, double *param, double hK, double**OrigValues, 
              int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
 template <int d>
 void TCDRhsSUPG(double Mult, double *coeff, double *param, double hK, double**OrigValues, 

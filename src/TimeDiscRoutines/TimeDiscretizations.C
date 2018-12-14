@@ -82,6 +82,7 @@ TimeDiscretization::TimeDiscretization(const ParameterDatabase & param_db)
     // rk = std::make_shared<RungeKuttaTable>(db["time_discretization"]);
     pre_stage_bdf = false;
   }
+  start_time = db["time_start"];
   current_time_step_length = db["time_step_length"];
   end_time = db["time_end"];
   TDatabase::TimeDB->TIMESTEPLENGTH = current_time_step_length;

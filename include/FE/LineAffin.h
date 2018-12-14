@@ -51,9 +51,9 @@ class TLineAffin : public TRefTrans1D
                                 );
 
     /** transfer a set of points form reference to original element */
-    void GetOrigFromRef(int N_Points, double *xi, double *X, double *Y, double *absdetjk);
+    void GetOrigFromRef(int N_Points, const double *xi, double *X, double *Y, double *absdetjk);
     /** transfer a set of points form reference to original element */
-    void GetOrigFromRef(int N_Points, double *xi, double *X, double *absdetjk);
+    void GetOrigFromRef(int N_Points, const double *xi, double *X, double *absdetjk);
 
     void GetOrigValues(int N_Sets, BaseFunct1D *BaseFuncts, int N_Points, double *zeta,
                        QuadFormula1D QuadFormula, bool *Needs2ndDer);

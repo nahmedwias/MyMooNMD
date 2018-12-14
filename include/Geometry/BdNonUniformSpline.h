@@ -60,13 +60,13 @@ class TBdNonUniformSpline : public TBoundComp2D
     virtual int GetTofXY(double X, double Y, double &T) const override;
 
     /** read parameter from input stream */
-    virtual int ReadIn(std::istream &dat);
+    virtual int ReadIn(std::istream &dat) override;
 
     /** get number of initial vertices on this component */
-    virtual int GetN_InitVerts()
+    virtual int GetN_InitVerts() override
     { return 4; }
     virtual int GenInitVerts(double *&points, int I_points,
-                             int *&edges, int I_edges)
+                             int *&edges, int I_edges) override
     { return -1; }
     
     /** return the X-coordinate of parameter value T from [0;1] on the ISpline-th subspline */

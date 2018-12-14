@@ -175,7 +175,15 @@ in your local or global `hgrc` file. This seems to be the appropriate tool to
 linearize the history in case of two heads in the same branch. Basically this 
 can replace a call to `hg merge` in some situations. 
 
-
+\note Update (2018/11/13 Najib Alia): <b>Do not hesitate to use the option --keep
+-branches with rebase!</b> It can often happen that the commits you want to rebase
+have been already used in other of your branches. In this case, using:
+\code
+hg rebase --keep-branches -s ... -d ...
+\endcode
+ensures that the other branches are NOT moved/merged to the branch you are 
+rebasing on. <b>It is recommended to make this command your default one when
+rebasing!</b>
 
 
 \section merge_issues Possible problems during merging

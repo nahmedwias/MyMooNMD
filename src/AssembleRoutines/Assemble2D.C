@@ -9,8 +9,6 @@
 //
 // =======================================================================
 
-#include <DefineParams.h>
-
 #include <Assemble2D.h>
 #include <Enumerations.h>
 #include <Matrix2D.h>
@@ -80,7 +78,7 @@ double factor
   int **AnsatzBeginIndex = nullptr;
   TFE2D *ele;
   TFEDesc2D *FEDesc_Obj;
-  double *weights, *xi, *eta;
+  const double *weights, *xi, *eta;
   double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D];
   double AbsDetjk[MaxN_QuadPoints_2D];
   double *Param[MaxN_QuadPoints_2D];
@@ -115,12 +113,12 @@ double factor
   BoundValueFunct2D *BoundaryValue;
   TNodalFunctional2D *nf;
   int N_EdgePoints;
-  double *EdgePoints;
+  const double *EdgePoints;
   double PointValues[MaxN_PointsForNodal2D];
   double FunctionalValues[MaxN_BaseFunctions2D];
   int *EdgeDOF, N_EdgeDOF;
   int N_LinePoints;
-  double *LineWeights, *zeta;
+  const double *LineWeights, *zeta;
   double x0, x1, y0, y1, hE, eps=1e-4;
   #ifdef __3D__
   double z0, z1;
@@ -1132,7 +1130,7 @@ TFEFunction2D *u1, TFEFunction2D *u2)
   int **AnsatzBeginIndex = nullptr;
   TFE2D *ele;
   TFEDesc2D *FEDesc_Obj;
-  double *weights, *xi, *eta;
+  const double *weights, *xi, *eta;
   double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D];
   double AbsDetjk[MaxN_QuadPoints_2D];
   double *righthand = nullptr;
@@ -1167,7 +1165,7 @@ TFEFunction2D *u1, TFEFunction2D *u2)
   BoundCondFunct2D *BoundaryCondition;
   int *EdgeDOF, N_EdgeDOF;
   int N_LinePoints;
-  double *LineWeights, *zeta;
+  const double *LineWeights, *zeta;
   double x0 = 0;
   double x1 = 0;
   double y0 = 0;
@@ -1941,7 +1939,7 @@ void Assemble2D_VectFE(int n_fespaces, const TFESpace2D** fespaces,
 {
 #ifdef __2D__
   int N_AllMatrices = n_sqmatrices+n_matrices;
-  double *weights, *xi, *eta;
+  const double *weights, *xi, *eta;
   double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D];
   double AbsDetjk[MaxN_QuadPoints_2D];
   double *righthand;
@@ -2214,7 +2212,7 @@ void Assemble2D_VectFE(int n_fespaces, const TFESpace2D** fespaces,
               // number of points used for computation of nodal functionals
               int N_EdgePoints; 
               // points used for computation of nodal functionals
-              double *EdgePoints; 
+              const double *EdgePoints; 
               nf->GetPointsForEdge(N_EdgePoints, EdgePoints);
               
               // read boundary values for each point
@@ -2250,7 +2248,7 @@ void Assemble2D_VectFE(int n_fespaces, const TFESpace2D** fespaces,
                      TFEDatabase2D::GetQFLineFromDegree(2*polynomialDegree);
               TQuadFormula1D *qf1 = TFEDatabase2D::GetQuadFormula1D(LineQuadFormula);
               int N_LinePoints; // number of quadrature points on this edge
-              double *LineWeights, *zeta;// quadrature points and weights
+              const double *LineWeights, *zeta;// quadrature points and weights
               qf1->GetFormulaData(N_LinePoints, LineWeights, zeta);
               BaseFunct->MakeRefElementData(LineQuadFormula);
               double **JointValues=TFEDatabase2D::GetJointValues2D(
@@ -2406,7 +2404,7 @@ void Assemble2D(int n_fespaces, TFESpace2D **fespaces,
   int **AnsatzBeginIndex = nullptr;
   TFE2D *ele;
   TFEDesc2D *FEDesc_Obj;
-  double *weights, *xi, *eta;
+  const double *weights, *xi, *eta;
   double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D];
   double AbsDetjk[MaxN_QuadPoints_2D];
   double *Param[MaxN_QuadPoints_2D];
@@ -2441,12 +2439,12 @@ void Assemble2D(int n_fespaces, TFESpace2D **fespaces,
   BoundValueFunct2D *BoundaryValue;
   TNodalFunctional2D *nf;
   int N_EdgePoints;
-  double *EdgePoints;
+  const double *EdgePoints;
   double PointValues[MaxN_PointsForNodal2D];
   double FunctionalValues[MaxN_BaseFunctions2D];
   int *EdgeDOF, N_EdgeDOF;
   int N_LinePoints;
-  double *LineWeights, *zeta;
+  const double *LineWeights, *zeta;
   double x0 = 0;
   double x1 = 0;
   double y0 = 0;
@@ -3833,7 +3831,7 @@ TAuxParam2D *Parameters)
   int **TestGlobalNumbers = nullptr, **TestBeginIndex = nullptr;
   int **AnsatzGlobalNumbers = nullptr, **AnsatzBeginIndex = nullptr;
   BF2DRefElements bf2Drefelements;
-  double *weights, *xi, *eta, *weights1D, *weights_neigh, *xi_neigh, *eta_neigh;
+  const double *weights, *xi, *eta, *weights1D, *weights_neigh, *xi_neigh, *eta_neigh;
   double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D], X_neigh[MaxN_QuadPoints_2D], Y_neigh[MaxN_QuadPoints_2D];
   double AbsDetjk[MaxN_QuadPoints_2D], AbsDetjk_neigh[MaxN_QuadPoints_2D],*AbsDetjk1D[4];
   double *Param[MaxN_QuadPoints_2D];
@@ -3854,7 +3852,7 @@ TAuxParam2D *Parameters)
   BoundCondFunct2D *BoundaryCondition;
   BoundValueFunct2D *BoundaryValue;
   int N_LinePoints;
-  double *LineWeights, *zeta;
+  const double *LineWeights, *zeta;
   double x0, x1, y0, y1, hE, nx, ny, eps=1e-12;
   bool *SecondDer;
 
@@ -5329,7 +5327,7 @@ TAuxParam2D *Parameters)
   int **TestGlobalNumbers = nullptr, **TestBeginIndex = nullptr;
   int **AnsatzGlobalNumbers = nullptr, **AnsatzBeginIndex = nullptr;
   BF2DRefElements bf2Drefelements;
-  double *weights, *xi, *eta, *weights1D, *weights_neigh, *xi_neigh, *eta_neigh;
+  const double *weights, *xi, *eta, *weights1D, *weights_neigh, *xi_neigh, *eta_neigh;
   double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D], X_neigh[MaxN_QuadPoints_2D], Y_neigh[MaxN_QuadPoints_2D];
   double AbsDetjk[MaxN_QuadPoints_2D], AbsDetjk_neigh[MaxN_QuadPoints_2D],*AbsDetjk1D[4];
   double *Param[MaxN_QuadPoints_2D];
@@ -5349,7 +5347,7 @@ TAuxParam2D *Parameters)
   BoundCondFunct2D *BoundaryCondition;
   BoundValueFunct2D *BoundaryValue;
   int N_LinePoints;
-  double *LineWeights, *zeta;
+  const double *LineWeights, *zeta;
   double x0, x1, y0, y1, hE, nx, ny, eps=1e-12;
   bool *SecondDer;
 
@@ -7116,7 +7114,7 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
     // calculate values on original element
     // ####################################################################
       int N_Points;
-      double *weights, *xi, *eta;
+      const double *weights, *xi, *eta;
       double X[MaxN_QuadPoints_2D],Y[MaxN_QuadPoints_2D];
       double AbsDetjk[MaxN_QuadPoints_2D];
     
@@ -7463,7 +7461,7 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
       double t0,t1;
       const TBoundComp *BoundComp;
       int N_EdgePoints;
-      double *EdgePoints;
+      const double *EdgePoints;
       double eps=1e-4;
         
       //if ((ele >= D_P1_2D_Q_A)&&(ele<= D_P3_2D_Q_M))
@@ -7528,7 +7526,7 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
             TQuadFormula1D *qf1;
             double s,t;
             int *EdgeDOF;
-            double *LineWeights, *zeta;
+            const double *LineWeights, *zeta;
             double x0, x1, y0,y1;
             double hE;
             double **JointValues;

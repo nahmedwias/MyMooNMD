@@ -8,7 +8,7 @@
 #include <Domain.h>
 #include <Database.h>
 #include <FEDatabase3D.h>
-#include <NSE3D.h>
+#include "NavierStokes.h"
 #include <Chrono.h>
 #include <LoopInfo.h>
 
@@ -46,7 +46,7 @@ int main(int argc, char* argv[])
     Chrono timer;
 
     // Construct the ParMooN Databases.
-    TDatabase Database;
+    TDatabase Database(argv[1]);
     ParameterDatabase parmoon_db = ParameterDatabase::parmoon_default_database();
     parmoon_db.read(argv[1]);
 
@@ -62,9 +62,7 @@ int main(int argc, char* argv[])
 #endif
 
     TFEDatabase3D feDatabase;
-
-    // Construct domain, thereby read in controls from the input file.
-    TDomain domain(parmoon_db, argv[1]);
+    TDomain domain(parmoon_db);
 
     if(my_rank==0) //Only one process should do that.
     {
@@ -75,31 +73,15 @@ int main(int argc, char* argv[])
     // Do the parameter check of the Database.
     check_parameters_consistency_NSE(parmoon_db);
 
-    // Intial refinement and grabbing of grids for multigrid.
-#ifdef _MPI
-    int maxSubDomainPerDof = 0;
-#endif
-    std::list<TCollection* > gridCollections
-    = domain.refine_and_get_hierarchy_of_collections(
-        parmoon_db
-#ifdef _MPI
-        , maxSubDomainPerDof
-#endif
-    );
+    // Intial refinement
+    domain.refine_and_get_hierarchy_of_collections(parmoon_db);
 
     //print information on the mesh partition on the finest grid
     domain.print_info("NSE3D domain");
 
-    // Choose and construct example.
-    Example_NSE3D example(parmoon_db);
-
     timer.restart_and_print("setup(domain, example, database)");
     // Construct an object of the NSE3D-problem type.
-#ifdef _MPI
-    NSE3D nse3d(gridCollections, parmoon_db, example, maxSubDomainPerDof);
-#else
-    NSE3D nse3d(gridCollections, parmoon_db, example);
-#endif
+    NavierStokes<3> nse3d(domain, parmoon_db);
     timer.restart_and_print("constructing NSE3D object");
     
     // assemble all matrices and right hand side
@@ -122,7 +104,7 @@ int main(int argc, char* argv[])
     for(unsigned int k=1;; k++)
     {
       if(my_rank == 0)
-        Output::print(); // new line for a new nonlinear iteration
+        Output::print<3>(); // new line for a new nonlinear iteration
       // solve the system
       timer_sol.start();
       nse3d.solve();
@@ -132,7 +114,7 @@ int main(int argc, char* argv[])
       if(parmoon_db["problem_type"].is(3))
         break;
 
-      nse3d.assemble_non_linear_term();
+      nse3d.assemble_nonlinear_term();
 
       // checking residuals
       if(nse3d.stop_it(k))

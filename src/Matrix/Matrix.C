@@ -98,7 +98,7 @@ void TMatrix::write(std::string filename) const
     for (int j=begin; j<end; ++j)
     {
       // shift row and col by +1 (fortran style)
-      matrixfile << i +1 << "\t" << KCol[pos] + 1 << "\t" << entries[pos] << "\n";
+      matrixfile << setprecision(16) << i +1 << "\t" << KCol[pos] + 1 << "\t" << entries[pos] << "\n";
       ++pos;
     }
   }
@@ -1159,13 +1159,97 @@ void TMatrix::reorderMatrix()
   }
 }
 
+/////////////// Routines for periodic boundary conditions /////////////////
+/** ************************************************************************* */
+void TMatrix::changeRows(std::map<int,std::map<int,double> > entries)
+{
+	if(entries.size() == 0)
+		return; // nothing needs to be done
+
+	const int *oldRows = structure->GetRowPtr();
+	const int *oldCols = structure->GetKCol();
+
+	// find out how many entries there are after all changes are applied, i.e.
+	// how many entries are deleted/created
+	int offset = 0;
+	for(std::map<int,std::map<int,double> >::iterator it=entries.begin();
+			it!=entries.end(); ++it)
+	{
+		int row = it->first;
+		offset -= oldRows[row+1]-oldRows[row];// number of entries in old structure
+		offset += (it->second).size();        // number of entries in new structure
+	}
+
+	int n_rows = structure->GetN_Rows();// new number of rows = old number of rows
+	// new number of columns = old number of columns
+	int n_cols = structure->GetN_Columns();
+	int n_entries = structure->GetN_Entries() + offset; // new number of entries
+	int n_active = structure->GetActiveBound();
+
+	int *columns = new int[n_entries];  // new pointer to columns
+	int *rows = new int[n_rows+1];      // new row pointer
+	rows[0] = 0;
+
+	// create new array to store the entries
+	std::vector<double> new_entries(n_entries);
+
+	// fill the arrays 'rows', 'columns' and 'new_entries'
+	for(int row=0; row<n_rows; row++)
+	{
+		std::map<int,std::map<int,double> >::iterator it = entries.find(row);
+		if(it == entries.end())
+		{
+			// this row stays unchanged
+			// number of (old) entries in this row
+			unsigned int n_old_entries = oldRows[row+1] - oldRows[row];
+			// copy pointer to columns in this row
+			memcpy(columns+rows[row], oldCols+oldRows[row], n_old_entries*SizeOfInt);
+			// update row pointer
+			rows[row+1] = rows[row] + n_old_entries;
+			// copy entries
+			memcpy(&new_entries[0]+rows[row], this->GetEntries()+oldRows[row],
+					n_old_entries*SizeOfDouble);
+		}
+		else
+		{
+			// this row will be replaced
+			std::map<int,double> newRow = it->second;
+			// loop over all new entries in this row
+			int columnIndex=0;
+			for(std::map<int,double>::iterator it2 = newRow.begin();
+					it2 != newRow.end(); ++it2)
+			{
+				int colInd = it2->first; // column index of new entry
+				double entry = it2->second; // value of new entry
+				columns[columnIndex+rows[row]] = colInd;
+				new_entries[columnIndex+rows[row]] = entry;
+				columnIndex++;
+			}
+			rows[row+1] = rows[row] + newRow.size();
+			//if(newRow.size() != columnIndex)
+			//  OutPut("ERROR: wrong number of columns in this row "<< newRow.size()
+			//      << "\t" << columnIndex << "\t" << row << endl);
+		}
+	}
+
+	// change Structure of this matrix
+	this->structure = std::make_shared<TStructure>(n_rows, n_cols, n_active,
+			n_entries, columns, rows);
+	delete [] columns;
+	delete [] rows;
+
+	this->entries = new_entries;
+}
+
+///////////////// ///////////////// ///////////////// /////////////////
+
 /** ************************************************************************* */
 void TMatrix::copyOwnStructure()
 {
-  if(this->structure.unique())
-  {
-    // no one else knows this->structure
-    return;
+	if(this->structure.unique())
+	{
+		// no one else knows this->structure
+		return;
   }
   // create a deep copy of the own structure
   std::shared_ptr<TStructure> new_structure(new TStructure(*this->structure));

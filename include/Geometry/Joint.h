@@ -28,21 +28,10 @@ class TJoint;
 
 struct StoreGeom
 {
-  TVertex *Vertices[MAXN_nVpoJ];
-  TJoint *Joints[MAXN_nJpoJ];
+  const TVertex *Vertices[MAXN_nVpoJ];
+  const TJoint *Joints[MAXN_nJpoJ];
   bool Filled;
 };
-
-#ifdef __MORTAR__
-  struct StoreGeomMortarStruct
-  {
-    TVertex **Vertices;
-    TJoint **Joints;
-    bool Filled;
-  };
-
-  typedef struct StoreGeomMortarStruct StoreGeomMortar;
-#endif
 
 /** supercall for edges and faces */
 class TJoint
@@ -94,20 +83,13 @@ class TJoint
     { return MapType; }
     
     /** Function is used to get local edge index on neighboured element */
-    int GetNeighbourEdgeIndex(TBaseCell*, int);
+    int GetNeighbourEdgeIndex(const TBaseCell*, int) const;
 #endif
 
     /** check the refinement pattern on both sides for matching,
         return already existing object on the joint in Tmp */
     virtual int CheckMatchingRef(TBaseCell *Me, int J_i,
                   struct StoreGeom &Tmp) = 0;
-
-    #ifdef __MORTAR__
-      /** check the refinement pattern on both sides for matching,
-          special version for moratr cells */
-      virtual int CheckMatchingRef(TBaseCell *Me, int J_i,
-                   StoreGeomMortar &Tmp) = 0;
-    #endif
 
     /** create a new instance of the same class */
     virtual TJoint *NewInst(double T_0, double T_1, TBaseCell *Me) = 0;
@@ -135,10 +117,10 @@ class TJoint
 
     #ifdef __3D__
       /** return mapper of refined vertices and faces */
-      void GetMapperRef(const int *&MapVerts, const int *&MapFaces);
+      void GetMapperRef(const int *&MapVerts, const int *&MapFaces) const;
 
       /** return mapper of original vertices and edges */
-      void GetMapperOrig(const int *&MapVerts, const int *&MapEdges);
+      void GetMapperOrig(const int *&MapVerts, const int *&MapEdges) const;
     #endif
             
     /** set value in ClipBoard */

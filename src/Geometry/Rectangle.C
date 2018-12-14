@@ -19,14 +19,14 @@ TRectangle::TRectangle() : TQuadrangle()
 }
 
 // Methods
-double TRectangle::GetDiameter(TVertex **Verts)
+double TRectangle::GetDiameter(TVertex **Verts) const
 {
   double diffX = Verts[0]->GetX() - Verts[2]->GetX();
   double diffY = Verts[0]->GetY() - Verts[2]->GetY();
 
   return sqrt(diffX*diffX + diffY*diffY);
 }
-double TRectangle::GetShortestEdge(TVertex **Verts)
+double TRectangle::GetShortestEdge(TVertex **Verts) const
 {
   double diffX1 = Verts[0]->GetX() - Verts[1]->GetX();
   double diffY1 = Verts[0]->GetY() - Verts[1]->GetY();
@@ -42,7 +42,7 @@ double TRectangle::GetShortestEdge(TVertex **Verts)
   return len;
 }
 
-double TRectangle::GetLengthWithReferenceMap(TVertex **Verts)
+double TRectangle::GetLengthWithReferenceMap(TVertex **Verts) const
 {
   double x0, x1, x3, y0, y1, y3;
   double xc1, xc2, yc1, yc2;
@@ -96,7 +96,7 @@ double TRectangle::GetLengthWithReferenceMap(TVertex **Verts)
 }
 
 // measure of parallelogramm with vector product
-double TRectangle::GetMeasure(TVertex **Verts)
+double TRectangle::GetMeasure(TVertex **Verts) const
 {
     double area, x[4], y[4];
 

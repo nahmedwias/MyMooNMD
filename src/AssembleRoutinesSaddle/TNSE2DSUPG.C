@@ -89,27 +89,29 @@ void TimeNSType4SUPG(double Mult, double *coeff, double *param, double hK,
       
       // Galerkin part
       double val  = c0*(test10*ansatz10 + test01*ansatz01); // diffusion term
-      if(TDatabase::ParamDB->NSE_NONLINEAR_FORM==0)
-        val += (u1*ansatz10 + u2*ansatz01)*test00; // convective term
-      else if(TDatabase::ParamDB->NSE_NONLINEAR_FORM==1)
-      {
+      // NSE_NONLINEAR_FORM: global database parameter is deleted
+      // uncomment after getting the idea
+      // if(TDatabase::ParamDB->NSE_NONLINEAR_FORM==0)
+      val += (u1*ansatz10 + u2*ansatz01)*test00; // convective term
+      // else if(TDatabase::ParamDB->NSE_NONLINEAR_FORM==1)
+      // {
         // skew symmetric form 
-        val += 0.5*(u1*ansatz10 + u2*ansatz01)*test00;
-        val -= 0.5*(u1*test10 + u2*test01)*ansatz00;
-      }
-      else if(TDatabase::ParamDB->NSE_NONLINEAR_FORM == 2)
-      {
-        // another skew symmetric form n(u,v,w) = (u.grad v, w) + 0.5 * (div u, v.w)
-        val += (u1*ansatz10 + u2*ansatz01)*test00;
-        skew_11 = 0.5*(ansatz10*u1*test00);
-        skew_22 = 0.5*(ansatz01*u2*test00);
-        skew_12 = 0.5*ansatz01*u1*test00;
-        skew_21 = 0.5*ansatz10*u2*test00;
-      }
-      else if(TDatabase::ParamDB->NSE_NONLINEAR_FORM == 3)
-      {
-        ErrThrow("EMEC should be implemented");
-      }
+        // val += 0.5*(u1*ansatz10 + u2*ansatz01)*test00;
+        // val -= 0.5*(u1*test10 + u2*test01)*ansatz00;
+      // }
+      // else if(TDatabase::ParamDB->NSE_NONLINEAR_FORM == 2)
+      // {
+      //   // another skew symmetric form n(u,v,w) = (u.grad v, w) + 0.5 * (div u, v.w)
+      //   val += (u1*ansatz10 + u2*ansatz01)*test00;
+      //   skew_11 = 0.5*(ansatz10*u1*test00);
+      //   skew_22 = 0.5*(ansatz01*u2*test00);
+      //   skew_12 = 0.5*ansatz01*u1*test00;
+      //   skew_21 = 0.5*ansatz10*u2*test00;
+      // }
+      // else if(TDatabase::ParamDB->NSE_NONLINEAR_FORM == 3)
+      // {
+      //   ErrThrow("EMEC should be implemented");
+      // }
       // supg contribution
       val +=  (-c0*(ansatz20 + ansatz02) + (u1*ansatz10 + u2*ansatz01) ) *ugrad;
       // grad div contribution
@@ -244,27 +246,27 @@ void TimeNSType4NLSUPG(double Mult, double *coeff, double *param, double hK,
       
       // Galerkin part
       double val  = c0*(test10*ansatz10 + test01*ansatz01); // diffusion term
-      if(TDatabase::ParamDB->NSE_NONLINEAR_FORM==0)
-        val += (u1*ansatz10 + u2*ansatz01)*test00; // convective term
-      else if(TDatabase::ParamDB->NSE_NONLINEAR_FORM==1)
-      {
-        // skew symmetric form 
-        val += 0.5*(u1*ansatz10 + u2*ansatz01)*test00;
-        val -= 0.5*(u1*test10 + u2*test01)*ansatz00;
-      }
-      else if(TDatabase::ParamDB->NSE_NONLINEAR_FORM == 2)
-      {
-        // another skew symmetric form n(u,v,w) = (u.grad v, w) + 0.5 * (div u, v.w)
-        val += (u1*ansatz10 + u2*ansatz01)*test00;
-        skew_11 = 0.5*(ansatz10*u1*test00);
-        skew_22 = 0.5*(ansatz01*u2*test00);
-        skew_12 = 0.5*ansatz01*u1*test00;
-        skew_21 = 0.5*ansatz10*u2*test00;
-      }
-      else if(TDatabase::ParamDB->NSE_NONLINEAR_FORM == 3)
-      {
-        ErrThrow("EMEC should be implemented");
-      }
+      // if(TDatabase::ParamDB->NSE_NONLINEAR_FORM==0)
+      val += (u1*ansatz10 + u2*ansatz01)*test00; // convective term
+      // else if(TDatabase::ParamDB->NSE_NONLINEAR_FORM==1)
+      // {
+      //   // skew symmetric form 
+      //   val += 0.5*(u1*ansatz10 + u2*ansatz01)*test00;
+      //   val -= 0.5*(u1*test10 + u2*test01)*ansatz00;
+      // }
+      // else if(TDatabase::ParamDB->NSE_NONLINEAR_FORM == 2)
+      // {
+      //   // another skew symmetric form n(u,v,w) = (u.grad v, w) + 0.5 * (div u, v.w)
+      //   val += (u1*ansatz10 + u2*ansatz01)*test00;
+      //   skew_11 = 0.5*(ansatz10*u1*test00);
+      //   skew_22 = 0.5*(ansatz01*u2*test00);
+      //   skew_12 = 0.5*ansatz01*u1*test00;
+      //   skew_21 = 0.5*ansatz10*u2*test00;
+      // }
+      // else if(TDatabase::ParamDB->NSE_NONLINEAR_FORM == 3)
+      // {
+      //   ErrThrow("EMEC should be implemented");
+      // }
       // supg contribution
       val +=  (-c0*(ansatz20 + ansatz02) + (u1*ansatz10 + u2*ansatz01) ) *ugrad;
       // grad div contribution
@@ -450,27 +452,27 @@ void TimeNSType14SUPG(double Mult, double *coeff, double *param, double hK,
       
       // Galerkin part
       double val  = c0*(test10*ansatz10 + test01*ansatz01); // diffusion term
-      if(TDatabase::ParamDB->NSE_NONLINEAR_FORM == 0)
-        val += (u1*ansatz10 + u2*ansatz01)*test00; // convective term
-      else if(TDatabase::ParamDB->NSE_NONLINEAR_FORM == 1)
-      {
-        // skew symmetric form 
-        val += 0.5*(u1*ansatz10 + u2*ansatz01)*test00;
-        val -= 0.5*(u1*test10 + u2*test01)*ansatz00;
-      }
-      else if(TDatabase::ParamDB->NSE_NONLINEAR_FORM == 2)
-      {
-        // another skew symmetric form n(u,v,w) = (u.grad v, w) + 0.5 * (div u, v.w)
-        val += (u1*ansatz10 + u2*ansatz01)*test00;
-        skew_11 = 0.5*(ansatz10*u1*test00);
-        skew_22 = 0.5*(ansatz01*u2*test00);
-        skew_12 = 0.5*ansatz01*u1*test00;
-        skew_21 = 0.5*ansatz10*u2*test00;
-      }
-      else if(TDatabase::ParamDB->NSE_NONLINEAR_FORM == 3)
-      {
-        ErrThrow("EMEC or other forms should be implemented");
-      }
+      // if(TDatabase::ParamDB->NSE_NONLINEAR_FORM == 0)
+      val += (u1*ansatz10 + u2*ansatz01)*test00; // convective term
+      // else if(TDatabase::ParamDB->NSE_NONLINEAR_FORM == 1)
+      // {
+      //   // skew symmetric form 
+      //   val += 0.5*(u1*ansatz10 + u2*ansatz01)*test00;
+      //   val -= 0.5*(u1*test10 + u2*test01)*ansatz00;
+      // }
+      // else if(TDatabase::ParamDB->NSE_NONLINEAR_FORM == 2)
+      // {
+      //   // another skew symmetric form n(u,v,w) = (u.grad v, w) + 0.5 * (div u, v.w)
+      //   val += (u1*ansatz10 + u2*ansatz01)*test00;
+      //   skew_11 = 0.5*(ansatz10*u1*test00);
+      //   skew_22 = 0.5*(ansatz01*u2*test00);
+      //   skew_12 = 0.5*ansatz01*u1*test00;
+      //   skew_21 = 0.5*ansatz10*u2*test00;
+      // }
+      // else if(TDatabase::ParamDB->NSE_NONLINEAR_FORM == 3)
+      // {
+      //   ErrThrow("EMEC or other forms should be implemented");
+      // }
 
       //               + (u1*ansatz10 + u2*ansatz01)*test00; // convective term
       // supg contribution
@@ -669,27 +671,27 @@ void TimeNSType14NLSUPG(double Mult, double *coeff, double *param, double hK,
       
       // Galerkin part
       double val  = c0*(test10*ansatz10 + test01*ansatz01); // diffusion term
-      if(TDatabase::ParamDB->NSE_NONLINEAR_FORM==0)
+      // if(TDatabase::ParamDB->NSE_NONLINEAR_FORM==0)
         val += (u1*ansatz10 + u2*ansatz01)*test00; // convective term
-      else if(TDatabase::ParamDB->NSE_NONLINEAR_FORM==1)
-      {
-        // skew symmetric form 
-        val += 0.5*(u1*ansatz10 + u2*ansatz01)*test00;
-        val -= 0.5*(u1*test10 + u2*test01)*ansatz00;
-      }
-      else if(TDatabase::ParamDB->NSE_NONLINEAR_FORM == 2)
-      {
-        // another skew symmetric form n(u,v,w) = (u.grad v, w) + 0.5 * (div u, v.w)
-        val += (u1*ansatz10 + u2*ansatz01)*test00;
-        skew_11 = 0.5*(ansatz10*u1*test00);
-        skew_22 = 0.5*(ansatz01*u2*test00);
-        skew_12 = 0.5*ansatz01*u1*test00;
-        skew_21 = 0.5*ansatz10*u2*test00;
-      }
-      else if(TDatabase::ParamDB->NSE_NONLINEAR_FORM == 3)
-      {
-        ErrThrow("EMEC or other forms should be implemented");
-      }
+      // else if(TDatabase::ParamDB->NSE_NONLINEAR_FORM==1)
+      // {
+      //   // skew symmetric form 
+      //   val += 0.5*(u1*ansatz10 + u2*ansatz01)*test00;
+      //   val -= 0.5*(u1*test10 + u2*test01)*ansatz00;
+      // }
+      // else if(TDatabase::ParamDB->NSE_NONLINEAR_FORM == 2)
+      // {
+      //   // another skew symmetric form n(u,v,w) = (u.grad v, w) + 0.5 * (div u, v.w)
+      //   val += (u1*ansatz10 + u2*ansatz01)*test00;
+      //   skew_11 = 0.5*(ansatz10*u1*test00);
+      //   skew_22 = 0.5*(ansatz01*u2*test00);
+      //   skew_12 = 0.5*ansatz01*u1*test00;
+      //   skew_21 = 0.5*ansatz10*u2*test00;
+      // }
+      // else if(TDatabase::ParamDB->NSE_NONLINEAR_FORM == 3)
+      // {
+      //   ErrThrow("EMEC or other forms should be implemented");
+      // }
 
       //               + (u1*ansatz10 + u2*ansatz01)*test00; // convective term
       // supg contribution

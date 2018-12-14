@@ -82,38 +82,38 @@ class TShapeDesc
 
     // Methods
     /** return the number of vertices */
-    int GetN_Vertices()
+    int GetN_Vertices() const
     { return N_Vertices; }
     /** return the number of edges */
-    int GetN_Edges()
+    int GetN_Edges() const
     { return N_Edges; }
     /** return the number of joints */
-    int GetN_Joints()
+    int GetN_Joints() const
     { return N_Joints; }
 
     #ifdef __3D__
       /** return the number of faces */
-      int GetN_Faces()
+      int GetN_Faces() const
       { return N_Faces; }
     #endif
 
     /** return the shape */
-    Shapes GetType()
+    Shapes GetType() const
     { return Type; }
 
     /** return the EdgeVertex array */
-    int GetEdgeVertex(const int *&TmpEV)
+    int GetEdgeVertex(const int *&TmpEV) const
     {
       TmpEV = EdgeVertex;
       return 0;
     }
 
     /** return the MaxN_EpV */
-    int GetMaxN_EpV()
+    int GetMaxN_EpV() const
     { return MaxN_EpV; }
 
     /** return the EdgeVertex array */
-    int GetVertexEdge(const int *&TmpVE)
+    int GetVertexEdge(const int *&TmpVE) const
     {
       TmpVE = VertexEdge;
       return 0;
@@ -122,6 +122,7 @@ class TShapeDesc
     #ifdef __3D__
       /** return the FaceVertex array */
       int GetFaceVertex(const int *&TmpFV, const int *&TmpLen, int &MaxLen)
+      const
       {
         TmpFV = FaceVertex;
         TmpLen = FaceVertexLen;
@@ -129,7 +130,7 @@ class TShapeDesc
         return 0;
       }
       /** return the FaceEdge array */
-      int GetFaceEdge(const int *&TmpFV, const int *&TmpLen, int &MaxLen)
+      int GetFaceEdge(const int *&TmpFV, const int *&TmpLen, int &MaxLen) const
       {
         TmpFV = FaceEdge;
         TmpLen = FaceEdgeLen;
@@ -138,7 +139,7 @@ class TShapeDesc
       }
 
       /** return the EdgeFace array */
-      int GetEdgeFace(const int *&TmpEF, int &MaxLen)
+      int GetEdgeFace(const int *&TmpEF, int &MaxLen) const
       {
         TmpEF = EdgeFace;
         MaxLen = MaxN_FpE;
@@ -146,23 +147,23 @@ class TShapeDesc
       }
 
       /** return the FaceType array */
-      int GetFaceType(const Shapes *&TmpFT)
+      int GetFaceType(const Shapes *&TmpFT) const
       {
         TmpFT = FaceType;
         return 0;
       }
     #endif
     /** return diameter of a cell */
-    virtual double GetDiameter(TVertex **Verts) = 0;
+    virtual double GetDiameter(TVertex **Verts) const = 0;
 
     /** return shortest of a cell */
-    virtual double GetShortestEdge(TVertex **Verts) = 0;
+    virtual double GetShortestEdge(TVertex **Verts) const = 0;
 
     /** return the length of the cell defined with the reference map */
-    virtual double GetLengthWithReferenceMap(TVertex **Verts) = 0;
+    virtual double GetLengthWithReferenceMap(TVertex **Verts) const = 0;
 
     /** return measure of a cell */
-    virtual double GetMeasure(TVertex **Verts) = 0;
+    virtual double GetMeasure(TVertex **Verts) const = 0;
 };
 
 #endif

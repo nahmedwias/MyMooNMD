@@ -28,7 +28,7 @@ class TIt_Search : public TIterator
     int ActiveRootCell;
 
     /** active cell */
-    TBaseCell *ActiveCell;
+    const TBaseCell *ActiveCell;
 
   public:
     // Constructors

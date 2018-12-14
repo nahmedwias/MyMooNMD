@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <sys/stat.h>
 #include <type_traits>
+#include <TimeDiscretizations.h>
 
 #ifdef _MPI
 #include "mpi.h"
@@ -18,7 +19,8 @@ template <int d>
 DataWriter<d>::DataWriter(const ParameterDatabase& param_db)
   : testcaseDir(), testcaseName(), n_steps_per_output(1),
     n_steps_until_next_output(0), FEFunctionArray(), FEVectFunctArray(),
-    Coll(nullptr), timeValues()
+    Coll(nullptr), timeValues(), continue_output_after_restart(0),restart_time(0), 
+    time_steplength_before_restart(0), output_initial_index(0)
 {
   // set the variables depending on input parameters
   ParameterDatabase db = ParameterDatabase::default_output_database();
@@ -36,6 +38,29 @@ DataWriter<d>::DataWriter(const ParameterDatabase& param_db)
   testcaseName = db["output_basename"].get<std::string>();
   testcaseDir = db["output_vtk_directory"].get<std::string>();
   n_steps_per_output = std::max<size_t>(1, db["steps_per_output"]); // avoid 0
+  
+  continue_output_after_restart = db["continue_output_after_restart"];
+  if(continue_output_after_restart)
+  {
+    ParameterDatabase db_time = TimeDiscretization::default_TimeDiscretization_database();
+    db_time.merge(param_db, false);
+    
+    restart_time = db_time["time_start"];
+    // some consistency check
+    if(!restart_time)
+    {
+      ErrThrow("The parameter continue_output_after_restart is TRUE, but the "
+      "start time is 0! Did you forget to set time_start to the actual restart time? "
+      "It should be equal to the time of the binary you are starting from. If you "
+      "really want to restart from 0, put the boolean continue_output_after_restart "
+      "to FALSE.");
+    }
+    time_steplength_before_restart = db_time["time_step_length"];
+    output_initial_index = restart_time / time_steplength_before_restart;
+    Output::root_info<1>("DataWriter","Output restarts numbering at index: ", 
+      output_initial_index, ". It is assumed that both 'time_step_length' "
+      "and 'n_steps_per_output' are the same in the previous and current simulations.");
+  }
 };
 
 template <int d>
@@ -148,13 +173,13 @@ void DataWriter<d>::write(double current_time)
     }
     std::string name;
     name += testcaseDir + "/" + testcaseName;
-    name += std::to_string(index * n_steps_per_output);  
+    name += std::to_string(index * n_steps_per_output + output_initial_index);  
     if(writeVTK)
     {
 #ifdef _MPI
       char SubID[] = "";
-      Write_ParVTK(MPI_COMM_WORLD, index * n_steps_per_output, SubID,
-                   testcaseDir, testcaseName);
+      Write_ParVTK(MPI_COMM_WORLD, index * n_steps_per_output +
+	      output_initial_index, SubID, testcaseDir, testcaseName);
 #else
       Output::print<2>(" DataWriter:: writing ", name + ".vtk");
       writeVtk(name + ".vtk");
@@ -174,7 +199,7 @@ void DataWriter<d>::write(double current_time)
         // write geometry only in the first iteration
         writeCaseGeo();
       }
-      writeCaseVars(index * n_steps_per_output);
+      writeCaseVars(index * n_steps_per_output + output_initial_index);
       writeCaseFile();
     }
   }
@@ -211,7 +236,7 @@ void DataWriter<d>::writeMesh(std::string name)
   {
     ErrThrow("cannot open file for output. ", name);
   }
-  dat << std::fixed << setprecision(12);
+  dat << setprecision(12);
 
   dat << "# vtk DataFile Version 4.0\n";
   dat << "file created by ParMooN"
@@ -1443,12 +1468,29 @@ void DataWriter<d>::writeCaseFile()
   }
   // time values
   unsigned int n_time_steps = timeValues.size();
+  // the following parameter is non-zero only in the case "continue_output_after_restart"
+  unsigned int n_time_steps_before_restart = output_initial_index/n_steps_per_output;
   casf << "TIME\n";
   casf << "time set: 1\n";
-  casf << "number of steps: " << std::max(1U, n_time_steps) << "\n";
+  casf << "number of steps: " << std::max(1U, n_time_steps+n_time_steps_before_restart) << "\n";
   casf << "filename start number: 0\n";
   casf << "filename increment: " << n_steps_per_output << "\n";
   casf << "time values:\n";
+  if(continue_output_after_restart)
+  { // re-construct the time steps from 0 to time_start
+    double old_timeValues = 0;
+    for(unsigned int i = 0; i < n_time_steps_before_restart; i++)
+    {
+      casf.precision(5);
+      casf.width(12);
+      casf << old_timeValues;
+      if((i && !(i % 5)) || (i == output_initial_index))
+	casf << "\n";
+      else
+	casf << " ";
+      old_timeValues = old_timeValues + time_steplength_before_restart*n_steps_per_output;
+    }
+  }
   for(unsigned int i = 0; i < n_time_steps; i++)
   {
     casf.precision(5);
@@ -1656,22 +1698,15 @@ void DataWriter<d>::writeCaseVars(int iter)
 template <int d>
 void DataWriter<d>::writeCoord(std::ofstream& f)
 {
+  f.precision(8);   
   unsigned int N_Vertices = Coll->GetN_Vertices();
   for(unsigned int i = 0; i < N_Vertices; i++)
   {
-    // f.setf(ios_base::scientific);
-    f.precision(12);
-    f.width(12);
+    ///@attention case output works only with this format
     f << Coll->GetCoord(i * d);
     f << " ";
-    // f.setf(ios_base::scientific);
-    f.precision(12);
-    f.width(12);
-    f << Coll->GetCoord(i * d + 1);
+     f << Coll->GetCoord(i * d + 1);
     f << " ";
-    // f.setf(ios_base::scientific);
-    f.precision(12);
-    f.width(12);
     if(d == 2)
     {
       f << 0.;

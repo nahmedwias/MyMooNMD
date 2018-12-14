@@ -76,7 +76,7 @@ THexahedron::THexahedron()
 }
 
 // Methods
-double THexahedron::GetDiameter(TVertex **Verts)
+double THexahedron::GetDiameter(TVertex **Verts) const
 {
   double len, diam = 0;
   double x0, x1, y0, y1, z0, z1;
@@ -105,7 +105,7 @@ double THexahedron::GetDiameter(TVertex **Verts)
 }
 
 // Methods, exact only for parallelepiped
-double THexahedron::GetShortestEdge(TVertex **Verts)
+double THexahedron::GetShortestEdge(TVertex **Verts) const
 {
   double len, diam = 1e10;
   double x0, x1, y0, y1, z0, z1;
@@ -129,7 +129,7 @@ double THexahedron::GetShortestEdge(TVertex **Verts)
 }
 
 // Method exact only for parallelepipeds
-double THexahedron::GetLengthWithReferenceMap(TVertex **Verts)
+double THexahedron::GetLengthWithReferenceMap(TVertex **Verts) const
 {
   double x0, x1, x3, x4, y0, y1, y3, y4, z0, z1, z3, z4;
   double xc1, xc2, xc3, yc1, yc2, yc3, zc1, zc2, zc3;
@@ -166,7 +166,7 @@ double THexahedron::GetLengthWithReferenceMap(TVertex **Verts)
   return(2*pow(detjk,1.0/3.0));
 }
 
-double THexahedron::GetMeasure(TVertex **Verts)
+double THexahedron::GetMeasure(TVertex **Verts) const
 {
   double x1,x2,x3,x4,x5,x6,x7,x8,y1,y2,y3,y4,y5,y6,y7,y8,z1,z2,z3,z4,z5,z6,z7,z8;
 
@@ -202,7 +202,7 @@ double THexahedron::GetMeasure(TVertex **Verts)
 	 x2*(y4*z5-y5*z4)-x4*(y2*z5-y5*z2)+x5*(y2*z4-y4*z2))/6.;
 }
 
-Shapes THexahedron::CheckHexa(TVertex **Vertices)
+Shapes THexahedron::CheckHexa(const TVertex * const * Vertices) const
 {
   double xt1, xt2, xt3, xt4;
   double yt1, yt2, yt3, yt4;

@@ -10,8 +10,6 @@
 //
 // =======================================================================
 
-#include <DefineParams.h>
-
 #include <Constants.h>
 #include <FESpace3D.h>
 #include <Joint.h>
@@ -48,11 +46,6 @@ TFESpace3D::TFESpace3D(TCollection *coll, std::string name, std::string descript
   UsedElements = nullptr;
   AllElements = nullptr;
   ElementForShape = nullptr;
-
-# ifdef _MPI
- MaxSubDomainPerDof = -1;
-# endif
-
 }
 
 // =====================================================================
@@ -225,6 +218,12 @@ TFESpace3D::TFESpace3D(TCollection *coll, std::string name, std::string descript
 
   // construct space
   ConstructSpace(BoundaryCondition);
+  
+#ifdef _MPI
+  // initialize the mapper and communicator for MPI communications
+  mapper_.reset(new TParFEMapper3D(1, this));
+  comm_ .reset(new TParFECommunicator3D(mapper_.get()));
+#endif // _MPI
 }
 
 /** constructor for building a space with the given elements */
@@ -245,6 +244,12 @@ TFESpace3D::TFESpace3D(TCollection *coll, std::string name, std::string descript
 
   // construct space
   ConstructSpace(BoundaryCondition);
+
+#ifdef _MPI
+  // initialize the mapper and communicator for MPI communications
+  mapper_.reset(new TParFEMapper3D(1, this));
+  comm_ .reset(new TParFECommunicator3D(mapper_.get()));
+#endif // _MPI
 }
 
 /** constructor for building a space with elements of order k */
@@ -423,6 +428,12 @@ TFESpace3D::TFESpace3D(TCollection *coll, std::string name, std::string descript
 
   // construct space
   ConstructSpace(BoundaryCondition);
+  
+#ifdef _MPI
+  // initialize the mapper and communicator for MPI communications
+  mapper_.reset(new TParFEMapper3D(1, this));
+  comm_ .reset(new TParFECommunicator3D(mapper_.get()));
+#endif // _MPI
 }
 
 /** return the FE Id for element i, corresponding to cell */
@@ -492,8 +503,8 @@ void TFESpace3D::ConstructSpace(BoundCondFunct3D *BoundaryCondition)
 {
   int i, j, k, l, m, n, N_Faces, NFaces;
   int *v;
-  TBaseCell *cell, *neigh, *child1, *child2, *child3, *child4;
-  TJoint *joint;
+  const TBaseCell *cell, *neigh, *child1, *child2, *child3, *child4;
+  const TJoint *joint;
   TBoundComp3D *BoundComp;
   TBoundFace *BoundFace;
   double t0;
@@ -505,7 +516,7 @@ void TFESpace3D::ConstructSpace(BoundCondFunct3D *BoundaryCondition)
   const int *TmpoFnF, *TmpLen1, *TmpFC, *TmpLen2, *TmpoFnlF;
   const int *TmpCTI;
   int MaxLen1, MaxLen2;
-  TRefDesc *refdesc;
+  const TRefDesc *refdesc;
 
   int SumLocDOF;
   int count, *BoundaryUpperBound, DirichletUpperBound;
@@ -541,9 +552,9 @@ void TFESpace3D::ConstructSpace(BoundCondFunct3D *BoundaryCondition)
   int N_Edges, N_EdgeNeibs, N_EdgeDOF, *EdgeDof, *NeibEdgeDof;
   int N_VertDof, N_VertInCell, N_VertNeibs;
   int neibdof, maptype, w, w0, w1, v0, v1, e;
-  TEdge *edge;
-  TBaseCell **EdgeNeibs, **VertNeibs;
-  TVertex *Vert;
+  const TEdge *edge;
+  const TBaseCell * const *EdgeNeibs, * const *VertNeibs;
+  const TVertex *Vert;
   const int *EdgeVertex, *NeibEdgeVertex;
 #endif
 
@@ -1086,21 +1097,11 @@ void TFESpace3D::ConstructSpace(BoundCondFunct3D *BoundaryCondition)
       {
         // no boundary joint
          neigh = joint->GetNeighbour(cell);
-        if (!neigh || joint->GetType() == MortarJoint ||
-            joint->GetType() == MortarBaseJoint)
+        if (!neigh)
         {
           // there is no neighbour
-          // => either mortar joint
-          //    or finer cell in 1 regular grid
+          // => finer cell in 1 regular grid
           //    will be handle from coarser cell
-          if(joint->GetType() == MortarJoint ||
-             joint->GetType() == MortarBaseJoint)
-          {
-            // do mortar mapping
-            mapper=TFEDatabase3D::GetFE3DMapper(FEDesc0, FEDesc0);
-            mapper->MapBound(GlobalNumbers, I_K0, Indices0, Counter,
-                             VHN, HNNumbers);
-          }
         } // !neigh
         else
         {
@@ -2107,14 +2108,14 @@ TFESpace3D::~TFESpace3D()
 void TFESpace3D::GetDOFPosition(double *x, double *y, double *z) const 
 {
   int i,j,k;
-  TBaseCell *cell;
+  const TBaseCell *cell;
   int N_Joints;
-  TJoint *joint;
+  const TJoint *joint;
   JointType jointtype;
   FE3D FEid;
   int *DOF;
   TNodalFunctional3D *nf;
-  double *xi, *eta, *zeta;
+  const double *xi, *eta, *zeta;
   int N_Points;
   RefTrans3D RefTrans, *RefTransArray;
   int IsIsoparametric;
@@ -2234,14 +2235,14 @@ void TFESpace3D::GetDOFPosition(double *x, double *y, double *z) const
 void TFESpace3D::GetDOFPosition(int dof, double &x, double &y, double &z) const
 {
   int i,j,k;
-  TBaseCell *cell;
+  const TBaseCell *cell;
   int N_Joints;
-  TJoint *joint;
+  const TJoint *joint;
   JointType jointtype;
   FE3D FEid;
   int *DOF;
   TNodalFunctional3D *nf;
-  double *xi, *eta, *zeta;
+  const double *xi, *eta, *zeta;
   int N_Points;
   RefTrans3D RefTrans, *RefTransArray;
   int IsIsoparametric;
@@ -2375,7 +2376,7 @@ void TFESpace3D::GetDOFPosition(int dof, double &x, double &y, double &z) const
 bool TFESpace3D::CheckMesh() const
 {
   int N_DOF, *DOF=nullptr, found;
-  TBaseCell *Cell;
+  const TBaseCell *Cell;
   FE3D feid;
   TFE3D *fe=nullptr;
 
@@ -2440,8 +2441,8 @@ void TFESpace3D::getFaceQuadratureData(TBaseCell *cell, int m,
   }
   
   int N_Points;
-  double* faceWeights;
-  double *t,*s;
+  const double* faceWeights;
+  const double *t,*s;
   // get a quadrature formula good enough for the velocity FE space
   TQuadFormula2D *qf2 = TFEDatabase3D::GetQuadFormula2D(FaceQuadFormula);
   qf2->GetFormulaData(N_Points, faceWeights, t, s);
@@ -2484,16 +2485,3 @@ void TFESpace3D::getFaceQuadratureData(TBaseCell *cell, int m,
   // ====================================
   
 }
-
-#ifdef _MPI
-void TFESpace3D::initialize_parallel(int maxSubDomainPerDof)
-{
-  MaxSubDomainPerDof = maxSubDomainPerDof;
-
-  // initialize the mapper and communicator for MPI communications
-  mapper_.reset(new TParFEMapper3D(1, this));
-  comm_ .reset(new TParFECommunicator3D(mapper_.get()));
-}
-#endif
-
-

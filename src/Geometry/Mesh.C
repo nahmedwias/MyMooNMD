@@ -6,7 +6,7 @@
 
 // default initialization of the mesh (dimension = 0, no elements)
 Mesh::Mesh() {
-  dimension = 0;
+  dimension = -1;
   vertex.resize(0);
   edge.resize(0);
   triangle.resize(0);
@@ -23,7 +23,7 @@ Mesh::Mesh() {
 // initialize from a file
 // note: dimension is set to 2, but it will be changed (if necessary) reading the file
 Mesh::Mesh(std::string filename) {
-  dimension = 2;
+  dimension = -1;
   vertex.resize(0);
   edge.resize(0);
   triangle.resize(0);
@@ -40,7 +40,7 @@ Mesh::Mesh(std::string filename) {
 }
 
 Mesh::Mesh(std::string filename,std::string filenameBoundary) {
-  dimension = 2;
+  dimension = -1;
   vertex.resize(0);
   edge.resize(0);
   triangle.resize(0);
@@ -98,9 +98,14 @@ void Mesh::readFromFile(std::string filename)
   if (line.length()>0)
     sscanf(line.c_str(),"%d",&dimension);
   else
-    ifile >> dimension; 
+    ifile >> dimension;
+  
   Output::print<4>("Read dimension: ",dimension);
-
+  if (dimension==-1)
+  {
+    Output::print<1>(" ** ERROR: I could not read the mesh dimension. Check the .mesh file **");
+    exit(1);
+  }
   // read nodes
   unsigned int numberOfNodes;
   do {
@@ -110,6 +115,7 @@ void Mesh::readFromFile(std::string filename)
   ifile >> numberOfNodes;
   Output::print<4>("Read n of nodes: ",numberOfNodes);
 
+  
   vertex.resize(numberOfNodes);  
   for (unsigned int i=0; i<numberOfNodes; i++) {
     if (dimension==2) {

@@ -58,7 +58,7 @@ static double NF_N_T_RT0_3D_T[1] = {0.33333333333333333333};// ???
 static double NF_N_T_RT0_3D_S[1] = {0.33333333333333333333};// ???
 
 void NF_N_T_RT0_3D_EvalAll(TCollection *Coll, TBaseCell *Cell,
-                          double *PointValues, double *Functionals)
+                           const double *PointValues, double *Functionals)
 {
   // PointValues[4*i + j] means i-th component (i=0 for x, i=1 for y, i=2 for z)
   // at j-th evaluation point (see NF_N_T_RT0_3D_Xi, ...Eta, ...Zeta)
@@ -69,7 +69,7 @@ void NF_N_T_RT0_3D_EvalAll(TCollection *Coll, TBaseCell *Cell,
 }
 
 void NF_N_T_RT0_3D_EvalFace(TCollection *Coll, TBaseCell *Cell, int face,
-                           double *PointValues, double *Functionals)
+                            const double *PointValues, double *Functionals)
 {
   double s; // size of face
   double x0,x1,x2,y0,y1,y2,z0,z1,z2;

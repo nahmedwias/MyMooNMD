@@ -1,68 +1,58 @@
-// =======================================================================
-// %W% %G%
-//
-// Class:      TRefTrans3D
-//
-// Purpose:    reference transformations for 3D geometric objects
-//
-// Author:     Gunar Matthies
-//
-// History:    01.02.00 start implementation
-// 
-// =======================================================================
-
 #ifndef __REFTRANS3D__
 #define __REFTRANS3D__
 
-#include <Constants.h>
-#include <Enumerations.h>
-#include <BaseCell.h>
+// forward declaration
+class TBaseCell;
 
-/** reference transformations for 3D geometric objects */
+/** @brief reference transformations for 3D geometric objects */
 class TRefTrans3D
 {
   protected:
     const TBaseCell *Cell;
 
   public:
-    /** constuctor */
-    TRefTrans3D();
+    /** @brief constuctor */
+    TRefTrans3D() = default;
 
-    /** transfer form reference element to original element */
-    void GetOrigFromRef(double xi, double eta, double zeta,
-                        double &x, double &y, double &z);
+    /** @brief transfer form reference element to original element */
+    virtual void GetOrigFromRef(double xi, double eta, double zeta,
+                        double &x, double &y, double &z) = 0;
 
-    /** transfer form reference element to original element */
-    void GetOrigFromRef(double *ref, double *orig);
+    /** @brief transfer form reference element to original element */
+    virtual void GetOrigFromRef(const double *ref, double *orig) = 0;
+    
+    virtual void GetOrigFromRef(int N_Points, const double *eta,
+                                const double *xi, const double *zeta,
+                                double *x, double *y, double *z,
+                                double *absdetjk) = 0;
 
-    /** transfer from original element to reference element */
-    void GetRefFromOrig(double x, double y, double z,
-                        double &xi, double &eta, double &zeta);
+    /** @brief transfer from original element to reference element */
+    virtual void GetRefFromOrig(double x, double y, double z,
+                                double &xi, double &eta, double &zeta) = 0;
 
-    /** transfer from original element to reference element */
-    void GetRefFromOrig(double *orig, double *ref);
+    /** @brief transfer from original element to reference element */
+    virtual void GetRefFromOrig(const double *orig, double *ref) = 0;
 
-    /** calculate functions and derivatives from reference element
-        to original element */
-    void GetOrigValues(const TBaseCell *cell);
-
-    /** set original element to cell */
+    /** @brief set original element to cell */
     virtual void SetCell(const TBaseCell *cell)
     {  Cell = cell; }
 
-    /** return outer normal unit vector */
-    void GetOuterNormal(int j, double s, double t,
-                        double &n1, double &n2, double &n3);
+    /** @brief return outer normal unit vector */
+    virtual void GetOuterNormal(int j, double s, double t,
+                                double &n1, double &n2, double &n3) const = 0;
 
-    /** return two tangent vectors */
-    void GetTangentVectors(int j, double p1, double p2,
-        double &t11, double &t12, double &t13,
-        double &t21, double &t22, double &t23);
+    /** @brief return two tangent vectors */
+    virtual void GetTangentVectors(int j, double p1, double p2,
+                                   double &t11, double &t12, double &t13,
+                                   double &t21, double &t22, double &t23)
+      const = 0;
     
-    virtual void PiolaMapOrigFromRef(int N_Functs, double *refD00, 
-                                     double *origD00)
-    { ErrMsg(" Piola Map not defined for this element\n"); };
-
+    /** @brief Piola map, needed for vector values basis functions such as 
+     *         Raviart-Thomas (RT) or Brezzi-Douglas-Marini (BDM).
+     */
+    virtual void PiolaMapOrigFromRef(double xi, double eta, double zeta,
+                                     int N_Functs, const double *refD00, 
+                                     double *origD00) = 0;
 };
 
 #endif

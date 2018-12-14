@@ -64,7 +64,7 @@ class TFEVectFunct2D : public TFEFunction2D
         DoubleFunct2D *Exact, DoubleFunct2D *Exact1,
         int N_Derivatives,
         MultiIndex2D *NeededDerivatives,
-        int N_Errors, ErrorMethod2D *ErrorMeth, 
+        int N_Errors, TFEFunction2D::ErrorMethod *ErrorMeth, 
         CoeffFct2D Coeff, TAuxParam2D *Aux,
         int n_fespaces, TFESpace2D **fespaces,
         double *errors);

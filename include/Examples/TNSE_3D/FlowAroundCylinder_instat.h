@@ -158,7 +158,7 @@ void get_cdrag_clift(TFEFunction3D *u1fct, TFEFunction3D *u2fct,
 {
   int i,j,k,l, N_;
   int N_Points,N_Faces,comp;
-  double *weights, *xi, *eta, *zeta;
+  const double *weights, *xi, *eta, *zeta;
   double X[MaxN_QuadPoints_3D];
   double Y[MaxN_QuadPoints_3D];
   double Z[MaxN_QuadPoints_3D];
@@ -459,7 +459,7 @@ double get_p_diff(const std::array<double,3>& point_A,
 }
 
 // this is the actual interface
-void compute_drag_lift_pdiff(Time_NSE3D& tnse3d)
+void compute_drag_lift_pdiff(TimeNavierStokes<3>& tnse3d)
 {
 #ifdef _MPI
   MPI_Comm comm = MPI_COMM_WORLD;

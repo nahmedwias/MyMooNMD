@@ -68,5 +68,12 @@ void BilinearAssemble_GLS(double Mult, double *coeff, double* param,
                          double hK, double **OrigValues, int *N_BaseFuncts,
                          double ***LocMatrices, double **LocRhs);
 
+//=============================================================================
+// local error computing routines:
+template<int d>
+void conv_diff_l2_h1_linf_error(int N_Points, std::array<double*, d> xyz,
+                                double *AbsDetjk, const double *Weights,
+                                double hK, double **Der, double **Exact,
+                                double **coeffs, double *LocError);
 
 #endif // __CONVDIFF__

@@ -77,7 +77,12 @@ void BrinkmanType1Galerkin(double Mult, double *coeff,
   double K = coeff[6];                    // permeability
 
 // LB Debug New 25.04.18 start:
-double approximate_delta_distribution_function = 0;//coeff[9];
+double approximate_delta_distribution_function = 0;
+
+if (TDatabase::ParamDB->SOURCE_SINK_FUNCTION)
+{
+	approximate_delta_distribution_function = coeff[9];
+}
 //cout<< "K::: "<< K << endl;
 //cout<< "mueff::: "<< mu_eff << endl;
 // LB Debug 25.04.18 end
@@ -594,13 +599,32 @@ void BrinkmanGradDivStab(double Mult, double *coeff,
   }
   else if (TDatabase::ParamDB->l_T == -1)
   {
-    grad_div_stab = delta * (mu_eff + (mu/K) * TDatabase::ParamDB->L_0 * TDatabase::ParamDB->L_0); // Brinkman_P1P1.tex with l_T=L_0
+  	grad_div_stab = delta * (mu_eff + (mu/K) * TDatabase::ParamDB->L_0 * TDatabase::ParamDB->L_0); // Brinkman_P1P1.tex with l_T=L_0
   }
   double val;
 
   if (TDatabase::ParamDB->SIGN_MATRIX_BI == -1)
   { // TODO LB: Do the stability analysis for the symmetric GLS stabilization and adapt the 'grad_div_stab_weight' accordingly.' 
-    grad_div_stab = coeff[8];
+  	grad_div_stab = coeff[8];
+  }
+
+  int GradDivStab_propto_h = 0;
+  if (GradDivStab_propto_h)
+  {
+  	int i = 0;
+  	if (i == 0)
+  	{
+  		Output::print("GradDiv-Stab is scaled as O(h).");
+  		i += 1;
+  	}
+  	grad_div_stab = delta * hK;
+  }
+
+  // LB Debug New21.08.18 start:
+  double approximate_delta_distribution_function = 0;
+  if (TDatabase::ParamDB->SOURCE_SINK_FUNCTION)
+  {
+  	approximate_delta_distribution_function = coeff[9];
   }
 
   for(int i = 0; i < N_U; i++)
@@ -610,6 +634,9 @@ void BrinkmanGradDivStab(double Mult, double *coeff,
 
     Rhs_u1[i] += Mult * grad_div_stab * c3 * test10; //(g,div v) = g (dv_1/dx_1 + ...)
     Rhs_u2[i] += Mult * grad_div_stab * c3 * test01; //(g,div v) = g(... + dv_2/dx_2)
+
+    Rhs_u1[i] += Mult * grad_div_stab * approximate_delta_distribution_function * test10; //(g,div v) = g (dv_1/dx_1 + ...)
+    Rhs_u2[i] += Mult * grad_div_stab * approximate_delta_distribution_function * test01; //(g,div v) = g(... + dv_2/dx_2)
 
     for(int j = 0; j < N_U; j++)
     {

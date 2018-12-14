@@ -185,7 +185,7 @@
 // }
 
 
-void MeanVelocity::compute_mean_velocity_on_points(const Time_NSE2D& tnse2d,
+void MeanVelocity::compute_mean_velocity_on_points(const TimeNavierStokes<2>& tnse2d,
   const std::vector<double>& vec, const std::vector<TBaseCell *> cells)
 {
   const TFEFunction2D *u1 = tnse2d.get_velocity().GetComponent(0);
@@ -298,7 +298,7 @@ void MeanVelocity::compute_mean_velocity_on_points(const Time_NSE2D& tnse2d,
     }
   }  
 }
-void MeanVelocity::compute_velocity_on_points(const Time_NSE2D& tnse2d,
+void MeanVelocity::compute_velocity_on_points(const TimeNavierStokes<2>& tnse2d,
                                               const std::vector<double>& vec_x_y,
                                               const std::vector<TBaseCell *> cells,
                                               std::string basename)

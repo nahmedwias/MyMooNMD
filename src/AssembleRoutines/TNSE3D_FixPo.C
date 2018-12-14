@@ -7281,7 +7281,7 @@ void TimeNS_VMS_SmallRhs3D(double Mult, double *coeff,
 // used for : GALERKIN
 //            COLETTI (non linear steps)
 // ========================================================================
-void TimeNSParamsVelo3D(double *in, double *out)
+void TimeNSParamsVelo3D(const double *in, double *out)
 {
   out[0] = in[3]; // u1old
   out[1] = in[4]; // u2old
@@ -7292,7 +7292,7 @@ void TimeNSParamsVelo3D(double *in, double *out)
 // parameters: u1old, u2old,
 // used for : COLETTI, Smagorinsky
 // ========================================================================
-void TimeNSParamsVelo_GradVelo3D(double *in, double *out)
+void TimeNSParamsVelo_GradVelo3D(const double *in, double *out)
 {
   out[0] = in[3]; // u1old
   out[1] = in[4]; // u2old
@@ -7336,7 +7336,7 @@ void TimeNSParamsGradVelo3D(double *in, double *out)
 // all partial derivatives
 // convolution of u1old, u2old, u3old
 // ========================================================================
-void TimeNSParamsVelo_GradVelo_ConvVelo3D(double *in, double *out)
+void TimeNSParamsVelo_GradVelo_ConvVelo3D(const double *in, double *out)
 {
   out[0] = in[3]; // u1old
   out[1] = in[4]; // u2old
@@ -7469,7 +7469,7 @@ void TimeNSParamsGL00AuxProblemNuT4_3D(double *in, double *out)
 // ========================================================================
 // used for VMS, assembling of rhs for small scale equation 
 // ========================================================================
-void TimeNSParams_VMS_SmallRhs3D(double *in, double *out)
+void TimeNSParams_VMS_SmallRhs3D(const double *in, double *out)
 {
   // large scales
   out[0] = in[3]; // u1old
@@ -7502,4 +7502,46 @@ void TimeNSParams_VMS_SmallRhs3D(double *in, double *out)
   out[23] = in[26]; // D3u3
   // large pressure
   out[24] = in[27]; // p
+}
+// ========================================================================
+// parameters: u1old, u2old, G^H
+// used for : projection-based VMS
+// ========================================================================
+void TimeNSParamsVelo_GradVelo_LargeScale3D(const double *in, double *out)
+{
+  out[0] = in[3]; // u1old
+  out[1] = in[4]; // u2old
+  out[2] = in[5]; // u3old
+
+  out[3] = in[6]; // D1u1
+  out[4] = in[7]; // D1u2
+  out[5] = in[8]; // D1u3
+  out[6] = in[9]; // D2u1
+  out[7] = in[10]; // D2u2
+  out[8] = in[11]; // D2u3
+  out[9] = in[12]; // D3u1
+  out[10] = in[13]; // D3u2
+  out[11] = in[14]; // D3u3
+
+  out[12] = in[0]; // x - coordinate for van Driest damping
+  out[13] = in[1]; // y - coordinate for van Driest damping
+  out[14] = in[2]; // z - coordinate for van Driest damping
+
+  // finest grid
+  if (TDatabase::ParamDB->INTERNAL_LEVEL == 1)
+  {
+      out[15] = in[15]; // G_11
+      out[16] = in[16]; // G_12
+      out[17] = in[17]; // G_13
+      out[18] = in[18]; // G_22
+      out[19] = in[19]; // G_23
+      out[20] = in[20]; // G_33
+    
+      out[21] = in[21]; // coarse space
+  }
+  else
+  {
+      // coarser grids
+      out[15] = out[16] = out[17] = out[18] = out[19] = out[20] = out[21] = 0;
+  }
 }

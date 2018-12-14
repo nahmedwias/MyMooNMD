@@ -35,7 +35,7 @@ void Boundary::initFromFile(std::string PRM)
   
   getline(ifile,theline,'\n'); // NBCT
   ifile >> nBoundaryParts;
-  Output::print("n parts ",nBoundaryParts);
+  //Output::print("n parts ",nBoundaryParts);
 
   getline(ifile,theline,'\n'); 
   parts.resize(nBoundaryParts);
@@ -46,7 +46,7 @@ void Boundary::initFromFile(std::string PRM)
     getline(ifile,theline,'\n'); 
     getline(ifile,theline,'\n'); // NCOMP
     ifile >> nBoundaryComponent;
-    Output::print("n comp ",nBoundaryComponent);
+    //Output::print("n comp ",nBoundaryComponent);
     getline(ifile,theline,'\n'); 
     parts[i].resize(nBoundaryComponent);
     
@@ -56,7 +56,7 @@ void Boundary::initFromFile(std::string PRM)
       ifile >> iType;
       ifile >> nSpline;
       ifile >> nParameters;
-      Output::print("types ",iType,",",nSpline," ",nParameters);
+      //Output::print("types ",iType,",",nSpline," ",nParameters);
       
       switch (iType) {
       case 1:
@@ -82,20 +82,21 @@ void Boundary::initFromFile(std::string PRM)
 
   }
   getline(ifile,theline,'\n'); // PARAMETERS
-  Output::print(theline);
+  //Output::print(theline);
   for (int i=0; i<nBoundaryParts; i++) {
     for (unsigned int k=0; k<parts[i].size(); k++) {
       for (unsigned int p=0; p<parts[i][k].parameters.size()/2; p++) {
 
       ifile >> parts[i][k].parameters[2*p];
       ifile >> parts[i][k].parameters[2*p+1];
-      Output::print("param[2] ",parts[i][k].parameters[2*p]," ",parts[i][k].parameters[2*p+1]);
+      //Output::print("param[2] ", parts[i][k].parameters[2*p], " ",
+      //              parts[i][k].parameters[2*p+1]);
       }
       getline(ifile,theline,'\n');   
     }
   }
   
-  Output::print("  Boundary::initFromFile() finished reading ", PRM);
+  Output::print<4>("  Boundary::initFromFile() finished reading ", PRM);
 }
 
 // return the Id of the boundary component of the point (x,y) and its local parameter (if any)
@@ -150,12 +151,18 @@ int Boundary::isOnComponent(double x, double y, double &t)
 	  double angle0 = parts[i][k].parameters[4];
 	  double angle1 = parts[i][k].parameters[5];
 	  double theta=atan2(y-parts[i][k].parameters[1],x-parts[i][k].parameters[0]);
+    bool full_circle = (2*pi - std::abs(angle0-angle1)) < 1.e-6;
 
 	  if (angle0<angle1) {
 	    // the boundary has "positive" sign
 	    while (theta<angle0) {
 	      theta= theta + 2*pi;
 	    }
+      if(full_circle && std::abs(theta - angle0) < 1.e-6)
+      {
+        t = k;
+        return i;
+      }
 	    if (theta<angle1) {
 	      // return the value of the angle renormalized between 0 and 1
 	      t = k + (theta-angle0)/(angle1-angle0);
@@ -168,6 +175,11 @@ int Boundary::isOnComponent(double x, double y, double &t)
 	    while (theta<angle1) {
 	      theta = theta + 2*pi;
 	    }
+      if(full_circle && std::abs(theta - angle1) < 1.e-6)
+      {
+        t = k;
+        return i;
+      }
 	    if (theta<angle0) {
 	      // return the value of the angle renormalized between 0 and 1
 	      t = k + (theta-angle0)/(angle1-angle0);

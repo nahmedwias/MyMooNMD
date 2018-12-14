@@ -47,8 +47,6 @@ enum class LocalAssembling_type
     Brinkman2D_GradDivStabilization,
     ConvDiff, /// Stationary convection diffusion reaction in 3D
     Darcy, // stationary Darcy problem (mixed form)
-    TCD3D, // mass matrix (+ matrix comming from time discretization SUPG case)
-    TCD3DStiffRhs, // stiffness matrix and right hand side
     TCDStiffMassRhs,
     TCDStiffRhs,
     TCDMassOnly,
@@ -164,7 +162,7 @@ class LocalAssembling
     
     void set_parameters_for_tcd(LocalAssembling_type type);
 
-    /** Depending on the NSTYPE and the NSE_NONLINEAR_FORM all parameters are 
+    /** Depending on the NSTYPE and the 'nse_nonlinear_form' all parameters are 
      * set within this function. This function is called from the constructor 
      * in case of Navier-Stokes problems. It only exists in order to not make 
      * the constructor huge. 
@@ -321,7 +319,7 @@ class LocalAssembling
     static ParameterDatabase default_local_assembling_database();
     
     /** return local stiffness matrix */
-    void GetLocalForms(int N_Points, double *weights, double *AbsDetjk,
+    void GetLocalForms(int N_Points, const double *weights, double *AbsDetjk,
                        std::array<double*, d> coordinates,
                        int *N_BaseFuncts, BaseFunct *BaseFuncts, 
                        TBaseCell *Cell, int cell_num, int N_Matrices, int N_Rhs,

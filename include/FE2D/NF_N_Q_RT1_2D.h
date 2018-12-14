@@ -41,7 +41,7 @@ static double NF_N_Q_RT1_2D_Eta[37]  =
 static double NF_N_Q_RT1_2D_T[] = { -NF_N_Q_RT1_2D_a, 0, NF_N_Q_RT1_2D_a };
 
 void NF_N_Q_RT1_2D_EvalAll(TCollection *Coll, TBaseCell *Cell,
-                           double *PointValues, double *Functionals)
+                           const double *PointValues, double *Functionals)
 {
   for(unsigned int i = 0; i < 12; ++i)
     Functionals[i] = 0;
@@ -171,7 +171,8 @@ void NF_N_Q_RT1_2D_EvalAll(TCollection *Coll, TBaseCell *Cell,
   }
 }
 
-void NF_N_Q_RT1_2D_EvalEdge(TCollection *Coll, TBaseCell *Cell, int Joint, double *PointValues,double *Functionals)
+void NF_N_Q_RT1_2D_EvalEdge(TCollection *Coll, TBaseCell *Cell, int Joint,
+                            const double *PointValues,double *Functionals)
 {
   #ifdef __2D__
   double x0, x1, y0, y1;

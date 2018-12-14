@@ -48,7 +48,7 @@ int TBdCircle::GetXYofT(double T, double &X, double &Y) const
 {
   double Phi;
 
-  if (T < -0.001 || T > 1.001)
+  if(!this->is_full_circle() && (T < -0.001 || T > 1.001))
   { 
     ErrThrow("WARNING in TBdCircle::GetXYofT. Parameter T=",T," out of range."
         " Not writing on X and Y. ");;
