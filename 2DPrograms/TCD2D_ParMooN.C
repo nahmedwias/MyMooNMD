@@ -11,7 +11,7 @@
 #include <Domain.h>
 #include <Database.h>
 #include <FEDatabase2D.h>
-#include <Time_CD2D.h>
+#include "TimeConvectionDiffusion.h"
 
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -26,7 +26,7 @@ using namespace std;
 int main(int argc, char* argv[])
 {
   double t_start = GetTime();
-  TDatabase Database;
+  TDatabase Database(argv[1]);
   TFEDatabase2D FEDatabase;
   
   ParameterDatabase parmoon_db = ParameterDatabase::parmoon_default_database();
@@ -38,27 +38,20 @@ int main(int argc, char* argv[])
   // ======================================================================
   // set the database values and generate mesh
   // ======================================================================
-  /** set variables' value in TDatabase using argv[1] (*.dat file), and generate the MESH based */
-  TDomain Domain(parmoon_db, argv[1]);
+  TDomain Domain(parmoon_db);
   
   parmoon_db.write(Output::get_outfile());
   Database.WriteParamDB(argv[0]);
   Database.WriteTimeDB();
   
-  
-  // Initialize class for storing snapshots
+  // refine grid
+  Domain.refine_and_get_hierarchy_of_collections(parmoon_db);
   SNAPS snaps( parmoon_db );
-  // refine grid up to the coarsest level
-  size_t n_ref = Domain.get_n_initial_refinement_steps();
-  for(unsigned int i=0; i<n_ref; i++){
-    Domain.RegRefineAll();  
-  }
   // write grid into an Postscript file
   if(parmoon_db["output_write_ps"])
     Domain.PS("Domain.ps", It_Finest, 0);
   
-  Example_TimeCD2D example( parmoon_db );
-  Time_CD2D tcd(Domain, parmoon_db, example);
+  TimeConvectionDiffusion<2> tcd(Domain, parmoon_db);
   
   TimeDiscretization& tss = tcd.get_time_stepping_scheme();
   tss.current_step_ = 0;
@@ -68,7 +61,9 @@ int main(int argc, char* argv[])
   tcd.assemble_initial_time();
   // ======================================================================
   
-  double end_time = tss.get_end_time(); 
+  double start_time = parmoon_db["time_start"];
+  double end_time   = parmoon_db["time_end"];
+  TDatabase::TimeDB->CURRENTTIME = start_time;
   tcd.output();
   // store initial condition as snapshot
   snaps.write_data(tcd.get_solution());

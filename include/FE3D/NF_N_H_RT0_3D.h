@@ -4,7 +4,7 @@
 
 // we use a tensor product of a 2-point Gauss quadrature on each face (which is 
 // exact for polynomials up to order 3)
-constexpr double s13 = std::sqrt(1./3.);
+const double s13 = std::sqrt(1./3.);
 /* for all functionals, these should use (higher order) quadrature formulas as 
 well. We need to find a much easier way to implement this. */
 static double NF_N_H_RT0_3D_Xi[] =
@@ -76,10 +76,10 @@ static double NF_N_H_RT0_3D_S[1] = {0};// ???
 
 // forward declaration
 void NF_N_H_RT0_3D_EvalFace(TCollection *Coll, TBaseCell *Cell, int face,
-                           double *PointValues, double *Functionals);
+                            const double *PointValues, double *Functionals);
 
 void NF_N_H_RT0_3D_EvalAll(TCollection *Coll, TBaseCell *Cell,
-                          double *PointValues, double *Functionals)
+                           const double *PointValues, double *Functionals)
 {
   if(Coll != nullptr && Cell != nullptr)
   {
@@ -115,7 +115,7 @@ void NF_N_H_RT0_3D_EvalAll(TCollection *Coll, TBaseCell *Cell,
 }
 
 void NF_N_H_RT0_3D_EvalFace(TCollection *Coll, TBaseCell *Cell, int face,
-                           double *PointValues, double *Functionals)
+                            const double *PointValues, double *Functionals)
 {
   double s; // size of face
   double x0,x1,x2,y0,y1,y2,z0,z1,z2;

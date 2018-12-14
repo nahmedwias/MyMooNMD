@@ -8,15 +8,16 @@
  * @author Clemens Bartsch, Naveed Ahmed
  */
 #include <AlgebraicFluxCorrection.h>
-#include <Time_CD2D.h>
+#include "TimeConvectionDiffusion.h"
 #include <Database.h>
 #include <FEDatabase2D.h>
 #include <TimeDiscRout.h>
 #include <MainUtilities.h>
+#include <ConvDiff.h>
 #include <AuxParam2D.h>
+#include <TimeDiscretizations.h>
 
-
-void testCN(Time_CD2D &tcd, int m)
+void testCN(TimeConvectionDiffusion<2> &tcd, int m)
 {
   double errors[5];
   errors[0]=errors[1]=errors[2]=errors[3]=0.;
@@ -26,8 +27,8 @@ void testCN(Time_CD2D &tcd, int m)
   const TFESpace2D* space = function.GetFESpace2D();
 
   function.GetErrors(tcd.get_example().get_exact(0), 3, AllDerivatives, 4,
-                       SDFEMErrors, tcd.get_example().get_coeffs(), &aux, 1,
-                       &space, errors);
+                     conv_diff_l2_h1_linf_error<2>,
+                     tcd.get_example().get_coeffs(), &aux, 1, &space, errors);
   double eps1 = 1E-6;
   double eps2 = 1E-5;
   if(m==0)
@@ -82,19 +83,18 @@ void testCN(Time_CD2D &tcd, int m)
   }
 }
 
-void time_integration(int td, Time_CD2D& tcd, TimeDiscretization& tss)
+void time_integration(int td, TimeConvectionDiffusion<2>& tcd, TimeDiscretization& tss)
 {
   TDatabase::TimeDB->TIME_DISC = td;
-
-  TDatabase::TimeDB->CURRENTTIME = TDatabase::TimeDB->STARTTIME;
+  TDatabase::TimeDB->CURRENTTIME = tcd.get_db()["time_start"];
 
   tcd.assemble_initial_time();
 
   int step=0;
   testCN(tcd, step);
 
-  while(TDatabase::TimeDB->CURRENTTIME <
-    TDatabase::TimeDB->ENDTIME-1e-10)
+  double end_time = tcd.get_db()["time_end"];
+  while(TDatabase::TimeDB->CURRENTTIME < end_time -1e-10)
   {
     step ++;
     TDatabase::TimeDB->INTERNAL_STARTTIME
@@ -139,20 +139,19 @@ int main(int argc, char* argv[])
     db["time_step_length"] = 0.001;
     TDatabase::ParamDB->ANSATZ_ORDER=1;
 
-    TDatabase::TimeDB->STARTTIME=0;
-    TDatabase::TimeDB->ENDTIME=0.02;
+    db["time_end"] = 0.02;
     TDatabase::TimeDB->TIMESTEPLENGTH = 0.001;
 
     db.add("boundary_file", "Default_UnitSquare", "");
     db.add("geo_file", "UnitSquare", "", {"UnitSquare", "TwoTriangles"});
+    db.add("refinement_n_initial_steps", (size_t) 5,"");
     TDomain domain(db);
     SetTimeDiscParameters(0);
-    // some parameters
-    for(int i=0; i< 5; ++i)
-      domain.RegRefineAll();
+    // refine grid
+    domain.refine_and_get_hierarchy_of_collections(db);
 
     db.add("solver_type", "direct", "", {"direct", "petsc"});
-    Time_CD2D tcd(domain, db);
+    TimeConvectionDiffusion<2> tcd(domain, db);
     
     TimeDiscretization& tss = tcd.get_time_stepping_scheme();
     tss.current_step_ = 0;
@@ -161,7 +160,7 @@ int main(int argc, char* argv[])
     time_integration(2,tcd, tss);
     
     db["solver_type"] = "petsc";
-    Time_CD2D tcd_petsc(domain, db);
+    TimeConvectionDiffusion<2> tcd_petsc(domain, db);
     time_integration(2, tcd_petsc, tss);
   }
 }

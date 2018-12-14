@@ -37,6 +37,9 @@ class TimeDiscretization
     /// @brief time step legth 
     double current_time_step_length;
     
+    /// @brief start time 
+    double start_time;
+    
     /// @brief end time 
     double end_time;
     
@@ -53,7 +56,7 @@ public:
     /// the time iteration. 
     unsigned int current_step_;
     
-    /// @brief 
+    /// @brief current time
     double current_time_;
     
     /// @brief return a default TimeDiscretization parameter database
@@ -149,6 +152,10 @@ public:
     double get_step_length()
     {
       return current_time_step_length;
+    }
+    double get_start_time()
+    {
+      return start_time;
     }
     /// returns the end time
     double get_end_time()

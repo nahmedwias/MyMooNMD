@@ -9,8 +9,6 @@
 //
 // =======================================================================
 
-#include <DefineParams.h>
-
 //#include <Assemble2D_edge_convdiv.h>
 #include <Enumerations.h>
 #include <Matrix2D.h>
@@ -64,7 +62,7 @@ void Assemble2D_edge_Oseen(CoeffFct2D Coeff,int n_fespaces, TFESpace2D **fespace
   int **TestGlobalNumbers, **TestBeginIndex;
   int **AnsatzGlobalNumbers, **AnsatzBeginIndex;
   BF2DRefElements bf2Drefelements;
-  double *weights, *xi, *eta, *weights1D, *weights_neigh, *xi_neigh, *eta_neigh;
+  const double *weights, *xi, *eta, *weights1D, *weights_neigh, *xi_neigh, *eta_neigh;
   double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D], X_neigh[MaxN_QuadPoints_2D], Y_neigh[MaxN_QuadPoints_2D];
   double AbsDetjk[MaxN_QuadPoints_2D], AbsDetjk_neigh[MaxN_QuadPoints_2D],*AbsDetjk1D[4];
   double *Param[MaxN_QuadPoints_2D];
@@ -79,7 +77,7 @@ void Assemble2D_edge_Oseen(CoeffFct2D Coeff,int n_fespaces, TFESpace2D **fespace
   double **HangingEntries;
   double integral;
   int dof_ii,dof_jj, found;
-  double *zeta;
+  const double *zeta;
   double x0, x1, y0, y1, hE, nx, ny; // tx, ty;
   bool *SecondDer;
   double max_b,dummy3,Re;

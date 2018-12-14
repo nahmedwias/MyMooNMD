@@ -139,8 +139,6 @@ int main(int argc, char* argv[])
   db2.info();
   
   
-  ParameterDatabase timedb = ParameterDatabase::default_time_database();
-  
   Output::print("successful test");
   return 0;
 }

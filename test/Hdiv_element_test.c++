@@ -24,7 +24,7 @@ bool CheckFEOnCell(const TFE2D &hdiv_fe, TBaseCell & cell,
   // get the points on the reference element, at which we have to evaluate the 
   // basis functions in order to evaluate the nodal functional
   int N_Points;
-  double *xi, *eta;
+  const double *xi, *eta;
   hdiv_fe.GetNodalFunctional2D()->GetPointsForAll(N_Points, xi, eta);
   
   // the basis functions object

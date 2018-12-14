@@ -4,26 +4,20 @@
 
 
 FEMatrix::FEMatrix(const TFESpace1D * space)
- : TMatrix(std::make_shared<TStructure>(space)), 
-   AnsatzSpace1D(space), AnsatzSpace2D(nullptr), AnsatzSpace3D(nullptr),
-   TestSpace1D(space), TestSpace2D(nullptr), TestSpace3D(nullptr)
+: FEMatrix(space, std::make_shared<TStructure>(space))
 {
   
 }
 
 FEMatrix::FEMatrix(const TFESpace2D * space)
-: TMatrix(std::make_shared<TStructure>(space)),
-  AnsatzSpace1D(nullptr), AnsatzSpace2D(space), AnsatzSpace3D(nullptr),
-  TestSpace1D(nullptr), TestSpace2D(space), TestSpace3D(nullptr)
+: FEMatrix(space, std::make_shared<TStructure>(space))
 {
   
 }
 
 #ifdef __3D__
 FEMatrix::FEMatrix(const TFESpace3D * space)
-: TMatrix(std::make_shared<TStructure>(space)),
-  AnsatzSpace1D(nullptr), AnsatzSpace2D(nullptr), AnsatzSpace3D(space),
-  TestSpace1D(nullptr), TestSpace2D(nullptr), TestSpace3D(space)
+: FEMatrix(space, std::make_shared<TStructure>(space))
 {
   
 }
@@ -44,6 +38,56 @@ FEMatrix::FEMatrix(const TFESpace3D * testspace, const TFESpace3D * ansatzspace,
   TestSpace1D(nullptr), TestSpace2D(nullptr), TestSpace3D(testspace)
 {
  
+}
+#endif // 3D
+
+FEMatrix::FEMatrix(const TFESpace1D * space,
+                   std::shared_ptr<TStructure> structure)
+: TMatrix(structure),
+  AnsatzSpace1D(space), AnsatzSpace2D(nullptr), AnsatzSpace3D(nullptr),
+  TestSpace1D(space), TestSpace2D(nullptr), TestSpace3D(nullptr)
+{
+  if(!structure->isSquare())
+  {
+    ErrThrow("The structure must be square for this FEMatrix constructor");
+  }
+  if(space->GetN_DegreesOfFreedom() != structure->GetN_Rows())
+  {
+    ErrThrow("The given matrix and structure to not properly match");
+  }
+}
+
+FEMatrix::FEMatrix(const TFESpace2D * space,
+                   std::shared_ptr<TStructure> structure)
+: TMatrix(structure),
+  AnsatzSpace1D(nullptr), AnsatzSpace2D(space), AnsatzSpace3D(nullptr),
+  TestSpace1D(nullptr), TestSpace2D(space), TestSpace3D(nullptr)
+{
+  if(!structure->isSquare())
+  {
+    ErrThrow("The structure must be square for this FEMatrix constructor");
+  }
+  if(space->GetN_DegreesOfFreedom() != structure->GetN_Rows())
+  {
+    ErrThrow("The given matrix and structure to not properly match");
+  }
+}
+
+#ifdef __3D__
+FEMatrix::FEMatrix(const TFESpace3D * space,
+                   std::shared_ptr<TStructure> structure)
+: TMatrix(structure),
+  AnsatzSpace1D(nullptr), AnsatzSpace2D(nullptr), AnsatzSpace3D(space),
+  TestSpace1D(nullptr), TestSpace2D(nullptr), TestSpace3D(space)
+{
+  if(!structure->isSquare())
+  {
+    ErrThrow("The structure must be square for this FEMatrix constructor");
+  }
+  if(space->GetN_DegreesOfFreedom() != structure->GetN_Rows())
+  {
+    ErrThrow("The given matrix and structure to not properly match");
+  }
 }
 #endif // 3D
 

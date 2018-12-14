@@ -30,7 +30,7 @@ class FEMatrix : public TMatrix
     /// @brief there is no default constructor, this makes no sense
     FEMatrix() = delete;
     
-    /// @name construct square structures using one finite element space
+    /// @name construct square matrix using one finite element space
     /// @brief ansatz and test space is the same 
     //@{
     FEMatrix(const TFESpace1D * space);
@@ -40,7 +40,7 @@ class FEMatrix : public TMatrix
     #endif // 3D
     //@}
     
-    /// @name construct rectangular structures using two finite element spaces
+    /// @name construct rectangular matrix using two finite element spaces
     /// @brief test and ansatz space are possibly different
     /// 
     /// A matrix using this structure represents a linear map from the ansatz 
@@ -50,6 +50,16 @@ class FEMatrix : public TMatrix
     FEMatrix(const TFESpace2D * testspace, const TFESpace2D * ansatzspace,  bool is_empty = false);
     #ifdef __3D__
     FEMatrix(const TFESpace3D * testspace, const TFESpace3D * ansatzspace,  bool is_empty = false);
+    #endif // 3D
+    //@}
+    
+    /// @name construct matrix with given structure and finite element space
+    /// @brief ansatz and test space is the same. The structure must be square.
+    //@{
+    FEMatrix(const TFESpace1D * space, std::shared_ptr<TStructure> structure);
+    FEMatrix(const TFESpace2D * space, std::shared_ptr<TStructure> structure);
+    #ifdef __3D__
+    FEMatrix(const TFESpace3D * space, std::shared_ptr<TStructure> structure);
     #endif // 3D
     //@}
     

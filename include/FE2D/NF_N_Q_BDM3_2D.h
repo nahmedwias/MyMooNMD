@@ -83,8 +83,8 @@ NF_N_Q_BDM3_2D_q[4],NF_N_Q_BDM3_2D_q[4],NF_N_Q_BDM3_2D_q[4],NF_N_Q_BDM3_2D_q[4],
 };
 
 
-void NF_N_Q_BDM3_2D_EvalAll(TCollection *Coll, TBaseCell *Cell, double *PointValues,
-                          double *Functionals)
+void NF_N_Q_BDM3_2D_EvalAll(TCollection *Coll, TBaseCell *Cell,
+                            const double *PointValues, double *Functionals)
 {
   // short names
   const double * q = NF_N_Q_BDM3_2D_q;
@@ -262,8 +262,8 @@ void NF_N_Q_BDM3_2D_EvalAll(TCollection *Coll, TBaseCell *Cell, double *PointVal
   }
 }
 
-void NF_N_Q_BDM3_2D_EvalEdge(TCollection *Coll, TBaseCell *Cell, int Joint, double *PointValues,
-                           double *Functionals)
+void NF_N_Q_BDM3_2D_EvalEdge(TCollection *Coll, TBaseCell *Cell, int Joint,
+                             const double *PointValues, double *Functionals)
 {
   #ifdef __2D__
   Functionals[0] = 0.;

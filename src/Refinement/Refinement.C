@@ -7,8 +7,6 @@
 //
 // =======================================================================
 
-#include <DefineParams.h>
-
 #include <GridCell.h>
 #include <JointEqN.h>
 #include <Database.h>
@@ -46,14 +44,6 @@ int TGridCell::Refine(int reflevel)
   TVertex *CurrVert;
   
   if (!IsToRefine()) return 1;
-
-  #ifdef __MORTAR__
-    if (RefDesc->GetType() >= Mortar)
-    {
-      RefineMortar(reflevel);
-      return 0;
-    }
-  #endif
 
   N_1 = RefDesc->GetN_OrigEdges();
 
@@ -121,7 +111,7 @@ int TGridCell::Refine(int reflevel)
       index = TmpValues1[i];
 
       if (Tmp[TmpValues2[i]].Filled)
-        NewJoints[index] = Tmp[TmpValues2[i]].Joints[0];
+        NewJoints[index] = const_cast<TJoint*>(Tmp[TmpValues2[i]].Joints[0]);
       else
         NewJoints[index] = Joints[TmpValues2[i]]->NewInst();
 
@@ -158,7 +148,8 @@ int TGridCell::Refine(int reflevel)
         {
           auxi = i * MaxLen1;
           for (j=1;j<N_2;j++)
-            NewVertices[TmpValues1[auxi + j]] = Tmp[i].Vertices[N_2-j];
+            NewVertices[TmpValues1[auxi + j]] 
+              = const_cast<TVertex*>(Tmp[i].Vertices[N_2-j]);
         }
         else
         {
@@ -178,7 +169,7 @@ int TGridCell::Refine(int reflevel)
         for (j=0;j<N_2;j++)
         {
           index = TmpValues2[auxi + j];
-          NewJoints[index] = Tmp[i].Joints[N_2-1 - j];
+          NewJoints[index] = const_cast<TJoint*>(Tmp[i].Joints[N_2-1 - j]);
           NewJoints[index]->SetNeighbour(Children[
                               TmpValues4[index * MaxLen3]]);
         }
@@ -325,8 +316,8 @@ int TGridCell::Refine(int reflevel)
   const double *TmpPos;
   bool Inside;
   Refinements FaceRefDescID;
-  TRefDesc *FaceRefDesc;
-  TShapeDesc *ChildDesc;
+  const TRefDesc *FaceRefDesc;
+  const TShapeDesc *ChildDesc;
   TVertex *CurrVert;
   TBaseCell *CurrCell, *StopCell;
   TJoint *CurrJoint;
@@ -462,7 +453,7 @@ int TGridCell::Refine(int reflevel)
       index = TmpValues1[i];
 
       if (Tmp[TmpValues2[i]].Filled)
-        NewJoints[index] = Tmp[TmpValues2[i]].Joints[0];
+        NewJoints[index] = const_cast<TJoint*>(Tmp[TmpValues2[i]].Joints[0]);
       else
         NewJoints[index] = Joints[TmpValues2[i]]->NewInst();
 
@@ -498,7 +489,8 @@ int TGridCell::Refine(int reflevel)
         
         auxi = i * MaxLen1;
         for (j=0;j<N_2;j++)
-          NewVertices[TmpValues1[auxi++]] = Tmp[i].Vertices[j];
+          NewVertices[TmpValues1[auxi++]]
+            = const_cast<TVertex*>(Tmp[i].Vertices[j]);
       }
   }
 
@@ -569,8 +561,8 @@ int TGridCell::Refine(int reflevel)
           CurrCell->GetRefDesc()->
                     GetVertexChildIndex(TmpValues4, TmpLen4, MaxLen4);
           CurrCellChildVertex = TmpValues4[0 + CurrCellVertex * MaxLen4];
-          NewVertices[LocVertex] = CurrCell->GetChild(CurrCellChild)->
-                                     GetVertex(CurrCellChildVertex);
+          NewVertices[LocVertex] = static_cast<TGridCell*>(CurrCell)
+            ->GetChild(CurrCellChild)->GetVertex(CurrCellChildVertex);
           break;
         }
 
@@ -635,8 +627,8 @@ int TGridCell::Refine(int reflevel)
                         GetVertexChildIndex(TmpValues4, TmpLen4, MaxLen4);
                   CurrCellChildVertex =
                       TmpValues4[0 + CurrCellVertex * MaxLen4];
-                  NewVertices[LocVertex] = CurrCell->GetChild(CurrCellChild)->
-                        GetVertex(CurrCellChildVertex);
+                  NewVertices[LocVertex] = static_cast<TGridCell*>(CurrCell)
+                    ->GetChild(CurrCellChild)->GetVertex(CurrCellChildVertex);
                   break;
               }
                 
@@ -713,7 +705,7 @@ int TGridCell::Refine(int reflevel)
         for (j=0;j<N_2;j++)
         {
           index = TmpValues3[auxi++];
-          CurrJoint = NewJoints[index] = Tmp[i].Joints[j];
+          CurrJoint = NewJoints[index] = const_cast<TJoint*>(Tmp[i].Joints[j]);
           CurrJoint->SetNeighbour(Children[TmpValues1[index * MaxLen1]]);
         }
       }
@@ -1160,7 +1152,7 @@ int TGridCell::RefDeref()
 
 int TGridCell::Gen1RegMarks()
 {
-  TBaseCell *child, *cell;
+  const TBaseCell *child, *cell;
   int i, j, k, l, ChildNumber;
 //   int ToDerefine=0;
   const int *TmpCE, *TmpnEoE;
@@ -1168,9 +1160,9 @@ int TGridCell::Gen1RegMarks()
   const int *TmpEC, *TmpLen2;
   int MaxLen, LocJointNum;
   int MaxLen1, MaxLen2;
-  TRefDesc *RefDesc_tmp;
+  const TRefDesc *RefDesc_tmp;
   int N_ = GetN_Edges();
-  TJoint *CurrJoint;
+  const TJoint *CurrJoint;
 
   switch (GetClipBoard())
   {

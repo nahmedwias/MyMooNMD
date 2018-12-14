@@ -20,6 +20,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <MooNMD_Io.h>
+#include <GridCell.h>
 
 BaseFunct3D THexaIsoparametric::BaseFunctFromOrder[] = { 
                 BF_C_H_Q0_3D, BF_C_H_Q1_3D, BF_C_H_Q2_3D, BF_C_H_Q3_3D,
@@ -75,7 +76,7 @@ void THexaIsoparametric::GetOrigFromRef(double xi, double eta, double zeta,
 
 /** transfer a set of point from reference to original element */
 void THexaIsoparametric::GetOrigFromRef(int N_Points,
-                double *xi, double *eta, double *zeta,
+                const double *xi, const double *eta, const double *zeta,
                 double *X, double *Y, double *Z, double *absdetjk)
 {
   int i, j, k;
@@ -145,7 +146,7 @@ void THexaIsoparametric::GetOrigFromRef(int N_Points,
 }
 
 /** transfer from reference element to original element */
-void THexaIsoparametric::GetOrigFromRef(double *ref, double *orig)
+void THexaIsoparametric::GetOrigFromRef(const double *ref, double *orig)
 {
   GetOrigFromRef(ref[0], ref[1], ref[2], orig[0], orig[1], orig[2]);
 }
@@ -202,25 +203,30 @@ void THexaIsoparametric::GetRefFromOrig(double X, double Y, double Z, double &xi
 }
 
 /** transfer from original element to reference element */
-void THexaIsoparametric::GetRefFromOrig(double *orig, double *ref)
+void THexaIsoparametric::GetRefFromOrig(const double *orig, double *ref)
 {
   OutPut("THexaIsoparametric::GetRefFromOrig is not implemented" << endl);
 }
 
 /** calculate functions and derivatives from reference element
     to original element */
-void THexaIsoparametric::GetOrigValues(BaseFunct3D BaseFunct,
-                               int N_Points, double *xi, double *eta, double *zeta,
-                               int N_Functs, QuadFormula3D quadformula)
+void THexaIsoparametric::GetOrigValues(BaseFunct3D BaseFunct, int N_Points,
+                                       const double *xi, const double *eta,
+                                       const double *zeta, int N_Functs,
+                                       QuadFormula3D quadformula)
 {
   cout << "THexaIsoparametric::GetOrigValues is not implemented yet" << endl;
   cout << __FILE__ << " " << __LINE__ << endl;
 }
 
 void THexaIsoparametric::GetOrigValues(int JointNr, double p1, double p2,
-          int N_BaseFunct,
-          double *uref, double *uxiref, double *uetaref, double *uzetaref,
-          double *uorig, double *uxorig, double *uyorig, double *uzorig)
+                                       int N_BaseFunct,
+                                       const double *uref,
+                                       const double *uxiref,
+                                       const double *uetaref,
+                                       const double *uzetaref,
+                                       double *uorig, double *uxorig,
+                                       double *uyorig, double *uzorig)
 {
   int j, k;
   double dx1, dx2, dx3;
@@ -319,9 +325,9 @@ void THexaIsoparametric::GetOrigValues(int JointNr, double p1, double p2,
 /** calculate functions and derivatives from reference element
     to original element, for all given elements */
 void THexaIsoparametric::GetOrigValues(int N_Sets, BaseFunct3D *BaseFuncts,
-                               int N_Points, double *xi, double *eta,
-                               double *zeta, QuadFormula3D quadformula,
-                               bool *Needs2ndDer)
+                               int N_Points, const double *xi,
+                               const double *eta, const double *zeta,
+                               QuadFormula3D quadformula, bool *Needs2ndDer)
 {
   int i,j,k;
   double **refvaluesD000, **origvaluesD000;
@@ -598,9 +604,12 @@ void THexaIsoparametric::GetOrigValues(int N_Sets, BaseFunct3D *BaseFuncts,
 /** calculate functions and derivatives from reference element
     to original element */
 void THexaIsoparametric::GetOrigValues(double xi, double eta, double zeta,
-                               int N_BaseFunct,
-                               double *uref, double *uxiref, double *uetaref, double *uzetaref,
-                               double *uorig, double *uxorig, double *uyorig, double *uzorig)
+                                       int N_BaseFunct, const double *uref,
+                                       const double *uxiref,
+                                       const double *uetaref,
+                                       const double *uzetaref,
+                                       double *uorig, double *uxorig,
+                                       double *uyorig, double *uzorig)
 {
   int i,j,k;
   double dx1, dx2, dx3;
@@ -680,7 +689,7 @@ void THexaIsoparametric::SetCell(const TBaseCell *cell)
   const TJoint *joint;
   JointType type;
 
-  TShapeDesc *ShapeDesc;
+  const TShapeDesc *ShapeDesc;
   const int *TmpFaceVertex, *TmpLen;
   int MaxLen;
   int *JointDOF;
@@ -690,8 +699,8 @@ void THexaIsoparametric::SetCell(const TBaseCell *cell)
   TBaseFunct3D *bf = nullptr;
   double dt, ds;
   double T, S, xm, ym, zm, xp, yp, zp;
-  TVertex **Vertices;
-  TVertex **AuxVertices=nullptr;
+  const TVertex * const * Vertices;
+  const TVertex * const * AuxVertices=nullptr;
   double x[4], y[4], z[4], factor;
   double LinComb[4];
   int CurvedJoint = 0;
@@ -1537,6 +1546,7 @@ void THexaIsoparametric::SetCell(const TBaseCell *cell)
 /** return outer normal unit vector */
 void THexaIsoparametric::GetOuterNormal(int j, double s, double t,
                                         double &n1, double &n2, double &n3)
+  const
 {
   double t11, t12, t13, t21, t22, t23;
 //   double len;
@@ -1559,7 +1569,7 @@ void THexaIsoparametric::GetOuterNormal(int j, double s, double t,
 /** return two tangent vectors */
 void THexaIsoparametric::GetTangentVectors(int j, double p1, double p2,
         double &t11, double &t12, double &t13,
-        double &t21, double &t22, double &t23)
+        double &t21, double &t22, double &t23) const
 {
   double Xi, Eta, Zeta;
   int i, k;
@@ -1758,4 +1768,11 @@ void THexaIsoparametric::GetTangentVectors(int j, double p1, double p2,
       Error("Wrong local joint number" << endl);
       return;
   }
+}
+
+void THexaIsoparametric::PiolaMapOrigFromRef(double xi, double eta, double zeta,
+                                             int N_Functs, const double *refD00,
+                                             double *origD00)
+{
+  ErrThrow("THexaIsoparametric::PiolaMapOrigFromRef not implemented");
 }

@@ -351,7 +351,7 @@ void Solver<L, V>::solve_augmented(const V& rhs, V& solution)
 #elif _MPI
     int my_rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-    double norm = r.norm_global(comms);
+    double norm = r.norm(comms);
     if(my_rank == 0)
       Output::info<4>("Iterative solver", "Absolute residual in Solver class, ",
                       setprecision(16), norm);
@@ -368,6 +368,16 @@ void Solver<L, V>::solve_augmented(const V& rhs, V& solution)
   if(db["solver_type"].is("direct"))
   {
 	  this->direct_solver->solve(rhs, solution);
+
+	 /* //New LB 11.07.18 start
+	  // augmented Lagrangian stuff:
+	  		 		  auto p = std::dynamic_pointer_cast <  Saddle_point_preconditioner > ( this->preconditioner );
+	  		      std::shared_ptr<IterativeMethod<BlockMatrix, BlockVector>> iterative_method = get_iterative_method<BlockMatrix, BlockVector>( db["iterative_solver_type"] ,
+	  				  this->db,  *this->linear_operator,  this->preconditioner);
+	  		  //use augmented matrix and rhs in case of AL
+	  		  iterative_method->iterate(p->get_augmented_matrix(), p->get_augmented_blockvector(rhs), solution);
+	   //New LB 11.07.18 end
+	 */
   }
   else if(db["solver_type"].is("iterative")) // ParMooN internal iterative
   {
@@ -424,7 +434,7 @@ void Solver<L, V>::solve(const V& rhs, V& solution)
 #elif _MPI
     int my_rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-    double norm = r.norm_global(comms);
+    double norm = r.norm(comms);
     if(my_rank == 0)
       Output::info<4>("Iterative solver", "Absolute residual in Solver class, ",
                       setprecision(16), norm);

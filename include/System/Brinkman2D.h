@@ -103,7 +103,7 @@ public:
      */
 
 // LB NEW 16.04.18 start
-void assemble(TFEFunction2D* coefficient_function = nullptr);
+void assemble(size_t level = 4711, TFEFunction2D* coefficient_function = nullptr);
 TFEFunction2D* u1;
 TFEFunction2D* u2;
 // LB NEW 16.04.18 end
@@ -163,6 +163,52 @@ TFEFunction2D* u2;
     /// @brief return the computed L2 error of the pressure
     double getH1SemiPressureError() const;
     //@}
+
+    /////////////// Routines for periodic boundary conditions /////////////////
+
+    // for the riverbed example with "nonhomogeneous periodic boundary conditions".
+    // this map contains all pairs of velocity dofs which have to be identified
+    std::map<int,int> periodic_dofs;
+
+
+    /** find periodic boundaries dofs.·
+     * This fills the map<int,int> 'periodic_dofs' such that a call to·
+     * 'getPeriodicDOF(int)' now makes sense
+     */
+    void findPeriodicDOFs();
+    /** enable periodic boundaries in some matrix which has as many rows as the
+     * Stokes matrix. This is used for·
+     * - S, the Stokes matrix itself  (default, i.e., no arguments)
+     * - C, coupling matrix used for the direct solution
+     * - E, representing (eta_f,u.n), which is added to the rhs during iteration
+     *·
+     * The method makePeriodicBoundary() (without arguments must be called first
+     * If the second argument is true then there will be ones on the diagonal and·
+     * -1 in the off-diagonal entry coupling with this row. If additionally the·
+     * third argument is true, then there are zeros put where otherwise 1 and -1
+     * are put (as described in the previous sentence). This enlarges the·
+     * structure of the matrix 'mat', it is then possible to add two such·
+     * matrices. This is currently implemented only due to periodic boundary
+     * values (riverbed example).··
+     */
+		 void makePeriodicBoundary(std::shared_ptr<TMatrix> mat = nullptr,
+				 bool stokesMat = false, bool p = false);
+
+     void checkPeriodicDOFs();
+
+     /** check if the given dof is a periodic dof. If no, -1 is returned. If yes,·
+      * the dof to which this dof is coupled (periodicDOF) is returned. The row·
+      * 'dof' should then be deleted. If mat==getMat().squareBlock(0), the row
+      * 'dof' should be replaced by a 1 on the diagonal and -1 on 'periodicDOF'.
+      */
+			int getPeriodicDOF(int dof) const
+      {
+      	std::map<int,int>::const_iterator it = periodic_dofs.find(dof);
+      	if (it == periodic_dofs.end()) return -1;
+      	else return it->second;
+      }
+
+			/////////////// /////////////// /////////////// ///////////////
 
     // getters and setters
     //    const BlockMatrixNSE2D & get_matrix() const TODO

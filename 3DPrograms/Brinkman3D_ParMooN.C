@@ -49,7 +49,7 @@ int main(int argc, char* argv[])
         
         
         // Declaration of database, this is needed in every program
-        TDatabase Database;
+        TDatabase Database(argv[1]);
         TFEDatabase3D FEDatabase;
         
         ParameterDatabase parmoon_db = ParameterDatabase::parmoon_default_database();
@@ -62,8 +62,7 @@ int main(int argc, char* argv[])
         TDatabase::ParamDB->Comm = comm;
 #endif
         
-        // Construct domain, thereby read in controls from the input file (argv[1]).
-        TDomain domain(parmoon_db, argv[1]);
+        TDomain domain(parmoon_db);
         
         
         // Produce an outfile "... .out", this is where all output is written to (addionally to console)
@@ -106,41 +105,19 @@ int main(int argc, char* argv[])
             Example_Brinkman3D example(parmoon_db);
             
             // Intial refinement and grabbing of grids for multigrid.
-#ifdef _MPI
-            int maxSubDomainPerDof = 0;
-#endif
-            
             std::list<TCollection* > gridCollections
-            = domain.refine_and_get_hierarchy_of_collections(parmoon_db
-#ifdef _MPI
-             , maxSubDomainPerDof
-#endif
-            );
-        
+             = domain.refine_and_get_hierarchy_of_collections(parmoon_db);
          Output::print(my_rank,": I CONSTRUCTED GRIDCOLLECTIONS");
         
             //        std::list<TCollection* > gridCollections = domain.refine_and_get_hierarchy_of_collections(parmoon_db
-            //#ifdef _MPI
-            //                                                         ,maxSubDomainPerDof
-            //#endif
-            //                                                         );
+             //                                                         );
             
             //=========================================================================
             // Create an object of the Brinkman class
-//#ifdef _MPI
-//
-//            Brinkman3D brinkman3d(domain, parmoon_db, example, maxSubDomainPerDof);
-//            Output::print("!!!!!!!!!!!!ENDE");
-//#else
 //            Brinkman3D brinkman3d(domain, parmoon_db, example);
-//#endif
            
             
-            #ifdef _MPI
-                    Brinkman3D brinkman3d(gridCollections, parmoon_db, example, maxSubDomainPerDof);
-            #else
                     Brinkman3D brinkman3d(gridCollections, parmoon_db, example);
-            #endif
             
             Output::print(my_rank,": I CONSTRuCTED BRINKMAN3D OBJECT");
         

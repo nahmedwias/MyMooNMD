@@ -12,7 +12,7 @@
 
 #include <vector>
 #include <ParameterDatabase.h>
-#include <Time_NSE3D.h>
+#include <TimeNavierStokes.h>
 
 class TCollection;
 
@@ -54,7 +54,7 @@ namespace ChannelTau180
   ///@brief computing the coordinates of the d.o.f. 
   /// for a finite element: currently only Q2-element
   /// @param[in]
-  void GetCoordinatesOfDof(const Time_NSE3D& tnse3d);
+  void GetCoordinatesOfDof(const TimeNavierStokes<3>& tnse3d);
   
   /// @brief mean velocities computed at each time step
   static std::deque<std::vector<double>> MeanVelocity;
@@ -69,7 +69,7 @@ namespace ChannelTau180
   /// currently implemented for only Channel Flow with
   /// Reynolds number=180 and Turbulent Model used is
   /// the Smagorinsky
-  void computeMeanVelocity(const Time_NSE3D& tnse3d); // replace the names when completed
+  void computeMeanVelocity(const TimeNavierStokes<3>& tnse3d); // replace the names when completed
   /// @brief this computes the temporal mean 
   void temporalMean(std::vector< double > spatial_mean, std::vector< double >& temporal_mean);
   ///TODO: not used and therefore not completed yet 
@@ -79,9 +79,9 @@ namespace ChannelTau180
   /// @brief compute the average velocity
   /// @param[out] list of velocity gradients for all three components
   /// of velocity with respect to x, y and z
-  /// @param[in] Time_NSE3D object
+  /// @param[in] TimeNavierStokes<3> object
   void computeAverageVelocity( std::array< std::vector< double >, int(9) > velo, 
-                               const Time_NSE3D& tnse3d);
+                               const TimeNavierStokes<3>& tnse3d);
   /// compute the summation of layers
   void count_dofs_per_layer(std::vector< int >& summ, const TFESpace3D& fesp);
   /// computations of spatial mean velocity at current time
@@ -91,9 +91,9 @@ namespace ChannelTau180
  /// eddy_xx, eddy_yy, eddy_zz, eddy_xy, eddy_xz, eddy_yz
  ///TODO: not considered yet 
  /// @param[out] eddy eddy viscosity
- /// @param[in]  Time_NSE3D class object 
+ /// @param[in]  TimeNavierStokes<3> class object 
  void eddy_viscosity(std::array< std::vector< double >, int(6) > eddy, 
-                     const Time_NSE3D& tnse3d);
+                     const TimeNavierStokes<3>& tnse3d);
  /// @brief computes the friction viscosity u_tau
  /// @param[in] vec mean velocity vector for the first component only
  /// @param[in out], derivative of the mean velcoity

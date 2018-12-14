@@ -55,7 +55,7 @@ TBaseCell *TIt_Between::Next(int &info)
   }
 
   info = ActiveLevel == Level ? 1 : ActiveLevel <= Level_bottom ? -1 : 0;
-  return ActiveCell;
+  return const_cast<TBaseCell *>(ActiveCell);
 }
 
 TBaseCell *TIt_Between::Prev()

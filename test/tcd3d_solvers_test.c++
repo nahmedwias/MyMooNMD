@@ -12,11 +12,12 @@
  * 
  */
 
-#include <Time_CD3D.h>
+#include "TimeConvectionDiffusion.h"
 #include <Database.h>
 #include <FEDatabase3D.h>
 #include <Domain.h>
 #include <TimeDiscRout.h>
+#include <TimeDiscretizations.h>
 #include <Multigrid.h>
 
 #ifdef _MPI
@@ -27,7 +28,8 @@ double timeC = 0;
 #endif
 
 // function to compare the errors
-void compare(const Time_CD3D& tcd3d, std::array<double, int(3)>errors, double tol)
+void compare(const TimeConvectionDiffusion<3>& tcd3d,
+             std::array<double, int(3)>errors, double tol)
 {
   std::array<double, int(3)> computed_errors;
   computed_errors = tcd3d.get_errors();
@@ -46,64 +48,48 @@ void check(ParameterDatabase& db, int ansatz_order, int time_disc,
            std::array<double, int(3)> errors, double tol)
 {
   TDatabase::ParamDB->ANSATZ_ORDER = ansatz_order;
-  TDatabase::TimeDB->TIME_DISC = time_disc;
-  TDatabase::TimeDB->STARTTIME=0;
+  if(time_disc == 1)
+    db["time_discretization"] = "backward_euler";
+  if(time_disc == 2)
+    db["time_discretization"] = "crank_nicolson";
   TDatabase::TimeDB->TIMESTEPLENGTH = 0.1;
-  TDatabase::TimeDB->ENDTIME = 1;
-  TDatabase::TimeDB->CURRENTTIME = TDatabase::TimeDB->STARTTIME;
+  db["time_step_length"] = 0.1;
+  db["time_end"] = 1.;
+  db["time_start"] = 0;
+  TDatabase::TimeDB->CURRENTTIME = db["time_start"];
   
-#ifdef _MPI
-  int my_rank, size;
-  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-  MPI_Comm_size(MPI_COMM_WORLD, &size);
-#else
-#endif
   TDomain domain(db);
 
-  // Intial refinement and grabbing of grids for multigrid.
-#ifdef _MPI
-  int maxSubDomainPerDof = 0;
-#endif
-  std::list<TCollection* > gridCollections
-  = domain.refine_and_get_hierarchy_of_collections( db
-  #ifdef _MPI
-      , maxSubDomainPerDof
-  #endif
-      );
+  // Intial refinement
+  domain.refine_and_get_hierarchy_of_collections(db);
   
   // set the time discretization 
   SetTimeDiscParameters(0);
 
   // example object
   Example_TimeCD3D example_obj(db);
-#ifdef _MPI
-  Time_CD3D tcd3d(gridCollections, db, example_obj, maxSubDomainPerDof);
-#else
-  Time_CD3D tcd3d(gridCollections, db, example_obj);
-#endif
-  
+  TimeConvectionDiffusion<3> tcd3d(domain, db, example_obj);
+  TimeDiscretization& tss = tcd3d.get_time_stepping_scheme();
+  tss.current_step_ = 0;
+  tss.current_time_ = db["time_start"];
   // assemble the matrices and right hand side at the start time
   tcd3d.assemble_initial_time();
   
-  int step = 0;
-  int imag=0;
-
-  while(TDatabase::TimeDB->CURRENTTIME < TDatabase::TimeDB->ENDTIME-1e-10)
+  while(tss.current_time_ < tss.get_end_time()-1e-10)
   {
-    step ++;
-    TDatabase::TimeDB->INTERNAL_STARTTIME = TDatabase::TimeDB->CURRENTTIME;
+    tss.current_step_++;
+    TDatabase::TimeDB->INTERNAL_STARTTIME = tss.current_time_;
+    tss.set_time_disc_parameters();
     SetTimeDiscParameters(1);
 
-    double tau = TDatabase::TimeDB->TIMESTEPLENGTH;
-    TDatabase::TimeDB->CURRENTTIME += tau;
+    double tau = tss.get_step_length();
+    tss.current_time_ += tau;
+    TDatabase::TimeDB->CURRENTTIME = tss.current_time_;
     
-    Output::print<1>("\nCURRENT TIME: ", TDatabase::TimeDB->CURRENTTIME);
+    Output::print<1>("\nCURRENT TIME: ", tss.current_time_);
     tcd3d.assemble();
-    tcd3d.solve();
-    tcd3d.descale_stiffness();
-    
-    tcd3d.output(step,imag);
-    
+    tcd3d.solve();    
+    tcd3d.output();
     compare(tcd3d, errors, tol);
   }
 }
@@ -200,9 +186,8 @@ int main(int argc, char* argv[])
   MPI_Comm comm = MPI_COMM_WORLD;
   TDatabase::ParamDB->Comm = comm;
 
-  int my_rank, size;
+  int my_rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-  MPI_Comm_size(MPI_COMM_WORLD, &size);
 #else
   int my_rank = 0;
 #endif
@@ -213,6 +198,7 @@ int main(int argc, char* argv[])
   db.merge(Multigrid::default_multigrid_database());
   db.merge(Example3D::default_example_database());
   db.merge(LocalAssembling3D::default_local_assembling_database());
+  db.merge(TimeDiscretization::default_TimeDiscretization_database());
   db["problem_type"] = 1;
   db.add("refinement_n_initial_steps",(size_t) 2,"",(size_t) 0, (size_t) 2);
   db["multigrid_n_levels"] = 1;
@@ -225,7 +211,7 @@ int main(int argc, char* argv[])
   // db["output_write_vtk"] = false;
 
   db["space_discretization_type"] = "galerkin"; //Galerkin discretization, nothing else implemented
-
+  
   TDatabase::ParamDB->Par_P0 = 0; // process responsible for the output
   TDatabase::ParamDB->Par_P3 = 1; // use mesh partitioning with halo cells
   

@@ -24,6 +24,10 @@
 /** a function from a finite element space */
 class TFEFunction3D
 {
+  public:
+    typedef void ErrorMethod(int, std::array<double*, 3>, double *,
+                             const double *, double, double **, double **,
+                             double **, double *);
   protected:
     /** name of the function */
     std::string Name;
@@ -90,19 +94,19 @@ class TFEFunction3D
      */
     void GetErrors(DoubleFunct3D *Exact, int N_Derivatives,
                    MultiIndex3D *NeededDerivatives,
-                   int N_Errors, ErrorMethod3D *ErrorMeth, 
+                   int N_Errors, ErrorMethod *ErrorMeth, 
                    CoeffFct3D Coeff, TAuxParam3D *Aux,
                    int n_fespaces, const TFESpace3D **fespaces,
                    double *errors) const;
     
     void GetErrorsForVectorValuedFunction(DoubleFunct3D * const * const Exact,
-                                          ErrorMethod3D * const ErrMeth,
+                                          ErrorMethod * const ErrMeth,
                                           double * const errors);
 
     /** calculate errors to given function */
     void GetMeshCellParams(DoubleFunct3D *Exact, int N_Derivatives,
                    MultiIndex3D *NeededDerivatives,
-                   int N_Errors, ErrorMethod3D *ErrorMeth, 
+                   int N_Errors, ErrorMethod *ErrorMeth, 
                    CoeffFct3D Coeff, TAuxParam3D *Aux,
                    int n_fespaces, const TFESpace3D **fespaces,
                    double *errors, double *cell_parameters);
@@ -155,6 +159,20 @@ class TFEFunction3D
      * @warning EvalAll must be correctly implemented for the used finite element
      */
     void Interpolate_vector_valued_function(std::vector<DoubleFunct3D*> Exact);
+    
+    typedef std::function<double(const TBaseCell* cell, int cell_index,
+                                 std::array<double, 3> xyz)> AnalyticFunction;
+    /**
+     * @brief add a given function f to this fe function
+     * 
+     * The cell and cell_index are from the collection of this TFEFunction3D
+     * and the point (x,y,z) is in that cell.
+     * 
+     * Note that this is similar to creating a second TFEFunction3D, 
+     * interpolating f on it and then adding it via operator+=. Here, no second
+     * TFEFunction3D is required.
+     */
+    void add(AnalyticFunction f);
     
     /**
      * @brief project this functions into the space L20 (having zero mean value)

@@ -6,7 +6,7 @@ void ExampleFile()
   bool ns = (TDatabase::ParamDB->FLOW_PROBLEM_TYPE == 5);
   Output::print<1>("Example: 2d ", ns ? "Navier-" : "", "Stokes, ",
                    "polynomial_solution.h.");
-  Output::print<1>("         This is Example D.3 in Volker Johns book "
+  Output::print<1>("         This is Example D.3 in Volker John's book "
                    "\"Finite Element Methods for Incompressible Flow Problems\""
                    ", 2016");
 }
@@ -194,6 +194,9 @@ void LinCoeffs(int n_points, double *X, double *Y,
       coeffs[i][2] += val1[0]*val2[1] + val2[0]*val2[2]; // f2
     }
     coeffs[i][3] = val1[1] + val2[2]; // g (divergence)
+
+    // additional coefficient (used only in the Brinkman problem)
+    coeffs[i][4] = 0.;
   }
   
 }

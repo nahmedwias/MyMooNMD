@@ -43,7 +43,7 @@ TBaseCell *TIt_LELevel::Next(int &info)
   }
   
   info = ActiveLevel;
-  return ActiveCell;
+  return const_cast<TBaseCell *>(ActiveCell);
 }
 
 TBaseCell *TIt_LELevel::Prev()

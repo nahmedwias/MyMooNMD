@@ -226,7 +226,7 @@ void Cylinder_Square::get_Drag_Lift(TFEFunction3D *u1, TFEFunction3D *u2,
   const TFESpace3D* pres_space = p->GetFESpace3D();;
   bool SecondDer[2] = { false, false};
   int N_Points;
-  double *weights, *xi, *eta, *zeta;
+  const double *weights, *xi, *eta, *zeta;
   std::vector<double>X(MaxN_QuadPoints_3D);
   std::vector<double>Y(MaxN_QuadPoints_3D);
   std::vector<double>Z(MaxN_QuadPoints_3D);
@@ -440,7 +440,7 @@ double Cylinder_Square::get_p_diff(const std::array< double, int(3) >& point_A,
   return pdiff;
 }
 
-void Cylinder_Square::compute_drag_lift_pdiff(Time_NSE3D& tnse3d)
+void Cylinder_Square::compute_drag_lift_pdiff(TimeNavierStokes<3>& tnse3d)
 {
 #ifdef _MPI
   MPI_Comm comm = MPI_COMM_WORLD;
@@ -455,7 +455,7 @@ void Cylinder_Square::compute_drag_lift_pdiff(Time_NSE3D& tnse3d)
   const TFEVectFunct3D& u(tnse3d.get_velocity());
   TFEFunction3D& p(tnse3d.get_pressure()); //I want this const!!!
   
-  const TFEVectFunct3D& uold (tnse3d.get_old_velocity());
+  const TFEVectFunct3D& uold (tnse3d.get_velocity_old());
 
   TFEFunction3D* u1 = u.GetComponent(0);
   TFEFunction3D* u2 = u.GetComponent(1);
@@ -561,7 +561,7 @@ void Cylinder_Square::PrepareCenterlineVelocities(TCollection* coll)
   count_fric_vel = 0;
 }
 
-void Cylinder_Square::CenterlineVelocities(Time_NSE3D& tnse3d)
+void Cylinder_Square::CenterlineVelocities(TimeNavierStokes<3>& tnse3d)
 {
 #ifdef _MPI
   int mpi_size, mpi_rank;
@@ -839,7 +839,7 @@ void Cylinder_Square::PrepareVelocityAtCylinder(TCollection* coll)
   counter_av_single = 0;
 }
 
-void Cylinder_Square::VelocityAtCylinder(Time_NSE3D& tnse3d)
+void Cylinder_Square::VelocityAtCylinder(TimeNavierStokes<3>& tnse3d)
 {
   TCollection * coll = tnse3d.get_velocity_space().GetCollection();
   size_t nCells = coll->GetN_Cells();
@@ -1014,7 +1014,7 @@ void Cylinder_Square::PreparePressureAtCylinder(const TCollection* coll)
   counter_av_pres = 0;
 }
 
-void Cylinder_Square::PressureAtCylinder(Time_NSE3D& tnse3d)
+void Cylinder_Square::PressureAtCylinder(TimeNavierStokes<3>& tnse3d)
 {
   TCollection * coll = tnse3d.get_velocity_space().GetCollection();
   size_t nCells = coll->GetN_Cells();
@@ -1103,60 +1103,60 @@ void Cylinder_Square::PressureAtCylinder(Time_NSE3D& tnse3d)
 }
 
 
-void Cylinder_Square::SetNoPenetrationValues(Time_NSE3D& tnse3d)
+void Cylinder_Square::SetNoPenetrationValues(TimeNavierStokes<3>& tnse3d)
 {
-  cout<<"setting No SetNoPenetrationValues"<<endl;
-  TFEFunction3D* u2 = tnse3d.get_velocity().GetComponent(1);
-  double* valu2 = u2->GetValues();
-  // diagonal matrices only A11, A22, A33
-  std::vector<std::shared_ptr<FEMatrix>> blocks 
-  = tnse3d.get_system_matrix_().get_blocks_uniquely();
-
-  int *rowPtr = blocks.at(5)->GetRowPtr();
-  int *kCol = blocks.at(5)->GetKCol();
-  double *entries = blocks.at(5)->GetEntries();
-  int nrows = blocks.at(5)->GetN_Rows();
-  
-  const double dt = tnse3d.get_time_stepping_scheme().get_step_length();
-  TCollection * coll = tnse3d.get_velocity_space().GetCollection();
-  double hmin, hmax;
-  coll->GetHminHmax(&hmin, &hmax);
-  double comp = TDatabase::ParamDB->PENETRATION_CONSTANT * hmin * dt/8.;
-
-  for(int i=0; i<nrows; i++)
-  {
-    for(int j=rowPtr[i]; j<rowPtr[i+1]; j++)
-    {
-      if(fabs(entries[j]) > comp)
-      {
-        valu2[kCol[j]] = 0.;
-      }
-    }
-  }
-  
-  TFEFunction3D* u3 = tnse3d.get_velocity().GetComponent(2);
-  double* valu3 = u3->GetValues();  
-  
-  rowPtr = blocks.at(10)->GetRowPtr();
-  kCol = blocks.at(10)->GetKCol();
-  entries = blocks.at(10)->GetEntries();
-  nrows = blocks.at(10)->GetN_Rows();
-
-  for(int i=0; i<nrows; i++)
-  {
-    for(int j=rowPtr[i]; j<rowPtr[i+1]; j++)
-    {
-      if(fabs(entries[j]) > comp)
-      {
-        valu3[kCol[j]] = 0.;
-      }
-    }
-  }
+//   cout<<"setting No SetNoPenetrationValues"<<endl;
+//   TFEFunction3D* u2 = tnse3d.get_velocity().GetComponent(1);
+//   double* valu2 = u2->GetValues();
+//   // diagonal matrices only A11, A22, A33
+//   std::vector<std::shared_ptr<FEMatrix>> blocks 
+//   = tnse3d.get_system_matrix_().get_blocks_uniquely();
+// 
+//   int *rowPtr = blocks.at(5)->GetRowPtr();
+//   int *kCol = blocks.at(5)->GetKCol();
+//   double *entries = blocks.at(5)->GetEntries();
+//   int nrows = blocks.at(5)->GetN_Rows();
+//   
+//   const double dt = tnse3d.get_time_stepping_scheme().get_step_length();
+//   TCollection * coll = tnse3d.get_velocity_space().GetCollection();
+//   double hmin, hmax;
+//   coll->GetHminHmax(&hmin, &hmax);
+//   double comp = TDatabase::ParamDB->PENETRATION_CONSTANT * hmin * dt/8.;
+// 
+//   for(int i=0; i<nrows; i++)
+//   {
+//     for(int j=rowPtr[i]; j<rowPtr[i+1]; j++)
+//     {
+//       if(fabs(entries[j]) > comp)
+//       {
+//         valu2[kCol[j]] = 0.;
+//       }
+//     }
+//   }
+//   
+//   TFEFunction3D* u3 = tnse3d.get_velocity().GetComponent(2);
+//   double* valu3 = u3->GetValues();  
+//   
+//   rowPtr = blocks.at(10)->GetRowPtr();
+//   kCol = blocks.at(10)->GetKCol();
+//   entries = blocks.at(10)->GetEntries();
+//   nrows = blocks.at(10)->GetN_Rows();
+// 
+//   for(int i=0; i<nrows; i++)
+//   {
+//     for(int j=rowPtr[i]; j<rowPtr[i+1]; j++)
+//     {
+//       if(fabs(entries[j]) > comp)
+//       {
+//         valu3[kCol[j]] = 0.;
+//       }
+//     }
+//   }
 }
 
 
 
-void Cylinder_Square::ComputeFrictionVelocities(const Time_NSE3D& tnse3d)
+void Cylinder_Square::ComputeFrictionVelocities(const TimeNavierStokes<3>& tnse3d)
 {
   TCollection * coll = tnse3d.get_velocity_space().GetCollection();
   size_t nCells = coll->GetN_Cells();

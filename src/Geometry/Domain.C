@@ -20,6 +20,12 @@
 #include <stdio.h>
 #include <limits>
 
+#include <BdCircle.h>
+#include <BdLine.h>
+#include <BdSpline.h>
+#include <BdPolygon.h>
+#include <BdNonUniformSpline.h>
+
 #ifdef __2D__
   #include <IsoBoundEdge.h>
   #include <IsoInterfaceJoint.h>
@@ -27,8 +33,10 @@
 
 #ifdef __3D__
   #include <BoundFace.h>
+  #include <BdNoPRM.h>
   #include <BdPlane.h>
   #include <BdWall.h>
+  #include <BdSphere.h>
   #include <BdCylinder.h>
   #include <IsoInterfaceJoint3D.h>
   #include <InterfaceJoint3D.h>
@@ -102,7 +110,8 @@ ParameterDatabase TDomain::default_domain_parameters()
    db.add("read_metis", false , "This Boolean will state if you read a file "
           "which contains the partition of the cells on the processors.");
 
-   db.add("read_metis_file", std::string("mesh_partitioning_file.txt"), "The Mesh-file will be read here.");
+   db.add("read_metis_file", std::string("mesh_partitioning_file.txt"),
+          "The Mesh-file will be read here.");
 
    db.add("write_metis", false , "This Boolean will state if you write out "
           "which cell belongs to which processor into a file (see parameter"
@@ -154,15 +163,9 @@ bool ends_with (std::string const &fullString, std::string const &ending) {
     }
 }
 
-TDomain::TDomain(const ParameterDatabase& param_db, const char* ParamFile) :
-  Interfaces(nullptr), RefLevel(0), db(default_domain_parameters())
+TDomain::TDomain(const ParameterDatabase& param_db)
+  : Interfaces(nullptr), RefLevel(0), db(default_domain_parameters())
 {
-  if(ParamFile)
-  {//read the param file and fil the old database
-	  Output::info<4>("READ-IN","Constructing old database from file ", ParamFile);
-	  ReadParam(ParamFile);
-  }
-
   // get the relevant parameters from the new database
   db.merge(param_db, false);
   
@@ -259,6 +262,9 @@ TDomain::~TDomain()
   for(int i = 0; i < N_BoundParts; ++i)
     delete BdParts[i];
   delete [] BdParts;
+  for(auto coll: gridCollections)
+    delete coll;
+  gridCollections.clear();
   /// @todo delete cells, joints, vertices here
   delete [] CellTree;
 }
@@ -1090,6 +1096,206 @@ void TDomain::ReadSandwichGeo(std::string file_name, std::string prm_file_name)
 
 #endif
 
+#ifdef __2D__
+void TDomain::ReadBdParam(std::istream& dat)
+#else
+void TDomain::ReadBdParam(std::istream& dat, bool& sandwich_flag)
+#endif
+{
+#ifdef _MPI
+  int rank; // out_rank=int(TDatabase::ParamDB->Par_P0);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+#endif
+  char line[100];
+  int i, j, CurrentBdPart, N_BdComp, CompType, CompID = 0, N_Spls;
+#ifdef __2D__
+  TBoundComp2D *BdComp;
+#else
+  TBoundComp3D *BdComp=nullptr;
+  TBoundComp2D *BdComp2D=nullptr;
+  sandwich_flag = false;
+#endif
+
+
+
+  // determine dimensions for creating arrays
+
+  // get the number of boundaries (inner and outer) of the domain
+  dat.getline (line, 99);
+  dat >> N_BoundParts;
+  dat.getline (line, 99);
+
+  BdParts = new TBoundPart*[N_BoundParts];
+  Interfaces = new int[N_BoundParts];
+  N_BoundComps = 0;
+  // StartBdCompID: index in the bdpart list where the new BdPart starts
+  StartBdCompID = new int[N_BoundParts + 1];
+  StartBdCompID[0] = 0; // set the first to 0
+
+  for (i=0;i<N_BoundParts;i++)
+  {
+    dat.getline (line, 99); // IBCT
+    dat >> CurrentBdPart;
+    dat.getline (line, 99);
+    Interfaces[i] = CurrentBdPart;
+    CurrentBdPart = ABS(CurrentBdPart); // it can be negative (for orientation)
+    if (i+1 != CurrentBdPart)
+    {
+#ifdef _MPI
+      if(rank==0)
+#endif
+        ErrThrow("different number of boundary part\nCurrentBdPart ", i, "  ",
+                 CurrentBdPart);
+    }
+
+    // get number of components f the bdpart i
+    dat.getline (line, 99);
+    dat >> N_BdComp;
+    dat.getline (line, 99);
+
+    BdParts[i] = new TBoundPart(N_BdComp);
+    N_BoundComps += N_BdComp;
+    SetStartBdCompID(N_BoundComps, i+1); // set the start ID of the next bdcomp
+
+    dat.getline (line, 99);
+    for (j=0;j<N_BdComp;j++)
+    {
+      dat >> CompType >> N_Spls;  //ITYP NSPLINE NPAR
+      dat.getline (line, 99);
+
+#ifdef __2D__
+      // 2D types: Line (1), Circle (2), Spline (3), Poygon (4), NonUnif Spline (5)
+      switch (abs(CompType))
+      {
+        case 1: BdComp = new TBdLine(CompID++);
+                break;
+        case 2: BdComp = new TBdCircle(CompID++);
+                break;
+        case 3: BdComp = new TBdSpline(CompID++, N_Spls);
+                break;
+        case 4: BdComp = new TBdPolygon(CompID++, N_Spls);
+                break;
+        case 5: BdComp = new TBdNonUniformSpline(CompID++, N_Spls);
+                break;
+        default:
+#ifdef _MPI
+                if(rank==0)
+#endif
+                  OutPut("ReadParam.C: Boundary type not implemented" << endl);
+                exit(-1);
+      }
+#else
+      // 3D types: Line (1), Circle (2), Spline (3), Poygon (4), NonUnif Spline (5),
+      //           Plane (10), Sphere (11)
+      switch (abs(CompType))
+      {
+        case 1: BdComp2D = new TBdLine(CompID++);
+                break;
+        case 2: BdComp2D = new TBdCircle(CompID++);
+                break;
+        case 3: BdComp2D = new TBdSpline(CompID++, N_Spls);
+                break;
+        case 4: BdComp2D = new TBdPolygon(CompID++, N_Spls);
+                break;
+        case 5: BdComp2D = new TBdNonUniformSpline(CompID++, N_Spls);
+                break;
+        case 10: BdComp = new TBdPlane(CompID++);
+                 break;
+        case 11: BdComp = new TBdSphere(CompID++);
+                 break;
+        case 4711: BdComp = new TBdNoPRM(CompID++); // create grid without PRM file
+                   break;
+        default:
+#ifdef _MPI
+                   if(rank==0)
+#endif
+                     OutPut("ReadParam.C: Boundary type (3D) not implemented" << endl);
+                   exit(-1);
+      }
+
+      if(abs(CompType)<10)
+      {
+        BdComp = new TBdWall(CompID-1, BdComp2D);
+        sandwich_flag = true;
+      }
+#endif // 3D
+      BdParts[i]->SetBdComp(j, BdComp);
+
+      if(CompType<0)
+      {
+        BdComp->SetFreeBoundaryStatus(true);
+        cout <<i<< " ReadBdParam : " << j << endl;
+      }
+    }
+  }
+
+  dat.getline (line, 99);
+  for (i=0;i<N_BoundParts;i++)
+  {
+    N_BdComp = BdParts[i]->GetN_BdComps();
+    for (j=0;j<N_BdComp;j++)
+    {
+      BdParts[i]->GetBdComp(j)->ReadIn(dat);
+    }
+  }
+
+  // read HOLES (if any)
+  dat.getline (line, 99);
+  N_Holes = -12345;
+  if (dat.eof())
+    N_Holes = 0;
+  else
+    dat >> N_Holes;
+
+  if(N_Holes == -12345)
+    N_Holes = 0;
+
+  dat.getline (line, 99);
+
+  if (N_Holes)
+  {
+    // coordinates of a point in a hole
+    PointInHole = new double[2*N_Holes];
+
+    dat.getline (line, 99);
+    for (i=0;i<N_Holes;i++)
+    {
+      dat >> PointInHole[2*i] >> PointInHole[2*i+1];
+      dat.getline (line, 99);
+    }
+  }
+  else
+    PointInHole = nullptr;
+
+  dat.getline (line, 99);
+  N_Regions = -12345;
+  if (dat.eof())
+    N_Regions = 0;
+  else
+    dat >> N_Regions;
+
+  if(N_Regions == -12345)
+    N_Regions = 0;
+
+  dat.getline (line, 99);
+
+  // read REGIONS (if any)
+  if (N_Regions)
+  {
+    PointInRegion = new double[4*N_Regions];
+
+    dat.getline (line, 99);
+    for (i=0;i<N_Regions;i++)
+    {
+      dat >> PointInRegion[4*i] >> PointInRegion[4*i+1];
+      PointInRegion[4*i+2] = i;
+      PointInRegion[4*i+3] = 10000;
+      dat.getline (line, 99);
+    }
+  }
+  else
+    PointInRegion = nullptr;
+}
 
 // initialize a domain from a mesh and a boundary(PRM) file
 void TDomain::InitFromMesh(std::string PRM, std::string MESHFILE)
@@ -1208,90 +1414,30 @@ void TDomain::InitFromMesh(std::string PRM, std::string MESHFILE)
 #endif
 }
 
-int TDomain::PS(const char *name, Iterators iterator, int arg)
+void TDomain::PS(const char *name, Iterators iterator, int arg)
 {
-  int BX, BY, info, i;
-  double scale;
-  std::ofstream dat(name);
-  TBaseCell *CurrCell;
-
-  if (!dat)
-  {
-    cerr << "cannot open '" << name << "' for output" << endl;
-    return -1;
-  }
-
-  cout << "Generating postscript file " << name << endl;
-  
-  // scale = 5350 / BoundX;
-  // if (7820 / BoundY < scale) scale = 7820 / BoundY;
-  scale = 535 / BoundX;
-  if (782 / BoundY < scale) scale = 782 / BoundY;
-
-  BX = (int) (BoundX * scale + .5);
-  BY = (int) (BoundY * scale + .5);
-
-  dat << "%!PS-Adobe-2.0" << endl;
-  dat << "%%Creator: MooN_MD (Volker Behns)" << endl;
-  dat << "%%DocumentFonts: Helvetica" << endl;
-  // dat << "%%BoundingBox: 300 300 " << 300+BX << " " << 300+BY << endl;
-  dat << "%%BoundingBox: 25 25 " << 35+BX << " " << 35+BY << endl;
-  dat << "%%Pages: 1" << endl;
-  dat << "%%EndComments" << endl;
-  dat << "%%EndProlog" << endl;
-  dat << "%%Page: 1 1" << endl;
-  dat << "/Helvetica findfont 14 scalefont setfont" << endl;
-  dat << "/Cshow { dup stringwidth pop 2 div neg 0 rmoveto show } def" << endl;
-  dat << "/M { moveto } def" << endl;
-  dat << "/L { lineto } def" << endl;
-  //dat << "0.10 0.10 scale" << endl;
-  //dat << "10.0 setlinewidth" << endl;
-  dat << "0.5 setlinewidth" << endl;
-
-  TDatabase::IteratorDB[iterator]->Init(arg);
-
-  // loop over all cells
-  i = 0;
-  while((CurrCell = TDatabase::IteratorDB[iterator]->Next(info)))
-  {
-    CurrCell->SetClipBoard(i);
-    CurrCell->PS(dat, scale, StartX, StartY);
-    i++;
-  }
-
-  dat << "stroke" << endl;
-  dat << "showpage" << endl;
-  dat << "%%Trailer" << endl;
-  dat << "%%Pages: 1" << endl;
-
-  return 0;
+  TCollection * coll = this->GetCollection(iterator, arg);
+  this->PS(name, coll);
+  delete coll;
 }
 
-int TDomain::PS(const char *name, TCollection *Coll)
+void TDomain::PS(const char *name, TCollection *Coll)
 {
-  int BX, BY;
-  double scale;
   std::ofstream dat(name);
-  TBaseCell *CurrCell;
-  int i, N_;
-
   if (!dat)
   {
-    cerr << "cannot open '" << name << "' for output" << endl;
-    return -1;
+    Output::warn("TDomain::PS", "unable to open ", name, " for output");
+    return;
   }
-
   Output::info("PS","Generating postscript file ", name);
-
-  N_ = Coll->GetN_Cells();
   
   // scale = 5350 / BoundX;
   // if (7820 / BoundY < scale) scale = 7820 / BoundY;
-  scale = 535 / BoundX;
+  double scale = 535 / BoundX;
   if (782 / BoundY < scale) scale = 782 / BoundY;
 
-  BX = (int) (BoundX * scale + .5);
-  BY = (int) (BoundY * scale + .5);
+  int BX = (int) (BoundX * scale + .5);
+  int BY = (int) (BoundY * scale + .5);
 
   dat << "%!PS-Adobe-2.0" << endl;
   dat << "%%Creator: MooN_MD (Volker Behns)" << endl;
@@ -1311,81 +1457,19 @@ int TDomain::PS(const char *name, TCollection *Coll)
   dat << "0.5 setlinewidth" << endl;
 
   // loop over all cells
-  for(i=0;i<N_;i++)
+  int n_cells = Coll->GetN_Cells();
+  for(int i = 0; i < n_cells; i++)
   {
-    CurrCell = Coll->GetCell(i);
-    CurrCell->SetClipBoard(i);
-    CurrCell->PS(dat, scale, StartX, StartY);
+    Coll->GetCell(i)->PS(dat, scale, StartX, StartY); // no cell indices
+    //Coll->GetCell(i)->PS(dat, scale, StartX, StartY, i); // with cell indices
   }
 
   dat << "stroke" << endl;
   dat << "showpage" << endl;
   dat << "%%Trailer" << endl;
   dat << "%%Pages: 1" << endl;
-
-  return 0;
 }
 
-int TDomain::MD_raw(const char *name, Iterators iterator, int arg)
-{
-  int N_Tri = 0, N_Quad = 0, info;
-  std::ofstream dat(name);
-  TBaseCell *CurrCell;
-  int OutValue[6];
-
-  if (!dat)
-  {
-    cerr << "cannot open '" << name << "' for output" << endl;
-    return -1;
-  }
-
-  TDatabase::IteratorDB[iterator]->Init(arg);
-
-  // loop over all cells
-  while ((CurrCell = TDatabase::IteratorDB[iterator]->Next(info)))
-    if (CurrCell->GetRefDesc()->GetShapeDesc()->GetType() == Triangle)
-      N_Tri++;
-    else
-      N_Quad++;
-
-  // write heads of files
-  OutValue[0] = 2;           // dimension
-  OutValue[1] = 2;           // number of object classes
-  OutValue[2] = Triangle;
-  OutValue[3] = N_Tri;
-  OutValue[4] = Quadrangle;
-  OutValue[5] = N_Quad;
-
-#ifdef __COMPAQ__
-  SwapIntArray(OutValue, 6);
-#endif
-  dat.write((const char *) OutValue, 6*SizeOfInt);
-
-  // fill data in files
-  if (N_Tri)
-  {
-    TDatabase::IteratorDB[iterator]->Init(arg);
-
-    // loop over all cells
-    while( (CurrCell = TDatabase::IteratorDB[iterator]->Next(info)))
-      if (CurrCell->GetRefDesc()->GetShapeDesc()->GetType() == Triangle)
-        CurrCell->MD_raw(dat);
-  }
-
-  if (N_Quad)
-  {
-    TDatabase::IteratorDB[iterator]->Init(arg);
-
-    // loop over all cells
-    while ((CurrCell = TDatabase::IteratorDB[iterator]->Next(info)))
-      if (CurrCell->GetRefDesc()->GetShapeDesc()->GetType() == Quadrangle)
-        CurrCell->MD_raw(dat);
-  }
-
-  dat.close();
-
-  return 0;
-}
 
 int TDomain::Refine()
 {
@@ -3110,7 +3194,7 @@ void TDomain::CorrectParametersAndShapes()
 {
   int MaxLevel, CurrLevel;
   int info, j, N_Edges;
-  TVertex **Vertices;
+  const TVertex * const * Vertices;
   TJoint *joint;
   TGridCell *ActiveCell;
 
@@ -3343,7 +3427,7 @@ int TDomain::GenerateEdgeInfo()
   TBaseCell **cells, *CurrCell, *NeibCell, **NeibCells;
   Iterators it=It_Finest;
   TVertex **Vertices_All, *Last, *Current;
-  TShapeDesc *ShapeDesc, *NeibShapeDesc;
+  const TShapeDesc *ShapeDesc, *NeibShapeDesc;
   TEdge *edge, *Neibedge;
   TJoint *joint;
 
@@ -3760,18 +3844,16 @@ void determine_n_refinement_steps_multigrid(
   }
 }
 
-std::list<TCollection* > TDomain::refine_and_get_hierarchy_of_collections(
-    const ParameterDatabase& parmoon_db
-#ifdef _MPI
-    , int& maxSubDomainPerDof
-#endif
-    )
+std::list<TCollection*> TDomain::refine_and_get_hierarchy_of_collections(
+    const ParameterDatabase& parmoon_db)
 {
 #ifdef _MPI
   int my_rank, size;
   MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
 #endif
+  gridCollections.clear();
+  gridCollections.push_front(this->GetCollection(It_Finest, 0));
 
   // Split the number of refinement steps - see doc of the method
   // TODO Removing this strange construction is a TODO
@@ -3795,6 +3877,7 @@ std::list<TCollection* > TDomain::refine_and_get_hierarchy_of_collections(
       this->barycentric_refinement();
     else
       this->RegRefineAll();
+        gridCollections.push_front(this->GetCollection(It_Finest, 0));
 #ifdef __3D__
     if(parmoon_db["problem_type"].is(6)
       && parmoon_db["example"].is(7))
@@ -3806,6 +3889,7 @@ std::list<TCollection* > TDomain::refine_and_get_hierarchy_of_collections(
                                        i+1);
     }
 #endif
+    gridCollections.push_front(this->GetCollection(It_Finest, 0));
   }
 
 #ifdef _MPI
@@ -3828,13 +3912,14 @@ std::list<TCollection* > TDomain::refine_and_get_hierarchy_of_collections(
   //(since distributing changed the domain).
   this->GenerateEdgeInfo();
 
-  // calculate largest possible number of processes which share one dof
-  maxSubDomainPerDof = MIN(maxCellsPerVertex, size);
+  // with _MPI the coarser grids are no longer used
+  gridCollections.clear();
+  gridCollections.push_front(this->GetCollection(It_Finest, 0));
 
 #endif
 
-  std::list<TCollection* > gridCollections;
-  gridCollections.push_front(this->GetCollection(It_Finest, 0));
+  
+  
 
   //this is only relevant for multigrid
   for(int level=0; level < n_ref_after; ++level)
@@ -4127,7 +4212,7 @@ void TDomain::distributeJoints(Mesh& m)
     const int *TmpFV, *TmpLen;
     int MaxLen;
     
-    TShapeDesc *ShapeDesc = CellTree[i]->GetShapeDesc();
+    const TShapeDesc *ShapeDesc = CellTree[i]->GetShapeDesc();
     ShapeDesc->GetFaceVertex(TmpFV, TmpLen, MaxLen);
 
     for(int j=0;j<4;++j)
@@ -4426,7 +4511,7 @@ void TDomain::distributeJoints(TTetGenMeshLoader& tgml)
     const int *TmpFV, *TmpLen;
     int MaxLen;
     
-    TShapeDesc *ShapeDesc = CellTree[i]->GetShapeDesc();
+    const TShapeDesc *ShapeDesc = CellTree[i]->GetShapeDesc();
     ShapeDesc->GetFaceVertex(TmpFV, TmpLen, MaxLen);
 
     for(int j=0;j<4;++j)

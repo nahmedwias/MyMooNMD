@@ -226,18 +226,21 @@ class BlockVector
      * 
      * compute the 2-norm (square root of sum of squares)
      * Note: possibly implement other norms as well
+     * @param[in] blocks compute norm only for the specified subblocks, defaults
+     * to all blocks.
      */
-    double norm(
+    double norm(std::vector<unsigned int> blocks
 #ifdef _MPI
-        std::vector<const TParFECommunicator3D*> comms={}
+       , std::vector<const TParFECommunicator3D*> comms={}
 #endif
     ) const;
-
+    
 #ifdef _MPI
-    /// Compute global norm of a vector distributed among the processes. All
-    /// processes will return the same results.
-    double norm_global(std::vector<const TParFECommunicator3D*> comms) const;
+    double norm(std::vector<const TParFECommunicator3D*> comms) const
+    { return norm(std::vector<unsigned int>{}, comms); }
 #endif
+    double norm() const
+    { return norm(std::vector<unsigned int>{}); }
 
     /**
      * @brief Print subvector iB to console in Matlab format

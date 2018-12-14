@@ -268,6 +268,10 @@ class TStructure
      */
     int *GetKCol()
     { return &columns[0]; }
+    
+    /** @brief return a copy of the columns vector */
+    std::vector<int> get_columns() const
+    { return columns; }
 
     /** @brief return array hangingColums */
     const int *GetHangingKCol() const
@@ -392,34 +396,6 @@ class TStructure
      */
     friend bool operator==(const TStructure &lhs, const TStructure &rhs);
     friend bool operator!=(const TStructure &lhs, const TStructure &rhs);
-    
-    
-#ifdef __MORTAR__ // \todo can this mortar stuff be removed?
-  protected:
-    int *AnsatzMortarSpaceGlobNo;
-    int *TestMortarSpaceGlobNo;
-
-    int *AnsatzNonMortarSpaceGlobNo;
-    int *TestNonMortarSpaceGlobNo;
-  public:
-    /** generate the matrix Structure2D, one space with 1D and the other
-     with 2D collection */
-    TStructure(TFESpace1D *testspace, TFESpace2D *ansatzspace);
-    
-    /** generate the matrix Structure2D, one space with 1D and the other
-     with 2D collection */
-    TStructure(TFESpace1D *testspace, TFESpace2D *ansatzspace,
-        int **ansatzcelljoints);
-
-    /** generate the matrix Structure2D, one space with 1D and the other
-     with 2D collection */
-    TStructure(TFESpace1D *testspace, TFESpace2D *ansatzspace,
-        TNonMortarData *NonMortarFEData);
-
-    TStructure(TFESpace2D *testspace, TFESpace1D *ansatzspace,
-        TNonMortarData *NonMortarFEData);
-#endif
-    
 };
 
 #endif

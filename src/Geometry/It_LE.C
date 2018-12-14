@@ -40,7 +40,7 @@ TBaseCell *TIt_LE::Next(int &info)
   }
   
   info = ActiveLevel;
-  ret = ActiveCell;
+  ret = const_cast<TBaseCell *>(ActiveCell);
 
   if (ActiveLevel)
     do

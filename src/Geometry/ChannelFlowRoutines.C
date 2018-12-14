@@ -30,7 +30,7 @@ void print(const std::string name, std::vector<double> vec)
 }
 
 void ChannelTau180::computeAverageVelocity(
-        std::array<std::vector<double>, 9> velo, const Time_NSE3D &tnse3d)
+        std::array<std::vector<double>, 9> velo, const TimeNavierStokes<3>& tnse3d)
 {
 #ifdef _MPI
   ErrThrow("MPI communications is not supported for this",
@@ -515,7 +515,7 @@ void ChannelTau180::setPeriodicFaceJoints(TCollection* Coll)
   }
 }
 
-void ChannelTau180::GetCoordinatesOfDof(const Time_NSE3D& tnse3d)
+void ChannelTau180::GetCoordinatesOfDof(const TimeNavierStokes<3>& tnse3d)
 {
   int rank = 0;
 #ifdef _MPI
@@ -643,7 +643,7 @@ void ChannelTau180::set_up_memory()
 }
 
 
-void ChannelTau180::computeMeanVelocity(const Time_NSE3D& tnse3d)
+void ChannelTau180::computeMeanVelocity(const TimeNavierStokes<3>& tnse3d)
 {
   const TFEVectFunct3D& U = tnse3d.get_velocity();
   size_t nuDofs = U.GetComponent(0)->GetLength();
@@ -868,7 +868,7 @@ std::vector< double >
 
 void ChannelTau180::eddy_viscosity(
   std::array< std::vector< double>, int(6)> eddy,
-  const Time_NSE3D& tnse3d)
+  const TimeNavierStokes<3>& tnse3d)
 {
   const TFESpace3D& space = tnse3d.get_velocity_space();
   size_t nuDofs = space.GetN_DegreesOfFreedom();

@@ -1,6 +1,5 @@
 #include <Example_NSE2D.h>
-#include <NSE2D.h>
-
+#include "NavierStokes.h"
 #include <Database.h>
 #include <Example_NSE2D.h>
 #include <FEDatabase2D.h>
@@ -34,7 +33,20 @@ namespace exampleD3
 {
   #include "NSE_2D/polynomial_solution.h"
 }
-//=========================================
+namespace brinkman_poiseuille
+{
+  #include "NSE_2D/Brinkman_Poiseuille.h"
+}
+namespace brinkman_sincos_darcyflow
+{
+  #include "NSE_2D/Brinkman_SinCos_DarcyFlow.h"
+}
+namespace brinkman_discacciatiflow
+{
+#include "NSE_2D/Brinkman_DiscacciatiFlow.h"
+}
+
+//============================================================================
 
 Example_NSE2D::Example_NSE2D(const ParameterDatabase& user_input_parameter_db) 
  : Example2D(user_input_parameter_db)
@@ -181,6 +193,79 @@ Example_NSE2D::Example_NSE2D(const ParameterDatabase& user_input_parameter_db)
       exampleD3::DIMENSIONLESS_VISCOSITY = get_nu();
       exampleD3::ExampleFile();
       break;
+    case 6:
+      /** exact_solution */
+      exact_solution.push_back( brinkman_poiseuille::ExactU1 );
+      exact_solution.push_back( brinkman_poiseuille::ExactU2 );
+      exact_solution.push_back( brinkman_poiseuille::ExactP );
+      
+      /** boundary condition */
+      boundary_conditions.push_back( brinkman_poiseuille::BoundCondition );
+      boundary_conditions.push_back( brinkman_poiseuille::BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+      
+      /** boundary values */
+      boundary_data.push_back( brinkman_poiseuille::U1BoundValue );
+      boundary_data.push_back( brinkman_poiseuille::U2BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+      
+      /** coefficients */
+      problem_coefficients = brinkman_poiseuille::LinCoeffs;
+      
+      // Set dimensionless viscosity
+      brinkman_poiseuille::effective_viscosity = get_nu();
+      brinkman_poiseuille::sigma = get_inverse_permeability();
+      brinkman_poiseuille::ExampleFile();
+      break;
+case 7:
+      /** exact_solution */
+      exact_solution.push_back( brinkman_sincos_darcyflow::ExactU1 );
+      exact_solution.push_back( brinkman_sincos_darcyflow::ExactU2 );
+      exact_solution.push_back( brinkman_sincos_darcyflow::ExactP );
+      
+      /** boundary condition */
+      boundary_conditions.push_back( brinkman_sincos_darcyflow::BoundCondition );
+      boundary_conditions.push_back( brinkman_sincos_darcyflow::BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+      
+      /** boundary values */
+      boundary_data.push_back( brinkman_sincos_darcyflow::U1BoundValue );
+      boundary_data.push_back( brinkman_sincos_darcyflow::U2BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+      
+      /** coefficients */
+      problem_coefficients = brinkman_sincos_darcyflow::LinCoeffs;
+      
+      // Set dimensionless viscosity
+      brinkman_sincos_darcyflow::effective_viscosity = get_nu();
+      brinkman_sincos_darcyflow::sigma = get_inverse_permeability();
+      brinkman_sincos_darcyflow::ExampleFile();
+      break;
+case 8:
+      /** exact_solution */
+      exact_solution.push_back( brinkman_discacciatiflow::ExactU1 );
+      exact_solution.push_back( brinkman_discacciatiflow::ExactU2 );
+      exact_solution.push_back( brinkman_discacciatiflow::ExactP );
+      
+      /** boundary condition */
+      boundary_conditions.push_back( brinkman_discacciatiflow::BoundCondition );
+      boundary_conditions.push_back( brinkman_discacciatiflow::BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+      
+      /** boundary values */
+      boundary_data.push_back( brinkman_discacciatiflow::U1BoundValue );
+      boundary_data.push_back( brinkman_discacciatiflow::U2BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+      
+      /** coefficients */
+      problem_coefficients = brinkman_discacciatiflow::LinCoeffs;
+      
+      // Set dimensionless viscosity
+      brinkman_discacciatiflow::effective_viscosity = get_nu();
+      brinkman_discacciatiflow::sigma = get_inverse_permeability();
+      brinkman_discacciatiflow::ExampleFile();
+      break;
+
     default:
       ErrThrow("Unknown Navier-Stokes example!");
   }
@@ -196,7 +281,7 @@ Example_NSE2D::Example_NSE2D(std::vector<DoubleFunct2D *> exact,
 }
 
 
-void Example_NSE2D::do_post_processing(NSE2D& nse2d) const
+void Example_NSE2D::do_post_processing(NavierStokes<2 >& nse2d) const
 {
   if(post_processing_stat)
   {
@@ -218,5 +303,10 @@ double Example_NSE2D::get_nu() const
   double inverse_reynolds = this->example_database["reynolds_number"];
   inverse_reynolds = 1/inverse_reynolds;
   return inverse_reynolds;
+}
+
+double Example_NSE2D::get_inverse_permeability() const
+{
+  return this->example_database["inverse_permeability"];
 }
 

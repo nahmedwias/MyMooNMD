@@ -47,7 +47,7 @@ TBaseCell *TIt_EQLevel::Next(int &info)
   } while (ActiveLevel != Level);
 
   info = ActiveLevel;
-  return ActiveCell;
+  return const_cast<TBaseCell *>(ActiveCell);
 }
 
 TBaseCell *TIt_EQLevel::Prev()

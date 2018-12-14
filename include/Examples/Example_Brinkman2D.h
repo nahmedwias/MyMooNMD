@@ -1,7 +1,7 @@
 /** ************************************************************************
  *
  * @class Example_Brinkman2D
- * @brief store all functions needed to describe a Brinkman example
+ * @brief store all functions needed to describe a Brinkman2D example
  *
  * The standard constructor of this class will fill the vectors
  * (in Example2D) with pointers to the functions needed to fully

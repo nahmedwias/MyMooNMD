@@ -10,7 +10,7 @@
 #include <Domain.h>
 #include <Database.h>
 #include <FEDatabase2D.h>
-#include <NSE2D.h>
+#include "NavierStokes.h"
 #include <Example_NSE2D.h>
 #include <Chrono.h>
 #include <LoopInfo.h>
@@ -26,18 +26,21 @@ int main(int argc, char* argv[])
   Chrono timer;
   
   //  declaration of database, you need this in every program
-  TDatabase Database;
-  TFEDatabase2D FEDatabase; 
+  TDatabase Database(argv[1]);
+  TFEDatabase2D FEDatabase;
   ParameterDatabase parmoon_db = ParameterDatabase::parmoon_default_database();
-  parmoon_db.merge(NSE2D::default_NSE_database());
+  parmoon_db.merge(NavierStokes<2>::default_nse_database());
   parmoon_db.read(argv[1]);
   
   //open OUTFILE, this is where all output is written to (additionally to console)
   Output::set_outfile(parmoon_db["outfile"], parmoon_db["script_mode"]);
   Output::setVerbosity(parmoon_db["verbosity"]);
   
-  /** set variables' value in TDatabase using argv[1] (*.dat file) */
-  TDomain domain(parmoon_db, argv[1]);
+  bool linear_problem = (parmoon_db["problem_type"].is(3)
+                         || parmoon_db["problem_type"].is(7));
+  TDatabase::ParamDB->INTERNAL_PROBLEM_LINEAR = linear_problem;
+  
+  TDomain domain(parmoon_db);
   
   // possibly change parameters in the database, if they are not meaningful now
   check_parameters_consistency_NSE(parmoon_db);
@@ -46,28 +49,24 @@ int main(int argc, char* argv[])
   Database.WriteParamDB(argv[0]);
   
   // refine grid
-  size_t n_ref = domain.get_n_initial_refinement_steps();
-  for(size_t i = 0; i < n_ref; i++)
-    domain.RegRefineAll();
+  domain.refine_and_get_hierarchy_of_collections(parmoon_db);
   
   // write grid into an Postscript file
   if(parmoon_db["output_write_ps"])
     domain.PS("Domain.ps", It_Finest, 0);
   
-  Example_NSE2D example(parmoon_db);
-  
   // create an object of the Navier-Stokes class
-  NSE2D ns(domain, parmoon_db, example);
-  ns.assemble();
+  NavierStokes<2> ns(domain, parmoon_db);
+  ns.assemble_linear_terms();
   // if solution was not zero up to here, you should call 
   //ns.assemble_nonlinear_term();
   
-  ns.stopIt(0);
+  ns.stop_it(0);
   
   LoopInfo loop_info("nonlinear");
   loop_info.print_time_every_step = true;
   loop_info.verbosity_threshold = 1; // full verbosity
-  loop_info.print(0, ns.getFullResidual());
+  loop_info.print(0, ns.get_full_residual());
   
   timer.restart_and_print("setting up spaces, matrices, linear assemble");
   
@@ -76,22 +75,22 @@ int main(int argc, char* argv[])
   // in function 'stopIt' termination condition is checked
   for(unsigned int k = 1;; k++)
   {
-    Output::print(); // new line for a new nonlinear iteration
+    Output::print<3>(); // new line for a new nonlinear iteration
     ns.solve();
     
-    //no nonlinear iteration for Stokes problem
-    if(parmoon_db["problem_type"].is(3))
+    //no nonlinear iteration for Stokes or Brinkman problems
+    if(linear_problem)
       break;
     
     ns.assemble_nonlinear_term();
     
-    if(ns.stopIt(k))
+    if(ns.stop_it(k))
     {
-      loop_info.finish(k, ns.getFullResidual());
+      loop_info.finish(k, ns.get_full_residual());
       break;
     }
     else
-      loop_info.print(k, ns.getFullResidual());
+      loop_info.print(k, ns.get_full_residual());
   } // end for k
   
   timer.restart_and_print("solving procedure");

@@ -75,8 +75,10 @@ void TTetraAffin::GetOrigFromRef(double xi, double eta, double zeta, double &X, 
 }
 
 /** transfer a set of points from reference to original element */
-void TTetraAffin::GetOrigFromRef(int N_Points, double *xi, double *eta, double *zeta,
-                                double *X, double *Y, double *Z, double *absdetjk)
+void TTetraAffin::GetOrigFromRef(int N_Points, const double *xi,
+                                 const double *eta, const double *zeta,
+                                 double *X, double *Y, double *Z,
+                                 double *absdetjk)
 {
   int i;
   double Xi, Eta, Zeta;
@@ -95,7 +97,7 @@ void TTetraAffin::GetOrigFromRef(int N_Points, double *xi, double *eta, double *
 }
 
 /** transfer from reference element to original element */
-void TTetraAffin::GetOrigFromRef(double *ref, double *orig)
+void TTetraAffin::GetOrigFromRef(const double *ref, double *orig)
 {
   orig[0]=xc0 + xc1*ref[0] + xc2*ref[1] + xc3*ref[2];
   orig[1]=yc0 + yc1*ref[0] + yc2*ref[1] + yc3*ref[2];
@@ -127,7 +129,7 @@ void TTetraAffin::GetRefFromOrig(double X, double Y, double Z, double &xi, doubl
 }
 
 /** transfer from original element to reference element */
-void TTetraAffin::GetRefFromOrig(double *orig, double *ref)
+void TTetraAffin::GetRefFromOrig(const double *orig, double *ref)
 {
   double xt=(orig[0] - xc0)/detjk;
   double yt=(orig[1] - yc0)/detjk;
@@ -143,8 +145,9 @@ void TTetraAffin::GetRefFromOrig(double *orig, double *ref)
 
 /** calculate functions and derivatives from reference element
     to original element */
-void TTetraAffin::GetOrigValues(BaseFunct3D BaseFunct,
-                                int N_Points, double *xi, double *eta, double *zeta,
+void TTetraAffin::GetOrigValues(BaseFunct3D BaseFunct, int N_Points,
+                                const double *xi, const double *eta,
+                                const double *zeta,
                                 int N_Functs, QuadFormula3D QuadFormula)
 {
   int i,j;
@@ -337,7 +340,8 @@ void TTetraAffin::GetOrigValues(BaseFunct3D BaseFunct,
 /** calculate functions and derivatives from reference element
     to original element, for all given elements */
 void TTetraAffin::GetOrigValues(int N_Sets, BaseFunct3D *BaseFuncts,
-                                int N_Points, double *xi, double *eta, double *zeta,
+                                int N_Points, const double *xi,
+                                const double *eta, const double *zeta,
                                 QuadFormula3D QuadFormula,
                                 bool *Needs2ndDer)
 {
@@ -407,7 +411,7 @@ void TTetraAffin::GetOrigValues(int N_Sets, BaseFunct3D *BaseFuncts,
     else
     {
       // do Piola transformation
-      PiolaMapOrigFromRef(N_Functs, refD000, origD000);
+      PiolaMapOrigFromRef(xi[j], eta[j], zeta[j], N_Functs, refD000, origD000);
     }
       } // endfor j
     
@@ -802,7 +806,8 @@ void TTetraAffin::GetOrigValues(int N_Sets, BaseFunct3D *BaseFuncts,
     to original element */
 void TTetraAffin::GetOrigValues(double xi, double eta, double zeta,
                 int N_BaseFunct,
-                double *uref, double *uxiref, double *uetaref, double *uzetaref,
+                const double *uref, const double *uxiref, const double *uetaref,
+                const double *uzetaref,
                 double *uorig, double *uxorig, double *uyorig, double *uzorig,
                 int _BaseVectDim)
 {
@@ -825,7 +830,7 @@ void TTetraAffin::GetOrigValues(double xi, double eta, double zeta,
   else
   {
     // D000
-    PiolaMapOrigFromRef(N_BaseFunct, uref, uorig);
+    PiolaMapOrigFromRef(xi, eta, zeta, N_BaseFunct, uref, uorig);
     
     // D100, D010, D001
     // not yet implemented
@@ -835,7 +840,8 @@ void TTetraAffin::GetOrigValues(double xi, double eta, double zeta,
 /** calculate functions and derivatives from reference element
         to original element on joint, parameters on joint are p1, p2 */
 void TTetraAffin::GetOrigValuesJoint(int JointNr, double p1, double p2, int N_BaseFunct,
-          double *uref, double *uxiref, double *uetaref, double *uzetaref,
+          const double *uref, const double *uxiref, const double *uetaref,
+          const double *uzetaref,
           double *uorig, double *uxorig, double *uyorig, double *uzorig)
 {
   int i;
@@ -856,7 +862,8 @@ void TTetraAffin::GetOrigValuesJoint(int JointNr, double p1, double p2, int N_Ba
 
 // for compatibility
 void TTetraAffin::GetOrigValues(int JointNr, double p1, double p2, int N_BaseFunct,
-          double *uref, double *uxiref, double *uetaref, double *uzetaref,
+          const double *uref, const double *uxiref, const double *uetaref,
+          const double *uzetaref,
           double *uorig, double *uxorig, double *uyorig, double *uzorig)
 {
   int i;
@@ -909,7 +916,7 @@ void TTetraAffin::SetCell(const TBaseCell *cell)
 
 /** return outer normal unit vector */
 void TTetraAffin::GetOuterNormal(int j, double s, double t,
-                                 double &n1, double &n2, double &n3)
+                                 double &n1, double &n2, double &n3) const
 {
 //   double len;
 
@@ -955,7 +962,7 @@ void TTetraAffin::GetOuterNormal(int j, double s, double t,
 /** return two tangent vectors */
 void TTetraAffin::GetTangentVectors(int j, double p1, double p2,
         double &t11, double &t12, double &t13,
-        double &t21, double &t22, double &t23)
+        double &t21, double &t22, double &t23) const
 {
   switch(j)
   {
@@ -987,7 +994,8 @@ void TTetraAffin::GetTangentVectors(int j, double p1, double p2,
 
 
 /** Piola transformation for vectorial basis functions */
-void TTetraAffin::PiolaMapOrigFromRef(int N_Functs, double *refD000, 
+void TTetraAffin::PiolaMapOrigFromRef(double xi, double eta, double zeta,
+                                      int N_Functs, const double *refD000, 
                                       double *origD000 )
 {
   double a11 = xc1 * rec_detjk;

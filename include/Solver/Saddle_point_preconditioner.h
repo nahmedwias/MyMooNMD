@@ -24,6 +24,7 @@ class Saddle_point_preconditioner : public Preconditioner<BlockVector>
     /// lsc - least squares commutator
     /// bd_lsc - boundary corrected least squares commutator
     /// AL - augmented Lagrangian based preconditioner
+	  /// mod_AL - modified augmented Lagrangian based preconditioner
     enum class type {simple, lsc, bd_lsc, AL, mod_AL};
     /// The database passed to the constuctor should be named this or have a 
     /// nested database with this name. Otherwise a default solver database is 

@@ -31,8 +31,8 @@ class TEdge
     /** neighbours */
     TBaseCell **Neighbs;
 
-    /** an integer for storing clipboard information*/
-    int ClipBoard;
+    /** an integer for storing clipboard information, Bad style! */
+    mutable int ClipBoard;
 
 #ifdef  _MPI
   /** a bool to check this edge belongs to two or more SubDomains **/
@@ -70,14 +70,14 @@ class TEdge
 
  // methods
     /** return type */
-    JointType GetType()
+    JointType GetType() const
     { return EdgeID; }
 
     /** set value in ClipBoard */
-    void SetClipBoard(int value)
+    void SetClipBoard(int value) const
     { ClipBoard=value; }
     /** get value from ClipBoard */
-    int GetClipBoard()
+    int GetClipBoard() const
     { return ClipBoard; }
 
 #ifdef  _MPI
@@ -97,7 +97,7 @@ class TEdge
   bool IsSubDomainCrossEdge()
    {return SubDomainCrossEdge;}
 
-  void GetNeibs(int &n_Neibs, TBaseCell **&neighbs)
+  void GetNeibs(int &n_Neibs, const TBaseCell * const *&neighbs) const
    {
     n_Neibs = N_Neibs;
     neighbs = Neighbs;

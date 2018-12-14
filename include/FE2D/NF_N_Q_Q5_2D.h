@@ -362,8 +362,8 @@ static double NF_N_Q_Q5_2D_CellWeight9[36] = {
 
 
 
-void NF_N_Q_Q5_2D_EvalAll(TCollection *Coll, TBaseCell *Cell, double *PointValues,
-                          double *Functionals)
+void NF_N_Q_Q5_2D_EvalAll(TCollection *Coll, TBaseCell *Cell,
+                          const double *PointValues, double *Functionals)
 {
   int OwnNum, NeighNum;
   TBaseCell *neigh;
@@ -930,7 +930,7 @@ void NF_N_Q_Q5_2D_EvalAll(TCollection *Coll, TBaseCell *Cell, double *PointValue
 }
 
 void NF_N_Q_Q5_2D_EvalEdge(TCollection *Coll, TBaseCell *Cell, int Joint,
-                           double *PointValues, double *Functionals)
+                           const double *PointValues, double *Functionals)
 {
   int OwnNum, NeighNum;
   TBaseCell *neigh;

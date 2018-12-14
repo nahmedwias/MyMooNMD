@@ -29,7 +29,7 @@ TLine::TLine()
 }
 
 // Methods
-double TLine::GetMeasure(TVertex **Verts)
+double TLine::GetMeasure(TVertex **Verts) const
 {
   double x1,x2,y1,y2;
 

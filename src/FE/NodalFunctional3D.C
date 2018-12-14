@@ -46,8 +46,8 @@ TNodalFunctional3D::TNodalFunctional3D(NodalFunctional3D id,
 }
 
 /** return information for points for all functionals */
-void TNodalFunctional3D::GetPointsForAll(int &n_points, double* &xi,
-                        double* &eta, double* &zeta)
+void TNodalFunctional3D::GetPointsForAll(int &n_points, const double* &xi,
+                        const double* &eta, const double* &zeta) const
 { 
   n_points = N_PointsAll;
   xi = Xi; 
@@ -58,7 +58,8 @@ void TNodalFunctional3D::GetPointsForAll(int &n_points, double* &xi,
 /** return information for points for face functionals 
     on joint j */
 void TNodalFunctional3D::GetPointsForFace(int j, int &n_points,
-                        double* &xi, double* &eta, double* &zeta)
+                        const double* &xi, const double* &eta,
+                        const double* &zeta) const
 { 
   n_points = N_PointsFace[j];
   xi   = XiArray[j];
@@ -67,8 +68,8 @@ void TNodalFunctional3D::GetPointsForFace(int j, int &n_points,
 }
 
 /** return information for points for face functionals */
-void TNodalFunctional3D::GetPointsForFace(int &n_points, double* &t,
-                                          double* &s)
+void TNodalFunctional3D::GetPointsForFace(int &n_points, const double* &t,
+                                          const double* &s) const
 {
   n_points = N_PointsFace[0],
   t = T;

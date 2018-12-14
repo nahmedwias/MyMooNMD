@@ -288,7 +288,7 @@ void ROM_TCDR2D::output(int time_step)
      * into seond (or generally several) output file (like here Output::redirect(error_file)) */
     
     //TODO: Check the redirect function for true and false case
-    if (TDatabase::TimeDB->CURRENTTIME==TDatabase::TimeDB->STARTTIME)
+    if (/*TDatabase::TimeDB->CURRENTTIME==*/rom_db["time_start"])
       Output::redirect(error_file);//, true);
     // else
     //   Output::redirect(error_file, false);

@@ -45,11 +45,11 @@ TJointEqN::~TJointEqN()
 
 int TJointEqN::CheckMatchingRef(TBaseCell *Me, int J_i, struct StoreGeom &Tmp)
 {
-  TBaseCell *Neighb, *Parent = nullptr;
+  const TBaseCell *Neighb, *Parent = nullptr;
   int i, J_j, N_, MaxLen1, MaxLen2, auxi, aux;
   const int *TmpValues1, *TmpValues2;
-  TRefDesc *NeighbRefDesc, *ParRefDesc;
-  TJoint *ParJoint;
+  const TRefDesc *NeighbRefDesc, *ParRefDesc;
+  const TJoint *ParJoint;
 #ifdef __2D__
   Refinements NeibEdgeRef, MyEdgeRef;
   const int *TmpoEnE, *TmpEC, *TmpECI, *TmpoEnV, *TmpVC, *TmpVCI;
@@ -125,28 +125,7 @@ int TJointEqN::CheckMatchingRef(TBaseCell *Me, int J_i, struct StoreGeom &Tmp)
     NeibEdgeRef = Neighb->GetEdgeRef(J_j);
     MyEdgeRef = Me->GetEdgeRef(J_i);
 
-  #ifdef __MORTAR__
-    // fix problem after mortar refinement layer
-    if (MyEdgeRef != NoRef)
-    {
-      while (NeibEdgeRef == NoRef && Neighb->ExistChildren())
-      {
-        Neighb->GetRefDesc()->GetOldEdgeNewEdge(TmpoEnE, TmpValues1, MaxLen1);
-        Neighb->GetRefDesc()->GetEdgeChild(TmpEC, TmpValues1, MaxLen2);
-        Neighb->GetRefDesc()->GetEdgeChildIndex(TmpECI, TmpValues1, MaxLen2);
-
-        J_j = TmpoEnE[MaxLen1 * J_j];
-        Neighb = Neighb->GetChild(TmpEC[MaxLen2 * J_j]);
-        J_j = TmpECI[MaxLen2 * J_j];
-        NeibEdgeRef = Neighb->GetEdgeRef(J_j);
-      }
-
-      if (NeibEdgeRef == NoRef) return 0;
-    }
-  #endif // __MORTAR__
-
-  
-      if (NeibEdgeRef != MyEdgeRef)
+    if (NeibEdgeRef != MyEdgeRef)
        cout << "test JointEqn" << endl;
   
     if (NeibEdgeRef != MyEdgeRef)
@@ -267,70 +246,3 @@ int TJointEqN::CheckMatchingRef(TBaseCell *Me, int J_i, struct StoreGeom &Tmp)
 
   return 0;
 }
-
-#ifdef __MORTAR__
-
-int TJointEqN::CheckMatchingRef(TBaseCell *Me, int J_i, StoreGeomMortar &Tmp)
-{
-  TBaseCell *Neighb;
-  int i, J_j, N_, MaxLen1, MaxLen2, auxi, aux;
-  const int *TmpValue;
-  const int *TmpoEnE, *TmpEC,  *TmpECI, *TmpoEnV, *TmpVC, *TmpVCI;
-  TRefDesc *NeighbRefDesc;
-  Refinements NeibEdgeRef, MyEdgeRef;
-
-  Tmp.Filled = false;
-
-  if (Neighb0 == Me)
-    Neighb = Neighb1;
-  else
-    Neighb = Neighb0;
-
-  if (!Neighb) return 0;
-
-  if (Neighb->ExistChildren())
-  {
-    N_ = Neighb->GetN_Edges();
-    for (J_j=0;J_j<N_;J_j++)
-      if (Neighb->GetJoint(J_j) == this) break;
-
-    NeibEdgeRef = Neighb->GetEdgeRef(J_j);
-    MyEdgeRef = Me->GetEdgeRef(J_i);
-
-    if (NeibEdgeRef != MyEdgeRef)
-      return -2;
-
-    Tmp.Filled = true;
-
-    NeighbRefDesc = Neighb->GetRefDesc();
-
-    NeighbRefDesc->GetOldEdgeNewEdge(TmpoEnE, TmpValue, MaxLen1);
-    N_ = TmpValue[J_j] + 1;
-
-    NeighbRefDesc->GetEdgeChild(TmpEC, TmpValue, MaxLen2);
-    NeighbRefDesc->GetEdgeChildIndex(TmpECI, TmpValue, MaxLen2);
-
-    for (i=0;i<N_;i++)
-    {
-      auxi = TmpoEnE[J_j * MaxLen1 + i] * MaxLen2;
-      Tmp.Joints[i] = Neighb->GetChild(TmpEC[auxi])->
-                              GetJoint(TmpECI[auxi]);
-    }
-
-    NeighbRefDesc->GetOldEdgeNewVertex(TmpoEnV, TmpValue, MaxLen1);
-    NeighbRefDesc->GetVertexChild(TmpVC, TmpValue, MaxLen2);
-    NeighbRefDesc->GetVertexChildIndex(TmpVCI, TmpValue, MaxLen2);
-
-    auxi = J_j * MaxLen1 + 1;
-    for (i=1;i<N_;i++)
-    {
-      aux = TmpoEnV[auxi++];
-      Tmp.Vertices[i] = Neighb->GetChild(TmpVC[aux])->
-                          GetVertex(TmpVCI[aux]);
-    }
-  }
-
-  return 0;
-}
-#endif
-

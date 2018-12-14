@@ -6,7 +6,7 @@
 
 #ifdef __2D__
 
-#include <Time_NSE2D.h>
+#include <TimeNavierStokes.h>
 
 #endif
 
@@ -22,13 +22,13 @@ namespace MeanVelocity
   static std::vector< double > R11; 
   static std::vector< double > R22;
 #ifdef __2D__  
-  void fill_arrays(const Time_NSE2D& tnse2d );
-  void compute_mean_velocity(const Time_NSE2D& tnse2d);
+  void fill_arrays(const TimeNavierStokes<2>& tnse2d );
+  void compute_mean_velocity(const TimeNavierStokes<2>& tnse2d);
   
-  void compute_mean_velocity_on_points(const Time_NSE2D& tnse2d,
+  void compute_mean_velocity_on_points(const TimeNavierStokes<2>& tnse2d,
                           const std::vector<double>& vec, const std::vector<TBaseCell *> cells);
   
-  void  compute_velocity_on_points(const Time_NSE2D& tnse2d,
+  void  compute_velocity_on_points(const TimeNavierStokes<2>& tnse2d,
                           const std::vector<double>& vec_x_y, const std::vector<TBaseCell *> cells,
                           std::string basename);
 #endif

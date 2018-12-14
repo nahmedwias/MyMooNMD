@@ -1,5 +1,5 @@
 #include <Example_TimeNSE3D.h>
-#include <Time_NSE3D.h>
+#include "TimeNavierStokes.h"
 #include <FEDatabase3D.h>
 #include <Database.h>
 #include <MainUtilities.h>
@@ -410,7 +410,7 @@ Example_TimeNSE3D::Example_TimeNSE3D(
   }
 }
 
-void Example_TimeNSE3D::do_post_processing(Time_NSE3D& tnse3d) const
+void Example_TimeNSE3D::do_post_processing(TimeNavierStokes<3>& tnse3d) const
 {
   if(post_processing_stat)
   {

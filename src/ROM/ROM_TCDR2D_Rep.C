@@ -315,7 +315,8 @@ void ROM_TCDR2D_Rep::output(int time_step)
      * into seond (or generally several) output file (like here Output::redirect(error_file)) */
     
     //TODO: Check the redirect function for true and false case
-    if (time_stepping_scheme.current_time_==TDatabase::TimeDB->STARTTIME)
+    double start_time = db["time_start"];
+    if (time_stepping_scheme.current_time_== start_time)
       Output::redirect(error_file);//, true);
     // else
     //   Output::redirect(error_file, false);

@@ -51,7 +51,7 @@ void TQuadFormula2D::InitObject(int n, double* w, double* xi,
   Accuracy = acc;
 }
 
-double *TQuadFormula2D::GetCoords(int i)
+const double *TQuadFormula2D::GetCoords(int i) const
 {
   double *ret=nullptr;
   if(i==0) 
@@ -64,7 +64,8 @@ double *TQuadFormula2D::GetCoords(int i)
 }
 
 void TQuadFormula2D::
-  GetFormulaData(int &n_points, double* &weights, double* &xi, double* &eta)
+  GetFormulaData(int &n_points, const double* &weights, const double* &xi,
+                 const double* &eta) const
 {
   n_points=N_QuadPoints;
   weights=Weights;

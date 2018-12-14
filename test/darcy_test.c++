@@ -167,8 +167,8 @@ void tests_on_triangles(unsigned int nRefinements, ParameterDatabase& db)
   check_darcy<2>(domain, db, 1000, errors);
   
   Output::print("\nstarting with RT1 on triangles");
-  errors = {{ 0.45226149917363, 5.7965843062654, 14.561985165855,
-              0.074478813057122, 2.3249493136119 }};
+  errors = {{  0.45197128738174, 5.7965618875804, 14.557486897762,
+               0.074463174420845, 2.3252470856326 }};
   check_darcy<2>(domain, db, 1001, errors);
   
   // this is really slow!
@@ -177,7 +177,7 @@ void tests_on_triangles(unsigned int nRefinements, ParameterDatabase& db)
   {
     Output::print("\nstarting with RT2 on triangles");
     errors = {{ 0.077083425180006, 1.0445467331298, 4.1457189447051,
-                0.0038190922876324, 0.81680935765046 }};
+                0.016309057144146, 0.81069387503794 }};
     check_darcy<2>(domain, db, 1002, errors);
   }
   
@@ -191,13 +191,13 @@ void tests_on_triangles(unsigned int nRefinements, ParameterDatabase& db)
   }
   
   Output::print("\nstarting with BDM1 on triangles");
-  errors = {{ 1.3471909779398, 19.174978565868, 24.552917977967,
-              0.25991524351834, 4.4428829381584 }};
+  errors = {{ 1.3473663974224, 19.174978486642, 24.552679374252,
+              0.25993100617474, 4.4428829381584 }};
   check_darcy<2>(domain, db, 1011, errors);
   
   Output::print("\nstarting with BDM2 on triangles");
-  errors = {{ 0.21067940108674, 5.7965843062654, 8.2247391949719,
-              0.074736732125372, 2.3558018820457 }};
+  errors = {{ 0.21030047956045, 5.7965618875804, 8.2266427741831,
+              0.074718685375952, 2.3561242018165 }};
   check_darcy<2>(domain, db, 1012, errors);
   
   // this is really slow!
@@ -205,7 +205,7 @@ void tests_on_triangles(unsigned int nRefinements, ParameterDatabase& db)
   {
     Output::print("\nstarting with BDM3 on triangles");
     errors = {{ 0.043596263688953, 1.0445467331299, 1.7271188357497,
-                0.0035276997665613, 0.82269214135298 }};
+                0.01629354826757, 0.81659172891947 }};
     check_darcy<2>(domain, db, 1013, errors);
   }
 }

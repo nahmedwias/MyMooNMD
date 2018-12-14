@@ -393,7 +393,7 @@ void UltraLocalProjection(void* A, bool ForPressure)
   TBaseCell *cell;
   bool SecondDer[2] = { false, false };
   int N_Points;
-  double *xi, *eta, *weights;
+  const double *xi, *eta, *weights;
   double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D];
   double AbsDetjk[MaxN_QuadPoints_2D];
   double G[MaxN_BaseFunctions2D*MaxN_BaseFunctions2D];
@@ -661,7 +661,7 @@ double UltraLocalError(TFEFunction2D *uh, DoubleFunct2D *ExactU,
   TBaseCell *cell;
   bool SecondDer[2] = { false, false };
   int N_Points;
-  double *xi, *eta, *weights;
+  const double *xi, *eta, *weights;
   double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D];
   double AbsDetjk[MaxN_QuadPoints_2D];
   double G[MaxN_BaseFunctions2D*MaxN_BaseFunctions2D];
@@ -874,7 +874,7 @@ void AddStreamlineTerm(TSquareMatrix2D* A, TFEFunction2D *uh1,
   TBaseCell *cell;
   bool SecondDer[2] = { false, false };
   int N_Points;
-  double *xi, *eta, *weights;
+  const double *xi, *eta, *weights;
   double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D];
   double AbsDetjk[MaxN_QuadPoints_2D];
   double G[MaxN_BaseFunctions2D*MaxN_BaseFunctions2D];
@@ -1165,7 +1165,7 @@ void AddStreamlineTermPWConst(TSquareMatrix2D* A, TFEFunction2D *uh1,
   TBaseCell *cell;
   bool SecondDer[2] = { false, false };
   int N_Points;
-  double *xi, *eta, *weights;
+  const double *xi, *eta, *weights;
   double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D];
   double AbsDetjk[MaxN_QuadPoints_2D];
   double G[MaxN_BaseFunctions2D*MaxN_BaseFunctions2D];
@@ -1439,7 +1439,7 @@ void AddDivergenceTerm(TSquareMatrix2D *A11,TSquareMatrix2D *A12,
   TBaseCell *cell;
   bool SecondDer[2] = { false, false };
   int N_Points;
-  double *xi, *eta, *weights;
+  const double *xi, *eta, *weights;
   double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D];
   double AbsDetjk[MaxN_QuadPoints_2D];
   double G[MaxN_BaseFunctions2D*MaxN_BaseFunctions2D];
@@ -2017,7 +2017,7 @@ double UltraLocalErrorDivergence(TFEFunction2D *uh1, TFEFunction2D *uh2,
   TBaseCell *cell;
   bool SecondDer[2] = { false, false };
   int N_Points;
-  double *xi, *eta, *weights;
+  const double *xi, *eta, *weights;
   double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D];
   double AbsDetjk[MaxN_QuadPoints_2D];
   double G[MaxN_BaseFunctions2D*MaxN_BaseFunctions2D];
@@ -2232,7 +2232,7 @@ double UltraLocalErrorStreamline(TFEFunction2D *uh, DoubleFunct2D *ExactU,
   TBaseCell *cell;
   bool SecondDer[2] = { false, false };
   int N_Points;
-  double *xi, *eta, *weights;
+  const double *xi, *eta, *weights;
   double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D];
   double AbsDetjk[MaxN_QuadPoints_2D];
   double G[MaxN_BaseFunctions2D*MaxN_BaseFunctions2D];
@@ -2456,7 +2456,7 @@ double UltraLocalErrorStreamlinePWConst(TFEFunction2D *uh, DoubleFunct2D *ExactU
   TBaseCell *cell;
   bool SecondDer[2] = { false, false };
   int N_Points;
-  double *xi, *eta, *weights;
+  const double *xi, *eta, *weights;
   double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D];
   double AbsDetjk[MaxN_QuadPoints_2D];
   double G[MaxN_BaseFunctions2D*MaxN_BaseFunctions2D];
@@ -2705,7 +2705,7 @@ void UltraLocalProjectionStreamlinePLaplacian(TSquareMatrix2D* A,
   Shapes shapetype;
   bool SecondDer[2] = { false, false };
   int N_Points;
-  double *xi, *eta, *weights;
+  const double *xi, *eta, *weights;
   double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D];
   double AbsDetjk[MaxN_QuadPoints_2D];
   double G[MaxN_BaseFunctions2D*MaxN_BaseFunctions2D];
@@ -3384,7 +3384,7 @@ void LocalProjectionCoarseGridQ0(TFEFunction2D *uh,
   };
   TCollection *Coll;
   const TFESpace2D *fespace_fine;
-  TBaseCell *cell, *parent_cell, *child_cell;
+  const TBaseCell *cell, *parent_cell, *child_cell;
 
   OutPut("compute local projection to Q0 on coarse grid"<<endl);
   coeffs = new double[20];
@@ -3542,7 +3542,7 @@ void LocalProjectionCrossWindCoarseGridQ0(TDomain *Domain, int mg_level,
     0.57735026918962576450914878050195746
   };
   TCollection *coll_coarse, *coll;
-  TBaseCell *cell, *child_cell;
+  const TBaseCell *cell, *child_cell;
   const TFESpace2D *fespace;
  
    OutPut("update rhs of crosswind local projection to Q0 on coarse grid"<<endl);
@@ -3753,7 +3753,8 @@ void AdaptivePostProcess(TFEFunction2D *FeFunction, double *PostSol, bool Dirich
   int OrderDiff;
 
   double **CoarseValues, *CoarseValue, *LPS_sol;
-  double val, w, *xi, *eta, *weights;
+  double val, w;
+  const double *xi, *eta, *weights;
   double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D];
   double AbsDetjk[MaxN_QuadPoints_2D];
   double G[MaxN_BaseFunctions2D*MaxN_BaseFunctions2D];
@@ -3920,7 +3921,7 @@ void AddALEStreamlineLPS(TSquareMatrix2D* A, int N_FeFunct, TFEFunction2D **FeFu
   
   bool SecondDer[2] = { false, false };
   int N_Points;
-  double *xi, *eta, *weights;
+  const double *xi, *eta, *weights;
   double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D];
   double AbsDetjk[MaxN_QuadPoints_2D];
   double G[MaxN_BaseFunctions2D*MaxN_BaseFunctions2D];
@@ -4311,7 +4312,7 @@ void AddStreamlineTerm(TSquareMatrix3D* A, TFEFunction3D *uh1,
   TBaseCell *cell;
   bool SecondDer[2] = { false, false };
 
-  double *xi, *eta, *zeta, *weights;
+  const double *xi, *eta, *zeta, *weights;
   double X[MaxN_QuadPoints_3D], Y[MaxN_QuadPoints_3D], Z[MaxN_QuadPoints_3D];
   double AbsDetjk[MaxN_QuadPoints_3D];
   double G[MaxN_BaseFunctions3D*MaxN_BaseFunctions3D];
@@ -4572,7 +4573,7 @@ void UltraLocalProjection(TSquareMatrix3D* A,
 //  Shapes shapetype;
   bool SecondDer[2] = { false, false };
 
-  double *xi, *eta, *zeta, *weights;
+  const double *xi, *eta, *zeta, *weights;
   double X[MaxN_QuadPoints_3D], Y[MaxN_QuadPoints_3D], Z[MaxN_QuadPoints_3D];
   double AbsDetjk[MaxN_QuadPoints_3D];
   double G[MaxN_BaseFunctions3D*MaxN_BaseFunctions3D];
@@ -4818,7 +4819,7 @@ void UltraLocalProjection(void* A, bool ForPressure, CoeffFct2D Coeff)
   Shapes shapetype;
   bool SecondDer[2] = { false, false };
   int N_Points;
-  double *xi, *eta, *weights;
+  const double *xi, *eta, *weights;
   double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D];
   double AbsDetjk[MaxN_QuadPoints_2D];
   double G[MaxN_BaseFunctions2D*MaxN_BaseFunctions2D];
@@ -5272,7 +5273,7 @@ void UltraLocalProjectionFunction(void* A, bool ForPressure)
   Shapes shapetype;
   bool SecondDer[2] = { false, false };
   int N_Points;
-  double *xi, *eta, *weights;
+  const double *xi, *eta, *weights;
   double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D];
   double AbsDetjk[MaxN_QuadPoints_2D];
   double G[MaxN_BaseFunctions2D*MaxN_BaseFunctions2D];
@@ -5545,7 +5546,7 @@ double UltraLocalErrorSmooth(TFEFunction2D *uh, DoubleFunct2D *ExactU,
   Shapes shapetype;
   bool SecondDer[2] = { false, false };
   int N_Points;
-  double *xi, *eta, *weights;
+  const double *xi, *eta, *weights;
   double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D];
   double AbsDetjk[MaxN_QuadPoints_2D];
   double G[MaxN_BaseFunctions2D*MaxN_BaseFunctions2D];
@@ -5765,7 +5766,7 @@ void UltraLocalProjection3D(void* A, bool ForPressure)
 //  Shapes shapetype;
   bool SecondDer[2] = { false, false };
   int N_Points;
-  double *xi, *eta, *zeta, *weights;
+  const double *xi, *eta, *zeta, *weights;
   double X[MaxN_QuadPoints_3D], Y[MaxN_QuadPoints_3D], Z[MaxN_QuadPoints_3D];
   double AbsDetjk[MaxN_QuadPoints_3D];
   double G[MaxN_BaseFunctions3D*MaxN_BaseFunctions3D];
@@ -6046,7 +6047,7 @@ double UltraLocalError3D(TFEFunction3D *uh, DoubleFunct3D *ExactU,
 //  Shapes shapetype;
   bool SecondDer[2] = { false, false };
   int N_Points;
-  double *xi, *eta, *zeta, *weights;
+  const double *xi, *eta, *zeta, *weights;
   double X[MaxN_QuadPoints_3D], Y[MaxN_QuadPoints_3D], Z[MaxN_QuadPoints_3D];
   double AbsDetjk[MaxN_QuadPoints_3D];
   double G[MaxN_BaseFunctions3D*MaxN_BaseFunctions3D];

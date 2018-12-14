@@ -9,8 +9,6 @@
 //
 // =======================================================================
 
-#include <DefineParams.h>
-
 #include <Assembler4.h>
 #include <Enumerations.h>
 #include <Matrix2D.h>
@@ -296,7 +294,7 @@ void Assembler4::assemble_local_system(std::vector <const TFESpace2D*>& fespaces
     // calculate values on original element
     
     int N_Points;
-    double *weights, *xi, *eta;
+    const double *weights, *xi, *eta;
     double X[MaxN_QuadPoints_2D],Y[MaxN_QuadPoints_2D];
     double AbsDetjk[MaxN_QuadPoints_2D];
     
@@ -351,7 +349,7 @@ void Assembler4::impose_boundary_conditions(int i_cell,
       double t0,t1;
       const TBoundComp *BoundComp;
       int N_EdgePoints;
-      double *EdgePoints;
+      const double *EdgePoints;
       double eps=1e-4;
     
       TNodalFunctional2D *nf = ele->GetNodalFunctional2D();

@@ -115,7 +115,7 @@ Example_CD2D::Example_CD2D(std::vector<DoubleFunct2D *> exact,
 }
 
 
-void Example_CD2D::do_post_processing(CD2D& cd2d) const
+void Example_CD2D::do_post_processing(ConvectionDiffusion<2>& cd2d) const
 {
   if(post_processing_stat)
   {

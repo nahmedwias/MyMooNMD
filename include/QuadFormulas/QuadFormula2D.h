@@ -38,10 +38,10 @@ class TQuadFormula2D : public TQuadFormula
                     double* eta, int acc);
 
     /** return coordinates of the formula */
-    virtual double *GetCoords(int i);
+    virtual const double *GetCoords(int i) const override;
     /** return all data of the quadrature formula */
-    void GetFormulaData(int &n_points, double* &weights, 
-                        double* &xi, double* &eta);
+    void GetFormulaData(int &n_points, const double* &weights, 
+                        const double* &xi, const double* &eta) const;
 
 // #ifdef __2D__
     /** return a quadrature formula which can be used for 

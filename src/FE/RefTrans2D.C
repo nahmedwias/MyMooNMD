@@ -1,30 +1,17 @@
-// =======================================================================
-// @(#)RefTrans2D.C        1.1 10/30/98
-//
-// Class:      TRefTrans2D
-//
-// Purpose:    reference transformations for 2D geometric objects
-//
-// Author:     Gunar Matthies
-//
-// History:    08.07.97 start implementation
-// 
-// =======================================================================
+#include "RefTrans2D.h"
+#include "MooNMD_Io.h"
 
-#include <RefTrans2D.h>
-
-RefTrans2D TRefTrans2D::FindRefTrans2D
-        (int N_LocalUsedElements, FE2D *LocalUsedElements)
+void TRefTrans2D::PiolaMapOrigFromRef(double ci, double eta, int N_Functs,
+                                      const double *refD00, double *origD00)
 {
-  RefTrans2D rf;
+  ErrThrow("Piola Map not defined for this element");
+};
 
-  if( ((int)(LocalUsedElements[0])) < 5)
-    rf = TriaAffin;
-  else
-    if( ((int)(LocalUsedElements[0])) < 10)
-      rf = QuadAffin;
-    else
-      rf = QuadBilinear;
-
-  return rf;
-}
+void TRefTrans2D::PiolaMapOrigFromRef(double xi, double eta, int N_Functs,
+                                      const double *refD00,
+                                      const double *refD10,
+                                      const double *refD01, double *origD10,
+                                      double *origD01)
+{
+  ErrThrow("Piola Map not defined for this element");
+};

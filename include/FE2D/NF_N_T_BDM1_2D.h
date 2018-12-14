@@ -16,9 +16,8 @@ static double NF_N_T_BDM1_2D_Eta[9] =
    NF_N_T_BDM1_2D_eq[0], NF_N_T_BDM1_2D_eq[1], NF_N_T_BDM1_2D_eq[2],
    NF_N_T_BDM1_2D_eq[2], NF_N_T_BDM1_2D_eq[1], NF_N_T_BDM1_2D_eq[0] };
 
-void NF_N_T_BDM1_2D_EvalAll(TCollection *Coll, TBaseCell *Cell, double 
-*PointValues,
-                          double *Functionals)
+void NF_N_T_BDM1_2D_EvalAll(TCollection *Coll, TBaseCell *Cell,
+                            const double *PointValues, double *Functionals)
 {
   // short names
   const double * p = NF_N_T_BDM1_2D_T;
@@ -92,8 +91,8 @@ void NF_N_T_BDM1_2D_EvalAll(TCollection *Coll, TBaseCell *Cell, double
   }
 }
 
-void NF_N_T_BDM1_2D_EvalEdge(TCollection *Coll, TBaseCell *Cell, int Joint, double *PointValues,
-                           double *Functionals)
+void NF_N_T_BDM1_2D_EvalEdge(TCollection *Coll, TBaseCell *Cell, int Joint,
+                             const double *PointValues, double *Functionals)
 {
   // this is needed for setting boundary conditions
   #ifdef __2D__

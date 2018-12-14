@@ -27,6 +27,14 @@ namespace rotating_bodies_1
 #include "TCD_2D/Rotating_Bodies.h"
 }
 
+namespace Geothermal_Energy_TCD2D
+{
+  #include "TCD_2D/Geothermal_Energy_TCD2D.h"
+}
+
+
+//=======================================================
+
 Example_TimeCD2D::Example_TimeCD2D(
   const ParameterDatabase& user_input_parameter_db)
  : Example_NonStationary2D(user_input_parameter_db)
@@ -129,6 +137,26 @@ Example_TimeCD2D::Example_TimeCD2D(
       // Print some example specific information.
       rotating_bodies_1::ExampleFile();
       break;
+ case 4:
+      /**Exact solution"**/
+      exact_solution.push_back(Geothermal_Energy_TCD2D::Exact);
+
+      /** boundary condition */
+      boundary_conditions.push_back( Geothermal_Energy_TCD2D::BoundCondition );
+
+      /** boundary values */
+      boundary_data.push_back( Geothermal_Energy_TCD2D::BoundValue );
+
+      /** coefficients */
+      problem_coefficients = Geothermal_Energy_TCD2D::BilinearCoeffs;
+
+      /** Initial condition*/
+      initialCondition.push_back(Geothermal_Energy_TCD2D::InitialCondition);
+
+      // Print some example specific information.
+      Geothermal_Energy_TCD2D::ExampleFile();
+      break;
+
     default:
       ErrThrow("Unknown name of the transient-convection-diffusion (Time_CD2D) example!", 
                example_code);
