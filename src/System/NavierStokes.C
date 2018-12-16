@@ -931,7 +931,10 @@ void NavierStokes<d>::output(int i)
   else
     outputWriter.write(i);
   
-  
+#ifdef __2D__
+  velocity_over_line({0.5, 0.}, {0.5, 1.}, 81, velocity_components);
+#endif
+
   // measure errors to known solution
   // If an exact solution is not known, it is usually set to be zero, so that
   // in such a case here only integrals of the solution are computed.
@@ -942,7 +945,7 @@ void NavierStokes<d>::output(int i)
     TAuxParam3D aux;
     MultiIndex3D nsAllDerivs[d+1] = {D000, D100, D010, D001};
 #else
-    TAuxParam2D aux;
+    TAuxParam2D aux, aux2;
     MultiIndex2D nsAllDerivs[d+1] = {D00, D10, D01};
 #endif
     const FESpace *velocity_space = &this->get_velocity_space();
@@ -966,7 +969,44 @@ void NavierStokes<d>::output(int i)
     // errors in pressure
     s.p.GetErrors(example.get_exact(d), d+1, nsAllDerivs, d, L2H1Errors,
                   nullptr, &aux, 1, &pressure_space, computed_errors[d].data());
-    
+
+
+    int boundary_component_id;
+    double un_boundary_error = 0.;
+    double boundary_error_l2_squared = 0.;
+    double boundary_error_l2 = 0;
+#ifdef __2D__
+    const ParameterDatabase e_db = example.get_database();
+    int n_nitsche_bd = e_db["n_nitsche_bd"];
+  if (n_nitsche_bd)
+  {
+    std::vector<size_t> nitsche_id = e_db["nitsche_id"];
+      std::vector<double> nitsche_penalty = e_db["nitsche_penalty"];
+      for(int k = 0; k < nitsche_id.size(); k++)
+      {
+        boundary_component_id = nitsche_id[k];
+
+        double boundary_error_l2_u0[1], boundary_error_l2_u1[1];
+
+        velocity_components[0]->GetL2BoundaryError(example.get_bd(0),
+                &aux2, 1, &velocity_space,
+                boundary_error_l2_u0, boundary_component_id);
+        velocity_components[1]->GetL2BoundaryError(example.get_bd(1),
+                &aux2, 1, &velocity_space,
+                boundary_error_l2_u1, boundary_component_id);
+
+        boundary_error_l2_squared += boundary_error_l2_u0[0] + boundary_error_l2_u1[0];
+
+        // compute the L2-norm of the normal velocity error at the Nitsche boundaries
+        un_boundary_error += s.u.GetL2NormNormalComponentError(example.get_bd(0),
+                example.get_bd(1), boundary_component_id);
+      }
+      un_boundary_error = sqrt(un_boundary_error);
+      boundary_error_l2 = sqrt(boundary_error_l2_squared);
+  }
+#endif
+
+
 #ifdef _MPI
     int n_send = 2*(d+1)+1;
     double err_red[n_send]; //memory for global (across all processes) error
@@ -1005,24 +1045,34 @@ void NavierStokes<d>::output(int i)
       l2_error += computed_errors[i][0] * computed_errors[i][0];
       h1_error += computed_errors[i][1] * computed_errors[i][1];
     }
-    
+
     errors.at(0) = std::sqrt(l2_error);
     errors.at(1) = div_error;
     errors.at(2) = std::sqrt(h1_error);
     errors.at(3) = computed_errors[d][0];
     errors.at(4) = computed_errors[d][1];
+#ifdef __2D__
+    errors.at(6) = boundary_error_l2;
+    errors.at(7) = un_boundary_error;
+#endif
 
     //print errors
     if(my_rank == 0)
     {
+      Output::print("--------------------------------------------");
       Output::stat("NavierStokes", "Measured errors");
       Output::dash("L2(u)     : ", setprecision(14), errors.at(0));
       Output::dash("L2(div(u)): ", setprecision(14), errors.at(1));
       Output::dash("H1-semi(u): ", setprecision(14), errors.at(2));
       Output::dash("L2(p)     : ", setprecision(14), errors.at(3));
       Output::dash("H1-semi(p): ", setprecision(14), errors.at(4));
+#ifdef __2D__
+      Output::dash("L2(u)_boundary: ", setprecision(14), errors.at(6));
+      Output::dash("L2(u.n)_boundary: ", setprecision(14), errors.at(7));
+#endif
+      Output::print("--------------------------------------------");
     }
-    
+
     auto sdt(db["space_discretization_type"]);
     bool pspg = sdt.is("pspg");
     bool symm_gls = sdt.is("symm_gls");
@@ -1065,6 +1115,15 @@ void NavierStokes<d>::output(int i)
   
   for(int i = 0; i < d; ++i)
     delete velocity_components[i];
+
+  bool write_matrix = false;
+  if (write_matrix)
+  {
+    // create an output file containing the whole FE matrix. This can be read into Matlab using the Matlab function mmread.m
+    std::stringstream matrix_name;
+    matrix_name << "Coeff_Matrix_matrixmarket";
+    s.matrix.get_combined_matrix()->write(matrix_name.str());
+  }
 
   //do postprocessing step depending on what the example implements
   example.do_post_processing(*this);
@@ -1166,7 +1225,7 @@ void NavierStokes<d>::reset_residuals()
 }
 
 /* ************************************************************************* */
-template<int d> std::array<double, 6> NavierStokes<d>::get_errors() const
+template<int d> std::array<double, 8> NavierStokes<d>::get_errors() const
 {
   return errors;
 }
@@ -1212,10 +1271,10 @@ void NavierStokes<d>::assemble_boundary_terms()
 
   for(System_per_grid& s : this->systems)
   {
-    
+
     ///@todo this part of the code needs still to be implemented dimension-independent
 #ifdef __2D__
-    
+
     if (n_neumann_bd)
     {
       // Neumann BC
@@ -1225,7 +1284,7 @@ void NavierStokes<d>::assemble_boundary_terms()
       for (int k = 0; k < neumann_id.size(); k++)
       {
         Output::print<1>(" Neumann BC on boundary: ", neumann_id[k],
-			 " value = ",neumann_value[k] );
+                ", value = ",neumann_value[k] );
         const FESpace* v_space = s.velocity_space.get();
 
         BoundaryAssembling2D::rhs_g_v_n(s.rhs, v_space,
@@ -1245,26 +1304,28 @@ void NavierStokes<d>::assemble_boundary_terms()
       {
         const FESpace * v_space = s.velocity_space.get();
         const FESpace * p_space = s.pressure_space.get();
-        Output::print<1>(" Nitsche BC on boundary: ", nitsche_id[k]);
+        Output::print<1>(" Nitsche BC on boundary: ", nitsche_id[k], ", nitsche penalty: ", nitsche_penalty[k]);
         int sym_u = e_db["symmetric_nitsche_u"];
         int sym_p = e_db["symmetric_nitsche_p"];
+        double sigma = this->example.get_inverse_permeability();
+        double L_0 = db["L_0"];
 
         BoundaryAssembling2D::nitsche_bc(s.matrix, s.rhs,
                 v_space, p_space,
                 this->example.get_bd(0), this->example.get_bd(1),
-                nitsche_id[k], nitsche_penalty[k], effective_viscosity,
+                nitsche_id[k], nitsche_penalty[k],
+                effective_viscosity, sigma, L_0,
                 sym_u, sym_p);
-
       }
 
       double corner_stab = e_db["corner_stab"];
       if (corner_stab)
       {
         const TFESpace2D * v_space = s.velocity_space.get();
-        Output::print<1>(" Corner stabilization is applied, stab = ",corner_stab);
+        Output::print<1>(" Corner stabilization is applied, corner_stab = ",corner_stab);
         double sigma = this->example.get_inverse_permeability();
-        double L_0 = 0.1;// TDatabase::ParamDB->L_0; // TODO: db["L_0"];
-        corner_stab = corner_stab * (effective_viscosity + sigma * L_0 * L_0);
+        double L_0 = db["L_0"];
+        corner_stab = corner_stab * (effective_viscosity + sigma * L_0* L_0);
 
         BoundaryAssembling2D::matrix_and_rhs_corner_stabilization(s.matrix, s.rhs, v_space,
                 this->example.get_bd(0),
@@ -1273,7 +1334,7 @@ void NavierStokes<d>::assemble_boundary_terms()
                 corner_stab);
       }
     }
-    
+
 #else
 
     TCollection* coll = s.velocity_space.get()->GetCollection();
@@ -1294,7 +1355,6 @@ void NavierStokes<d>::assemble_boundary_terms()
         const TFESpace3D * v_space = s.velocity_space.get();
         ba.rhs_g_v_n(s.rhs, v_space, nullptr, boundaryFaceList,
                 (int) neumann_id[k], -1.*neumann_value[k]);
-        //ba.rhs_g_v_n(s.rhs_, v_space, nullptr, dummy, (int) neumann_id[k], -1.*neumann_value[k]);
       }
     }
     if (n_nitsche_bd)
@@ -1307,7 +1367,7 @@ void NavierStokes<d>::assemble_boundary_terms()
 
       for (int k = 0; k < nitsche_id.size(); k++)
       {
-        Output::print<1>(" Nitsche BC on boundary: ", nitsche_id[k]);
+        Output::print<1>(" Nitsche BC on boundary: ", nitsche_id[k], ", nitsche penalty: ", nitsche_penalty[k]);
         coll->get_face_list_on_component(nitsche_id[k], boundaryFaceList);
         Output::print<5>("boundaryFaceList.size(): ", boundaryFaceList.size() );
         const TFESpace3D * v_space = s.velocity_space.get();
@@ -1316,30 +1376,55 @@ void NavierStokes<d>::assemble_boundary_terms()
         double effective_viscosity = this->example.get_nu();
         int sym_u = e_db["symmetric_nitsche_u"];
         int sym_p = e_db["symmetric_nitsche_p"];
-
-        Output::print<5>("this->example_.get_bd(0): ", this->example.get_bd()[0]);
-        Output::print<5>("this->example_.get_bd(1): ", this->example.get_bd(1));
-        Output::print<5>("this->example_.get_bd(2): ", this->example.get_bd(2));
-
-        Output::print<5>("nitsche_id[k]: ", nitsche_id[k]);
-        Output::print<5>("nitsche_penalty[k]: ", nitsche_penalty[k]);
-        Output::print<5>("effective_viscosity: ", effective_viscosity);
-        Output::print<5>("sym_u: ", sym_u);
-        Output::print<5>("sym_p: ", sym_p);
+        double sigma = this->example.get_inverse_permeability();
+        double L_0 = db["L_0"];
 
         ba.nitsche_bc(s.matrix, s.rhs, v_space, p_space,
                 nullptr, nullptr, nullptr,
                 boundaryFaceList,
-                nitsche_id[k], nitsche_penalty[k], effective_viscosity,
+                nitsche_id[k], nitsche_penalty[k],
+                effective_viscosity,// sigma, L_0,
                 sym_u, sym_p);
       }
     }
-    
+
 #endif
-    
+
   }
 }
 
+/* ************************************************************************* */
+template <int d>
+void NavierStokes<d>::velocity_over_line(std::vector<double> start_point, std::vector<double> end_point, size_t number_of_points, std::array<FEFunction*, d> velocity_components)
+{
+  //----------------------------------------------------------------------------------
+  // The following output is made for the geometry channel.mesh or channel_simple.mesh
+  Output::print("The values the solution u1, u2 (, u3) takes (and the velocity magnitude) at the line [x1, x2] x [y1, y2] are saved in u_values_over_line.txt.");
+  std::ostringstream oss;
+  oss << "u_values_over_line.txt";
+
+  std::string var = oss.str();
+  std::ofstream velfile(var);
+
+#ifdef __2D__
+  double values_u1[3];
+  double values_u2[3];
+
+  for (int k = 0; k < number_of_points; k++)
+  {
+    double Y = start_point[1] + k * (end_point[1]-start_point[1])/(number_of_points-1);
+    double X = start_point[0] + k * (end_point[0]-start_point[0])/(number_of_points-1); //x[0];
+
+    // for (int i = 0; i < d; i++)
+    //{
+    velocity_components[0]->FindGradient(X, Y, values_u1);
+    velocity_components[1]->FindGradient(X, Y, values_u2);
+    //}
+    velfile << "(X, Y) = (" << X << ", " << Y << "); " << " " << " " << " " <<  " (u0, u1, |u|) = ( " << values_u1[0] << ", " << values_u2[0] << ", " << sqrt( values_u1[0] * values_u1[0] + values_u2[0] * values_u2[0]) << ")" << endl;
+  }
+#endif
+  velfile.close();
+}
 
 
 /* ************************************************************************* */

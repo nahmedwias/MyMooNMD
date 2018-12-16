@@ -243,6 +243,17 @@ class TFEFunction2D
         double *final_boundary_error_l2,
         bool rescale_by_h_E = false);
 
+    /** @brief calculate errors to a given function at the boundary (this is of interest, e.g., for the Nitsche method) without the global database
+      *
+      */
+     void GetL2BoundaryError(BoundValueFunct2D *Exact,
+         TAuxParam2D *Aux,
+         int n_fespaces, const TFESpace2D **fespaces,
+         double *final_boundary_error_l2,
+         int boundary_component_id,
+         bool rescale_by_h_E = false);
+
+
     /// @brief compute the L^2 norm on a particular boundary component.
     /// Negative values mean that all components are considered.
     double get_L2_norm_on_boundary(int boundary_component = -1) const;
