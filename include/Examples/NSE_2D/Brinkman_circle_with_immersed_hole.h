@@ -32,6 +32,8 @@
 // These should be reset when constructing the Example class
 double effective_viscosity = -1.;
 double sigma = -1.;
+std::vector<size_t> neumann_id;
+std::vector<size_t> nitsche_id;
 
 
 double u0 = 1.;
@@ -40,7 +42,7 @@ double r_0 = 0.05;
 
 void ExampleFile()
 {
-  Output::print<1>("Example: Brinkman_Radial_Flow_with_hole.h");
+  Output::print<1>("Example: Brinkman_circle_with_immersed_hole.h");
 }
 
 // ========================================================================
