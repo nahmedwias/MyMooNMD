@@ -203,8 +203,12 @@ class NavierStokes
     void reset_residuals();
     
     /// @brief return the computed errors (computed in output())
-    std::array<double, 6> get_errors() const;
-    
+    std::array<double, 8> get_errors() const;
+
+    /// @brief write a file containg the component-wise values of the velocity and its magnitude over the line [x1, x2] x [y1,y2]
+    void velocity_over_line(std::vector<double> start_point, std::vector<double> end_point, size_t number_of_points, std::array<FEFunction*, d> velocity_components);
+
+
   protected:
     
     /// @brief default copy constructor (useful in derived classes)
@@ -321,7 +325,7 @@ class NavierStokes
      * errors.at(4) is H1-semi). Finally, at errors[5] there is a natural norm
      * for pressure stabilized methods (such as PSPG or GLS).
      */
-    std::array<double, 6> errors;
+    std::array<double, 8> errors;
 
     /** @brief set the velocity and pressure orders
      *

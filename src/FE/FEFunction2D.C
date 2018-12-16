@@ -179,6 +179,106 @@ void TFEFunction2D::GetL2BoundaryError(BoundValueFunct2D *Exact,
   }
  }
 
+//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+/** Calculate L2-errors to a given function at the boundary (without the global database)*/
+void TFEFunction2D::GetL2BoundaryError(BoundValueFunct2D *Exact,
+                                       TAuxParam2D *Aux,
+                                       int n_fespaces,
+                                       const TFESpace2D **fespaces,
+                                       double *final_boundary_error_l2,
+                                       int boundary_component_id,
+                                       bool rescale_by_h_E)
+{
+  int *GlobalNumbers = FESpace2D->GetGlobalNumbers();
+  int *BeginIndex = FESpace2D->GetBeginIndex();
+  int *N_BaseFunct = TFEDatabase2D::GetN_BaseFunctFromFE2D();
+
+  // ########################################################################
+  // loop over all Nitsche edges
+  // ########################################################################
+  TCollection *Coll = fespaces[0]->GetCollection();  // all spaces use the same Coll
+
+  final_boundary_error_l2[0] = 0;
+
+    // Create a list of those boundary edges that are on the boundary component with given ID
+    std::vector<TBoundEdge*> boundaryEdgeList;
+    Coll->get_edge_list_on_component(boundary_component_id, boundaryEdgeList);
+
+    double boundary_error_l2_on_Component = 0;
+
+    for(size_t m = 0; m < boundaryEdgeList.size(); m++)
+    {
+      TBoundEdge *boundedge = boundaryEdgeList[m];
+      TBaseCell *cell = boundedge->GetNeighbour(0);
+      // get basis dimension and FE space data of the current cell
+      // Here it is assumed that only one local FE space is used for the hole mesh!
+      FE2D CurrentElement_FEID = FESpace2D->GetFE2D(0, cell);
+
+      BaseFunct2D *BaseFuncts = TFEDatabase2D::GetBaseFunct2D_IDFromFE2D();
+      // calculate all needed values and derivatives of the basis functions
+      BaseFunct2D BaseFunct = BaseFuncts[CurrentElement_FEID];
+      if(TFEDatabase2D::GetBaseFunct2D(BaseFunct)->GetBaseVectDim() > 1)
+      {
+        ErrMsg("The method "
+            << "TFEFunction2D::GetL2BoundaryErrors"
+            << "is not designed for vector valued functions");
+        OutPut("No errors were computed\n");
+        return;
+      }
+
+      int BaseVectDim = 1;
+      int joint_id = boundedge->get_index_in_neighbour(cell);
+      // get a quadrature formula good enough for the argument of the integral
+      int fe_degree = TFEDatabase2D::GetPolynomialDegreeFromFE2D(CurrentElement_FEID);
+      QuadFormula1D LineQuadFormula = TFEDatabase2D::GetQFLineFromDegree((TDatabase::ParamDB->INPUT_QUAD_RULE < 2*fe_degree)? 2*fe_degree : TDatabase::ParamDB->INPUT_QUAD_RULE);
+      std::vector<double> quadWeights, quadPoints;
+      BoundaryAssembling2D::get_quadrature_formula_data(quadPoints, quadWeights, LineQuadFormula);
+      // compute values of all basis functions and their first partial derivatives at all quadrature points
+      std::vector< std::vector<double> > uorig, u_dx_orig ,u_dy_orig;
+      BoundaryAssembling2D::get_original_values(CurrentElement_FEID, joint_id, cell, quadPoints, BaseVectDim, uorig, u_dx_orig, u_dy_orig, LineQuadFormula);
+
+      int N_ = N_BaseFunct[CurrentElement_FEID];
+
+      double FEFunctValues[MaxN_BaseFunctions2D];
+      int *DOF = GlobalNumbers + BeginIndex[cell->GetCellIndex()];
+      for(int l = 0; l < N_; l++)
+      {
+        FEFunctValues[l] = Values[DOF[l]];
+      }
+
+      double summing_boundary_error_l2_on_edge = 0;
+      double edge_length = boundedge->get_length();
+      double reference_edge_length = 2; // [-1,1] is the reference edge here
+
+      for(size_t j = 0; j < quadPoints.size(); j++)
+      {
+        double value = 0;
+        for(int l = 0; l < N_; l++)
+        {
+          value += FEFunctValues[l] * uorig[j][l]; // compute u_h|T = \sum \alpha_i \Phi_i
+        }
+        auto comp = boundedge->GetBoundComp();
+        int comp_ID = comp->GetID();
+        double t0, t1;
+        boundedge->GetParameters(t0, t1);
+        double t = t0 + 0.5 * (t1-t0) * (quadPoints[j]+1);
+        double ExactVal, Diff;
+        Exact(comp_ID, t, ExactVal);
+        Diff = ExactVal - value;
+
+        if(rescale_by_h_E)
+        {
+          summing_boundary_error_l2_on_edge += quadWeights[j] * edge_length/reference_edge_length * 1/edge_length * Diff * Diff;
+        }
+        else
+        {
+          summing_boundary_error_l2_on_edge += quadWeights[j] * edge_length/reference_edge_length * Diff * Diff;
+        }
+      }
+      boundary_error_l2_on_Component += summing_boundary_error_l2_on_edge;
+    }
+    final_boundary_error_l2[0] +=  boundary_error_l2_on_Component;
+ }
 
 //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 /** calculate errors to given function */
