@@ -2,9 +2,9 @@
  * Model for geothermal flow (geothermal plant with 2 wells)
  * 
  * Consider a rectangular domain (L1 x L2) with two small circles
- * of radius r_well at positions (xi,yi) and (xe,ye) (i=injection, e=extraction)
+ * of radius r_well at positions (xi, yi) and (xe, ye) (i=injection, e=extraction)
  * Both circles are physical boundaries but not resolved by the mesh
- * Instead, they are modeled as singulr source and sink
+ * Instead, they are modeled as singular source and sink
  * Parameters/BC
  * Q = incoming/outgoing flow at wells
  * |u| at wells = Q/(2*Pi*r_well)
@@ -18,6 +18,7 @@
 double effective_viscosity = -1.;
 double sigma = -1.;
 std::vector<size_t> neumann_id;
+std::vector<size_t> nitsche_id;
 
 // we consider a domain [0,10000]x[0,6000] (m)
 double Q = 150./3600.; // 150m^3/h
