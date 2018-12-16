@@ -55,6 +55,21 @@ namespace BoundaryAssembling2D
       double mult,
       bool rescale_by_h);
 
+  void rhs_uD_n_v_n(BlockVector &rhs,
+          const TFESpace2D *U_Space,
+          BoundValueFunct2D *given_boundary_data1,
+          BoundValueFunct2D *given_boundary_data2,
+          int boundary_component_id,
+          double mult,
+          bool rescale_by_h);
+
+  void rhs_uD_n_v_n(BlockVector &rhs,
+          const TFESpace2D *U_Space,
+          BoundValueFunct2D *given_boundary_data1,
+          BoundValueFunct2D *given_boundary_data2,
+          std::vector<TBoundEdge*> &edge,
+          double mult,
+          bool rescale_by_h);
 
   /** @brief assemble sum_{x_c in corner nodes}  jump(u \cdot n)(x_c) * jump(v \cdot n)](x_c)
    * with jump(u \cdot n)(x_c):= (u \cdot n_E - u \cdot n_E')(x_c) and the according rhs
@@ -258,7 +273,8 @@ namespace BoundaryAssembling2D
   void nitsche_bc(BlockFEMatrix &s_matrix,BlockVector &s_rhs,
 		  const TFESpace2D * v_space, const TFESpace2D *p_space,
 		  BoundValueFunct2D * U1, BoundValueFunct2D *U2,
-		  int bd_comp, double gamma, double mu,
+		  int bd_comp, double gamma,
+		  double mu, double sigma, double L_0,
 		  int sym_u, int sym_p);
   
   /** @brief Get the quadrature points and weights according to LineQuadFormula = Quadrature formula for specified degree. LineQuadFormula has to be set before the call of this function
