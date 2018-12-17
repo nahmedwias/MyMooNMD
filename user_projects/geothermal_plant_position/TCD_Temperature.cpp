@@ -76,7 +76,7 @@ void temperature_coefficients(int n_points, double *x, double *y,
   {
     //another approx. for domain [0, 10] x [0, 6]
     double r_well = 0.2; // 20cm
-    double epsDelta = 100*r_well;
+    double epsDelta = 50*r_well;
     double T_in = 303.15; //injection temperature  = 30 + 273.15; 
 
     
@@ -102,12 +102,12 @@ void temperature_coefficients(int n_points, double *x, double *y,
       magnitude *= cos(Pi*(y[i] - center_source[1])/epsDelta) + 1;
       magnitude /= 4.*epsDelta*epsDelta;
 
-      //coeffs[i][3] = magnitude; // reaction
-      //coeffs[i][4] = magnitude * T_in; // right-hand side
+      coeffs[i][3] = magnitude; // reaction
+      coeffs[i][4] = magnitude * T_in; // right-hand side
       
-      double penalty_factor = 1000.;
-      coeffs[i][3] = 1 * penalty_factor; // reaction
-      coeffs[i][4] = T_in * penalty_factor; // right-hand side*/
+      //double penalty_factor = 1000.;
+      //coeffs[i][3] = 1 * penalty_factor; // reaction
+      //coeffs[i][4] = T_in * penalty_factor; // right-hand side*/
     }
   }
 }
@@ -126,8 +126,13 @@ void TCD_Temperature<d>::assemble(const FEVectFunct& convection,
   double distance = x[0];
   auto u1 = convection.GetComponent(0);
   auto u2 = convection.GetComponent(1);
+;
+  
+  
+
   std::array<TFEFunction2D*, 2> fe_functions_pointers{{u1, u2}};
 
+  
   auto& s = this->TCD_Temperature<d>::systems.front();
 
   LocalAssembling_type la_type = LocalAssembling_type::TCDStiffRhs;

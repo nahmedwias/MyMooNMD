@@ -267,7 +267,7 @@ void approximate_delta_functions(int n_points, double *x, double *y,
     // Note: this function should be consistent with the used domain/mesh
     double r_well = 0.2; // 20cm
     double epsDelta = 25*r_well;
-    double Qin = 150./3600.;
+    double Qin = 150./300.; // m^3/h thickness = 1000m
 
     
     std::vector<double> singular_x,singular_y,singular_sign;
@@ -449,6 +449,16 @@ void GeothermalPlantsPositionOptimization<d>::apply_control_and_solve(const doub
     if((tss.current_step_-1) % TDatabase::TimeDB->STEPS_PER_IMAGE == 0)
       tcd_primal.output();
 
+    // Temperature at production well
+    auto temperature = tcd_primal.get_function();
+    double x_production_well = 5500;
+    double delta_x = 300;
+    double y_production_well = 3000;
+    double temperature_values[3];
+    temperature.FindGradient(x_production_well - delta_x,y_production_well,temperature_values);
+    Output::print(" *** T(well) = ",temperature_values[0]);
+    
+    
   }
   // ======================================================================
   Output::print("MEMORY: ", setw(10), GetMemory()/(1048576.0), " MB");
@@ -477,6 +487,7 @@ const
 
   double alpha = db["alpha_cost"];
 
+  
   /*
   //New LB 19.11.18 START
   double pressure_prod[1], pressure_inj[1], temperature_prod[1];
@@ -548,16 +559,6 @@ const
   };
   */
 
-  // 3Wells
-  //  double functional_value = 0.5 * alpha * distance;
-  // functional_value += 0.5 * cost_functional[0] / distance;
-  /*double functional_value = (1000/1000001)  * alpha * distance; //0.5 * alpha * distance;
-  functional_value +=  (1000/1000001)  * cost_functional[0] / distance; //0.5 * cost_functional[0] / distance;
-  if(n_calls > 1)
-  {
-    Output::print("difference to previous functional ", std::setprecision(14),
-            current_J_hat - functional_value);
-	    }*/
   
   double functional_value = 1.;
   delete u1;
