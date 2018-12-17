@@ -953,7 +953,7 @@ void NavierStokes<d>::output(int i)
     outputWriter.write(i);
   
 #ifdef __2D__
-  velocity_over_line({0.5, 0.}, {0.5, 1.}, 81, velocity_components);
+ // velocity_over_line({0.5, 0.}, {0.5, 1.}, 81, velocity_components);
 #endif
 
   // measure errors to known solution
