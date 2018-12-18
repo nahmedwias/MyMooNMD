@@ -153,6 +153,11 @@ class NavierStokes
     { return this->systems.front().p; }
     FEFunction & get_pressure()
     { return this->systems.front().p; }
+
+    const FEFunction & get_exact_pressure() const
+    { return this->systems.front().p_exact; }
+    FEFunction & get_exact_pressure()
+    { return this->systems.front().p_exact; }
     
     const FESpace & get_velocity_space() const
     { return *this->systems.front().velocity_space.get(); }
@@ -203,8 +208,12 @@ class NavierStokes
     void reset_residuals();
     
     /// @brief return the computed errors (computed in output())
-    std::array<double, 6> get_errors() const;
-    
+    std::array<double, 8> get_errors() const;
+
+    /// @brief write a file containg the component-wise values of the velocity and its magnitude over the line [x1, x2] x [y1,y2]
+    void velocity_over_line(std::vector<double> start_point, std::vector<double> end_point, size_t number_of_points, std::array<FEFunction*, d> velocity_components);
+
+
   protected:
     
     /// @brief default copy constructor (useful in derived classes)
@@ -238,6 +247,10 @@ class NavierStokes
       FEVectFunct u;
       /** @brief Finite Element function for pressure */
       FEFunction p;
+
+      /** @brief Finite Element function for exact pressure (if available)*/
+      FEFunction p_exact;
+      double *values_exact_p;
       
       /** @brief constructor in mpi case
        * @param[in] example The current example.
@@ -321,7 +334,7 @@ class NavierStokes
      * errors.at(4) is H1-semi). Finally, at errors[5] there is a natural norm
      * for pressure stabilized methods (such as PSPG or GLS).
      */
-    std::array<double, 6> errors;
+    std::array<double, 8> errors;
 
     /** @brief set the velocity and pressure orders
      *

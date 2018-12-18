@@ -1362,30 +1362,35 @@ void BoundaryAssembling3D::nitsche_bc(BlockFEMatrix &s_matrix, BlockVector &s_rh
     int bd_comp, double gamma, double mu,
     int sym_u, int sym_p)
 {
-  cout<<"okkkk 0"<<endl;
+
+  if (TDatabase::ParamDB->NSTYPE != 14)
+  {
+    Output::print("WARNING BoundaryAssembling2D::nitsche_bc(..): The NSTYPE is not equal to 14. This might result in errors related to bad access.");
+  }
+
   // gamma/h (u,v)
   // rescale local integral by edge values
   matrix_u_v(s_matrix, v_space, boundaryFaceList, bd_comp, gamma*mu, true);
-cout<<"okkkk 1"<<endl;
+
   // gamma/h (uD,v) [rhs]
   // rescale local integral by edge values
   rhs_uD_v(s_rhs, v_space, U1, U2, U3, boundaryFaceList, bd_comp, gamma*mu, true);
-cout<<"okkkk 2"<<endl;
+
   // - (mu grad(u)n,v)
   matrix_gradu_n_v(s_matrix, v_space, boundaryFaceList, bd_comp, (-1.) * mu);  // OK
-cout<<"okkkk 3"<<endl;
+
   // - sign_u * (u, mu grad(v)n) [sign_u=1: symmetric, -1: skew-symmetric]
   matrix_gradv_n_u(s_matrix, v_space, boundaryFaceList, bd_comp, (-1.) * sym_u * mu);
-  cout<<"okkkk 4"<<endl;
+
   // - sign_u * (uD,mu grad(v)n) [rhs]
   rhs_gradv_n_uD(s_rhs, v_space, U1, U2, U3, boundaryFaceList, bd_comp, (-1) * sym_u * mu );
-  cout<<"okkkk 5"<<endl;
+
   // (pn,v)
   matrix_p_v_n(s_matrix, v_space, p_space, boundaryFaceList, bd_comp, 1.);
-  cout<<"okkkk 6"<<endl;
+
   // sign_p * (u,qn)
   matrix_q_u_n(s_matrix, v_space, p_space, boundaryFaceList, bd_comp, sym_p);
-  cout<<"okkkk 7"<<endl;
+
   // sign_p * (uD,qn) [rhs]
   rhs_q_uD_n(s_rhs, v_space, p_space, U1, U2, U3, boundaryFaceList, bd_comp, sym_p);
 }

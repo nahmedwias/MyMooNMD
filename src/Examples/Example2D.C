@@ -69,23 +69,23 @@ ParameterDatabase Example2D::default_example_database()
 	 " easily changed in the file " __FILE__,0u,999u);
 
   db.add("neumann_value", {0.,0.,0.,0.,0.,0.,0.,0.,0.,0.},
-	 " Neumann values to be assigned to the respetive boundary."
-	 " Warning: the length must be the same as the one given in neumann_boundary_id");
+	 " Neumann values to be assigned to the respective boundary."
+	 " Warning: the length must be the same as the one given in neumann_boundary_id",-100.,100.);
 
   // Nitsche BC
   db.add("n_nitsche_bd",0u,
 	 " Number of boundary components where Nitsche BC are imposed"
 	 " This variable is used as a preliminary flag. The number of Nitsche BC"
-	 " must match the length of the parameter nitsche_id",0u,9u);
+	 " must match the length of the parameter nitsche_id", 0u,9u);
 
   db.add("nitsche_id", {1u,1u,1u,1u,1u,1u,1u,1u,1u,1u},
 	 "Component ID of boundaries where the Nitsche method is used to "
-	 " impose (weak) Dirichlet BC."
+	 " impose (weak) essential BC."
 	 " Attention: at the moment max. 10 boundaries are allowed. This can be "
 	 " easily changed in the file " __FILE__,0u,999u);
   
   db.add("nitsche_penalty", {0.,0.,0.,0.,0.,0.,0.,0.,0.,0.},
-	 " Nitsche penalty (gamma) to be imposed on each boundary");
+	 " Nitsche penalty (gamma) to be imposed on each boundary",-100.,100.);
 
 
   db.add("symmetric_nitsche_u",-1,

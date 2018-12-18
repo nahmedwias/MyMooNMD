@@ -1314,16 +1314,16 @@ ParameterDatabase ParameterDatabase::default_nonlinit_database()
 
 ParameterDatabase ParameterDatabase::default_output_database()
 {
-	  ParameterDatabase db("default ParMooN output control parameters database");
+  ParameterDatabase db("default ParMooN output control parameters database");
 
-	  db.add("output_write_vtk", false,
-			  "This parameter can control, whether an output method"
-			  "of a system class will produce VTK output or not.",
-			  {true,false});
+  db.add("output_write_vtk", false,
+	 "This parameter can control, whether an output method"
+	 "of a system class will produce VTK output or not.",
+	 {true,false});
     
-    db.add("output_write_vtu", false,
+  db.add("output_write_vtu", false,
 			  "This parameter can control, whether an output method"
-			  "of a system class will produce VTU output or not.",
+	 "of a system class will produce VTU output or not.",
 			  {true,false});
 
 	  db.add("output_write_case", false,
@@ -1357,6 +1357,12 @@ ParameterDatabase ParameterDatabase::default_output_database()
 		"desirable behavior. Otherwise, it behaves as if the "
 		"initial time was 0, and starts the numbering at 0, leading "
 		"sometimes to overwritting existing files.", 
+		 {true,false});
+
+	  db.add("output_write_exact_solution", false,
+		 " If set to true, this parameter allows to write the exact solution "
+		 " into the vtk or case output file. "
+		 " Note: the exact solution must be specified in the example file",
 		 {true,false});
 	  
 	  return db;
