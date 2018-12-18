@@ -8,8 +8,10 @@
 
 // initialize physical parameters
 // These should be reset when constructing the Example class
-double effective_viscosity = -1;
-double sigma = -1;
+double effective_viscosity = -1.;
+double sigma = -1.;
+std::vector<size_t> neumann_id;
+std::vector<size_t> nitsche_id;
 
 void ExampleFile()
 {
@@ -52,23 +54,16 @@ void BoundCondition(int i, double Param, BoundCond &cond)
 {
   cond = DIRICHLET; // default
 
+  // set Neumann BC
   if (i == 1)
     cond = NEUMANN;
 
-  for (int j = 0; j < TDatabase::ParamDB->n_neumann_boundary; j++)
-  {
-    if (i == TDatabase::ParamDB->neumann_boundary_id[j])
-    {
-      cond = NEUMANN;
-      return;
-    }
-  }
 
-  for (int j = 0; j < TDatabase::ParamDB->n_nitsche_boundary; j++)
+  // set Nitsche BC
+  for (int j = 0; j < nitsche_id.size(); j++)
   {
-    if (i == TDatabase::ParamDB->nitsche_boundary_id[j])
+    if (i == nitsche_id[j])
     {
-      // Todo
       cond = DIRICHLET_WEAK;
       return;
     }
@@ -79,6 +74,7 @@ void U1BoundValue(int BdComp, double Param, double &value)
 {
   // loop to impose Neumann boundary conditions
   // Since we are using the Neumann boundary condition via boundaryAssembling, the boundvalue here has to be always zero!!!!
+ /*
   for (int j = 0; j < TDatabase::ParamDB->n_neumann_boundary; j++)
   {
     if ( BdComp == TDatabase::ParamDB->neumann_boundary_id[j])
@@ -96,6 +92,8 @@ void U1BoundValue(int BdComp, double Param, double &value)
       return;
     }
   }
+  */
+
   double UMAX;
   // loop to impose (strong or weak) Dirichlet
   switch(BdComp)
@@ -163,10 +161,6 @@ void LinCoeffs(int n_points, double *x, double *y,
 
     //g(x,y):  RHS for mass conservation equation
     coeffs[i][3] = 0.;
-
-    // stabilization parameters
-    ///coeffs[i][7] = TDatabase::ParamDB->equal_order_stab_weight_PkPk;
-    ///coeffs[i][8] = TDatabase::ParamDB->grad_div_stab_weight;
   }
 }
 

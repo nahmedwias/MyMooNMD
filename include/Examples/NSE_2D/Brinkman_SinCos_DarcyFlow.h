@@ -18,6 +18,8 @@
 // initialize physical parameters
 double effective_viscosity = -1;
 double sigma = -1;
+std::vector<size_t> neumann_id;
+std::vector<size_t> nitsche_id;
 
 void ExampleFile()
 {
@@ -59,18 +61,18 @@ void BoundCondition(int i, double Param, BoundCond &cond)
   cond = DIRICHLET; // default
 
   // set Neumann BC
-  for (int j = 0; j < TDatabase::ParamDB->n_neumann_boundary; j++)
+  for (int j = 0; j < neumann_id.size(); j++)
   {
-    if (i == TDatabase::ParamDB->neumann_boundary_id[j])
+    if (i == neumann_id[j])
     {
       cond = NEUMANN;
       return;
     }
   }
   // set Nitsche BC
-  for (int j = 0; j < TDatabase::ParamDB->n_nitsche_boundary; j++)
+  for (int j = 0; j < nitsche_id.size(); j++)
   {
-    if (i == TDatabase::ParamDB->nitsche_boundary_id[j])
+    if (i == nitsche_id[j])
     {
       cond = DIRICHLET_WEAK;
       return;
@@ -137,14 +139,11 @@ void LinCoeffs(int n_points, double *x, double *y,
     coeffs[i][4] = sigma;
 
     // (f1,f2)(x,y): RHS for momentum equation
-    coeffs[i][1] = 0;   //-coeffs[i][5]*val_u1[3] + val_p[1] + (coeffs[i][4]/coeffs[i][6])*val_u1[0];   // f1
-    coeffs[i][2] = 0;   //-coeffs[i][5]*val_u2[3] + val_p[2] + (coeffs[i][4]/coeffs[i][6])*val_u2[0];   // f2
+    coeffs[i][1] = 0.; //-coeffs[i][0] * val_u1[3] + val_p[1] + coeffs[i][4] * val_u1[0];   // f1
+    coeffs[i][2] = 0.; //-coeffs[i][0] * val_u2[3] + val_p[2] + coeffs[i][4] * val_u2[0];   // f2
 
     //g(x,y):  RHS for mass conservation equation
     coeffs[i][3] = val_u1[1] + val_u2[2]; // g
-
-    //coeffs[i][7] = TDatabase::ParamDB->equal_order_stab_weight_PkPk;
-    //coeffs[i][8] = TDatabase::ParamDB->grad_div_stab_weight;
   }
 }
 

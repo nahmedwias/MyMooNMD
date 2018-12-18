@@ -626,6 +626,109 @@ double TFEVectFunct2D::GetL2NormNormalComponentError(BoundValueFunct2D *Exact_u1
   return final_boundary_error_l2[0];
 }
 
+//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+/** calculate L2-norm of (u-u_h).n-error without the global database */
+double TFEVectFunct2D::GetL2NormNormalComponentError(BoundValueFunct2D *Exact_u1, BoundValueFunct2D *Exact_u2, int boundary_component_id, bool rescale_by_h_E)
+{
+  int *N_BaseFunct = TFEDatabase2D::GetN_BaseFunctFromFE2D();
+  double *Values0 = Values;
+  double *Values1 = Values+Length;
+  int *GlobalNumbers = FESpace2D->GetGlobalNumbers();
+  int *BeginIndex = FESpace2D->GetBeginIndex();
+
+  TCollection *Coll = FESpace2D->GetCollection();
+
+  // Initialize Pointer (necessary: Resource allocation is initialization Paradigm)
+  double *ExactVal_u1[MaxN_QuadPoints_2D], *ExactVal_u2[MaxN_QuadPoints_2D];
+  double *aux1 = new double [MaxN_QuadPoints_2D * 4]{0.};
+  double *aux2 = new double [MaxN_QuadPoints_2D * 4]{0.};
+  for(int ii = 0; ii < MaxN_QuadPoints_2D; ii++)
+  {
+    ExactVal_u1[ii] = aux1 + ii*4;
+    ExactVal_u2[ii] = aux2 + ii*4;
+  }
+
+  double FEFunctValues0[MaxN_BaseFunctions2D], FEFunctValues1[MaxN_BaseFunctions2D];
+  double final_boundary_error_l2[1];
+  final_boundary_error_l2[0] = 0;
+
+    // Create a list of those boundary edges that are on the boundary component with given ID
+    std::vector<TBoundEdge*> boundaryEdgeList;
+    Coll->get_edge_list_on_component(boundary_component_id, boundaryEdgeList);
+
+    double boundary_error_l2_on_Component = 0;
+
+    for(size_t m = 0; m < boundaryEdgeList.size(); m++)
+    {
+      TBoundEdge *boundedge = boundaryEdgeList[m];
+      TBaseCell *cell = boundedge->GetNeighbour(0);
+      FE2D CurrentElement_FEID = FESpace2D->GetFE2D(0, cell);
+
+      int joint_id = boundedge->get_index_in_neighbour(cell);
+      // get a quadrature formula good enough for the argument of the integral
+      int fe_degree = TFEDatabase2D::GetPolynomialDegreeFromFE2D(CurrentElement_FEID);
+      QuadFormula1D LineQuadFormula = TFEDatabase2D::GetQFLineFromDegree((TDatabase::ParamDB->INPUT_QUAD_RULE < 2*fe_degree)? 2*fe_degree : TDatabase::ParamDB->INPUT_QUAD_RULE);
+      std::vector<double> quadWeights, quadPoints;
+      BoundaryAssembling2D::get_quadrature_formula_data(quadPoints, quadWeights, LineQuadFormula);
+      // compute values of all basis functions and their first partial derivatives at all quadrature points
+      std::vector< std::vector<double> > uorig, u_dx_orig ,u_dy_orig;
+      int BaseVectDim = 1;
+      BoundaryAssembling2D::get_original_values(CurrentElement_FEID, joint_id, cell, quadPoints, BaseVectDim, uorig, u_dx_orig, u_dy_orig, LineQuadFormula);
+
+      // calculate all needed derivatives of this FE function
+      int N_Bf = N_BaseFunct[CurrentElement_FEID];
+
+      int *DOF = GlobalNumbers + BeginIndex[cell->GetCellIndex()];
+      for(int l = 0; l < N_Bf; l++)
+      {
+        FEFunctValues0[l] = Values0[DOF[l]];
+        FEFunctValues1[l] = Values1[DOF[l]];
+      }
+
+      double summing_boundary_error_l2_on_edge = 0;
+      double edge_length = boundedge->get_length();
+      double reference_edge_length = 2; // [-1,1] is the reference edge here↲
+      // normal vector to this boundary (normalized)
+      double n1, n2;
+      boundedge->get_normal(n1, n2);
+
+      for(size_t j = 0; j < quadPoints.size(); j++)
+      {
+        double value = 0;
+        double value_u1 = 0;
+        double value_u2 = 0;
+        double exact_val = 0;
+        for(int l = 0; l < N_Bf; l++)
+        { // compute u_h|T = \sum \alpha_i \Phi_i
+          value_u1 += FEFunctValues0[l] * uorig[j][l];
+          value_u2 += FEFunctValues1[l] * uorig[j][l];
+        }
+        value += value_u1 * n1 + value_u2 * n2;
+
+        auto comp = boundedge->GetBoundComp();
+        int comp_ID = comp->GetID();
+        double t0, t1;
+        boundedge->GetParameters(t0, t1);
+        double t = t0 + 0.5 * (t1-t0) * (quadPoints[j]+1);
+        Exact_u1(comp_ID, t, ExactVal_u1[j][0]);
+        Exact_u2(comp_ID, t, ExactVal_u2[j][0]);
+        exact_val += ExactVal_u1[j][0] * n1 + ExactVal_u2[j][0] * n2;
+
+        if(rescale_by_h_E)
+        {
+          summing_boundary_error_l2_on_edge += quadWeights[j] * edge_length/reference_edge_length * 1/edge_length  * (exact_val - value) * (exact_val - value);
+        }
+        else
+        {
+          summing_boundary_error_l2_on_edge += quadWeights[j] * edge_length/reference_edge_length * (exact_val - value) * (exact_val - value);
+        }
+      }
+      boundary_error_l2_on_Component += summing_boundary_error_l2_on_edge;
+    }
+    final_boundary_error_l2[0] =  boundary_error_l2_on_Component;
+
+  return final_boundary_error_l2[0];
+}
 
 //==========================================================================
 /** calculate L2-norm of divergence error - written by Laura Blank 03.01.18*/

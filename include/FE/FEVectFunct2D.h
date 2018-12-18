@@ -95,6 +95,9 @@ class TFEVectFunct2D : public TFEFunction2D
     /** calculate L2-norm of (u \cdot n)-error at the boundary */
     double GetL2NormNormalComponentError(BoundValueFunct2D *Exact_u1, BoundValueFunct2D *Exact_u2, bool rescale_by_h_E = false);
 
+    /** calculate L2-norm of (u \cdot n)-error at the boundary */
+    double GetL2NormNormalComponentError(BoundValueFunct2D *Exact_u1, BoundValueFunct2D *Exact_u2,  int boundary_component_id, bool rescale_by_h_E = false);
+
     /** write the solution into a data file **/
     void WriteSol(double t,
         std::string directory=std::string("."),

@@ -52,7 +52,7 @@ double timeC = 0;
 void compare(const NavierStokes<3>& nse3d, std::array<double, int(5)> errors,
              double tol)
 {
-  std::array<double, 6> computed_errors = nse3d.get_errors();
+  std::array<double, 8> computed_errors = nse3d.get_errors();
 
   // check the L2-error of the velcoity
   if( fabs(computed_errors[0]-errors[0]) > tol ||

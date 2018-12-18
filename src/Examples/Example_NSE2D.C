@@ -57,6 +57,13 @@ namespace brinkman_two_wells
 {
 #include "NSE_2D/Brinkman_two_wells.h"
 }
+namespace brinkman_expo_poiseuille
+{
+#include "NSE_2D/Brinkman_Exponential_Poiseuille.h"
+}
+
+
+
 
 //============================================================================
 
@@ -254,6 +261,9 @@ case 7:
       // Set dimensionless viscosity
       brinkman_sincos_darcyflow::effective_viscosity = get_nu();
       brinkman_sincos_darcyflow::sigma = get_inverse_permeability();
+
+      brinkman_sincos_darcyflow::neumann_id = get_neumann_id();
+      brinkman_sincos_darcyflow::nitsche_id = get_nitsche_id();
       brinkman_sincos_darcyflow::ExampleFile();
       break;
   case 8:
@@ -278,6 +288,10 @@ case 7:
       // Set dimensionless viscosity
       brinkman_discacciatiflow::effective_viscosity = get_nu();
       brinkman_discacciatiflow::sigma = get_inverse_permeability();
+
+      // boundary conditions
+      brinkman_discacciatiflow::neumann_id = get_neumann_id();
+      brinkman_discacciatiflow::nitsche_id = get_nitsche_id();
       brinkman_discacciatiflow::ExampleFile();
       break;
 
@@ -334,6 +348,8 @@ case 7:
     brinkman_circle_with_immersed_hole::sigma = get_inverse_permeability();
     
     // boundary conditions
+    brinkman_circle_with_immersed_hole::neumann_id = get_neumann_id();
+    brinkman_circle_with_immersed_hole::nitsche_id = get_nitsche_id();
     brinkman_circle_with_immersed_hole::ExampleFile();
     break;
 
@@ -362,9 +378,39 @@ case 7:
     
     // boundary conditions
     brinkman_two_wells::neumann_id = get_neumann_id();
+    brinkman_two_wells::nitsche_id = get_nitsche_id();
     brinkman_two_wells::ExampleFile();
     break;
     
+  case 12:
+      /** exact_solution */
+      exact_solution.push_back( brinkman_expo_poiseuille::ExactU1 );
+      exact_solution.push_back( brinkman_expo_poiseuille::ExactU2 );
+      exact_solution.push_back( brinkman_expo_poiseuille::ExactP );
+
+      /** boundary condition */
+      boundary_conditions.push_back( brinkman_expo_poiseuille::BoundCondition );
+      boundary_conditions.push_back( brinkman_expo_poiseuille::BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+
+      /** boundary values */
+      boundary_data.push_back( brinkman_expo_poiseuille::U1BoundValue );
+      boundary_data.push_back( brinkman_expo_poiseuille::U2BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+
+      /** coefficients */
+      problem_coefficients = brinkman_expo_poiseuille::LinCoeffs;
+
+      // Set dimensionless viscosity
+      brinkman_expo_poiseuille::effective_viscosity = get_nu();
+      brinkman_expo_poiseuille::sigma = get_inverse_permeability();
+
+      // boundary conditions
+      brinkman_expo_poiseuille::neumann_id = get_neumann_id();
+      brinkman_expo_poiseuille::nitsche_id = get_nitsche_id();
+      brinkman_expo_poiseuille::ExampleFile();
+      break;
+
   default:
     ErrThrow("Unknown Navier-Stokes example!");
   }
@@ -420,6 +466,7 @@ double Example_NSE2D::get_nu() const
   case 9:
   case 10:
   case 11:
+  case 12:
     {
       nu = this->example_database["effective_viscosity"];
       break;
