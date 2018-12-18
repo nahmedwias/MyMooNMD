@@ -77,15 +77,14 @@ endif()
 include(cmake/external_libraries.cmake)
 
 # turn on all warnings
-IF(CMAKE_BUILD_TOOL MATCHES "make")
-  IF(NOT CMAKE_CXX_FLAGS MATCHES "-Wall")
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-attributes")
-  ENDIF(NOT CMAKE_CXX_FLAGS MATCHES "-Wall")
-  IF(NOT CMAKE_C_FLAGS MATCHES "-Wall")
-    SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wno-attributes")
-  ENDIF(NOT CMAKE_C_FLAGS MATCHES "-Wall")
-ENDIF(CMAKE_BUILD_TOOL MATCHES "make")
-
+add_compile_options(
+  # clang/GCC warnings
+  $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:-Wall>
+  $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:-Wextra>
+  $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:-pedantic>
+  $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:-Wno-attributes>
+  # MSVC warnings
+  $<$<CXX_COMPILER_ID:MSVC>:"/W4">)
 
 
 # Determine precompiler definitions ("PCD") depending on the chosen _PARALLEL_TYPE
