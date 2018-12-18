@@ -13,9 +13,9 @@ constexpr double surrounding_temperature = 348.15; //=75 + 273.15; //150.;
 void doublet_ux_solution(double x, double y, double *values)
 {
 
-  double r_0 = 50.; // epsilon used for approximate delta function
+  double r_0 = 25.; // epsilon used for approximate delta function
   double r_1 = 3000.; // minimal distance well-boundary
-  double sigma = 10000.;
+  double sigma = 1e11;
   double Qin = 150./3600.;
   double u0 = Qin/(2.*Pi*r_0);
   double xi = 4500.;
@@ -71,10 +71,13 @@ void doublet_uy_solution(double x, double y, double *values)
 
 void doublet_p_solution(double x, double y, double *values)
 {
-  double r_0 = 50.; // epsilon used for approximate delta function
+  double r_well = 0.2; // 20cm
+  double H = 1000.;
+  double Volume = r_well*r_well*Pi*H;
+  double Qin = 150./3600.; // m^3/h thickness = 1000m
+  double r_0 = 5.; // epsilon used for approximate delta function
   double r_1 = 3000.; // minimal distance well-boundary
-  double sigma = 10000.;
-  double Qin = 150./3600.;
+  double sigma = 1e11;
   double u0 = Qin/(2.*Pi*r_0);
   double xi = 4500.;
   double yi = 3000.;
@@ -84,18 +87,34 @@ void doublet_p_solution(double x, double y, double *values)
   double x_1 = x - xi;
   double y_1 = y - yi;
   double r2_1 = x_1*x_1 + y_1*y_1;
-  values[0] = -sigma * u0 * r_0 * 0.5 * log( r2_1/(r_1*r_1) );     
-  values[1] = -sigma * u0 * r_0 * x_1/r2_1;
-  values[2] = -sigma * u0 * r_0 * y_1/r2_1;
 
+  if (r2_1<r_0*r_0)
+  {
+    values[0] = 0.;
+    values[1] = 0.;
+    values[2] = 0.;
+  } else
+  {
+    values[0] = -sigma * Qin/H * 0.5 * log( r2_1/(r_1*r_1) );     
+    values[1] = -sigma * Qin/H * x_1/r2_1;
+    values[2] = -sigma * Qin/H * y_1/r2_1;
+  }
     
   double x_2 = x - xe;
   double y_2 = y - ye;
   double r2_2 = x_2*x_2 + y_2*y_2;
-  values[0] -= -sigma * u0 * r_0 * 0.5 * log( r2_2/(r_1*r_1) );     
-  values[1] -= -sigma * u0 * r_0 * x_2/r2_2;
-  values[2] -= -sigma * u0 * r_0 * y_2/r2_2;
-
+  if (r2_2<r_0*r_0)
+  {
+    values[0] = 0.;
+    values[1] = 0.;
+    values[2] = 0.;
+  } else
+  {
+    values[0] -= -sigma * Qin/H * 0.5 * log( r2_2/(r_1*r_1) );     
+    values[1] -= -sigma * Qin/H * x_2/r2_2;
+    values[2] -= -sigma * Qin/H * y_2/r2_2;
+  }
+  
   values[3] = 0.;
 }
 #endif

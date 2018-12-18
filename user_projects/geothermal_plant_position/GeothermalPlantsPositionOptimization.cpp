@@ -267,7 +267,9 @@ void approximate_delta_functions(int n_points, double *x, double *y,
     // Note: this function should be consistent with the used domain/mesh
     double r_well = 0.2; // 20cm
     double epsDelta = 25*r_well;
-    double Qin = 150./300.; // m^3/h thickness = 1000m
+    double H = 1000.;
+    double Volume = r_well*r_well*Pi*H;
+    double Qin = 150./3600./Volume; // m^3/h thickness = 1000m
 
     
     std::vector<double> singular_x,singular_y,singular_sign;
