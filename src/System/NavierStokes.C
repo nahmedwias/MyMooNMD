@@ -1304,7 +1304,7 @@ void NavierStokes<d>::assemble_boundary_terms()
 
       for (int k = 0; k < neumann_id.size(); k++)
       {
-        Output::print<1>(" Neumann BC on boundary: ", neumann_id[k],
+        Output::print<2>(" Neumann BC on boundary: ", neumann_id[k],
                 ", value = ",neumann_value[k] );
         const FESpace* v_space = s.velocity_space.get();
 
@@ -1325,7 +1325,7 @@ void NavierStokes<d>::assemble_boundary_terms()
       {
         const FESpace * v_space = s.velocity_space.get();
         const FESpace * p_space = s.pressure_space.get();
-        Output::print<1>(" Nitsche BC on boundary: ", nitsche_id[k], ", nitsche penalty: ", nitsche_penalty[k]);
+        Output::print<2>(" Nitsche BC on boundary: ", nitsche_id[k], ", nitsche penalty: ", nitsche_penalty[k]);
         int sym_u = e_db["symmetric_nitsche_u"];
         int sym_p = e_db["symmetric_nitsche_p"];
         double sigma = this->example.get_inverse_permeability();
@@ -1343,7 +1343,7 @@ void NavierStokes<d>::assemble_boundary_terms()
       if (corner_stab)
       {
         const TFESpace2D * v_space = s.velocity_space.get();
-        Output::print<1>(" Corner stabilization is applied, corner_stab = ",corner_stab);
+        Output::print<2>(" Corner stabilization is applied, corner_stab = ",corner_stab);
         double sigma = this->example.get_inverse_permeability();
         double L_0 = db["L_0"];
         corner_stab = corner_stab * (effective_viscosity + sigma * L_0* L_0);
@@ -1371,7 +1371,7 @@ void NavierStokes<d>::assemble_boundary_terms()
       std::vector<TBaseCell*> dummy;
       for (int k = 0; k < neumann_id.size(); k++)
       {
-        Output::print<1>(" Neumann BC on boundary: ", neumann_id[k]);
+        Output::print<2>(" Neumann BC on boundary: ", neumann_id[k]);
         coll->get_face_list_on_component(neumann_id[k], boundaryFaceList);
         const TFESpace3D * v_space = s.velocity_space.get();
         ba.rhs_g_v_n(s.rhs, v_space, nullptr, boundaryFaceList,
@@ -1388,7 +1388,7 @@ void NavierStokes<d>::assemble_boundary_terms()
 
       for (int k = 0; k < nitsche_id.size(); k++)
       {
-        Output::print<1>(" Nitsche BC on boundary: ", nitsche_id[k], ", nitsche penalty: ", nitsche_penalty[k]);
+        Output::print<2>(" Nitsche BC on boundary: ", nitsche_id[k], ", nitsche penalty: ", nitsche_penalty[k]);
         coll->get_face_list_on_component(nitsche_id[k], boundaryFaceList);
         Output::print<5>("boundaryFaceList.size(): ", boundaryFaceList.size() );
         const TFESpace3D * v_space = s.velocity_space.get();

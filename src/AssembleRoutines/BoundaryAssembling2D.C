@@ -597,8 +597,6 @@ void BoundaryAssembling2D::rhs_uD_n_v_n(BlockVector &rhs,
         value2 = 0.0;
       }
 
-      cout << "value1, value_2: "<<  value1 << ", " << value2 << endl;
-
       // mapping from local(cell) DOF to global DOF
       int *DOF = GlobalNumbers + BeginIndex[cell->GetCellIndex()]; //BeginIndex[i];
 
@@ -735,7 +733,7 @@ void BoundaryAssembling2D::matrix_and_rhs_corner_stabilization(BlockFEMatrix &M,
                 {
                   xc.push_back(x0_E1);
                   yc.push_back(y0_E1);
-                  Output::print("Detected a pair of corner edges with corner (xc,yc) = (", xc[0], ", ", yc[0],").");
+                  Output::print<4>("Detected a pair of corner edges with corner (xc,yc) = (", xc[0], ", ", yc[0],").");
 
                   int locdof_corner_1, locdof_corner_2;
                   find_cornerDofs_in_boundarycells(xc, yc, U_Space, boundedge_1, boundedge_2, locdof_corner_1, locdof_corner_2);
@@ -784,7 +782,7 @@ void BoundaryAssembling2D::matrix_and_rhs_corner_stabilization(BlockFEMatrix &M,
                 {
                   xc.push_back(x1_E1);
                   yc.push_back(y1_E1);
-                  Output::print<1>("Detected a pair of corner edges with corner (xc,yc) = (", xc[0], ", ", yc[0],").");
+                  Output::print<4>("Detected a pair of corner edges with corner (xc,yc) = (", xc[0], ", ", yc[0],").");
 
                   int locdof_corner_1, locdof_corner_2;
                   find_cornerDofs_in_boundarycells(xc, yc, U_Space, boundedge_1, boundedge_2, locdof_corner_1, locdof_corner_2);
@@ -1145,6 +1143,7 @@ void BoundaryAssembling2D::matrix_gradu_n_v(BlockFEMatrix &M,
           double u1_dy = uyorig[k][l2];
           double u2_dx = u1_dx; // u1 and u2 component have the same FE space
           double u2_dy = u1_dy; // u1 and u2 component have the same FE space
+
 
           // (see the note about blocks at the beginning of the function)
           blocks[0]->add( test_DOF, ansatz_DOF, scale_factor * v1 * u1_dx * n1 ); // A11
