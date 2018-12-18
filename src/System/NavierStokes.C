@@ -115,14 +115,7 @@ NavierStokes<d>::System_per_grid::System_per_grid (
                   solution.length(0), d);
   p = FEFunction(pressure_space.get(), "p", "p", solution.block(d),
                  solution.length(d));
-
-
-  // initialize variables for storing exact solution (FE functions)
-  values_exact_p = new double[solution.length(d)];
-  p_exact = FEFunction(pressure_space.get(), "p_exact", "p_exact",
-		       values_exact_p,solution.length(d));
-
- 
+  
 #ifdef _MPI
   //print some information
   velocity_space->get_communicator().print_info();
@@ -229,9 +222,27 @@ NavierStokes<d>::NavierStokes(const TDomain& domain,
   outputWriter.add_fe_vector_function(&this->get_velocity());
   outputWriter.add_fe_function(&this->get_pressure());
 
-  if (db["output_write_exact_solution"])
+  if(db["output_write_exact_solution"])
   {
-    outputWriter.add_fe_function(&this->get_exact_pressure());
+    // initialize variables for storing exact solution (FE functions)
+    solution_exact = BlockVector(this->get_solution());
+    u_exact = FEVectFunct(this->systems.front().velocity_space.get(), "u_exact",
+                          "u_exact", solution_exact.block(0),
+                          solution_exact.length(0), d);
+    p_exact = FEFunction(this->systems.front().pressure_space.get(), "p_exact",
+                         "p_exact", solution_exact.block(d),
+                         solution_exact.length(d));
+    // Interpolating the exact solution
+    for(int i = 0; i < d; ++i)
+    {
+      auto ui = u_exact.GetComponent(i);
+      ui->Interpolate(example.get_exact(i));
+      delete ui;
+    }
+    p_exact.Interpolate(example.get_exact(d));
+    p_exact.PrintMinMax(std::string("p_exact"));
+    outputWriter.add_fe_vector_function(&u_exact);
+    outputWriter.add_fe_function(&p_exact);
   }
   
   output_problem_size_info();
@@ -898,14 +909,6 @@ void NavierStokes<d>::solve()
   // project pressure if necessary
   if(s.matrix.pressure_projection_enabled())
     s.p.project_into_L20();
-
-  // interpolate exact solution
-  if (db["output_write_exact_solution"])
-  {
-    Output::print(" Interpolating the exact solution (pressure)");
-    s.p_exact.Interpolate(example.get_exact(d));
-    s.p_exact.PrintMinMax(std::string("p_exact"));    
-  }
 }
 
 /* ************************************************************************* */
