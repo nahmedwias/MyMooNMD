@@ -78,7 +78,7 @@ void TQuadFormula3D::
 #ifdef __3D__
 void TQuadFormula3D::FindLocalQuadFormula3D
         (int N_LocalUsedElements, FE3D *LocalUsedElements,
-         QuadFormula2D &qf1, QuadFormula3D &qf2)
+         QuadFormula2D &, QuadFormula3D &qf2)
 {
   int i, MaxPolynomialDegree, PolynomialDegree;
   BF3DRefElements RefElement;

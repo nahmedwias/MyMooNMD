@@ -92,7 +92,7 @@ void analytic_coefficient_function(double x, double y, double * values)
 * A corresponding FEFunction2D is constructed via interpolate(analytic_coefficient_function)
 *  for each refinement step and then it is used in the assemble routine
 *  */
-void analytic_coefficient_function(double x, double y, double * values)
+void analytic_coefficient_function(double, double y, double * values)
 {
   if (y <= 1.5)
   {
@@ -139,7 +139,7 @@ void analytic_coefficient_function(double x, double y, double * values)
 // =======================================================================
 // main program
 // =======================================================================
-int main(int argc, char* argv[])
+int main(int, char* argv[])
 {
 	Output::print(" ");
 	Output::print("###################################################################");

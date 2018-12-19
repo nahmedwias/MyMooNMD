@@ -162,7 +162,7 @@ bool check(TDomain & domain, const std::list<FE2D>& elements)
 
 #ifdef __3D__
 // check the properties on a given mesh and given elements
-bool check(TDomain & domain, const std::list<FE3D>& elements)
+bool check(TDomain &, const std::list<FE3D>& elements)
 {
   // call TFE3D::CheckNFandBF on all these finite elements
   for(auto e : elements)
@@ -216,7 +216,7 @@ bool check(TDomain & domain, const std::list<FE3D>& elements)
 
 
 
-int main(int argc, char* argv[])
+int main(int, char**)
 {
 #ifdef __2D__
   //  declaration of databases

@@ -10,10 +10,6 @@
 
 #include <Mapper.h>
 
-#ifndef nullptr
-#define nullptr 0
-#endif
-
 // MapTriReg0: map tri, reg, (0,0)
 static const int DatMapTriReg0RefVerts[] = {0,2,1,5,4,3};
 static const int DatMapTriReg0RefEdges[] = {5,4,3,2,1,0,7,6,8};

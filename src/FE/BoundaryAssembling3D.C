@@ -91,14 +91,14 @@ void BoundaryAssembling3D::rhs_g_v_n(BlockVector &rhs,
 void BoundaryAssembling3D::rhs_g_v_n(BlockVector &rhs,
 				     const TFESpace3D *U_Space,
 				     BoundValueFunct3D *given_boundary_data,
-				     std::vector<TBaseCell*> &boundaryCells,
+				     std::vector<TBaseCell*> &,
 				     int componentID,
 				     double mult)
 {  
   // now we loop always over the whole collection: inefficient!
   TCollection* coll = U_Space->GetCollection();
 
-  for(size_t i = 0; i < coll->GetN_Cells(); i++)
+  for(int i = 0; i < coll->GetN_Cells(); i++)
   {
     TBaseCell* cell = coll->GetCell(i); //boundaryCells[i];
 
@@ -846,13 +846,13 @@ void BoundaryAssembling3D::rhs_gradv_n_uD(BlockVector &rhs,
    //   cout << "cell->GetCellIndex(): "<< cell->GetCellIndex() << endl;
       //cout << "cell->GetBd_Part(): " << cell->GetBd_Part() << endl;
       //cout << "Face_ID: "<< boundface->get_index_in_neighbour(cell) << endl;
-      TVertex *ver0;
-      for (int j = 0; j < 4; j++)
-      {
-        ver0 = cell->GetVertex(j);
-   //     cout << ver0->GetX() << ", "<< ver0->GetY() << ", " << ver0->GetZ() <<endl;
-
-      }
+//       TVertex *ver0;
+//       for (int j = 0; j < 4; j++)
+//       {
+//         ver0 = cell->GetVertex(j);
+//    //     cout << ver0->GetX() << ", "<< ver0->GetY() << ", " << ver0->GetZ() <<endl;
+// 
+//       }
       //TCollection *coll = U_Space->GetCollection();
       //coll->writeMesh("3DTest.mesh");
 
@@ -1049,6 +1049,9 @@ void BoundaryAssembling3D::getQuadratureDataIncludingFirstDerivatives(
   case 4:
     // quadrilateral face
     FaceQuadFormula = TFEDatabase3D::GetQFQuadFromDegree(2*fe_degree);
+    break;
+  default:
+    ErrThrow("wrong number of face vertices ", nFaceVertices);
     break;
   }
   int N_Points;
@@ -1420,6 +1423,9 @@ void BoundaryAssembling3D::getQuadratureData(const TFESpace3D *fespace, TBaseCel
   case 4:
     // quadrilateral face
     FaceQuadFormula = TFEDatabase3D::GetQFQuadFromDegree(2*fe_degree);
+    break;
+  default:
+    ErrThrow("wrong number of face vertices ", nFaceVertices);
     break;
   }
 

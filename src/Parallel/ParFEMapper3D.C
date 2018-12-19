@@ -196,7 +196,7 @@ TParFEMapper3D::TParFEMapper3D()
 
 }
 
-static int GetLocalIndex(int N, int *array, int val)
+static int GetLocalIndex(int, int *array, int val)
 {
  int m=0;
  while(array[m] != val)
@@ -870,8 +870,10 @@ if(TDatabase::ParamDB->Par_P4){
   delete [] all_GlobalDofNo;                  all_GlobalDofNo            = nullptr;
   delete [] GlobalDofNo;                      GlobalDofNo                = nullptr;
   delete [] GlobalDofNo_interface;            GlobalDofNo_interface      = nullptr;
-  for(i=0;i<size;i++) 
+  for(i=0;i<size;i++)
+  {
     delete [] Master_Table[i];                Master_Table[i]            = nullptr;
+  }
   delete [] N_ranks_per_interface_dofs;       N_ranks_per_interface_dofs = nullptr;     
   delete [] N_allocated_masters;              N_allocated_masters        = nullptr;
   delete [] temp_arr;                         temp_arr                   = nullptr;
@@ -1530,8 +1532,8 @@ if(TDatabase::ParamDB->Par_P5 == 1)
   if(rank == 0)
     printf("Total Time Taken for mapping the dofs = %lf\n",end_time-temp_time);
   
-    if(rank==TDatabase::ParamDB->Par_P0)
-      printf("\n################       Mapping for slave-master dofs and halo_1, halo_2 dofs done !!!    ################\n");
+  if(rank==TDatabase::ParamDB->Par_P0)
+    printf("\n################       Mapping for slave-master dofs and halo_1, halo_2 dofs done !!!    ################\n");
   
   if(rank == 0)
       printf("total time taken by the ConstructDofMap_light() = %lf\n",MPI_Wtime()-start_time);  

@@ -61,7 +61,7 @@ std::vector< std::vector<int> > target_n_gmres_steps =
 // =======================================================================
 // main program
 // =======================================================================
-int main(int argc, char* argv[])
+int main(int, char**)
 {
     //  declaration of databases
     TDatabase Database;

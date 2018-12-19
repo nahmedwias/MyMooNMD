@@ -3471,7 +3471,7 @@ void LocalProjectionCoarseGridQ0(TFEFunction2D *uh,
 }
 
 
-void LocalProjectionCrossWindCoarseGridQ0(TDomain *Domain, int mg_level,
+void LocalProjectionCrossWindCoarseGridQ0(TDomain *, int,
             TFEFunction2D *uh,
             TFEFunction2D *uh_proj,
             CoeffFct2D Coeff,
@@ -3705,7 +3705,7 @@ void LocalProjectionCrossWindCoarseGridQ0(TDomain *Domain, int mg_level,
 }
 
 // Adaptive post processing basd on Friedhelm Schiweck talk at MAFELAP 09 - Sashi
-void AdaptivePostProcess(TFEFunction2D *FeFunction, double *PostSol, bool DirichletBC)
+void AdaptivePostProcess(TFEFunction2D *FeFunction, double *PostSol, bool)
 {
   int i, j, k, l, CoarseOrder, N_Points, N_U;
   int N_Cells, N_CoarseDOF, N_DOF;

@@ -291,7 +291,7 @@ namespace BoundaryAssembling2D
       std::vector< std::vector<double> > &u01,
       const QuadFormula1D& LineQuadFormula);
 
-};
+}
 
 #endif
 

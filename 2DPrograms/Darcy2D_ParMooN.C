@@ -15,7 +15,7 @@
 // =======================================================================
 // main program
 // =======================================================================
-int main(int argc, char* argv[])
+int main(int, char* argv[])
 {
   double t_start = GetTime();
   //  declaration of database, you need this in every program

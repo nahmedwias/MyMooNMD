@@ -9,7 +9,7 @@
 
 using namespace std;
 
-int main(int argc, char* argv[])
+int main(int, char* argv[])
 {
   TDatabase Database(argv[1]);
   TFEDatabase2D FEDatabase2D;

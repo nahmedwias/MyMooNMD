@@ -44,7 +44,7 @@ class Iteration_multigrid : public IterativeMethod<LinearOperator, Vector>,
                                             const Vector & rhs,
                                             Vector & solution) override final;
     
-    void update(const LinearOperator& A) override final
+    void update(const LinearOperator&) override final
     { mg_->update(); };
     void update() override final
     { mg_->update(); };

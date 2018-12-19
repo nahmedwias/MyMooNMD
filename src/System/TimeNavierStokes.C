@@ -186,7 +186,7 @@ TimeNavierStokes<d>::TimeNavierStokes(const TDomain& domain,
                n_multigrid_levels, " geometric grids but got", n_grids,".");
     }
     // remove not needed coarser grid from list of collections
-    for(int i = n_multigrid_levels; i < n_grids; ++i)
+    for(size_t i = n_multigrid_levels; i < n_grids; ++i)
     {
       collections.pop_back();
     }

@@ -21,7 +21,7 @@ void ExampleFile()
 }
 
 // Unknown exact solution - put to zero.
-void Exact(double x, double y, double *values)
+void Exact(double, double, double *values)
 {
   values[0] = 0;
   values[1] = 0;
@@ -30,7 +30,7 @@ void Exact(double x, double y, double *values)
 }
 
 // kind of boundary condition
-void BoundCondition(int BdComp, double t, BoundCond &cond)
+void BoundCondition(int BdComp, double, BoundCond &cond)
 {
 	// numbering of boundary components starts with 0 at the y==0 bdry
 	// and proceeds counterclockwise for UnitSquare.PRM
@@ -55,7 +55,7 @@ void BoundValue(int BdComp, double Param, double &value)
 		value = 0;
 }
 
-void BilinearCoeffs(int n_points, double *x, double *y,
+void BilinearCoeffs(int n_points, double *, double *,
         double **parameters, double **coeffs)
 {
   for(int i = 0; i < n_points; i++)

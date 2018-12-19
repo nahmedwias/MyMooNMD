@@ -184,7 +184,7 @@ NavierStokes<d>::NavierStokes(const TDomain& domain,
       ErrThrow("Wrong number of grids for multigrid! I was expecting ",
                n_geo_multigrid_levels, " geometric grids but only got ", n_grids,".");
     // remove not needed coarser grid from list of collections
-    for(int i = n_geo_multigrid_levels; i < n_grids; ++i)
+    for(size_t i = n_geo_multigrid_levels; i < n_grids; ++i)
     {
       collections.pop_back();
     }
@@ -995,18 +995,18 @@ void NavierStokes<d>::output(int i)
                   nullptr, &aux, 1, &pressure_space, computed_errors[d].data());
 
 
+#ifdef __2D__
     int boundary_component_id;
     double un_boundary_error = 0.;
     double boundary_error_l2_squared = 0.;
     double boundary_error_l2 = 0;
-#ifdef __2D__
     const ParameterDatabase e_db = example.get_database();
     int n_nitsche_bd = e_db["n_nitsche_bd"];
   if (n_nitsche_bd)
   {
     std::vector<size_t> nitsche_id = e_db["nitsche_id"];
       std::vector<double> nitsche_penalty = e_db["nitsche_penalty"];
-      for(int k = 0; k < nitsche_id.size(); k++)
+      for(unsigned int k = 0; k < nitsche_id.size(); k++)
       {
         boundary_component_id = nitsche_id[k];
 
@@ -1257,7 +1257,7 @@ template<int d> std::array<double, 8> NavierStokes<d>::get_errors() const
 /* ************************************************************************* */
 template <int d>
 void natural_error_norm_infsup_stabilizations(int N_Points,
-                                              std::array<double*, d> xyz,
+                                              std::array<double*, d>,
                                               double *AbsDetjk,
                                               const double *Weights, double hK,
                                               double **Der, double **Exact,
@@ -1305,7 +1305,7 @@ void NavierStokes<d>::assemble_boundary_terms()
       std::vector<size_t> neumann_id = e_db["neumann_id"];
       std::vector<double> neumann_value = e_db["neumann_value"];
 
-      for (int k = 0; k < neumann_id.size(); k++)
+      for(unsigned int k = 0; k < neumann_id.size(); k++)
       {
         Output::print<2>(" Neumann BC on boundary: ", neumann_id[k],
                 ", value = ",neumann_value[k] );
@@ -1324,7 +1324,7 @@ void NavierStokes<d>::assemble_boundary_terms()
       std::vector<double> nitsche_penalty = e_db["nitsche_penalty"];
       double effective_viscosity = this->example.get_nu();
 
-      for (int k = 0; k < nitsche_id.size(); k++)
+      for (unsigned int k = 0; k < nitsche_id.size(); k++)
       {
         const FESpace * v_space = s.velocity_space.get();
         const FESpace * p_space = s.pressure_space.get();
@@ -1372,7 +1372,7 @@ void NavierStokes<d>::assemble_boundary_terms()
       std::vector<double> neumann_value = e_db["neumann_value"];
 
       std::vector<TBaseCell*> dummy;
-      for (int k = 0; k < neumann_id.size(); k++)
+      for (size_t k = 0; k < neumann_id.size(); k++)
       {
         Output::print<2>(" Neumann BC on boundary: ", neumann_id[k]);
         coll->get_face_list_on_component(neumann_id[k], boundaryFaceList);
@@ -1389,7 +1389,7 @@ void NavierStokes<d>::assemble_boundary_terms()
       std::vector<size_t> nitsche_id = e_db["nitsche_id"];
       std::vector<double> nitsche_penalty = e_db["nitsche_penalty"];
 
-      for (int k = 0; k < nitsche_id.size(); k++)
+      for (size_t k = 0; k < nitsche_id.size(); k++)
       {
         Output::print<2>(" Nitsche BC on boundary: ", nitsche_id[k], ", nitsche penalty: ", nitsche_penalty[k]);
         coll->get_face_list_on_component(nitsche_id[k], boundaryFaceList);
@@ -1400,8 +1400,8 @@ void NavierStokes<d>::assemble_boundary_terms()
         double effective_viscosity = this->example.get_nu();
         int sym_u = e_db["symmetric_nitsche_u"];
         int sym_p = e_db["symmetric_nitsche_p"];
-        double sigma = this->example.get_inverse_permeability();
-        double L_0 = db["L_0"];
+        //double sigma = this->example.get_inverse_permeability();
+        //double L_0 = db["L_0"];
 
         ba.nitsche_bc(s.matrix, s.rhs, v_space, p_space,
                 nullptr, nullptr, nullptr,
@@ -1419,7 +1419,9 @@ void NavierStokes<d>::assemble_boundary_terms()
 
 /* ************************************************************************* */
 template <int d>
-void NavierStokes<d>::velocity_over_line(std::vector<double> start_point, std::vector<double> end_point, size_t number_of_points, std::array<FEFunction*, d> velocity_components)
+void NavierStokes<d>::velocity_over_line(
+  std::vector<double> start_point, std::vector<double> end_point,
+  size_t number_of_points, std::array<FEFunction*, d> velocity_components)
 {
   //----------------------------------------------------------------------------------
   // The following output is made for the geometry channel.mesh or channel_simple.mesh
@@ -1434,7 +1436,7 @@ void NavierStokes<d>::velocity_over_line(std::vector<double> start_point, std::v
   double values_u1[3];
   double values_u2[3];
 
-  for (int k = 0; k < number_of_points; k++)
+  for (unsigned int k = 0; k < number_of_points; k++)
   {
     double Y = start_point[1] + k * (end_point[1]-start_point[1])/(number_of_points-1);
     double X = start_point[0] + k * (end_point[0]-start_point[0])/(number_of_points-1); //x[0];

@@ -13,7 +13,7 @@ void ExampleFile()
 // ========================================================================
 // exact solution
 // ========================================================================
-void ExactU1(double x, double y, double z, double *values)
+void ExactU1(double, double, double z, double *values)
 {
   values[0] = 2*z-1;
   values[1] = 0;
@@ -22,7 +22,7 @@ void ExactU1(double x, double y, double z, double *values)
   values[4] = 0;
 }
 
-void ExactU2(double x, double y, double z, double *values)
+void ExactU2(double, double y, double, double *values)
 {
   values[0] = y;
   values[1] = 0;
@@ -31,7 +31,7 @@ void ExactU2(double x, double y, double z, double *values)
   values[4] = 0;
 }
 
-void ExactU3(double x, double y, double z, double *values)
+void ExactU3(double, double, double z, double *values)
 {
   values[0] = z;
   values[1] = 0;
@@ -39,7 +39,7 @@ void ExactU3(double x, double y, double z, double *values)
   values[3] = 1;
   values[4] = 0;
 }
-void ExactP(double x, double y, double z, double *values)
+void ExactP(double, double, double, double *values)
 {
   values[0] = 0;
   values[1] = 0;
@@ -51,7 +51,7 @@ void ExactP(double x, double y, double z, double *values)
 // ========================================================================
 // boundary conditions
 // ========================================================================
-void BoundCondition(double x, double y, double z, BoundCond &cond)  
+void BoundCondition(double x, double, double, BoundCond &cond)  
 {
   if(std::abs(x) <= tol) // (x == 0.0)
     cond = NEUMANN;
@@ -117,8 +117,8 @@ void UNBoundValue(double x, double y, double z, double &value)
 // ========================================================================
 // coefficients for Stokes form: A, B1, B2, f1, f2
 // ========================================================================
-void LinCoeffs(int n_points, double *X, double *Y, double *Z,
-               double **parameters, double **coeffs)
+void LinCoeffs(int n_points, double *X, double *Y, double *Z, double **,
+               double **coeffs)
 {
   const double eps = 1./TDatabase::ParamDB->SIGMA_PERM;
   double u1[5], u2[5], u3[5], p[5];

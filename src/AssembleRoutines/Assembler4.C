@@ -621,7 +621,7 @@ void Assembler4::add_local_to_global_matrix(int i,
 void Assembler4::add_local_to_global_rhs(int i,
     std::vector<const TFESpace2D*>& ferhs,
     double **LocRhs,
-    const Example2D& example)
+    const Example2D&)
 {
   TBaseCell *cell = this->Coll->GetCell(i);
   int *N_BaseFunct = TFEDatabase2D::GetN_BaseFunctFromFE2D();
@@ -902,7 +902,7 @@ void Assembler4::handle_hanging_nodes(std::vector<const TFESpace2D*>& ferhs)
 
 
 //================================================================================
-Assembler4::~Assembler4(){};
+Assembler4::~Assembler4(){}
 
 
 

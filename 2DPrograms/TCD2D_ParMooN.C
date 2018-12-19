@@ -21,7 +21,7 @@
 
 using namespace std;
 
-int main(int argc, char* argv[])
+int main(int, char* argv[])
 {
   double t_start = GetTime();
   TDatabase Database(argv[1]);

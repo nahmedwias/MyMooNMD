@@ -15,7 +15,7 @@ void ExampleFile()
 // ========================================================================
 // exact solution
 // ========================================================================
-void ExactU1(double x, double y, double *values)
+void ExactU1(double x, double, double *values)
 {
     values[0] = sin(Pi*x);          //u1
     values[1] = Pi*cos(Pi*x);       //u1_x
@@ -44,7 +44,7 @@ void ExactP(double x, double y, double *values)
 // boundary conditions (Parametrisierung des Randes); Param \in [0,1]
 // ========================================================================
 
-void BoundCondition(int i, double Param, BoundCond &cond)
+void BoundCondition(int i, double, BoundCond &cond)
 {
     cond = DIRICHLET; // default
     
@@ -253,8 +253,7 @@ void U2BoundValue(int BdComp, double Param, double &value)
 // ========================================================================
 // coefficients for Stokes form: A, B1, B2, f1, f2
 // ========================================================================
-void LinCoeffs(int n_points, double *X, double *Y,
-               double **parameters, double **coeffs)
+void LinCoeffs(int n_points, double *X, double *Y, double **, double **coeffs)
 {
   double val1[4];
   double val2[4];

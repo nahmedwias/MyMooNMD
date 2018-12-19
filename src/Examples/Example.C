@@ -13,7 +13,7 @@ Example::Example(std::vector<BoundaryCondition>&& bc,
 
 /* ************************************************************************* */
 /** a method to be used for the unit square, used in multiple examples */
-bool is_unit_square(const TDomain& domain)
+bool is_unit_square(const TDomain&)
 {
   ErrThrow("to be implemented");
   //   if(bdesc.dimension() != 2)
@@ -140,7 +140,7 @@ bool is_unit_square(const TDomain& domain)
 }
 
 /* ************************************************************************* */
-bool Example::check_suitable_domain(const TDomain& domain) const
+bool Example::check_suitable_domain(const TDomain&) const
 {
   Output::warn<>("Example::check_suitable_domain", "not yet implemented");
   

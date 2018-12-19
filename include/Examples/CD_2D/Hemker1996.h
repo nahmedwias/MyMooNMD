@@ -9,7 +9,7 @@ void ExampleFile()
 }
 
 // exact solution
-void Exact(double x, double y, double *values)
+void Exact(double, double, double *values)
 {
   values[0] = 0;
   values[1] = 0;
@@ -17,7 +17,7 @@ void Exact(double x, double y, double *values)
   values[3] = 0;
 }
 
-void BoundCondition(int BdComp, double t, BoundCond &cond)
+void BoundCondition(int BdComp, double, BoundCond &cond)
 {
     switch(BdComp)
     {
@@ -33,7 +33,7 @@ void BoundCondition(int BdComp, double t, BoundCond &cond)
 
 
 // value of boundary condition
-void BoundValue(int BdComp, double Param, double &value)
+void BoundValue(int BdComp, double, double &value)
 {
   switch(BdComp)
   {
@@ -49,12 +49,12 @@ void BoundValue(int BdComp, double Param, double &value)
 }
 
 // initial conditon
-void InitialCondition(double x,  double y, double *values)
+void InitialCondition(double, double, double *values)
 {
   values[0] = 0;
 }
 
-void BoundConditionAdjoint(int BdComp, double t, BoundCond &cond)
+void BoundConditionAdjoint(int BdComp, double, BoundCond &cond)
 {
     switch(BdComp)
     {
@@ -70,13 +70,13 @@ void BoundConditionAdjoint(int BdComp, double t, BoundCond &cond)
 
 
 // value of boundary condition
-void BoundValueAdjoint(int BdComp, double Param, double &value)
+void BoundValueAdjoint(int, double, double &value)
 {
     value = 0;
 }
 
-void BilinearCoeffs(int n_points, double *x, double *y,
-        double **parameters, double **coeffs)
+void BilinearCoeffs(int n_points, double *, double *, double **,
+                    double **coeffs)
 {
   double eps=1/TDatabase::ParamDB->RE_NR;
   double angle = 0, v1, v2;
@@ -120,7 +120,7 @@ void ComputeExtremalValues(int N, double *sol, double  *values)
 }
  
 /** compute curve of the outflow boundary */
-void ComputeOutflowBoundary(int level, TFEFunction2D *ufct)
+void ComputeOutflowBoundary(int , TFEFunction2D *ufct)
 {
   double h, x=4,values[3],y;
   int i, bound_points = 401;

@@ -753,8 +753,7 @@ void LocalAssembling<d>::GetLocalForms(int N_Points, const double *weights,
 }
 //========================================================================
 template<int d>
-void LocalAssembling<d>::GetParameters(int n_points,
-                                      TBaseCell *cell, int cellnum,
+void LocalAssembling<d>::GetParameters(int n_points, TBaseCell *, int cellnum,
                                       std::array<double*, d> coordinates)
 {
   if(N_ParamFct == 0)
@@ -1405,7 +1404,7 @@ void LocalAssembling<d>::set_parameters_for_tnse( LocalAssembling_type la_type)
 }
 //========================================================================
 template<>
-void LocalAssembling<2>::set_parameters_for_tnse_smagorinsky( LocalAssembling_type type)
+void LocalAssembling<2>::set_parameters_for_tnse_smagorinsky(LocalAssembling_type)
 {
   ErrThrow("smagorinsky is not supported in 2D yet");
 }

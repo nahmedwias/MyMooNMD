@@ -102,7 +102,7 @@ double BoundaryData::get_data(const TJoint& joint, double s, double time) const
 #ifdef __3D__
   ErrThrow("BoundaryData::get_data(const Joint&, double, double) is only for "
            "2D");
-  TBoundFace* bd_joint; // to avoid compiler errors
+  TBoundFace* bd_joint = (TBoundFace*)&joint; // to avoid compiler errors
 #endif // 3D
 #ifdef __2D__
   TBoundEdge* bd_joint = (TBoundEdge*)&joint;
@@ -158,7 +158,7 @@ double BoundaryData::get_data(const TJoint& joint, std::pair<double, double> ts,
 #ifdef __2D__
   ErrThrow("BoundaryData::get_data(const Joint&, std::pair<double,double>, "
            "double) is only for 3D");
-  TBoundEdge* bd_joint; // to avoid compiler errors
+  TBoundEdge* bd_joint = (TBoundEdge*)&joint; // to avoid compiler errors
 #endif // 2D
 #ifdef __3D__
   TBoundFace* bd_joint = (TBoundFace*)&joint;

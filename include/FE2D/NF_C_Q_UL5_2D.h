@@ -327,7 +327,7 @@ static double NF_C_Q_UL5_2D_W37[] = {
 0.1238672550527024714183509e-1
 };
 
-void NF_C_Q_UL5_2D_EvalAll(TCollection *Coll, TBaseCell *Cell,
+void NF_C_Q_UL5_2D_EvalAll(TCollection *, TBaseCell *,
                            const double *PointValues, double *Functionals)
 {
   // boundary functionals
@@ -980,13 +980,13 @@ void NF_C_Q_UL5_2D_EvalAll(TCollection *Coll, TBaseCell *Cell,
                    +NF_C_Q_UL5_2D_W37[33]*PointValues[53]
                    +NF_C_Q_UL5_2D_W37[34]*PointValues[54]
                    +NF_C_Q_UL5_2D_W37[35]*PointValues[55];
-};
+}
 
-void NF_C_Q_UL5_2D_EvalEdge(TCollection *Coll, TBaseCell *Cell, int Joint,
+void NF_C_Q_UL5_2D_EvalEdge(TCollection *, TBaseCell *, int,
                             const double *PointValues, double *Functionals)
 {
   memcpy(Functionals, PointValues, 6*SizeOfDouble);
-};
+}
 
 /*
 TNodalFunctional2D(NodalFunctional2D id,

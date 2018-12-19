@@ -65,7 +65,7 @@ class TJoint
     // Methods
     /** return type */
     JointType GetType() const
-    { return ID; } const
+    { return ID; }
     
     void ChangeType(JointType New_ID)
      {ID = New_ID;}

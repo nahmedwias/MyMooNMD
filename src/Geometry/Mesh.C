@@ -84,7 +84,7 @@ void Mesh::readFromFile(std::string filename)
     ifile >> dimension;
   
   Output::print<4>("Read dimension: ",dimension);
-  if (dimension==-1)
+  if(dimension == 1 || dimension > 3)
   {
     Output::print<1>(" ** ERROR: I could not read the mesh dimension. Check the .mesh file **");
     exit(1);

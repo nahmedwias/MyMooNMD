@@ -432,8 +432,7 @@ void THexaTrilinear::GetOrigValues(BaseFunct3D BaseFunct, int N_Points,
 void THexaTrilinear::GetOrigValues(int N_Sets, BaseFunct3D *BaseFuncts,
                                    int N_Points, const double *xi,
                                    const double *eta, const double *zeta,
-                                   QuadFormula3D QuadFormula,
-                                   bool *Needs2ndDer)
+                                   QuadFormula3D QuadFormula, bool *)
 {
   int i,j,k;
   double **refvaluesD000, **origvaluesD000;
@@ -1013,9 +1012,8 @@ void THexaTrilinear::GetTangentVectors(int j, double p1, double p2,
 } // end THexaTrilinear::GetTangentVectors
 
 
-void THexaTrilinear::PiolaMapOrigFromRef(double xi, double eta, double zeta,
-                                         int N_Functs, const double *refD000,
-                                         double *origD000)
+void THexaTrilinear::PiolaMapOrigFromRef(double, double, double, int,
+                                         const double *, double *)
 {
   ErrMsg("Piola Map for HexaTrilinear reference map not yet implemented");
   exit(1);

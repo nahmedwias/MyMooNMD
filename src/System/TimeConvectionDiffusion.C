@@ -109,7 +109,7 @@ TimeConvectionDiffusion<d>::TimeConvectionDiffusion(
                " provided.");
     }
     // remove not needed coarser grid from list of collections
-    for(int i = nMgLevels; i < n_grids; ++i)
+    for(size_t i = nMgLevels; i < n_grids; ++i)
     {
       collections.pop_back();
     }

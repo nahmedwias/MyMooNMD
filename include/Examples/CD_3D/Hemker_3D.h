@@ -30,7 +30,7 @@ void ExampleFile()
 }
 
 // exact solution is not known
-void Exact(double x, double y, double z, double *values)
+void Exact(double, double, double, double *values)
 {
   values[0] = 0;
   values[1] = 0;
@@ -40,7 +40,7 @@ void Exact(double x, double y, double z, double *values)
 }
 
 // find out if the point (x,y,z) is on the cylinder
-bool on_cylinder(double x, double y, double z)
+bool on_cylinder(double x, double y, double)
 {
   // this is fact returns true for points inside the cylinder. This is needed 
   // here because the fe space evaluates at the center of face to determine the 
@@ -68,8 +68,8 @@ void BoundValue(double x, double y, double z, double &value)
   value = on_cylinder(x, y, z) ? 1. : 0.;
 }
 
-void BilinearCoeffs(int n_points, double *x, double *y, double *z,
-        double **parameters, double **coeffs)
+void BilinearCoeffs(int n_points, double *, double *, double *, double **,
+                    double **coeffs)
 {
   for(int i = 0; i < n_points; ++i)
   {

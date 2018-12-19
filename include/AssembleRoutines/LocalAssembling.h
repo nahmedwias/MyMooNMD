@@ -356,7 +356,7 @@ class LocalAssembling
     LocalAssembling_type get_type() const
     { return type; }
 
-    const int get_disctype() const
+    int get_disctype() const
     { return discretization_type; }
     
     int get_n_rhs() const

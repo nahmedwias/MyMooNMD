@@ -191,7 +191,7 @@ void tests_on_triangles(ParameterDatabase& db)
 // =======================================================================
 // main program
 // =======================================================================
-int main(int argc, char* argv[])
+int main(int, char**)
 {
   Output::setVerbosity(2);
   //  declaration of databases

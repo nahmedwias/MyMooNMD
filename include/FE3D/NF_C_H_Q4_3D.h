@@ -264,13 +264,13 @@ static double NF_C_H_Q4_3D_S[25] = {
          0.75, 0.75, 0.75, 0.75, 0.75,
          1, 1, 1, 1, 1 };
 
-void NF_C_H_Q4_3D_EvalAll(TCollection *Coll, TBaseCell *Cell,
+void NF_C_H_Q4_3D_EvalAll(TCollection *, TBaseCell *,
                           const double *PointValues, double *Functionals)
 {
   memcpy(Functionals, PointValues, 125*SizeOfDouble);
 }
 
-void NF_C_H_Q4_3D_EvalFace(TCollection *Coll, TBaseCell *Cell, int Joint, 
+void NF_C_H_Q4_3D_EvalFace(TCollection *, TBaseCell *, int,
                            const double *PointValues, double *Functionals)
 {
   memcpy(Functionals, PointValues, 25*SizeOfDouble);

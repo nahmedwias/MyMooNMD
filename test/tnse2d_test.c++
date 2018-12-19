@@ -95,7 +95,7 @@ void compute(TDomain& domain, ParameterDatabase& db,
   }
 }
 
-void check(TDomain& domain, ParameterDatabase& db, int velocity_order, int pressure_order,
+void check(TDomain& domain, ParameterDatabase& db, int velocity_order, int,
            int nstype, int laplace_type, int nonlinear_form, int time_disc,
            std::array<std::array<double, int(4)>,4> errors, double tol)
 {
@@ -190,7 +190,7 @@ double get_tolerance(std::string solver_name)
   return val;
 }
 
-int main(int argc, char* argv[])
+int main(int, char* argv[])
 {
   
   // test for quads

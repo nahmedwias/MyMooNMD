@@ -38,8 +38,7 @@ static void N_T_BDDF1_3D_Funct(double xi, double eta, double zeta,
   }
 }
 
-static void N_T_BDDF1_3D_DeriveXi(double xi, double eta, double zeta,
-                                double *values)
+static void N_T_BDDF1_3D_DeriveXi(double, double, double, double *values)
 {
   int nBF = 12; // number of basis functions
   // monomials x-component, y-component and z-component
@@ -59,8 +58,7 @@ static void N_T_BDDF1_3D_DeriveXi(double xi, double eta, double zeta,
   }
 }
 
-static void N_T_BDDF1_3D_DeriveEta(double xi, double eta, double zeta,
-                                 double *values)
+static void N_T_BDDF1_3D_DeriveEta(double, double, double, double *values)
 {
   int nBF = 12; // number of basis functions
   // monomials x-component, y-component and z-component
@@ -80,8 +78,7 @@ static void N_T_BDDF1_3D_DeriveEta(double xi, double eta, double zeta,
   }
 }
 
-static void N_T_BDDF1_3D_DeriveZeta(double xi, double eta, double zeta,
-                                  double *values)
+static void N_T_BDDF1_3D_DeriveZeta(double, double, double, double *values)
 {
   int nBF = 12; // number of basis functions
   // monomials x-component, y-component and z-component
@@ -101,43 +98,37 @@ static void N_T_BDDF1_3D_DeriveZeta(double xi, double eta, double zeta,
   }
 }
 
-static void N_T_BDDF1_3D_DeriveXiXi(double xi, double eta, double zeta,
-                                  double *values)
+static void N_T_BDDF1_3D_DeriveXiXi(double, double, double, double *values)
 {
   int nBF = 12; // number of basis functions
   memset(values, 0.0, 3*nBF*SizeOfDouble); // 3 is the space dimension
 }
 
-static void N_T_BDDF1_3D_DeriveXiEta(double xi, double eta, double zeta,
-                                   double *values)
+static void N_T_BDDF1_3D_DeriveXiEta(double, double, double, double *values)
 {
   int nBF = 12; // number of basis functions
   memset(values, 0.0, 3*nBF*SizeOfDouble); // 3 is the space dimension
 }
 
-static void N_T_BDDF1_3D_DeriveXiZeta(double xi, double eta, double zeta,
-                                    double *values)
+static void N_T_BDDF1_3D_DeriveXiZeta(double, double, double, double *values)
 {
   int nBF = 12; // number of basis functions
   memset(values, 0.0, 3*nBF*SizeOfDouble); // 3 is the space dimension
 }
 
-static void N_T_BDDF1_3D_DeriveEtaEta(double xi, double eta, double zeta,
-                                    double *values)
+static void N_T_BDDF1_3D_DeriveEtaEta(double, double, double, double *values)
 {
   int nBF = 12; // number of basis functions
   memset(values, 0.0, 3*nBF*SizeOfDouble); // 3 is the space dimension
 }
 
-static void N_T_BDDF1_3D_DeriveEtaZeta(double xi, double eta, double zeta,
-                                     double *values)
+static void N_T_BDDF1_3D_DeriveEtaZeta(double, double, double, double *values)
 {
   int nBF = 12; // number of basis functions
   memset(values, 0.0, 3*nBF*SizeOfDouble); // 3 is the space dimension
 }
 
-static void N_T_BDDF1_3D_DeriveZetaZeta(double xi, double eta, double zeta,
-                                      double *values)
+static void N_T_BDDF1_3D_DeriveZetaZeta(double, double, double, double *values)
 {
   int nBF = 12; // number of basis functions
   memset(values, 0.0, 3*nBF*SizeOfDouble); // 3 is the space dimension

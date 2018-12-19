@@ -349,7 +349,7 @@ void check_other_stabilizations(ParameterDatabase db)
 // =======================================================================
 // main program
 // =======================================================================
-int main(int argc, char* argv[])
+int main(int, char**)
 {
   TDatabase Database;
   OldDatabase FEDatabase;

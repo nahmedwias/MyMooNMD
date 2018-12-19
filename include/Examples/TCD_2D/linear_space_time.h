@@ -24,7 +24,7 @@ void Exact(double x, double y, double *values)
 }
 
 // kind of boundary condition (for FE space needed)
-void BoundCondition(int BdComp, double Param, BoundCond &cond)
+void BoundCondition(int, double, BoundCond &cond)
 {
   cond = DIRICHLET;
 }
@@ -60,7 +60,7 @@ void InitialCondition(double x,  double y, double *values)
 }
 
 void BilinearCoeffs(int n_points, double *X, double *Y,
-        double **parameters, double **coeffs)
+        double **, double **coeffs)
 {
   double eps=1/TDatabase::ParamDB->RE_NR;
   double a=1, b=2, c=1;

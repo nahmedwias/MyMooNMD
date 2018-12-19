@@ -140,6 +140,6 @@ namespace Output
       local_outfile.close();
     }
   }
-};
+}
 
 std::ofstream& OutFile = Output::outfile;

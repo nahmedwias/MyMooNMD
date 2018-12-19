@@ -203,17 +203,16 @@ void THexaIsoparametric::GetRefFromOrig(double X, double Y, double Z, double &xi
 }
 
 /** transfer from original element to reference element */
-void THexaIsoparametric::GetRefFromOrig(const double *orig, double *ref)
+void THexaIsoparametric::GetRefFromOrig(const double *, double *)
 {
   OutPut("THexaIsoparametric::GetRefFromOrig is not implemented" << endl);
 }
 
 /** calculate functions and derivatives from reference element
     to original element */
-void THexaIsoparametric::GetOrigValues(BaseFunct3D BaseFunct, int N_Points,
-                                       const double *xi, const double *eta,
-                                       const double *zeta, int N_Functs,
-                                       QuadFormula3D quadformula)
+void THexaIsoparametric::GetOrigValues(BaseFunct3D, int, const double *,
+                                       const double *, const double *, int,
+                                       QuadFormula3D)
 {
   cout << "THexaIsoparametric::GetOrigValues is not implemented yet" << endl;
   cout << __FILE__ << " " << __LINE__ << endl;
@@ -327,7 +326,7 @@ void THexaIsoparametric::GetOrigValues(int JointNr, double p1, double p2,
 void THexaIsoparametric::GetOrigValues(int N_Sets, BaseFunct3D *BaseFuncts,
                                int N_Points, const double *xi,
                                const double *eta, const double *zeta,
-                               QuadFormula3D quadformula, bool *Needs2ndDer)
+                               QuadFormula3D quadformula, bool *)
 {
   int i,j,k;
   double **refvaluesD000, **origvaluesD000;
@@ -1770,9 +1769,8 @@ void THexaIsoparametric::GetTangentVectors(int j, double p1, double p2,
   }
 }
 
-void THexaIsoparametric::PiolaMapOrigFromRef(double xi, double eta, double zeta,
-                                             int N_Functs, const double *refD00,
-                                             double *origD00)
+void THexaIsoparametric::PiolaMapOrigFromRef(double, double, double, int,
+                                             const double *, double *)
 {
   ErrThrow("THexaIsoparametric::PiolaMapOrigFromRef not implemented");
 }

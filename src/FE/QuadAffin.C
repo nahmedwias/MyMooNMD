@@ -602,6 +602,9 @@ void TQuadAffin::GetOrigValues(int joint, double zeta, int N_BaseFunct,
     case 3:
       xi = -1 ; eta = -zeta;
     break;
+    default:
+      ErrThrow("wrong joint number ", joint, " in TQuadAffin::GetOrigValues.");
+      break;
    }
    this->GetOrigValues(xi, eta, N_BaseFunct, uref, uxiref, uetaref, 
                        uorig, uxorig, uyorig, _BaseVectDim);
@@ -641,7 +644,7 @@ void TQuadAffin::SetCell(const TBaseCell *cell)
 }
 
 /** return outer normal vector */
-void TQuadAffin::GetOuterNormal(int j, double zeta, double &n1, double &n2)
+void TQuadAffin::GetOuterNormal(int j, double, double &n1, double &n2)
   const
 {
   double len;
@@ -681,7 +684,7 @@ void TQuadAffin::GetOuterNormal(int j, double zeta, double &n1, double &n2)
 }
 
 /** return derivative of boundary parametrization */
-void TQuadAffin::GetTangent(int j, double zeta, double &t1, double &t2) const
+void TQuadAffin::GetTangent(int j, double, double &t1, double &t2) const
 {
   // factor 0.5 since edge parameter runs from -1 to +1
   switch(j)
@@ -757,7 +760,7 @@ void TQuadAffin::GetOrigBoundFromRef(int joint, int N_Points, double *zeta, doub
 
 
 /** Piola transformation for vectorial basis functions */
-void TQuadAffin::PiolaMapOrigFromRef(double xi, double eta, int N_Functs,
+void TQuadAffin::PiolaMapOrigFromRef(double, double, int N_Functs,
                                      const double *refD00, double *origD00)
 {
   double a11 = xc1*rec_detjk;
@@ -775,8 +778,8 @@ void TQuadAffin::PiolaMapOrigFromRef(double xi, double eta, int N_Functs,
   }
 }
    
-void TQuadAffin::PiolaMapOrigFromRef(double xi, double eta, int N_Functs,
-                                     const double *refD00, const double *refD10,
+void TQuadAffin::PiolaMapOrigFromRef(double, double, int N_Functs,
+                                     const double *, const double *refD10,
                                      const double *refD01, double *origD10,
                                      double *origD01)
 {

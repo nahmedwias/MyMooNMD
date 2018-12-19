@@ -71,14 +71,14 @@ void Exact(double x, double y, double *values)
 
 
 /** The type of the boundary condition - Dirichlet on all components. */
-void BoundCondition(int BdComp, double t, BoundCond &cond)
+void BoundCondition(int, double, BoundCond &cond)
 {
   cond = DIRICHLET;
 }
 
 
 /** The value of boundary condition - 0 everywhere*/
-void BoundValue(int BdComp, double Param, double &value)
+void BoundValue(int, double, double &value)
 {
   value = 0;
 }
@@ -111,7 +111,7 @@ void InitialCondition(double x,  double y, double *values)
  * Coefficient function, used in the assembling process of the CDR problem.
  */
 void BilinearCoeffs(int n_points, double *X, double *Y,
-double **parameters, double **coeffs)
+double **, double **coeffs)
 {
 
   double eps = 1.0/TDatabase::ParamDB->RE_NR;

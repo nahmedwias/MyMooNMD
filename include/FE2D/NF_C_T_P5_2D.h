@@ -21,7 +21,7 @@ static double NF_C_T_P5_2D_Eta[] = { 0,   0,   0,   0,   0,   0,
                                      1 };
 static double NF_C_T_P5_2D_T[] = { -1, -0.6, -0.2, 0.2, 0.6, 1 };
 
-void NF_C_T_P5_2D_EvalAll(TCollection *Coll, TBaseCell *Cell,
+void NF_C_T_P5_2D_EvalAll(TCollection *, TBaseCell *,
                           const double *PointValues, double *Functionals)
 {
   Functionals[0] = PointValues[0];
@@ -47,7 +47,7 @@ void NF_C_T_P5_2D_EvalAll(TCollection *Coll, TBaseCell *Cell,
   Functionals[20] = PointValues[20];
 }
 
-void NF_C_T_P5_2D_EvalEdge(TCollection *Coll, TBaseCell *Cell, int Joint,
+void NF_C_T_P5_2D_EvalEdge(TCollection *, TBaseCell *, int ,
                            const double *PointValues, double *Functionals)
 {
   Functionals[0] = PointValues[0];

@@ -17,13 +17,13 @@ static double NF_C_T_RR2_2D_Eta[] = { 0, 0, 0, 0, 0, 0.25, 0.5, 0.75,
 
 static double NF_C_T_RR2_2D_T[] = { -1, -0.5, 0, 0.5, 1 };
 
-void NF_C_T_RR2_2D_EvalAll(TCollection *Coll, TBaseCell *Cell,
+void NF_C_T_RR2_2D_EvalAll(TCollection *, TBaseCell *,
                            const double *PointValues, double *Functionals)
 {
   memcpy(Functionals, PointValues, 15*SizeOfDouble);
 }
 
-void NF_C_T_RR2_2D_EvalEdge(TCollection *Coll, TBaseCell *Cell, int Joint,
+void NF_C_T_RR2_2D_EvalEdge(TCollection *, TBaseCell *, int,
                             const double *PointValues, double *Functionals)
 {
   memcpy(Functionals, PointValues, 5*SizeOfDouble);

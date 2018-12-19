@@ -35,7 +35,7 @@
 // Standard Galerkin for Brinkman in [p div v] formulation
 // ======================================================================
 void BrinkmanType1Galerkin(double Mult, double *coeff,
-    double *param, double hK,
+    double *, double,
     double **OrigValues, int *N_BaseFuncts,
     double ***LocMatrices, double **LocRhs)
 {
@@ -167,7 +167,7 @@ double val;
 // ======================================================================
 // To Do: Decide about deleting this assembling
 void BrinkmanType2Galerkin(double Mult, double *coeff,
-    double *param, double hK,
+    double *, double,
     double **OrigValues, int *N_BaseFuncts,
     double ***LocMatrices, double **LocRhs)
 {
@@ -288,7 +288,7 @@ void BrinkmanType2Galerkin(double Mult, double *coeff,
 // ======================================================================
 
 void BrinkmanType1GalerkinResidualStabP1(double Mult, double *coeff,
-    double *param, double hK,
+    double *, double hK,
     double **OrigValues, int *N_BaseFuncts,
     double ***LocMatrices, double **LocRhs)
 {
@@ -422,7 +422,7 @@ void BrinkmanType1GalerkinResidualStabP1(double Mult, double *coeff,
 // ======================================================================
 
 void BrinkmanType1GalerkinResidualStabP2(double Mult, double *coeff,
-    double *param, double hK,
+    double *, double hK,
     double **OrigValues, int *N_BaseFuncts,
     double ***LocMatrices, double **LocRhs)
 {
@@ -548,7 +548,7 @@ void BrinkmanType1GalerkinResidualStabP2(double Mult, double *coeff,
 // Additional Terms:  grad_div_stab_weight * (div u - g, div v)
 // ======================================================================
 void BrinkmanGradDivStab(double Mult, double *coeff,
-    double *param, double hK,
+    double *, double hK,
     double **OrigValues, int *N_BaseFuncts,
     double ***LocMatrices, double **LocRhs)
 {

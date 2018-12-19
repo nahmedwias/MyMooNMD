@@ -94,9 +94,10 @@ TimeDiscretization::TimeDiscretization(const ParameterDatabase & param_db)
 }
 
 /* ****************************************************************************/
-void TimeDiscretization::prepare_timestep(BlockFEMatrix& system_matrix,
-  const BlockFEMatrix& mass_matrix, std::vector<BlockVector> & rhs,
-  const std::vector<BlockVector> old_solutions)
+void TimeDiscretization::prepare_timestep(BlockFEMatrix&,
+                                          const BlockFEMatrix&,
+                                          std::vector<BlockVector>&,
+                                          const std::vector<BlockVector>)
 {
   //TODO: here the idea can be implemented of multisteps
 }

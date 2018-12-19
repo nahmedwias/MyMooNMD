@@ -17,7 +17,7 @@ void analytic_function(double x, double y, double z, double * values)
 }
 
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
 #ifdef _MPI
 	  MPI_Init(&argc, &argv);

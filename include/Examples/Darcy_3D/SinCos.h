@@ -52,7 +52,7 @@ void ExactP(double x, double y, double z, double *values)
 // ========================================================================
 // boundary conditions
 // ========================================================================
-void BoundCondition(double x, double y, double z, BoundCond &cond)
+void BoundCondition(double, double, double, BoundCond &cond)
 {
   cond = DIRICHLET;
 }
@@ -114,19 +114,19 @@ void FluxBoundValue(double x, double y, double z, double &value)
    }
 }
 
-void BoundConditionPressure(double x, double y, double z, BoundCond &cond)
+void BoundConditionPressure(double, double, double, BoundCond &cond)
 {
   cond = NEUMANN; 
 }
 
-void PressureBoundValue(double x, double y, double z, double &value)
+void PressureBoundValue(double, double, double, double &value)
 {
   value = 0;
 }
 
 // coefficients in the pde
-void LinCoeffs(int n_points, double *X, double *Y,double *Z,
-               double **parameters, double **coeffs)
+void LinCoeffs(int n_points, double *X, double *Y,double *Z, double **,
+               double **coeffs)
 {
   const double eps = 1./TDatabase::ParamDB->SIGMA_PERM;
   for(int i=0;i<n_points;i++)

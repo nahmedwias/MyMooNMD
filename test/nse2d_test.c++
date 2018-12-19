@@ -286,7 +286,7 @@ void check_one_element_including_boundary(TDomain& domain, ParameterDatabase db,
 // =======================================================================
 // main program
 // =======================================================================
-int main(int argc, char* argv[])
+int main(int, char* argv[])
 {
   bool testall = false;
   if (argv[1])

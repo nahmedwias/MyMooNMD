@@ -17,7 +17,7 @@ static double NF_N_Q_BDM1_2D_Eta[]  =
 static double NF_N_Q_BDM1_2D_T[] = { -NF_N_Q_BDM1_2D_a, 0, NF_N_Q_BDM1_2D_a };
 
 
-void NF_N_Q_BDM1_2D_EvalAll(TCollection *Coll, TBaseCell *Cell,
+void NF_N_Q_BDM1_2D_EvalAll(TCollection *, TBaseCell *Cell,
                             const double *PointValues, double *Functionals)
 {
   // short names
@@ -125,18 +125,16 @@ void NF_N_Q_BDM1_2D_EvalAll(TCollection *Coll, TBaseCell *Cell,
   }
 }
 
-void NF_N_Q_BDM1_2D_EvalEdge(TCollection *Coll, TBaseCell *Cell, int Joint,
+void NF_N_Q_BDM1_2D_EvalEdge(TCollection *, TBaseCell *Cell, int,
                              const double *PointValues,double *Functionals)
 {
-  #ifdef __2D__
-  double x0, x1, y0, y1;
-  Cell->GetVertex(Joint)->GetCoords(x0, y0);
-  Cell->GetVertex((Joint+1)%4)->GetCoords(x1, y1); // 4=number of edges
+  double x0, x1, y0, y1, z; // z is just a dummy
+  Cell->GetVertex(Joint)->GetCoords(x0, y0, z);
+  Cell->GetVertex((Joint+1)%4)->GetCoords(x1, y1, z); // 4=number of edges
   // length of joint, 0.5 due to 1D-reference cell having measure 2
   double l = 0.5*sqrt((x0-x1)*(x0-x1) + (y0-y1)*(y0-y1));
   Functionals[0] = (5*PointValues[0]+8*PointValues[1]+5*PointValues[2])*l/9.;
   Functionals[1] = (-PointValues[0] + PointValues[2])*NF_N_Q_BDM1_2D_a*l*5/9.;
-  #endif
 }
 
 TNodalFunctional2D *NF_N_Q_BDM1_2D_Obj = new TNodalFunctional2D

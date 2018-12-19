@@ -22,7 +22,7 @@ void ExampleFile()
 // exact solution
 // ========================================================================
 
-void ExactU1(double x, double y, double *values)
+void ExactU1(double, double, double *values)
 {
   values[0] = 0;             //u1
   values[1] = 0;             //u1_x
@@ -30,7 +30,7 @@ void ExactU1(double x, double y, double *values)
   values[3] = 0;             //Delta u1 = u1_xx + u1_yy
 }
 
-void ExactU2(double x, double y, double *values)
+void ExactU2(double, double, double *values)
 {
   values[0] = 0;            //u2
   values[1] = 0;            //u2_x
@@ -38,7 +38,7 @@ void ExactU2(double x, double y, double *values)
   values[3] = 0;            //Delta u2 = u2_xx + u2_yy
 }
 
-void ExactP(double x, double y, double *values)
+void ExactP(double, double, double *values)
 {
   values[0] = 0;                      //p
   values[1] = 0;                      //p_x
@@ -50,7 +50,7 @@ void ExactP(double x, double y, double *values)
 // boundary conditions
 // ========================================================================
 
-void BoundCondition(int i, double Param, BoundCond &cond)
+void BoundCondition(int i, double, BoundCond &cond)
 {
   cond = DIRICHLET; // default
 
@@ -60,9 +60,9 @@ void BoundCondition(int i, double Param, BoundCond &cond)
 
 
   // set Nitsche BC
-  for (int j = 0; j < nitsche_id.size(); j++)
+  for (unsigned int j = 0; j < nitsche_id.size(); j++)
   {
-    if (i == nitsche_id[j])
+    if (i == (int)nitsche_id[j])
     {
       cond = DIRICHLET_WEAK;
       return;
@@ -115,7 +115,7 @@ void U1BoundValue(int BdComp, double Param, double &value)
   }
 }
 
-void U2BoundValue(int BdComp, double Param, double &value)
+void U2BoundValue(int, double, double &value)
 {
   value = 0;
 }
@@ -128,8 +128,7 @@ void U2BoundValue(int BdComp, double Param, double &value)
 // div(u) = g
 // (lhs and rhs of the Brinkman problem computed at quadrature points - for the error norms)
 // ========================================================================
-void LinCoeffs(int n_points, double *x, double *y,
-    double **parameters, double **coeffs)
+void LinCoeffs(int n_points, double *x, double *y, double **, double **coeffs)
 {
   for(int i = 0; i < n_points; i++)
   {

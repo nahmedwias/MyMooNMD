@@ -1147,14 +1147,14 @@ void Assemble3D(int n_fespaces, const TFESpace3D** fespaces, int n_sqmatrices,
 void Assemble3DSlipBC(int n_fespaces, const TFESpace3D **fespaces,
                       int n_sqmatrices, TSquareMatrix3D **sqmatrices,
                       int n_matrices, TMatrix3D **matrices,
-                      int n_rhs, double **rhs, const TFESpace3D **ferhs,
+                      int n_rhs, double **, const TFESpace3D **ferhs,
                       BoundCondFunct3D **BoundaryConditions,
-                      BoundValueFunct3D **BoundaryValues)
+                      BoundValueFunct3D **)
 {
   double hK;
   int N_AllMatrices = n_sqmatrices+n_matrices;
   int i,j,l,l1,m, N_LocalUsedElements;
-  int N_Cells, N_Points, N_Parameters, N_;
+  int N_Cells, N_Points, N_;
   int N_Joints;
   int *N_BaseFunct;
   BaseFunct3D *BaseFuncts;
@@ -1176,7 +1176,6 @@ void Assemble3DSlipBC(int n_fespaces, const TFESpace3D **fespaces,
   double X[MaxN_QuadPoints_3D], Y[MaxN_QuadPoints_3D];
   double Z[MaxN_QuadPoints_3D];
   double AbsDetjk[MaxN_QuadPoints_3D];
-  double *Param[MaxN_QuadPoints_3D];
   double *righthand=nullptr;
   double **Matrices, *aux;
   double ***LocMatrices=nullptr, **LocRhs=nullptr;

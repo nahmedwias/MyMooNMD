@@ -1414,7 +1414,7 @@ std::shared_ptr<const TMatrix> BlockMatrix::get_block(size_t cell_row,
 
     /* ************************************************************************* */
     void BlockMatrix::handle_discovery_of_vector_non_actives(
-      const int n_nonActive, const int spaceNumber) const
+      const int n_nonActive, const int) const
     {
       if(n_nonActive != 0)
       {

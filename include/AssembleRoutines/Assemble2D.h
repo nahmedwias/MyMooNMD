@@ -101,6 +101,7 @@ void Assemble2D_CIP(CoeffFct2D Coeff,int n_fespaces, TFESpace2D **fespaces,
 
 /** assembling for vector finite elements (Raviart-Thomas (RT) and
  * Brezzi-Douglas-Marini (BDM)) */
+#ifdef __2D__
 void Assemble2D_VectFE(int n_fespaces, const TFESpace2D **fespaces,
                        int n_sqmatrices, TSquareMatrix2D **sqmatrices,
                        int n_matrices, TMatrix2D **matrices,
@@ -109,6 +110,7 @@ void Assemble2D_VectFE(int n_fespaces, const TFESpace2D **fespaces,
                        BoundCondFunct2D **BoundaryConditions,
                        BoundValueFunct2D * const * const BoundaryValues
                        );
+#endif // 2D
                   
                   void Assemble2D(int n_fespaces,
                                   TFESpace2D **fespaces,

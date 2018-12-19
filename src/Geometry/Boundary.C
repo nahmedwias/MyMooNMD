@@ -7,13 +7,13 @@
 Boundary::Boundary()
 {
   parts.resize(0);
-};
+}
 
 Boundary::Boundary(std::string PRM)
 {
   parts.resize(0);
   initFromFile(PRM);
-};
+}
 
 // read a PRM file (2D)
 void Boundary::initFromFile(std::string PRM)

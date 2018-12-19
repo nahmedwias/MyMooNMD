@@ -24,7 +24,7 @@ void ExampleFile()
 // ========================================================================
 // exact solution
 // ========================================================================
-void ExactU1(double x, double y, double *values)
+void ExactU1(double, double y, double *values)
 {
   // ratio between Stokes and Darcy terms
   double t = fabs(sqrt( effective_viscosity/sigma));
@@ -54,7 +54,7 @@ void ExactU1(double x, double y, double *values)
   }
 }
 
-void ExactU2(double x, double y, double *values)
+void ExactU2(double, double, double *values)
 {
   values[0] = 0.;
   values[1] = 0.;
@@ -68,7 +68,7 @@ void ExactU2(double x, double y, double *values)
   if pressures with non zero mean are prescribed on 
   the boundaries
  */
-void ExactP(double x, double y, double *values)
+void ExactP(double x, double, double *values)
 {
   values[0] = 0.5-x;   
   values[1] = -1.;
@@ -79,14 +79,14 @@ void ExactP(double x, double y, double *values)
 // ========================================================================
 // boundary conditions
 // ========================================================================
-void BoundCondition(int i, double Param, BoundCond &cond)
+void BoundCondition(int i, double, BoundCond &cond)
 {
   cond = DIRICHLET; // default
 
   // set Neumann BC
-  for (int j = 0; j < neumann_id.size(); j++)
+  for (unsigned int j = 0; j < neumann_id.size(); j++)
   {
-    if (i == neumann_id[j])
+    if (i == (int)neumann_id[j])
     {
       cond = NEUMANN;
       return;
@@ -94,9 +94,9 @@ void BoundCondition(int i, double Param, BoundCond &cond)
   }
 
   // set Nitsche BC
-  for (int j = 0; j < nitsche_id.size(); j++)
+  for (unsigned int j = 0; j < nitsche_id.size(); j++)
   {
-    if (i == nitsche_id[j])
+    if (i == (int)nitsche_id[j])
     {
       cond = DIRICHLET_WEAK;
       
@@ -111,9 +111,9 @@ void U1BoundValue(int BdComp, double Param, double &value)
 
   // loop to impose Neumann boundary conditions
   ///@attention we set =0 here, as Neumann BC are imposed using boundary assembling
-  for (int j = 0; j < neumann_id.size(); j++)
+  for (unsigned int j = 0; j < neumann_id.size(); j++)
   {
-    if ( BdComp == neumann_id[j])
+    if ( BdComp == (int)neumann_id[j])
     {
       switch(BdComp)
       {
@@ -163,7 +163,7 @@ void U1BoundValue(int BdComp, double Param, double &value)
   }
 }
 
-void U2BoundValue(int BdComp, double Param, double &value)
+void U2BoundValue(int, double, double &value)
 {
   value = 0;
 }
@@ -176,8 +176,7 @@ void U2BoundValue(int BdComp, double Param, double &value)
 // -mu Delta u + grad(p) + sigma u = (f1,f2)
 // div(u) = g
 // ========================================================================
-void LinCoeffs(int n_points, double *x, double *y,
-    double **parameters, double **coeffs)
+void LinCoeffs(int n_points, double *x, double *y, double **, double **coeffs)
 {
   double val_u1[4];
   double val_u2[4];

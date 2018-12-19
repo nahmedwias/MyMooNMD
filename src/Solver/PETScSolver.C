@@ -593,7 +593,7 @@ PETScSolver::PETScSolver(const BlockFEMatrix& matrix,
 }
 
 /* ************************************************************************** */
-PETScSolver::PETScSolver(const BlockMatrix& matrix, const ParameterDatabase& db)
+PETScSolver::PETScSolver(const BlockMatrix&, const ParameterDatabase&)
 {
   ErrThrow("can not construct a PETScSolver using a BlockMatrix. I need a "
            "BlockFEMatrix instead. It would be possible to implement this "

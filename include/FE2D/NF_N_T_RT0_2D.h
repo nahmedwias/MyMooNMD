@@ -14,7 +14,7 @@ static double NF_N_T_RT0_2D_Eta[6] =
   (sqrt(1./3.)+1.)/2., (-sqrt(1./3.)+1.)/2.};
 static double NF_N_T_RT0_2D_T[] = {-sqrt(1./3.), sqrt(1./3.)};
 
-void NF_N_T_RT0_2D_EvalAll(TCollection *Coll, TBaseCell *Cell,
+void NF_N_T_RT0_2D_EvalAll(TCollection *, TBaseCell *Cell,
                            const double *PointValues, double *Functionals)
 {
   // on the reference triangle with points (0,0), (1,0), (0,1) 
@@ -61,18 +61,16 @@ void NF_N_T_RT0_2D_EvalAll(TCollection *Coll, TBaseCell *Cell,
   }
 }
 
-void NF_N_T_RT0_2D_EvalEdge(TCollection *Coll, TBaseCell *Cell, int Joint,
+void NF_N_T_RT0_2D_EvalEdge(TCollection *, TBaseCell *Cell, int Joint,
                             const double *PointValues, double *Functionals)
 {
   // this is needed for setting boundary conditions
-  #ifdef __2D__
-  double x0, x1, y0, y1;
-  Cell->GetVertex(Joint)->GetCoords(x0, y0);
-  Cell->GetVertex((Joint+1)%3)->GetCoords(x1, y1);// 3=number of edges
+  double x0, x1, y0, y1, z; // z is just a dummy
+  Cell->GetVertex(Joint)->GetCoords(x0, y0, z);
+  Cell->GetVertex((Joint+1)%3)->GetCoords(x1, y1, z);// 3=number of edges
   // length of joint, 0.5 due to 1D-reference cell having measure 2
   double l = 0.5*sqrt((x0-x1)*(x0-x1) + (y0-y1)*(y0-y1));
   Functionals[0] = (PointValues[0] + PointValues[1])*l;
-  #endif
 }
 
 TNodalFunctional2D *NF_N_T_RT0_2D_Obj = new TNodalFunctional2D

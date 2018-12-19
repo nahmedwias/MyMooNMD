@@ -240,23 +240,21 @@ void TTriaIsoparametric::GetOrigFromRef(const double *ref, double *orig)
 }
 
 /** transfer from original element to reference element */
-void TTriaIsoparametric::GetRefFromOrig(double X, double Y, 
-                                        double &xi, double &eta)
+void TTriaIsoparametric::GetRefFromOrig(double, double, double &, double &)
 {
   cout << "not implemented yet 1 " << endl;
 }
 
 /** transfer from original element to reference element */
-void TTriaIsoparametric::GetRefFromOrig(const double *orig, double *ref)
+void TTriaIsoparametric::GetRefFromOrig(const double *, double *)
 {
   cout << "not implemented yet 2" << endl;
 }
 
 /** calculate functions and derivatives from reference element
     to original element */
-void TTriaIsoparametric::GetOrigValues(BaseFunct2D BaseFunct, int N_Points,
-                                       const double *xi, const double *eta,
-                                       int N_Functs, QuadFormula2D formula)
+void TTriaIsoparametric::GetOrigValues(BaseFunct2D, int, const double *,
+                                       const double *, int, QuadFormula2D)
 {
   cout << "not implemented yet 3" << endl;
 }
@@ -264,8 +262,8 @@ void TTriaIsoparametric::GetOrigValues(BaseFunct2D BaseFunct, int N_Points,
 /** calculate functions and derivatives from reference element
     to original element, for all given elements */
 void TTriaIsoparametric::GetOrigValues(int N_Sets, BaseFunct2D *BaseFuncts,
-                                       int N_Points, const double *xi,
-                                       const double *eta,
+                                       int N_Points, const double *,
+                                       const double *,
                                        QuadFormula2D formula,
                                        bool *Needs2ndDer)
 {
@@ -966,20 +964,15 @@ void TTriaIsoparametric::GetOrigBoundFromRef( int joint, int N_Points,
    }
 }
 
-void TTriaIsoparametric::PiolaMapOrigFromRef(double xi, double eta,
-                                             int N_Functs,
-                                             const double *refD00,
-                                             double *origD00)
+void TTriaIsoparametric::PiolaMapOrigFromRef(double, double, int,
+                                             const double *, double *)
 {
   ErrThrow("TTriaIsoparametric::PiolaMapOrigFromRef not implemented");
 }
     
-void TTriaIsoparametric::PiolaMapOrigFromRef(double xi, double eta,
-                                             int N_Functs,
-                                             const double *refD00,
-                                             const double *refD10,
-                                             const double *refD01,
-                                             double *origD10, double *origD01)
+void TTriaIsoparametric::PiolaMapOrigFromRef(double, double, int,
+                                             const double *, const double *,
+                                             const double *, double *, double *)
 {
   ErrThrow("TTriaIsoparametric::PiolaMapOrigFromRef not implemented");
 }

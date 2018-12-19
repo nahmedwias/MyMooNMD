@@ -114,7 +114,7 @@ void time_integration(int td, TimeConvectionDiffusion<2>& tcd, TimeDiscretizatio
   
 }
 
-int main(int argc, char* argv[])
+int main(int, char**)
 {
   // test with Crank Nicolson euler 
   {

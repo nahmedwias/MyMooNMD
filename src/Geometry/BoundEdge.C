@@ -21,8 +21,7 @@ TBoundEdge::TBoundEdge(TBoundComp2D *bdcomp, double t_0, double t_1)
 }
 
 // Methods
-int TBoundEdge::CheckMatchingRef(TBaseCell *Me, int J_i,
-                  struct StoreGeom &Tmp)
+int TBoundEdge::CheckMatchingRef(TBaseCell *, int, struct StoreGeom &Tmp)
 {
   Tmp.Filled = false;
   return 0;
@@ -53,7 +52,7 @@ void TBoundEdge::UpdateParameters(const TVertex *Begin, const TVertex *End)
 #endif
 
 // create a new instance of this class
-TJoint *TBoundEdge::NewInst(double newT_0, double newT_1, TBaseCell *Me)
+TJoint *TBoundEdge::NewInst(double newT_0, double newT_1, TBaseCell *)
 {
   return new TBoundEdge(BoundComp, T_0 + newT_0*(T_1 - T_0),
                         T_0 + newT_1*(T_1 - T_0));

@@ -26,7 +26,7 @@ constexpr bool coefficients_depend_on_time = false;
 
 //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 // exact solution
-void Exact(double x, double y, double *values)
+void Exact(double, double, double *values)
 {
   values[0] = 0;
   values[1] = 0; 
@@ -37,7 +37,7 @@ void Exact(double x, double y, double *values)
 
 //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 // kind of boundary condition (for FE space needed)
-void BoundCondition(int BdComp, double t, BoundCond &cond)
+void BoundCondition(int, double, BoundCond &cond)
 {
  // if(BdComp==1)
  //   cond = NEUMANN;
@@ -46,7 +46,7 @@ void BoundCondition(int BdComp, double t, BoundCond &cond)
 }
 
 // value of boundary condition
-void BoundValue(int BdComp, double Param, double &value)
+void BoundValue(int, double, double &value)
 {
    
 value = 150;
@@ -73,7 +73,7 @@ switch(BdComp)
 
 //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 // initial condition
-void InitialCondition(double x, double y, double *values)
+void InitialCondition(double, double, double *values)
 {
   //double t = TDatabase::TimeDB->CURRENTTIME;
   values[0] = 150;

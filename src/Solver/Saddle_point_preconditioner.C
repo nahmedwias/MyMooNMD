@@ -28,7 +28,7 @@ constexpr char Saddle_point_preconditioner::required_database_name[];
 
 /* ************************************************************************** */
 Saddle_point_preconditioner::Saddle_point_preconditioner(
-  const BlockFEMatrix& m, type t,  const ParameterDatabase& db, const BlockVector& rhs)
+  const BlockFEMatrix& m, type t,  const ParameterDatabase& db, const BlockVector&)
   : spp_type(t), M(&m), velocity_block(), pressure_block(), 
     pressure_mass(), gradient_block(nullptr),
     divergence_block(nullptr), velocity_solver(nullptr), inverse_diagonal(), 
@@ -222,7 +222,7 @@ cout<<"JAAAA"<<endl;    */
 
 /* ************************************************************************** */
 Saddle_point_preconditioner::Saddle_point_preconditioner(
-  const BlockMatrix& m, type t, const ParameterDatabase& db)
+  const BlockMatrix&, type, const ParameterDatabase&)
 {
   ErrThrow("Creating a Saddle_point_preconditioner with a BlockMatrix is not "
            "possible, you need a BlockFEMatrix.");
@@ -597,6 +597,14 @@ break;
 }
 
 /* ************************************************************************** */
+
+void Saddle_point_preconditioner::apply(int, int, const BlockVector &z,
+                                        BlockVector &r) const
+{
+  this->apply(z,r);
+}
+
+/* ************************************************************************** */
 /* LSC === */
 std::shared_ptr<BlockMatrix> 
 Saddle_point_preconditioner::compute_Poisson_solver_matrix() const
@@ -655,10 +663,10 @@ Saddle_point_preconditioner::compute_Poisson_solver_matrix() const
 /* ************************************************************************** */
 // local assembling routine to assemble a pressure mass matrix
 // This needs to go into some assembling class!
-void local_assembling_pressure_mass_matrix(double Mult, double *coeff, double *param,
-                                    double hK, double **OrigValues, 
+void local_assembling_pressure_mass_matrix(double Mult, double *, double *,
+                                    double, double **OrigValues, 
                                     int *N_BaseFuncts, double ***LocMatrices, 
-                                    double **LocRhs)
+                                    double **)
 {
   // assemble (p,q) at a specific quadrature point in a specific cell
   double **Mp = LocMatrices[0];
@@ -684,10 +692,9 @@ void local_assembling_pressure_mass_matrix(double Mult, double *coeff, double *p
 // local assembling routine to assemble a mass velocity matrix
 // This needs to go into some assembling class!
 bool has_vector_valued_basis_functions;
-void local_assembling_velocity_mass(double Mult, double *coeff, double *param,
-                                    double hK, double **OrigValues, 
-                                    int *N_BaseFuncts, double ***LocMatrices, 
-                                    double **LocRhs)
+void local_assembling_velocity_mass(double Mult, double *, double *, double,
+                                    double **OrigValues, int *N_BaseFuncts,
+                                    double ***LocMatrices, double **)
 {
   // assemble (u,v) at a specific quadrature point in a specific cell
   double ** MatrixM = LocMatrices[0];
@@ -813,7 +820,7 @@ void Saddle_point_preconditioner::fill_pressure_mass_matrix()
 
     sq_matrices[0] =  &one_block_of_mass_matrix;
     int n_rect_mat = 0; // only square matrices
-    RectMat *rect_matrices[0];
+    RectMat **rect_matrices = nullptr;
     double **rhs = nullptr; // right hand sides
     const FESpace ** fe_spaces_rhs = nullptr;
     // which boundary conditions are correct here? We could as well use the ones
@@ -943,7 +950,7 @@ void Saddle_point_preconditioner::fill_inverse_diagonal()
     
     sq_matrices[0] =  &one_block_of_mass_matrix;
     int n_rect_mat = 0; // only square matrices
-    RectMat *rect_matrices[0];
+    RectMat **rect_matrices = nullptr;
     double **rhs = nullptr; // right hand sides
     const FESpace ** fe_spaces_rhs = nullptr;
     // which boundary conditions are correct here? We could as well use the ones

@@ -39,7 +39,7 @@ BoundaryCondition::BoundaryCondition(
 
 /** ************************************************************************ */
 BoundaryCondition::BoundaryCondition(BoundCond bc)
-  : BoundaryCondition([bc](unsigned int i)
+  : BoundaryCondition([bc](unsigned int)
                       {
                         return bc;
                       })

@@ -247,7 +247,7 @@ Example_TimeNSE2D::Example_TimeNSE2D(std::vector <DoubleFunct2D*> exact,
                             timedependentcoeffs, init_cond)
   {
 
-  };
+  }
 
 void Example_TimeNSE2D::do_post_processing(TimeNavierStokes<2>& tnse2d,
                                            double& val) const

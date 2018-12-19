@@ -68,10 +68,7 @@ class Saddle_point_preconditioner : public Preconditioner<BlockVector>
      * @param z The right hand side of the preconditioning
      * @param r The obtained vector
      */
-    void apply(int i, int j, const BlockVector &z, BlockVector &r) const
-    {
-      this->apply(z,r);
-    }
+    void apply(int i, int j, const BlockVector &z, BlockVector &r) const;
 
     /* @brief get the augmentated system matrix in case of augmented Lagrangian preconditioner:
      * A_ij -> A_ij + gamma * B_i^T * W^{-1} * B_j */

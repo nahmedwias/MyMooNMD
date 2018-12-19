@@ -316,17 +316,16 @@ void TTetraIsoparametric::GetRefFromOrig(double X, double Y, double Z, double &x
 }
 
 /** transfer from original element to reference element */
-void TTetraIsoparametric::GetRefFromOrig(const double *orig, double *ref)
+void TTetraIsoparametric::GetRefFromOrig(const double *, double *)
 {
   OutPut("TTetraIsoparametric::GetRefFromOrig is not implemented" << endl);
 }
 
 /** calculate functions and derivatives from reference element
     to original element */
-void TTetraIsoparametric::GetOrigValues(BaseFunct3D BaseFunct, int N_Points,
-                                        const double *xi, const double *eta,
-                                        const double *zeta, int N_Functs,
-                                        QuadFormula3D quadformula)
+void TTetraIsoparametric::GetOrigValues(BaseFunct3D, int, const double *,
+                                        const double *, const double *,
+                                        int, QuadFormula3D)
 {
   OutPut("TTetraIsoparametric::GetOrigValues is not implemented yet" << endl);
 }
@@ -334,9 +333,9 @@ void TTetraIsoparametric::GetOrigValues(BaseFunct3D BaseFunct, int N_Points,
 /** calculate functions and derivatives from reference element
     to original element, for all given elements */
 void TTetraIsoparametric::GetOrigValues(int N_Sets, BaseFunct3D *BaseFuncts,
-                               int N_Points, const double *xi,
-                               const double *eta, const double *zeta,
-                               QuadFormula3D quadformula, bool *Needs2ndDer)
+                               int N_Points, const double *, const double *,
+                               const double *, QuadFormula3D quadformula,
+                               bool *)
 {
   int i,j,k;
   double **refvaluesD000, **origvaluesD000;
@@ -1230,10 +1229,8 @@ void TTetraIsoparametric::GetTangentVectors(int j, double p1, double p2,
 
 }
 
-void TTetraIsoparametric::PiolaMapOrigFromRef(double xi, double eta,
-                                              double zeta, int N_Functs,
-                                              const double *refD00,
-                                              double *origD00)
+void TTetraIsoparametric::PiolaMapOrigFromRef(double, double, double, int,
+                                              const double *, double *)
 {
   ErrThrow("TTetraIsoparametric::PiolaMapOrigFromRef not implemented");
 }

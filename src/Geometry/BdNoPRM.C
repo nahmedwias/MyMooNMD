@@ -24,8 +24,7 @@ void TBdNoPRM::SetParams ()
 }
 
 // set dummy values
-int TBdNoPRM::GetXYZofTS(double T, double S,
-                        double &X, double &Y, double &Z) const
+int TBdNoPRM::GetXYZofTS(double, double, double &X, double &Y, double &Z) const
 {
     X = -4711;
     Y = -4711;
@@ -39,7 +38,7 @@ int TBdNoPRM::GetXYZofTS(double T, double S,
 // set dummy values
 int TBdNoPRM::GetXYZandTS(int N_Points, double *LinComb,
                           double *xp, double *yp, double *zp,
-                          double *tp, double *sp,
+                          double *, double *,
                           double &X, double &Y, double &Z,
                           double &T, double &S) const
 {
@@ -60,8 +59,7 @@ int TBdNoPRM::GetXYZandTS(int N_Points, double *LinComb,
 }
 
 // set dummu valus
-int TBdNoPRM::GetTSofXYZ(double X, double Y, double Z,
-                        double &T, double &S) const
+int TBdNoPRM::GetTSofXYZ(double, double, double, double &T, double &S) const
 {
 //  double TS_aux;
 
@@ -71,7 +69,7 @@ int TBdNoPRM::GetTSofXYZ(double X, double Y, double Z,
 }
 
 // no readin
-int TBdNoPRM::ReadIn(std::istream &dat)
+int TBdNoPRM::ReadIn(std::istream &)
 {
   return 0;
 }

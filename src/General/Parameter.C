@@ -24,7 +24,7 @@ std::string check_name(std::string name)
 }
 
 /// @brief check if the given Parameter type is the corresponding template type
-template <typename T> bool check_type(Parameter::types t) { return false; }
+template <typename T> bool check_type(Parameter::types) { return false; }
 template<> bool check_type<bool>(Parameter::types t)
 { return Parameter::types::_bool == t; }
 template<> bool check_type<int>(Parameter::types t)
@@ -1470,13 +1470,12 @@ template<> void Parameter::set_range(double min_value, double max_value)
   this->double_min = min_value;
   this->double_max = max_value;
 }
-template<> void Parameter::set_range(bool min_value, bool max_value)
+template<> void Parameter::set_range(bool, bool)
 {
   ErrThrow("Parameter::set_range with two bool arguments makes no sense, "
            "Parameter ", this->name);
 }
-template<> void Parameter::set_range(std::string min_value,
-                                     std::string max_value)
+template<> void Parameter::set_range(std::string, std::string)
 { 
   ErrThrow("Parameter::set_range with two string arguments makes no sense, "
            "Parameter ", this->name);

@@ -12,7 +12,7 @@
 #include <tuple>
 #include <MooNMD_Io.h>
 
-int main(int argc, char* argv[])
+int main(int, char**)
 {
   {
   //check correct splitting and merging of colors when replacing blocks

@@ -267,7 +267,9 @@ int Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
 //    exit(0);
    eptr[0] = 0;  
    for(i=1;i<=N_Cells;i++)
+   {
     eptr[i] = eptr[i-1] + N_VertInCell;
+   }
    
 
     MetisVertexNumbers= new idx_t[N_AllLocVert];
@@ -698,10 +700,14 @@ int Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
        {
         N_Edges=cell->GetN_Edges();
         for(j=0;j<N_Edges;j++)
+        {
           EdgeDel[N_EdgeDel++] = cell->GetEdge(j);
+        }
 
         for(j=0;j<N_VertInCell;j++)
+        {
          VertexDel[N_VertexDel++] = cell->GetVertex(j);
+        }
 
          CellDel[N_CellDel++] = cell;
        }

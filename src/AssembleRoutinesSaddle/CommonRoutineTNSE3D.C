@@ -408,7 +408,7 @@ double vermanViscosityModel(double delta, double *gradu)
   return viscosity;
 }
 
-double frobeniusNormTensor(double* u, double* gradu, double* uConv, int proj_space)
+double frobeniusNormTensor(double*, double* gradu, double* uConv, int)
 {
   int viscosityTensor = TDatabase::ParamDB->TURBULENT_VISCOSITY_TENSOR;
   double a11, a12, a13,a22, a23, a33;
@@ -467,8 +467,8 @@ double frobeniusNormTensor(double* u, double* gradu, double* uConv, int proj_spa
 }
 
 
-double turbulentViscosity3D(double hK, double* u, double* gradu, 
-                            double* uConv, double* x, double* y, double* z, double proj_space)
+double turbulentViscosity3D(double hK, double* u, double* gradu, double* uConv,
+                            double* x, double* y, double* z, double)
 {
   /// compute Characteristic Filter Width
   double filter_constant = TDatabase::ParamDB->FILTER_WIDTH_CONSTANT;

@@ -146,8 +146,8 @@ void TTetraAffin::GetRefFromOrig(const double *orig, double *ref)
 /** calculate functions and derivatives from reference element
     to original element */
 void TTetraAffin::GetOrigValues(BaseFunct3D BaseFunct, int N_Points,
-                                const double *xi, const double *eta,
-                                const double *zeta,
+                                const double *, const double *,
+                                const double *,
                                 int N_Functs, QuadFormula3D QuadFormula)
 {
   int i,j;
@@ -839,7 +839,7 @@ void TTetraAffin::GetOrigValues(double xi, double eta, double zeta,
 
 /** calculate functions and derivatives from reference element
         to original element on joint, parameters on joint are p1, p2 */
-void TTetraAffin::GetOrigValuesJoint(int JointNr, double p1, double p2, int N_BaseFunct,
+void TTetraAffin::GetOrigValuesJoint(int, double, double, int N_BaseFunct,
           const double *uref, const double *uxiref, const double *uetaref,
           const double *uzetaref,
           double *uorig, double *uxorig, double *uyorig, double *uzorig)
@@ -861,7 +861,7 @@ void TTetraAffin::GetOrigValuesJoint(int JointNr, double p1, double p2, int N_Ba
 }
 
 // for compatibility
-void TTetraAffin::GetOrigValues(int JointNr, double p1, double p2, int N_BaseFunct,
+void TTetraAffin::GetOrigValues(int, double, double, int N_BaseFunct,
           const double *uref, const double *uxiref, const double *uetaref,
           const double *uzetaref,
           double *uorig, double *uxorig, double *uyorig, double *uzorig)
@@ -915,7 +915,7 @@ void TTetraAffin::SetCell(const TBaseCell *cell)
 }
 
 /** return outer normal unit vector */
-void TTetraAffin::GetOuterNormal(int j, double s, double t,
+void TTetraAffin::GetOuterNormal(int j, double, double,
                                  double &n1, double &n2, double &n3) const
 {
 //   double len;
@@ -960,7 +960,7 @@ void TTetraAffin::GetOuterNormal(int j, double s, double t,
 }
 
 /** return two tangent vectors */
-void TTetraAffin::GetTangentVectors(int j, double p1, double p2,
+void TTetraAffin::GetTangentVectors(int j, double, double,
         double &t11, double &t12, double &t13,
         double &t21, double &t22, double &t23) const
 {
@@ -994,9 +994,8 @@ void TTetraAffin::GetTangentVectors(int j, double p1, double p2,
 
 
 /** Piola transformation for vectorial basis functions */
-void TTetraAffin::PiolaMapOrigFromRef(double xi, double eta, double zeta,
-                                      int N_Functs, const double *refD000, 
-                                      double *origD000 )
+void TTetraAffin::PiolaMapOrigFromRef(double, double, double, int N_Functs,
+                                      const double *refD000, double *origD000)
 {
   double a11 = xc1 * rec_detjk;
   double a12 = xc2 * rec_detjk;

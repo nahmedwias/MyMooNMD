@@ -281,7 +281,7 @@ static void C_H_Q2_3D_DeriveZeta(double xi, double eta, double zeta,
   values[26] = -t20*t69/8+t51/8;
 }
 
-static void C_H_Q2_3D_DeriveXiXi(double xi, double eta, double zeta,
+static void C_H_Q2_3D_DeriveXiXi(double, double eta, double zeta,
                              double *values)
 {
   double t2, t3, t4, t5, t6, t7, t8, t9, t11, t12, t13, t14, t15, t16;
@@ -478,7 +478,7 @@ static void C_H_Q2_3D_DeriveXiZeta(double xi, double eta, double zeta,
   values[26] = -t15*t65/8+t43/8+t67/8-t39/8;
 }
 
-static void C_H_Q2_3D_DeriveEtaEta(double xi, double eta, double zeta,
+static void C_H_Q2_3D_DeriveEtaEta(double xi, double, double zeta,
                              double *values)
 {
   double t2, t3, t4, t5, t6, t7, t8, t9, t11, t12, t13, t14, t15, t16;
@@ -606,7 +606,7 @@ static void C_H_Q2_3D_DeriveEtaZeta(double xi, double eta, double zeta,
   values[26] = -t24*t67/8+t44/8+t62/8-t28/8;
 }
 
-static void C_H_Q2_3D_DeriveZetaZeta(double xi, double eta, double zeta,
+static void C_H_Q2_3D_DeriveZetaZeta(double xi, double eta, double,
                              double *values)
 {
   double t2, t3, t4, t5, t6, t7, t8, t9, t11, t12, t13, t14, t15, t16;

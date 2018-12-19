@@ -12,7 +12,7 @@ bool equal(const double a, const double b)
     return std::abs(a-b) < 1e-14;
 }
 
-int main(int argc, char **argv) 
+int main(int, char**) 
 {
   { // create local scope
   Output::increaseVerbosity(5);

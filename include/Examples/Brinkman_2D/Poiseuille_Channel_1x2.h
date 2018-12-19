@@ -19,7 +19,7 @@ void ExampleFile()
 // exact solution
 // ========================================================================
 
-void ExactU2(double x, double y, double *values)
+void ExactU2(double, double y, double *values)
 {
   values[0] = 4 * y * (1-y);    //u1
   values[1] = 0;                //u1_x
@@ -27,7 +27,7 @@ void ExactU2(double x, double y, double *values)
   values[3] = -8;               //Delta u1
 }
 
-void ExactU1(double x, double y, double *values)
+void ExactU1(double, double, double *values)
 {
   values[0] = 0;            //u2
   values[1] = 0;            //u2_x
@@ -35,7 +35,7 @@ void ExactU1(double x, double y, double *values)
   values[3] = 0;            //Delta u2
 }
 
-void ExactP(double x, double y, double *values)
+void ExactP(double x, double, double *values)
 {
   values[0] = 0.5 - x;        //p
   values[1] = -1;   //1;      //p_x
@@ -44,7 +44,7 @@ void ExactP(double x, double y, double *values)
 }
 
 
-void BoundCondition(int i, double Param, BoundCond &cond)
+void BoundCondition(int i, double, BoundCond &cond)
 {
     cond = DIRICHLET; // Default
     
@@ -109,7 +109,7 @@ void U1BoundValue(int BdComp, double Param, double &value)
 }
 
 
-void U2BoundValue(int BdComp, double Param, double &value)
+void U2BoundValue(int, double, double &value)
 {
     value = 0;
 }
@@ -119,9 +119,9 @@ void U2BoundValue(int BdComp, double Param, double &value)
 // (the lhs of the Brinkman problem computed at quadrature points - for the error norms)
 // ========================================================================
 
-void LinCoeffs(int n_points, double *x, double *y,
+void LinCoeffs(int n_points, double *, double *,
     //std::vector<std::vector<double>> parameters,
-    double **Parameters,
+    double **,
     //std::vector<std::vector<double>> coeffs,
     double **coeffs)
 {

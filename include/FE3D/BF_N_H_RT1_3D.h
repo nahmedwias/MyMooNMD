@@ -162,7 +162,7 @@ static void N_H_RT1_3D_DeriveZeta(double xi, double eta, double zeta,
   }
 }
 
-static void N_H_RT1_3D_DeriveXiXi(double xi, double eta, double zeta,
+static void N_H_RT1_3D_DeriveXiXi(double, double eta, double zeta,
                                   double *values)
 {
   int nBF = 36; // number of basis functions
@@ -252,7 +252,7 @@ static void N_H_RT1_3D_DeriveXiZeta(double xi, double eta, double zeta,
   }
 }
 
-static void N_H_RT1_3D_DeriveEtaEta(double xi, double eta, double zeta,
+static void N_H_RT1_3D_DeriveEtaEta(double xi, double, double zeta,
                                     double *values)
 {
   int nBF = 36; // number of basis functions
@@ -312,7 +312,7 @@ static void N_H_RT1_3D_DeriveEtaZeta(double xi, double eta, double zeta,
   }
 }
 
-static void N_H_RT1_3D_DeriveZetaZeta(double xi, double eta, double zeta,
+static void N_H_RT1_3D_DeriveZetaZeta(double xi, double eta, double,
                                       double *values)
 {
   int nBF = 36; // number of basis functions

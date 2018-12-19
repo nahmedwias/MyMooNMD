@@ -26,7 +26,7 @@ void ExampleFile()
 }
 
 // exact solution
-void ExactU1(double x, double y,  double z, double *values)
+void ExactU1(double, double, double, double *values)
 {
   values[0] =  1;
   values[1] =  0;
@@ -34,7 +34,7 @@ void ExactU1(double x, double y,  double z, double *values)
   values[3] =  0;
   values[4] =  0; //Laplacian
 }
-void ExactU2(double x, double y,  double z, double *values)
+void ExactU2(double, double, double, double *values)
 {
   values[0] =  0;
   values[1] =  0;
@@ -42,7 +42,7 @@ void ExactU2(double x, double y,  double z, double *values)
   values[3] =  0;
   values[4] =  0; //Laplacian
 }
-void ExactU3(double x, double y,  double z, double *values)
+void ExactU3(double, double, double, double *values)
 {
   values[0] =  0;
   values[1] =  0;
@@ -51,7 +51,7 @@ void ExactU3(double x, double y,  double z, double *values)
   values[4] =  0; //Laplacian
 }
 
-void ExactP(double x, double y,  double z, double *values)
+void ExactP(double, double, double, double *values)
 {
   values[0] = 0;
   values[1] = 0;
@@ -175,8 +175,8 @@ void U3BoundValue(double x, double y, double z, double &value)
   }
 }
 
-void LinCoeffs(int n_points, double * X, double * Y, double * Z,
-               double **parameters, double **coeffs)
+void LinCoeffs(int n_points, double * X, double * Y, double * Z, double **,
+               double **coeffs)
 {
   const double eps = DIMENSIONLESS_VISCOSITY;
   std::vector<double> u1(5,0.0);

@@ -113,7 +113,7 @@ double NF_N_T_RT3_2D_iw[19] =
   0.0216417696886446886446886446886446,
   0.0216417696886446886446886446886446 };
 
-void NF_N_T_RT3_2D_EvalAll(TCollection *Coll, TBaseCell *Cell,
+void NF_N_T_RT3_2D_EvalAll(TCollection *, TBaseCell *Cell,
                            const double *PointValues, double *Functionals)
 {
   for(unsigned int i = 0; i < 24; ++i)
@@ -275,11 +275,10 @@ void NF_N_T_RT3_2D_EvalAll(TCollection *Coll, TBaseCell *Cell,
   }
 }
 
-void NF_N_T_RT3_2D_EvalEdge(TCollection *Coll, TBaseCell *Cell, int Joint,
+void NF_N_T_RT3_2D_EvalEdge(TCollection *, TBaseCell *Cell, int Joint,
                             const double *PointValues, double *Functionals)
 {
   // this is needed for setting boundary conditions
-  #ifdef __2D__
   Functionals[0] = 0.;
   Functionals[1] = 0.;
   Functionals[2] = 0.;
@@ -292,16 +291,15 @@ void NF_N_T_RT3_2D_EvalEdge(TCollection *Coll, TBaseCell *Cell, int Joint,
     Functionals[2] += pv * NF_N_T_RT3_2D_w[i] * NF_N_T_RT3_2D_p2[i];
     Functionals[3] += pv * NF_N_T_RT3_2D_w[i] * NF_N_T_RT3_2D_p3[i];
   }
-  double x0, x1, y0, y1;
-  Cell->GetVertex(Joint)->GetCoords(x0, y0);
-  Cell->GetVertex((Joint+1)%3)->GetCoords(x1, y1);// 3=number of edges
+  double x0, x1, y0, y1, z; // z is just a dummy
+  Cell->GetVertex(Joint)->GetCoords(x0, y0, z);
+  Cell->GetVertex((Joint+1)%3)->GetCoords(x1, y1, z);// 3=number of edges
   // length of joint
   double l = sqrt((x0-x1)*(x0-x1) + (y0-y1)*(y0-y1));
   Functionals[0] *= l;
   Functionals[1] *= l;
   Functionals[2] *= l;
   Functionals[3] *= l;
-  #endif
 }
 
 TNodalFunctional2D *NF_N_T_RT3_2D_Obj = new TNodalFunctional2D

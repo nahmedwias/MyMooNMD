@@ -114,7 +114,7 @@ void NF_N_H_RT0_3D_EvalAll(TCollection *Coll, TBaseCell *Cell,
   }
 }
 
-void NF_N_H_RT0_3D_EvalFace(TCollection *Coll, TBaseCell *Cell, int face,
+void NF_N_H_RT0_3D_EvalFace(TCollection *, TBaseCell *Cell, int face,
                             const double *PointValues, double *Functionals)
 {
   double s; // size of face

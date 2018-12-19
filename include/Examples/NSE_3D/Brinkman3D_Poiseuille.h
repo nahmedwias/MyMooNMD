@@ -31,7 +31,7 @@ void ExampleFile()
 // ========================================================================
 
 
-void ExactU1(double x, double y, double z, double *values)
+void ExactU1(double, double, double, double *values)
 {
   values[0] = 0.;
   values[1] = 0.;
@@ -40,7 +40,7 @@ void ExactU1(double x, double y, double z, double *values)
   values[4] = 0.; // Delta u2=u2_xx+u2_yy+u2_zz
 }
 
-void ExactU2(double x, double y, double z, double *values)
+void ExactU2(double, double, double, double *values)
 {
   values[0] = 0.;
   values[1] = 0.;
@@ -49,7 +49,7 @@ void ExactU2(double x, double y, double z, double *values)
   values[4] = 0.; // Delta u2=u2_xx+u2_yy+u2_zz
 }
 
-void ExactU3(double x, double y, double z, double *values)
+void ExactU3(double x, double y, double, double *values)
 {
   // ratio between Stokes and Darcy terms
   double t = fabs(sqrt( effective_viscosity/sigma));
@@ -98,7 +98,7 @@ void ExactU3(double x, double y, double z, double *values)
   if pressures with non zero mean are prescribed on 
   the boundaries
  */
-void ExactP(double x, double y, double z, double *values)
+void ExactP(double, double, double z, double *values)
 {
   values[0] = 1-(_DELTA_P/_HEIGHT)*z;
   values[1] = 0.;
@@ -155,18 +155,18 @@ void BoundCondition(double x, double y, double z, BoundCond &cond)
   }
 }
 
-void U1BoundValue(double x, double y, double z, double &value) // (int BdComp, double Param, double &value)
+void U1BoundValue(double, double, double, double &value) // (int BdComp, double Param, double &value)
 {
     value = 0.;
 
 }
 
-void U2BoundValue(double x, double y, double z, double &value)
+void U2BoundValue(double, double, double, double &value)
 {
   value = 0;
 }
 
-void U3BoundValue(double x, double y, double z, double &value)
+void U3BoundValue(double x, double y, double, double &value)
 {
   if (neumann_id.size())
   {
@@ -189,8 +189,8 @@ void U3BoundValue(double x, double y, double z, double &value)
 // -mu Delta u + grad(p) + sigma u = (f1,f2)
 // div(u) = g
 // ========================================================================
-void LinCoeffs(int n_points, double *x, double *y, double *z,
-    double **parameters, double **coeffs)
+void LinCoeffs(int n_points, double *, double *, double *, double **,
+               double **coeffs)
 {
   for(int i = 0; i < n_points; i++)
   {

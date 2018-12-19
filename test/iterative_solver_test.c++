@@ -6,7 +6,7 @@
 #include <MooNMD_Io.h>
 #include <BlockVector.h>
 
-int main(int argc, char* argv[])
+int main(int, char**)
 {
   Output::increaseVerbosity(1);
   /**

@@ -1101,8 +1101,7 @@ void Assemble2DSlipBC(int n_fespaces, const TFESpace2D **fespaces,
 int n_sqmatrices, TSquareMatrix2D **sqmatrices,
 int n_matrices, TMatrix2D **matrices,
 int n_rhs, double **rhs, const TFESpace2D **ferhs,
-BoundCondFunct2D **BoundaryConditions,
-BoundValueFunct2D **BoundaryValues,
+BoundCondFunct2D **BoundaryConditions, BoundValueFunct2D **,
 TFEFunction2D *u1, TFEFunction2D *u2)
 {
   int N_AllMatrices = n_sqmatrices+n_matrices;
@@ -1929,6 +1928,7 @@ TFEFunction2D *u1, TFEFunction2D *u2)
     implementation: Alfonso (07.09.2010)
 */
 
+#ifdef __2D__
 void Assemble2D_VectFE(int n_fespaces, const TFESpace2D** fespaces,
                        int n_sqmatrices, TSquareMatrix2D** sqmatrices,
                        int n_matrices, TMatrix2D** matrices, int n_rhs,
@@ -1937,7 +1937,6 @@ void Assemble2D_VectFE(int n_fespaces, const TFESpace2D** fespaces,
                        BoundCondFunct2D** BoundaryConditions, 
                        BoundValueFunct2D * const * const BoundaryValues)
 {
-#ifdef __2D__
   int N_AllMatrices = n_sqmatrices+n_matrices;
   const double *weights, *xi, *eta;
   double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D];
@@ -2356,8 +2355,8 @@ void Assemble2D_VectFE(int n_fespaces, const TFESpace2D** fespaces,
       delete [] LocRhs;
     }
   } // endfor i (N_Cells)
-#endif // __2D__
 } // end of Assemble_VectFE
+#endif // __2D__
 
 
 

@@ -42,7 +42,7 @@
 #include <BaseCell.h>
 #include <BoundaryAssembling2D.h>
 
-void OnlyDirichlet(int i, double t, BoundCond &cond)
+void OnlyDirichlet(int, double, BoundCond &cond)
 {
   cond = DIRICHLET;
 }
@@ -79,8 +79,7 @@ TFEFunction2D::~TFEFunction2D()
 /** Calculate L2-errors to a given function at the boundary */
 /** written by Laura Blank 27.02.18 */
 void TFEFunction2D::GetL2BoundaryError(BoundValueFunct2D *Exact,
-                                       TAuxParam2D *Aux,
-                                       int n_fespaces,
+                                       TAuxParam2D *, int,
                                        const TFESpace2D **fespaces,
                                        double *final_boundary_error_l2,
                                        bool rescale_by_h_E)
@@ -182,8 +181,7 @@ void TFEFunction2D::GetL2BoundaryError(BoundValueFunct2D *Exact,
 //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 /** Calculate L2-errors to a given function at the boundary (without the global database)*/
 void TFEFunction2D::GetL2BoundaryError(BoundValueFunct2D *Exact,
-                                       TAuxParam2D *Aux,
-                                       int n_fespaces,
+                                       TAuxParam2D *, int,
                                        const TFESpace2D **fespaces,
                                        double *final_boundary_error_l2,
                                        int boundary_component_id,
@@ -289,7 +287,7 @@ void TFEFunction2D::GetErrors(DoubleFunct2D *Exact, int N_Derivatives,
     CoeffFct2D Coeff, 
     TAuxParam2D *Aux,
     int n_fespaces, const TFESpace2D **fespaces,
-    double *errors, bool is_SDFEM, 
+    double *errors, bool,
     std::function<bool(const TBaseCell*, int)>funct) const
 {
   bool SecondDer[n_fespaces];

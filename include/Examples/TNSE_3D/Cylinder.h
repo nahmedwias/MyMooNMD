@@ -19,44 +19,34 @@ void ExampleFile()
 }
 
 
-void InitialU1(double x, double y, double z, double *values)
+void InitialU1(double, double, double, double *values)
 {
   
     values[0] = 0;
 }
 
 
-void InitialU2(double x, double y, double z, double *values)
+void InitialU2(double, double, double, double *values)
 {
   
     values[0] = 0;
 }
 
 
-void InitialU3(double x, double y, double z, double *values)
+void InitialU3(double, double, double, double *values)
 {
 
     values[0] = 0;
 }
 
 
-void InitialP(double x, double y,  double z, double *values)
+void InitialP(double, double, double, double *values)
 {
   values[0] = 0;
 }
 
 
-void ExactU1(double x, double y,  double z, double *values)
-{
-  values[0] = 0;
-  values[1] = 0;
-  values[2] = 0;
-  values[3] = 0;
-  values[4] = 0;
-}
-
-
-void ExactU2(double x, double y,  double z, double *values)
+void ExactU1(double, double, double, double *values)
 {
   values[0] = 0;
   values[1] = 0;
@@ -66,7 +56,7 @@ void ExactU2(double x, double y,  double z, double *values)
 }
 
 
-void ExactU3(double x, double y,  double z, double *values)
+void ExactU2(double, double, double, double *values)
 {
   values[0] = 0;
   values[1] = 0;
@@ -76,7 +66,17 @@ void ExactU3(double x, double y,  double z, double *values)
 }
 
 
-void ExactP(double x, double y,  double z, double *values)
+void ExactU3(double, double, double, double *values)
+{
+  values[0] = 0;
+  values[1] = 0;
+  values[2] = 0;
+  values[3] = 0;
+  values[4] = 0;
+}
+
+
+void ExactP(double, double, double, double *values)
 {
   values[0] = 0;
   values[1] = 0;
@@ -116,14 +116,14 @@ void BoundCondition(double x, double y, double z, BoundCond &cond)
 
 
 // value of boundary condition
-void U1BoundValue(double x, double y, double z, double &value)
+void U1BoundValue(double, double, double, double &value)
 {
   value = 0;
 }
 
 
 // value of boundary condition
-void U2BoundValue(double x, double y, double z, double &value)
+void U2BoundValue(double, double, double, double &value)
 {
   value = 0;
 }
@@ -168,8 +168,8 @@ void U3BoundValue(double x, double y, double z, double &value)
 // ========================================================================
 // coefficients for Stokes form: A, B1, B2, f1, f2
 // ========================================================================
-void LinCoeffs(int n_points, double *X, double *Y, double *Z,
-double **parameters, double **coeffs)
+void LinCoeffs(int n_points, double *, double *, double *, double **,
+               double **coeffs)
 {
   double nu = DIMENSIONLESS_VISCOSITY;
 

@@ -1484,7 +1484,7 @@ void DataWriter<d>::writeCaseFile()
       casf.precision(5);
       casf.width(12);
       casf << old_timeValues;
-      if((i && !(i % 5)) || (i == output_initial_index))
+      if((i && !(i % 5)) || ((int)i == output_initial_index))
 	casf << "\n";
       else
 	casf << " ";

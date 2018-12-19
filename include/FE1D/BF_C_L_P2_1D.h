@@ -19,7 +19,7 @@ static void C_L_P2_1D_DeriveXi(double xi, double *values)
 }
 
 // values of the derivatives in xi-xi  direction
-static void C_L_P2_1D_DeriveXiXi(double xi, double *values)
+static void C_L_P2_1D_DeriveXiXi(double, double *values)
 {
   values[0]=1;
   values[1]=-2;

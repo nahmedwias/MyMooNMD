@@ -57,8 +57,9 @@ class TBdCylinder : public TBoundComp3D
                             double &X, double &Y, double &Z,
                             double &T, double &S) const override;
 
-    virtual void get_normal_vector(double x, double y, double z,
-				   double& nx, double& ny, double &nz) const override{
+    virtual void get_normal_vector(double, double, double,
+                                   double&, double&, double &) const override
+    {
       Output::print(" ** ERROR: get_normal_vector() not yet implemented for BdCylinder ");
       exit(1);
     };

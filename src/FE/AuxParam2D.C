@@ -52,11 +52,9 @@ TAuxParam2D::TAuxParam2D()
 
 
 /** return all parameters at all quadrature points */
-void TAuxParam2D::GetParameters(int N_Points, TCollection *Coll, 
-                                TBaseCell *cell, int cellnum,
-                                const double *Xi, const double *Eta,
-                                double *X, double *Y,
-                                double **Parameters)
+void TAuxParam2D::GetParameters(int N_Points, TCollection *, TBaseCell *cell,
+                                int cellnum, const double *, const double *,
+                                double *X, double *Y, double **Parameters)
 {
   // collect information
   for(int j=0;j<N_FEValues;j++)

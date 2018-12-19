@@ -30,7 +30,7 @@
 #include <ParFECommunicator3D.h>
 #endif
 
-void OnlyDirichlet(double x, double y, double z, BoundCond &cond)
+void OnlyDirichlet(double, double, double, BoundCond &cond)
 {
 	cond = DIRICHLET;
 }
@@ -1529,7 +1529,7 @@ void TFEFunction3D::Interpolate(int N_Coord, double *Coords, int N_AuxFeFcts,  T
   }
 }
 
-void TFEFunction3D::add(AnalyticFunction f)
+void TFEFunction3D::add(AnalyticFunction)
 {
   ErrThrow("TFEFunction3D::add is not yet implemented");
 }

@@ -4,9 +4,8 @@
 #include <MooNMD_Io.h>
 
 template <int d>
-void TCDStiff(double Mult, double *coeff, double *param,
-                    double hK, double**OrigValues, int *N_BaseFuncts,
-                    double ***LocMatrices, double **LocRhs)
+void TCDStiff(double Mult, double *coeff, double *, double , double**OrigValues,
+              int *N_BaseFuncts, double ***LocMatrices, double **)
 {
   double **Matrix = LocMatrices[0];
   int N_ = N_BaseFuncts[0];
@@ -42,8 +41,8 @@ void TCDStiff(double Mult, double *coeff, double *param,
 }
 
 template<int d>
-void TCDMass(double Mult, double *coeff, double *param, double hK, double**OrigValues, 
-             int *N_BaseFuncts, double ***LocMatrices, double **LocRhs)
+void TCDMass(double Mult, double *, double *, double, double**OrigValues, 
+             int *N_BaseFuncts, double ***LocMatrices, double **)
 {
   double **Matrix = LocMatrices[1];
   int N_ = N_BaseFuncts[0];
@@ -55,8 +54,8 @@ void TCDMass(double Mult, double *coeff, double *param, double hK, double**OrigV
 }
 
 template<int d>
-void TCDRhs(double Mult, double* coeff, double* param, double hK, double ** OrigValues, 
-            int* N_BaseFuncts, double *** LocMatrices, double ** LocRhs)
+void TCDRhs(double Mult, double* coeff, double*, double, double ** OrigValues, 
+            int* N_BaseFuncts, double ***, double ** LocRhs)
 {
   int N_ = N_BaseFuncts[0];
   double *u = OrigValues[0];
@@ -67,8 +66,8 @@ void TCDRhs(double Mult, double* coeff, double* param, double hK, double ** Orig
 }
 
 template <int d>
-void TCDStiffSUPG(double Mult, double *coeff, double *param, double hK, double**OrigValues, 
-              int *N_BaseFuncts, double ***LocMatrices, double **LocRhs)
+void TCDStiffSUPG(double Mult, double *coeff, double *, double hK, double**OrigValues, 
+              int *N_BaseFuncts, double ***LocMatrices, double **)
 {
   double **Matrix = LocMatrices[0];
   int N_ = N_BaseFuncts[0];
@@ -138,8 +137,8 @@ void TCDStiffSUPG(double Mult, double *coeff, double *param, double hK, double**
   }
 }
 template <int d>
-void TCDMassSUPG(double Mult, double *coeff, double *param, double hK, double**OrigValues, 
-             int *N_BaseFuncts, double ***LocMatrices, double **LocRhs)
+void TCDMassSUPG(double Mult, double *coeff, double *, double hK, double**OrigValues, 
+             int *N_BaseFuncts, double ***LocMatrices, double **)
 {
   double **Matrix = LocMatrices[1];
   int N_ = N_BaseFuncts[0];
@@ -198,8 +197,9 @@ void TCDMassSUPG(double Mult, double *coeff, double *param, double hK, double**O
 }
 
 template <int d>
-void TCDRhsSUPG(double Mult, double *coeff, double *param, double hK, double**OrigValues, 
-             int *N_BaseFuncts, double ***LocMatrices, double **LocRhs)
+void TCDRhsSUPG(double Mult, double *coeff, double *, double hK,
+                double**OrigValues,  int *N_BaseFuncts, double ***,
+                double **LocRhs)
 {
   int N_ = N_BaseFuncts[0];
   
