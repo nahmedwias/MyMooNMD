@@ -25,7 +25,7 @@
 #include <type_traits>
 
 
-int main(int argc, char* argv[])
+int main(int, char**)
 {
 
   //  declaration of databases

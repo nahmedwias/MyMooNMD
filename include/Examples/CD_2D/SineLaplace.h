@@ -19,7 +19,7 @@ void Exact(double x, double y, double *values)
 }
 
 // kind of boundary condition (for FE space needed)
-void BoundCondition(int BdComp, double t, BoundCond &cond)
+void BoundCondition(int BdComp, double, BoundCond &cond)
 {
   if(BdComp==1)
     cond = NEUMANN;
@@ -42,8 +42,8 @@ void BoundValue(int BdComp, double Param, double &value)
     value = 0;
 }
 
-void BilinearCoeffs(int n_points, double *x, double *y,
-        double **parameters, double **coeffs)
+void BilinearCoeffs(int n_points, double *x, double *y, double **,
+                    double **coeffs)
 {
   const double eps=1/TDatabase::ParamDB->PE_NR;
   double exact[4];

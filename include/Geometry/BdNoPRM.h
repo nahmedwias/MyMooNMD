@@ -44,8 +44,9 @@ class TBdNoPRM : public TBoundComp3D
                             double &X, double &Y, double &Z,
                             double &T, double &S) const override;
 
-    virtual void get_normal_vector(double x, double y, double z,
-				   double& nx, double& ny, double &nz) const override{
+    virtual void get_normal_vector(double, double, double, double&, double&,
+                                   double&) const override
+    {
       ErrThrow(" ** ERROR: get_normal_vector() not available for BdNoPRM ");
     };
     

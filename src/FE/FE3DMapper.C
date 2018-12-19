@@ -39,14 +39,10 @@ TFE3DMapper::TFE3DMapper(char *name, char *description, int n0, int n1,
   Aux=new int[n_nodes];
 }
 
-void TFE3DMapper::Map(int Type,
-                    int *Global, int I_K0, int I_K1, 
-                    int *Indices0, int *Indices1,
-                    int LocEdge0, int LocEdge1,
-                    TFEDesc3D *Desc0, TFEDesc3D *Desc1,
-                    int &Counter,
-                    std::vector<THangingNode *> *vect,
-                    std::vector<int> *numbers)
+void TFE3DMapper::Map(int Type, int *Global, int I_K0, int I_K1, int *Indices0,
+                      int *Indices1, int, int, TFEDesc3D *, TFEDesc3D *,
+                      int &Counter, std::vector<THangingNode*> *vect,
+                      std::vector<int> *numbers)
 {
   static int i;
   int *CurrentPairs;
@@ -74,7 +70,7 @@ void TFE3DMapper::Map(int Type,
 
 void TFE3DMapper::MapBound(int *Global, int I_K, int *Indices, 
                          int &BoundCounter,
-                         std::vector<THangingNode *> *vect,
+                         std::vector<THangingNode *> *,
                          std::vector<int> *numbers)
 {
   static int i,j, dof, v, w;
@@ -132,8 +128,8 @@ void TFE3DMapper::MapBound(int *Global, int I_K, int *Indices,
 }
 
 void TFE3DMapper::MapDOF(int *Global, int dof0, int dof1, int &Counter,
-                         std::vector<THangingNode *> *vect,
-                         std::vector<int> *numbers)
+                         std::vector<THangingNode *> *,
+                         std::vector<int> *)
 {
   int v0, v1, w0, w1;
   int w,e;
@@ -271,7 +267,7 @@ void TFE3DMapper::MapDOF(int *Global, int dof0, int dof1, int &Counter,
 
 void TFE3DMapper::MapBoundEdge(int N_EdgeDOF, int *Global, int I_K, int *Indices, 
                                int &BoundCounter,
-                               std::vector<THangingNode *> *vect,
+                               std::vector<THangingNode *> *,
                                std::vector<int> *numbers)
 {
   static int i,j, dof, v, w;
@@ -333,7 +329,7 @@ void TFE3DMapper::MapBoundEdge(int N_EdgeDOF, int *Global, int I_K, int *Indices
 
 void TFE3DMapper::MapBoundVert(int *Global, int I_K, int Index, 
                                int &BoundCounter,
-                               std::vector<THangingNode *> *vect,
+                               std::vector<THangingNode *> *,
                                std::vector<int> *numbers)
 {
   static int j, dof, v, w;

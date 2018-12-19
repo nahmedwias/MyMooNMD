@@ -137,7 +137,7 @@ Example Example::Darcy(const ParameterDatabase& param_db)
       exact.push_back(AnalyticalFunction(p));
       // boundary data, automatically computed from known solution
       // bd.push_back(BoundaryData(bc[0], exact));
-      auto g = [permeability](unsigned int component, double t, double time)
+      auto g = [permeability](unsigned int component, double t, double)
       {
         if(component == 0 || component == 3) // Neumann
           return 0.0;
@@ -194,7 +194,7 @@ Example Example::Darcy(const ParameterDatabase& param_db)
       };
       exact.push_back(AnalyticalFunction(u2));
       // exact solution, pressure component
-      auto p = [](const Point& point, FunctionEvaluation& v)
+      auto p = [](const Point&, FunctionEvaluation& v)
       {
         v.set(0., 0, MultiIndex::D00);
         v.set(0., 0, MultiIndex::D10);
@@ -206,7 +206,7 @@ Example Example::Darcy(const ParameterDatabase& param_db)
       exact.push_back(AnalyticalFunction(p));
       // boundary data, automatically computed from known solution
       // bd.push_back(BoundaryData(bc[0], exact));
-      auto g = [permeability](unsigned int component, double t, double time)
+      auto g = [permeability](unsigned int component, double t, double)
       {
         if(component == 0) // Neumann, (x,y) = (t,0), (nx,ny) = (0,-1)
           return -t;
@@ -286,7 +286,7 @@ Example Example::Darcy(const ParameterDatabase& param_db)
       exact.push_back(AnalyticalFunction(p));
       // boundary data, automatically computed from known solution
       // bd.push_back(BoundaryData(bc[0], exact));
-      auto g = [permeability](unsigned int component, double t, double time)
+      auto g = [permeability](unsigned int component, double t, double)
       {
         if(component == 0) // Neumann, (x,y) = (t,0), (nx,ny) = (0,-1)
           return 0.;
@@ -300,7 +300,7 @@ Example Example::Darcy(const ParameterDatabase& param_db)
       };
       bd.push_back(BoundaryData(g));
       // the coefficient function
-      f = [permeability](const Point& point, double, 
+      f = [permeability](const Point&, double,
                          std::vector<double>& coeffs)
       {
         coeffs[0] = 1./permeability; // permeability
@@ -365,7 +365,7 @@ Example Example::Darcy(const ParameterDatabase& param_db)
       // exact solution, pressure component (unknown)
       exact.push_back(AnalyticalFunction());
       // boundary data
-      auto g = [permeability](unsigned int component, double t, double time)
+      auto g = [permeability](unsigned int component, double, double)
       {
         if(component == 0) // Dirichlet (x,y) = (t,0), (nx,ny) = (0,-1)
           return 0.;
@@ -550,7 +550,7 @@ Example Example::Darcy(const ParameterDatabase& param_db)
       exact.push_back(AnalyticalFunction(p));
       // boundary data, automatically computed from known solution
       // bd.push_back(BoundaryData(bc[0], exact));
-      auto g = [permeability](unsigned int component, double t, double time)
+      auto g = [permeability](unsigned int component, double t, double)
       {
         double h = 1.0 / 32.0; // needs to be the mesh width!
         int order = 1;         // polynomial order (1 or 2 supported)

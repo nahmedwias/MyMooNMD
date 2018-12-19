@@ -210,8 +210,7 @@ errors(), outputWriter(param_db)
 Brinkman3D::Brinkman3D(std::list<TCollection* > collections,
                        const ParameterDatabase& param_db,
                        const Example_Brinkman3D& e,
-                       int reference_id
-                       )
+                       int)
 : systems(), example(e), brinkman3d_db(get_default_Brinkman3D_parameters()),
 solver(param_db), defect(), initial_residual(1e10), norms_of_old_residuals(),
 errors(), outputWriter(param_db)
@@ -611,7 +610,7 @@ void Brinkman3D::assemble()
 }
 
 /** ************************************************************************ */
-void Brinkman3D::stopIt(unsigned int iteration_counter)
+void Brinkman3D::stopIt(unsigned int)
 { 
 }
 
@@ -747,7 +746,7 @@ void Brinkman3D::solve_with_Petsc(ParameterDatabase parmoon_db)
 
 
 /** ************************************************************************ */
-void Brinkman3D::output(int i)
+void Brinkman3D::output(int)
 {
 #ifdef _MPI
     int my_rank;
@@ -818,7 +817,7 @@ void Brinkman3D::output(int i)
         err_send[7]=err_p[1];
         
         MPI_Allreduce(err_send, err_red, 8, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-        for(i=0;i<8;i++)
+        for(int i=0;i<8;i++)
         {//MPI: sqrt was skipped in GetErrors function - do it here globally!
             err_red[i] = sqrt(err_red[i]);
         }

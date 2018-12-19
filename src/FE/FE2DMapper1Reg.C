@@ -45,9 +45,8 @@ TFE2DMapper1Reg::TFE2DMapper1Reg(char *name, char *description,
     coarse cell has lower number,
     0 is coarser side 0; 1,2 are on finer side 1 */
 void TFE2DMapper1Reg::MapCoarseFine(int *Global, int I_K0, int I_K1, int I_K2,
-             int *Indices0, int *Indices1, int *Indices2,
-             int LocEdge0, int LocEdge1, int LocEdge2,
-             TFEDesc2D *Desc0, TFEDesc2D *Desc1, TFEDesc2D *Desc2,
+             int *Indices0, int *Indices1, int *Indices2, int, int, int,
+             TFEDesc2D *, TFEDesc2D *, TFEDesc2D *,
              int &Counter, int LowerFirstChild,
              std::vector<THangingNode *> *vect,
              std::vector<int> *numbers)
@@ -120,9 +119,8 @@ void TFE2DMapper1Reg::MapCoarseFine(int *Global, int I_K0, int I_K1, int I_K2,
     coarse cell has bigger number,
     0 is coarser side 0; 1,2 are on finer side 1 */
 void TFE2DMapper1Reg::MapFineCoarse(int *Global, int I_K0, int I_K1, int I_K2,
-             int *Indices0, int *Indices1, int *Indices2,
-             int LocEdge0, int LocEdge1, int LocEdge2,
-             TFEDesc2D *Desc0, TFEDesc2D *Desc1, TFEDesc2D *Desc2,
+             int *Indices0, int *Indices1, int *Indices2, int, int, int,
+             TFEDesc2D *, TFEDesc2D *, TFEDesc2D *,
              int &Counter, int LowerFirstChild,
              std::vector<THangingNode *> *vect,
              std::vector<int> *numbers)

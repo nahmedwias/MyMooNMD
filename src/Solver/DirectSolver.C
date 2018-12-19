@@ -39,24 +39,9 @@ extern "C" void pardiso_(
     int *error
 );
 #else
-void pardiso_(
-    void * handle,
-    int *max_factorizations,
-    int *matrix_num,
-    int *matrix_type,
-    int *ido,
-    int *neqns,
-    double *a,
-    int *ia,
-    int *ja,
-    int *perm_user,
-    int *nb,
-    int iparam[pardiso_options_array_length],
-    int *msglvl,
-    double *b,
-    double *x,
-    int *error
-)
+void pardiso_(void * , int *, int *, int *, int *, int *, double *, int *,
+              int *, int *, int *, int [pardiso_options_array_length], int *,
+              double *, double *, int *)
 {
   ErrThrow("you compiled without openmp, therefore pardiso does not work."
            "Change PARMOON_PARALLEL_TYPE in your CMakeCache.txt");

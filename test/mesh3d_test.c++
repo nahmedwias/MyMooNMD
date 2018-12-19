@@ -163,7 +163,7 @@ double get_tolerance(std::string solver_name)
 }
 
 
-int main(int argc, char* argv[])
+int main(int, char* argv[])
 {
   //declaration of databases
   TDatabase Database;

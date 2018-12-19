@@ -1006,28 +1006,6 @@ std::vector<std::shared_ptr<const FEMatrix>> BlockFEMatrix::get_blocks() const
 
 /* ************************************************************************* */
 
-std::vector<std::shared_ptr<FEMatrix>> BlockFEMatrix::get_blocks_TERRIBLY_UNSAFE()
-{
-  std::vector<std::shared_ptr<FEMatrix>> block_ptrs;
-
-  for(size_t i =0 ; i < n_cell_columns_ ; ++i)
-  {
-    for(size_t j =0 ; j < n_cell_rows_ ; ++j)
-    {
-      //juggle the pointers around until we can store it the way we want...
-      std::shared_ptr<FEMatrix> shared //cast FEMatrix
-      = std::dynamic_pointer_cast<FEMatrix>(cell_grid_[i][j].block_);
-
-      // make a weak pointer from it and push it back
-      block_ptrs.push_back(shared);
-    }
-  }
-
-  return block_ptrs;
-}
-
-/* ************************************************************************* */
-
 std::vector<std::shared_ptr<FEMatrix>> BlockFEMatrix::get_blocks_uniquely(
     bool include_zeroes)
 {
@@ -1418,10 +1396,9 @@ void BlockFEMatrix::print_matrix_info(std::string name) const
 
 /* ************************************************************************* */
 
-void BlockFEMatrix::replace_blocks(
-    const TMatrix& new_block,
-    const std::vector<std::vector<size_t>>& cell_positions,
-    const std::vector<bool>& transposed_states)
+void BlockFEMatrix::replace_blocks(const TMatrix&,
+                                   const std::vector<std::vector<size_t>>&,
+                                   const std::vector<bool>&)
 {
   ErrThrow("Don't try to put a TMatrix into an FEMatrix!");
 }

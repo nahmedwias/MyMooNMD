@@ -9,7 +9,7 @@ void ExampleFile()
 // ========================================================================
 // exact solution
 // ========================================================================
-void ExactU1(double x, double y, double *values)
+void ExactU1(double x, double, double *values)
 {
   values[0] = sin(Pi*x);
   values[1] = Pi*cos(Pi*x);
@@ -33,7 +33,7 @@ void ExactP(double x, double y, double *values)
   values[3] = -Pi*Pi*sin(Pi*x)*cos(Pi*y)-Pi*Pi*sin(Pi*x)*cos(Pi*y);
 }
 
-void InitialU1(double x, double y, double *values)
+void InitialU1(double x, double, double *values)
 {
   values[0] = sin(Pi*x);
 }
@@ -51,7 +51,7 @@ void InitialP(double x, double y, double *values)
 // ========================================================================
 // boundary conditions
 // ========================================================================
-void BoundCondition(int i, double t, BoundCond &cond)
+void BoundCondition(int, double, BoundCond &cond)
 {
   cond = DIRICHLET;
 }
@@ -163,7 +163,7 @@ void U2BoundValue(int BdComp, double Param, double &value)
 // coefficients for Stokes form: A, B1, B2, f1, f2
 // ========================================================================
 void LinCoeffs(int n_points, double *X, double *Y,
-               double **parameters, double **coeffs)
+               double **, double **coeffs)
 {
   const double nu=1./TDatabase::ParamDB->RE_NR;
   double val1[4];

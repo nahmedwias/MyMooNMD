@@ -83,7 +83,7 @@ static double *NF_D_H_P1_3D_ZetaArray[6] = {
 static double *NF_D_H_P1_3D_T = nullptr;
 static double *NF_D_H_P1_3D_S = nullptr;
 
-void NF_D_H_P1_3D_EvalAll(TCollection *Coll, TBaseCell *Cell,
+void NF_D_H_P1_3D_EvalAll(TCollection *, TBaseCell *,
                           const double *PointValues, double *Functionals)
 {
   Functionals[0] = ( PointValues[0]+PointValues[1]
@@ -116,8 +116,8 @@ void NF_D_H_P1_3D_EvalAll(TCollection *Coll, TBaseCell *Cell,
                     +PointValues[7]*NF_D_H_P1_3D_Zeta[7] ) * 0.375;
 }
 
-void NF_D_H_P1_3D_EvalFace(TCollection *Coll, TBaseCell *Cell, int Joint, 
-                           const double *PointValues, double *Functionals)
+void NF_D_H_P1_3D_EvalFace(TCollection *, TBaseCell *, int,
+                           const double *, double *)
 {
 }
 

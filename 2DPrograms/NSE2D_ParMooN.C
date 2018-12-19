@@ -20,7 +20,7 @@
 // =======================================================================
 // main program
 // =======================================================================
-int main(int argc, char* argv[])
+int main(int, char* argv[])
 {
   // start a stopwatch which measures time spent in program parts
   Chrono timer;

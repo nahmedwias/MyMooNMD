@@ -153,12 +153,12 @@ int TimeNSBeginParam_VMS_SmallRhs[1] = { 0 };
 // boundary values for higher order fe in VMS
 // ========================================================================
 
-void ho_BoundCondition(double x, double y, double z, BoundCond &cond)
+void ho_BoundCondition(double, double, double, BoundCond &cond)
 {
   cond = DIRICHLET;
 }
 
-void ho_BoundValue(double x, double y, double z, double &value)
+void ho_BoundValue(double, double, double, double &value)
 {
   value = 0;
 }

@@ -100,7 +100,7 @@ ConvectionDiffusion<d>::ConvectionDiffusion(const TDomain& domain,
       ErrThrow("Not enough collections (", n_levels, ") to use ",
                desirec_multigrid_levels, " multigrid levels!");
     // remove not needed coarser grid from list of collections
-    for(int i = desirec_multigrid_levels; i < n_levels; ++i)
+    for(size_t i = desirec_multigrid_levels; i < n_levels; ++i)
     {
       collections.pop_back();
     }

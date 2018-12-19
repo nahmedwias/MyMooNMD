@@ -278,7 +278,7 @@ public:
     const TFESpace3D& get_pressure_space() const
     { return this->systems.front().pressure_space; }
     
-    const int get_size(){return this->systems.front().solution.length();}
+    int get_size(){return this->systems.front().solution.length();}
     
     const ParameterDatabase & get_db() const
     { return brinkman3d_db; }

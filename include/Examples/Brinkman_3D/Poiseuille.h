@@ -19,7 +19,7 @@ void ExampleFile()
 // ========================================================================
 // exact solution
 // ========================================================================
-void ExactU1(double x, double y,  double z, double *values)
+void ExactU1(double, double, double, double *values)
 {
     values[0] = 0;           // u1
     values[1] = 0;           // u1_x
@@ -28,7 +28,7 @@ void ExactU1(double x, double y,  double z, double *values)
     values[4] = 0;           // Delta u1=u1_xx+u1_yy+u1_zz
 }
 
-void ExactU2(double x, double y,  double z, double *values)
+void ExactU2(double, double, double, double *values)
 {
     values[0] = 0;            // u2
     values[1] = 0;            // u2_x
@@ -37,7 +37,7 @@ void ExactU2(double x, double y,  double z, double *values)
     values[4] = 0;            // Delta u2=u2_xx+u2_yy+u2_zz
 }
 
-void ExactU3(double x, double y,  double z, double *values)
+void ExactU3(double x, double y, double, double *values)
 {
     values[0] = 1-(x*x+y*y);        // u3
     values[1] = -2*x;               // u3_x
@@ -47,7 +47,7 @@ void ExactU3(double x, double y,  double z, double *values)
 
 }
 
-void ExactP(double x, double y,  double z, double *values)
+void ExactP(double, double, double z, double *values)
 {
     double Length = 1.;
     double Radius = 1.;
@@ -68,7 +68,7 @@ void ExactP(double x, double y,  double z, double *values)
 // kind of boundary condition (for FE space needed);
 // To all nodes (x,y,z) a bound condition has to be assigned to (Usually DIRICHLET or NEUMANN),
 // The condition "DIRICHLET" assures the uniqueness of the pressure in case of Dirichlet b.c.
-void BoundCondition(double x, double y, double z, BoundCond &cond)
+void BoundCondition(double, double, double z, BoundCond &cond)
 {
     double zBottom = 0.;
     double zTop = 1.;
@@ -120,13 +120,13 @@ void BoundCondition(double x, double y, double z, BoundCond &cond)
 
 
 // value of boundary condition
-void U1BoundValue(double x, double y, double z, double &value)
+void U1BoundValue(double, double, double, double &value)
 {
     value = 0;
 }
 
 // value of boundary condition
-void U2BoundValue(double x, double y, double z, double &value)
+void U2BoundValue(double, double, double, double &value)
 {
     value = 0;
 }
@@ -154,8 +154,8 @@ void U3BoundValue(double x, double y, double z, double &value)
 // ========================================================================
 // coefficients for Stokes form: A, B1, B2, f1, f2
 // ========================================================================
-void LinCoeffs(int n_points, double *X, double *Y, double *Z,
-               double **parameters, double **coeffs)
+void LinCoeffs(int n_points, double *, double *, double *, double **,
+               double **coeffs)
 {
     double *coeff;
     //double Length = 1;

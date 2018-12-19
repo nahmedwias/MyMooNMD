@@ -116,8 +116,7 @@ static void N_T_RT1_3D_DeriveZeta(double xi, double eta, double zeta,
   }
 }
 
-static void N_T_RT1_3D_DeriveXiXi(double xi, double eta, double zeta,
-                                  double *values)
+static void N_T_RT1_3D_DeriveXiXi(double, double, double, double *values)
 {
   int nBF = 15; // number of basis functions
   // monomials x-component, y-component and z-component
@@ -140,8 +139,7 @@ static void N_T_RT1_3D_DeriveXiXi(double xi, double eta, double zeta,
   }
 }
 
-static void N_T_RT1_3D_DeriveXiEta(double xi, double eta, double zeta,
-                                   double *values)
+static void N_T_RT1_3D_DeriveXiEta(double, double, double, double *values)
 {
   int nBF = 15; // number of basis functions
   // monomials x-component, y-component and z-component
@@ -164,8 +162,7 @@ static void N_T_RT1_3D_DeriveXiEta(double xi, double eta, double zeta,
   }
 }
 
-static void N_T_RT1_3D_DeriveXiZeta(double xi, double eta, double zeta,
-                                    double *values)
+static void N_T_RT1_3D_DeriveXiZeta(double, double, double, double *values)
 {
   int nBF = 15; // number of basis functions
   // monomials x-component, y-component and z-component
@@ -188,8 +185,7 @@ static void N_T_RT1_3D_DeriveXiZeta(double xi, double eta, double zeta,
   }
 }
 
-static void N_T_RT1_3D_DeriveEtaEta(double xi, double eta, double zeta,
-                                    double *values)
+static void N_T_RT1_3D_DeriveEtaEta(double, double, double, double *values)
 {
   int nBF = 15; // number of basis functions
   // monomials x-component, y-component and z-component
@@ -212,8 +208,7 @@ static void N_T_RT1_3D_DeriveEtaEta(double xi, double eta, double zeta,
   }
 }
 
-static void N_T_RT1_3D_DeriveEtaZeta(double xi, double eta, double zeta,
-                                     double *values)
+static void N_T_RT1_3D_DeriveEtaZeta(double, double, double, double *values)
 {
   int nBF = 15; // number of basis functions
   // monomials x-component, y-component and z-component
@@ -236,8 +231,7 @@ static void N_T_RT1_3D_DeriveEtaZeta(double xi, double eta, double zeta,
   }
 }
 
-static void N_T_RT1_3D_DeriveZetaZeta(double xi, double eta, double zeta,
-                                      double *values)
+static void N_T_RT1_3D_DeriveZetaZeta(double, double, double, double *values)
 {
   int nBF = 15; // number of basis functions
   // monomials x-component, y-component and z-component

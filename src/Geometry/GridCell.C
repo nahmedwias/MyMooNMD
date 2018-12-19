@@ -735,7 +735,7 @@ int TGridCell::Set1Refine(int i)
 #endif
 
 #ifdef __3D__
-int TGridCell::Set1Refine(int i)
+int TGridCell::Set1Refine(int)
 {
  
     cerr << "Error: Not yet implemented !!!" << endl;

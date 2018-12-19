@@ -635,11 +635,15 @@ void TFESpace3D::ConstructSpace(BoundCondFunct3D *BoundaryCondition)
 
      N_Edges=cell->GetN_Edges();      
      for(j=0;j<N_Edges;j++)
+     {
       (cell->GetEdge(j))->SetClipBoard(-1);
+     }
      
       N_VertInCell = cell->GetN_Vertices();
       for(j=0;j<N_VertInCell;j++)
+      {
        (cell->GetVertex(j))->SetClipBoard(-1);    
+      }
       
       /** set dept. vert neib cells to -1, especiall to use own_FEspace and FEspace with (own + Hallo) cells */
       if(cell->IsDependentCell())
@@ -2472,6 +2476,9 @@ void TFESpace3D::getFaceQuadratureData(TBaseCell *cell, int m,
     // quadrilateral face
     FaceQuadFormula = TFEDatabase3D::GetQFQuadFromDegree(fe_degree);
     break;
+  default:
+    ErrThrow("wrong number of face vertices ", nFaceVertices);
+    break;
   }
   
   int N_Points;
@@ -2551,7 +2558,7 @@ void TFESpace3D::getFaceQuadratureValue(TBaseCell *cell, int m, QuadFormula2D Fa
 							    cell, N_Points, JointValues);
   
   basisFunctionsValues.resize(N_Points);                       
-  for (unsigned int l=0; l<N_Points; l++) {
+  for (int l=0; l<N_Points; l++) {
     basisFunctionsValues[l].resize(N_BaseFunct[FEId]);                          
     for (unsigned int k=0; k<basisFunctionsValues[l].size(); k++) {
       basisFunctionsValues[l][k]=JointValues[l][k];

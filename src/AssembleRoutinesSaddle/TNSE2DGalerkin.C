@@ -7,7 +7,7 @@
 
 #include <MooNMD_Io.h>
 
-void TimeNSType1Galerkin(double Mult, double *coeff, double *param, double hK,
+void TimeNSType1Galerkin(double Mult, double *coeff, double *param, double,
     double **OrigValues, int *N_BaseFuncts, double ***LocMatrices, double **LocRhs)
 {
   double **MatrixA, **MatrixB1, **MatrixB2, **MatrixM;
@@ -93,7 +93,7 @@ void TimeNSType1Galerkin(double Mult, double *coeff, double *param, double hK,
 }
 
 void TimeNSType2Galerkin(double Mult, double *coeff,
-double *param, double hK,
+double *param, double,
 double **OrigValues, int *N_BaseFuncts,
 double ***LocMatrices, double **LocRhs)
 {
@@ -197,7 +197,7 @@ double ***LocMatrices, double **LocRhs)
 }
 // ======================================================================
 void TimeNSType3Galerkin(double Mult, double *coeff,
-double *param, double hK,
+double *param, double,
 double **OrigValues, int *N_BaseFuncts,
 double ***LocMatrices, double **LocRhs)
 {
@@ -296,7 +296,7 @@ double ***LocMatrices, double **LocRhs)
 }
 // ======================================================================
 void TimeNSType3GalerkinDD(double Mult, double *coeff,
-double *param, double hK,
+double *param, double,
 double **OrigValues, int *N_BaseFuncts,
 double ***LocMatrices, double **LocRhs)
 {
@@ -405,7 +405,7 @@ double ***LocMatrices, double **LocRhs)
 
 // ======================================================================
 void TimeNSType4Galerkin(double Mult, double *coeff,
-double *param, double hK,
+double *param, double,
 double **OrigValues, int *N_BaseFuncts,
 double ***LocMatrices, double **LocRhs)
 {
@@ -527,7 +527,7 @@ double ***LocMatrices, double **LocRhs)
 
 // ======================================================================
 void TimeNSType4GalerkinDD(double Mult, double *coeff,
-double *param, double hK,
+double *param, double,
 double **OrigValues, int *N_BaseFuncts,
 double ***LocMatrices, double **LocRhs)
 {
@@ -659,9 +659,9 @@ double ***LocMatrices, double **LocRhs)
 }
 
 void TimeNSType1_2NLGalerkin(double Mult, double *coeff,
-double *param, double hK,
+double *param, double,
 double **OrigValues, int *N_BaseFuncts,
-double ***LocMatrices, double **LocRhs)
+double ***LocMatrices, double **)
 {
   double **MatrixA;
   double val;
@@ -709,9 +709,9 @@ double ***LocMatrices, double **LocRhs)
 }
 
 void TimeNSType3_4NLGalerkin(double Mult, double *coeff,
-double *param, double hK,
+double *param, double,
 double **OrigValues, int *N_BaseFuncts,
-double ***LocMatrices, double **LocRhs)
+double ***LocMatrices, double **)
 {
   double **MatrixA11, **MatrixA22;
   double val;
@@ -762,9 +762,9 @@ double ***LocMatrices, double **LocRhs)
 }
 
 void TimeNSType3_4NLGalerkinDD(double Mult, double *coeff,
-double *param, double hK,
+double *param, double,
 double **OrigValues, int *N_BaseFuncts,
-double ***LocMatrices, double **LocRhs)
+double ***LocMatrices, double **)
 {
   double **MatrixA11, **MatrixA22;
   double val, val1;
@@ -820,9 +820,9 @@ double ***LocMatrices, double **LocRhs)
 // right-hand side ONLY, for NSE
 // ======================================================================
 void TimeNSRHS(double Mult, double *coeff,
-double *param, double hK,
+double *, double,
 double **OrigValues, int *N_BaseFuncts,
-double ***LocMatrices, double **LocRhs)
+double ***, double **LocRhs)
 {
   double *Rhs1, *Rhs2;
   double test00;

@@ -31,7 +31,7 @@ void Exact(double x, double y, double *values)
 }
 
 // kind of boundary condition (for FE space needed)
-void BoundCondition(int BdComp, double t, BoundCond &cond)
+void BoundCondition(int, double, BoundCond &cond)
 {
   if (TDatabase::ParamDB->SOLD_PARAMETER_TYPE == FEM_FCT)
     cond = NEUMANN;
@@ -69,7 +69,7 @@ void InitialCondition(double x, double y, double *values)
 }
 
 void BilinearCoeffs(int n_points, double *X, double *Y,
-        double **parameters, double **coeffs)
+        double **, double **coeffs)
 {
   double eps=1./TDatabase::ParamDB->PE_NR;
   double b1=2., b2=-1., c=1.;

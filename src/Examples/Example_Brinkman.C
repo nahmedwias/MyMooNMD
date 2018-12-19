@@ -65,7 +65,7 @@ Example Example::Brinkman(const ParameterDatabase& param_db)
       // bd.push_back(BoundaryData(bc, exact));
       // Boundary data for first velocity component
       auto g1 =
-          [deformation_tensor](unsigned int component, double t, double time)
+          [deformation_tensor](unsigned int component, double t, double)
       {
         return (component == 1 || component == 3) ? 4 * t * (1 - t) : 0.;
       };
@@ -75,7 +75,7 @@ Example Example::Brinkman(const ParameterDatabase& param_db)
       bd.push_back(BoundaryData(0.0)); // all zero for pressure
       // the coefficient function
       f = [reynolds_number, viscosity, effective_viscosity, permeability](
-          const Point& point, double, std::vector<double>& coeffs)
+          const Point&, double, std::vector<double>& coeffs)
       {
         coeffs[0] = 1. / reynolds_number; // reynolds number
         coeffs[1] = 0.;            // right hand side, first component

@@ -24,15 +24,14 @@ TIsoBoundEdge::TIsoBoundEdge(TBoundComp2D *bdcomp, double t_0, double t_1)
 }
 
 // Methods
-int TIsoBoundEdge::CheckMatchingRef(TBaseCell *Me, int J_i,
-                  struct StoreGeom &Tmp)
+int TIsoBoundEdge::CheckMatchingRef(TBaseCell *, int, struct StoreGeom &Tmp)
 {
   Tmp.Filled = false;
   return 0;
 }
 
 // create a new instance of this class
-TJoint *TIsoBoundEdge::NewInst(double newT_0, double newT_1, TBaseCell *Me)
+TJoint *TIsoBoundEdge::NewInst(double newT_0, double newT_1, TBaseCell *)
 {
   return new TIsoBoundEdge(BoundComp, T_0 + newT_0*(T_1 - T_0),
                         T_0 + newT_1*(T_1 - T_0));
@@ -73,7 +72,7 @@ void TIsoBoundEdge::GenerateVertices(int n_vertices)
 #endif // __2D__
 }
 
-void TIsoBoundEdge::GeneratemidVert(int n_vertices, double*X, double*Y)
+void TIsoBoundEdge::GeneratemidVert(int n_vertices, double* X, double* Y)
 {
    if(Vertices)
      delete Vertices;
@@ -81,7 +80,6 @@ void TIsoBoundEdge::GeneratemidVert(int n_vertices, double*X, double*Y)
   N_Vertices = n_vertices;
   Vertices = new TVertex*[N_Vertices];
 
-#ifdef __2D__
   double  x, y;
   for(int i=0;i<N_Vertices;i++)
   {
@@ -94,9 +92,10 @@ void TIsoBoundEdge::GeneratemidVert(int n_vertices, double*X, double*Y)
     //x /=r;
     //y /=r;
     //cout << " x " << x << " y " << y <<endl;
-    Vertices[i] = new TVertex(x, y);;
+#ifdef __2D__
+    Vertices[i] = new TVertex(x, y);
+#endif
   } // endfor i
-#endif // __2D__
 }
 
 void TIsoBoundEdge::DeleteVertices()

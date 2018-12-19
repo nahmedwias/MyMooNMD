@@ -116,7 +116,7 @@ void check_solution_norms(TimeConvectionDiffusion<3> &tcd, int m)
 
 
  //test crank-nicolson linear fem-fct scheme
-int main(int argc, char* argv[])
+int main(int argc, char** argv)
 {
 
   TDatabase Database;
@@ -177,7 +177,6 @@ int main(int argc, char* argv[])
     tss.current_time_ = db["time_start"];
     // assemble the matrices and right hand side at the start time
     tcd.assemble_initial_time();
-    double end_time = db["time_end"];
     while(tss.current_time_ < tss.get_end_time()-1e-10)
     {
       tss.current_step_++;

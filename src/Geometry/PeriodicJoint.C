@@ -25,7 +25,7 @@ TPeriodicJoint::TPeriodicJoint(TBaseCell *neighb0, TBaseCell *neighb1) :
 }
 
 // Methods
-TJoint *TPeriodicJoint::NewInst(double newT_0, double newT_1, TBaseCell *Me)
+TJoint *TPeriodicJoint::NewInst(double, double, TBaseCell *Me)
 {
   return new TPeriodicJoint(Me);
 }

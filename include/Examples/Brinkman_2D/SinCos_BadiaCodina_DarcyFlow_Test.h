@@ -67,7 +67,7 @@ void ExactP(double x, double y, double *values)
 // boundary conditions (Parametrisierung des Randes); Param \in [0,1]
 // ========================================================================
 
-void BoundCondition(int i, double Param, BoundCond &cond)
+void BoundCondition(int i, double, BoundCond &cond)
 {
   cond = DIRICHLET; // default
 
@@ -126,8 +126,7 @@ void U2BoundValue(int BdComp, double Param, double &value)
 // ========================================================================
 // coefficients for Stokes form: A, B1, B2, f1, f2
 // ========================================================================
-void LinCoeffs(int n_points, double *X, double *Y,
-               double **parameters, double **coeffs)
+void LinCoeffs(int n_points, double *X, double *Y, double **, double **coeffs)
 {
   double val_u1[4];
   double val_u2[4];

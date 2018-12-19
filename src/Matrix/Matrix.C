@@ -743,8 +743,8 @@ const
 std::shared_ptr< TMatrix > 
   TMatrix::multiply_with_transpose_from_right(const TMatrix& B
 #ifdef _MPI
-  , const std::vector<const TParFECommunicator3D*>& test_comms
-  , const std::vector<const TParFECommunicator3D*>& ansatz_comms
+  , const std::vector<const TParFECommunicator3D*>&
+  , const std::vector<const TParFECommunicator3D*>&
 #endif
   ) const
 {

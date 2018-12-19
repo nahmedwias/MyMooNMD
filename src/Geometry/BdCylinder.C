@@ -19,7 +19,7 @@ TBdCylinder::TBdCylinder (int id) : TBoundComp3D(id)
 
 /** Methods **/
 
-int TBdCylinder::ReadIn(std::istream &dat)
+int TBdCylinder::ReadIn(std::istream &)
 {
   return 0;
 }
@@ -63,7 +63,7 @@ int TBdCylinder::GetTSofXYZ(double X, double Y, double Z, double &T,
         combination of vertices */
 int TBdCylinder::GetXYZandTS(int N_Points, double *LinComb,
                             double *xp, double *yp, double *zp,
-                            double *tp, double *sp,
+                            double *, double *,
                             double &X, double &Y, double &Z,
                             double &T, double &S) const
 {

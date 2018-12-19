@@ -320,7 +320,7 @@ void UpwindForNavierStokes3D(TSquareMatrix3D *sqmatrix, TFEFunction3D *u1,
 }
 
 
-void UpwindForConvDiff(TSquareMatrix3D *sqmatrix, double *RHS,
+void UpwindForConvDiff(TSquareMatrix3D *sqmatrix, double *,
                        TFESpace3D *fespace, TDiscreteForm3D *DiscreteForm)
 {
   static double RE=TDatabase::ParamDB->RE_NR;

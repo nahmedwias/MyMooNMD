@@ -20,7 +20,7 @@ void ExampleFile()
 }
 
 // exact solution
-void ExactU1(double x, double y,  double z, double *values)
+void ExactU1(double x, double y, double z, double *values)
 {
   values[0] =  2*x*y*z;   //u
   values[1] =  2*y*z;   //dx
@@ -28,7 +28,7 @@ void ExactU1(double x, double y,  double z, double *values)
   values[3] =  2*x*y;   //dz
   values[4] =  0;   //Laplace
 }
-void ExactU2(double x, double y,  double z, double *values)
+void ExactU2(double, double y, double z, double *values)
 {
   values[0] =  -y*y*z;   //u
   values[1] =  0;   //dx
@@ -36,7 +36,7 @@ void ExactU2(double x, double y,  double z, double *values)
   values[3] =  -y*y;   //dz
   values[4] =  -2*z;   //Laplace
 }
-void ExactU3(double x, double y,  double z, double *values)
+void ExactU3(double x, double, double, double *values)
 {
   values[0] =  -x*x*x;   //u
   values[1] =  -3*x*x;   //dx
@@ -45,7 +45,7 @@ void ExactU3(double x, double y,  double z, double *values)
   values[4] =  -6*x;   //Laplace
 }
 
-void ExactP(double x, double y,  double z, double *values)
+void ExactP(double, double, double z, double *values)
 {
   values[0] = z*z - 1/3.0; //adapted to be L^2_0 on unit cube
   values[1] = 0;
@@ -59,7 +59,7 @@ void ExactP(double x, double y,  double z, double *values)
  From here it's the same for all NSE3D test Examples.
  * **** */
 // kind of boundary condition (for FE space needed)
-void BoundCondition(double x, double y, double z, BoundCond &cond)
+void BoundCondition(double, double, double, BoundCond &cond)
 {
   cond = DIRICHLET;
 }
@@ -83,8 +83,8 @@ void U3BoundValue(double x, double y, double z, double &value)
   value = diri[0]; //Dirichlet value
 }
 
-void LinCoeffs(int n_points, double * X, double * Y, double * Z,
-               double **parameters, double **coeffs)
+void LinCoeffs(int n_points, double * X, double * Y, double * Z, double **,
+               double **coeffs)
 {
   const double eps = DIMENSIONLESS_VISCOSITY;
   std::vector<double> u1(5,0.0);

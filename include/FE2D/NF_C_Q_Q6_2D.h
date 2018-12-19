@@ -121,17 +121,17 @@ static double NF_C_Q_Q6_2D_T[] = {
          1.000000000000000e+00
 };
 
-void NF_C_Q_Q6_2D_EvalAll(TCollection *Coll, TBaseCell *Cell,
+void NF_C_Q_Q6_2D_EvalAll(TCollection *, TBaseCell *,
                           const double *PointValues, double *Functionals)
 {
   memcpy(Functionals, PointValues, 49*SizeOfDouble);
-};
+}
 
-void NF_C_Q_Q6_2D_EvalEdge(TCollection *Coll, TBaseCell *Cell, int Joint,
+void NF_C_Q_Q6_2D_EvalEdge(TCollection *, TBaseCell *, int,
                            const double *PointValues, double *Functionals)
 {
   memcpy(Functionals, PointValues, 7*SizeOfDouble);
-};
+}
 
 TNodalFunctional2D *NF_C_Q_Q6_2D_Obj = new TNodalFunctional2D
         (NF_C_Q_Q6_2D, 49, 7, 49, 7, NF_C_Q_Q6_2D_Xi, NF_C_Q_Q6_2D_Eta,

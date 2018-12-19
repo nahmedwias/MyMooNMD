@@ -65,8 +65,7 @@ class TBdNonUniformSpline : public TBoundComp2D
     /** get number of initial vertices on this component */
     virtual int GetN_InitVerts() override
     { return 4; }
-    virtual int GenInitVerts(double *&points, int I_points,
-                             int *&edges, int I_edges) override
+    virtual int GenInitVerts(double *&, int, int *&, int) override
     { return -1; }
     
     /** return the X-coordinate of parameter value T from [0;1] on the ISpline-th subspline */

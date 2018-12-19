@@ -117,7 +117,7 @@ void time_integration(int td, TimeConvectionDiffusion<2>& tcd, TimeDiscretizatio
 }
 
  //test crank-nicolson linear fem-fct scheme
-int main(int argc, char* argv[])
+int main(int, char**)
 {
   {
     TDatabase Database;

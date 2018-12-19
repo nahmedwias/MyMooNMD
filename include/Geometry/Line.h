@@ -27,18 +27,18 @@ class TLine : public TShapeDesc
 
     // Methods
     /** return diameter of a cell */
-    virtual double GetDiameter(TVertex **Verts) const override
+    virtual double GetDiameter(TVertex **) const override
     {
       return 0;
     }
 
     /** return shortest edge of a cell */
-    virtual double GetShortestEdge(TVertex **Verts) const override
+    virtual double GetShortestEdge(TVertex **) const override
     {
       return 0;
     }  
     /** return the length of the cell defined with the reference map */
-    virtual double GetLengthWithReferenceMap(TVertex **Verts) const override
+    virtual double GetLengthWithReferenceMap(TVertex **) const override
     {
       return 0;
     }  

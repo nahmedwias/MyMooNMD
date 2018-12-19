@@ -1939,7 +1939,8 @@ RefTrans2D TFEDatabase2D::GetOrig(int N_LocalUsedElements,
     break;
 
     default:
-      N_Edges = 0;
+      ErrThrow("wrong reference element ", RefElement);
+      break;
   } // endswitch
 
   bool IsIsoparametric = false;
@@ -2656,5 +2657,5 @@ QuadFormula2D TFEDatabase2D::GetQFFromDegree(int accuracy,
       ErrMsg("unknown reference element");
       exit(0);
   }
-};
+}
 

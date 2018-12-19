@@ -322,7 +322,7 @@ TFEFunction2D *u1, TFEFunction2D *u2)
 
 
 void UpwindForConvDiff(CoeffFct2D Coeff, TSquareMatrix2D *sqmatrix, 
-                       double *RHS, const TFESpace2D *fespace, 
+                       double *, const TFESpace2D *fespace,
                        const TFEFunction2D *u1, const TFEFunction2D *u2, 
                        bool ConvIsVelo)
 {
@@ -734,7 +734,7 @@ void UpwindForConvDiff(CoeffFct2D Coeff, TSquareMatrix2D *sqmatrix,
 
 void ComputeParametersMizukamiHughes(TBaseCell *cell, int cell_no,
 TFEFunction2D *u, CoeffFct2D Coeffs,
-BoundCondFunct2D *BoundaryCondition,
+BoundCondFunct2D *,
 int *dof, int ActiveBound,
 double *c_mh)
 {

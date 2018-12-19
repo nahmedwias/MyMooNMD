@@ -220,8 +220,8 @@ int GetSignOfThisDOF<3>(int N, int i)
 // elements
 // ======================================================================
 template <int d>
-void BilinearAssembleDarcyGalerkin(double Mult, double *coeff, double *param,
-                                   double hK, double **OrigValues,
+void BilinearAssembleDarcyGalerkin(double Mult, double *coeff, double *,
+                                   double, double **OrigValues,
                                    int *N_BaseFuncts, double ***LocMatrices,
                                    double **LocRhs)
 {

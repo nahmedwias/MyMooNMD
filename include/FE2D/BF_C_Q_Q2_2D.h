@@ -65,7 +65,7 @@ static void C_Q_Q2_2D_DeriveEta(double xi, double eta, double *values)
   values[8]=xi2*eta2;
 }
 // values of the derivatives in xi-xi  direction
-static void C_Q_Q2_2D_DeriveXiXi(double xi, double eta, double *values)
+static void C_Q_Q2_2D_DeriveXiXi(double, double eta, double *values)
 {
   double eta0=0.5*eta*(eta-1);
   double eta1=1-eta*eta;
@@ -103,7 +103,7 @@ static void C_Q_Q2_2D_DeriveXiEta(double xi, double eta, double *values)
 }
 
 // values of the derivatives in eta-eta direction
-static void C_Q_Q2_2D_DeriveEtaEta(double xi, double eta, double *values)
+static void C_Q_Q2_2D_DeriveEtaEta(double xi, double, double *values)
 {
   double xi0=0.5*xi*(xi-1);
   double xi1=1-xi*xi;

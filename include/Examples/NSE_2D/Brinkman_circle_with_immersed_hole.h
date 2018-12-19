@@ -106,12 +106,12 @@ void ExactP(double x, double y, double *values)
 // ========================================================================
 // boundary conditions
 // ========================================================================
-void BoundCondition(int i, double Param, BoundCond &cond)
+void BoundCondition(int, double, BoundCond &cond)
 {
   cond = NEUMANN; 
 }
 
-void U1BoundValue(int BdComp, double Param, double &value)
+void U1BoundValue(int BdComp, double, double &value)
 {
   
   switch(BdComp)
@@ -128,7 +128,7 @@ void U1BoundValue(int BdComp, double Param, double &value)
 
 
 
-void U2BoundValue(int BdComp, double Param, double &value)
+void U2BoundValue(int BdComp, double, double &value)
 {
   switch(BdComp)
   {
@@ -150,8 +150,7 @@ void U2BoundValue(int BdComp, double Param, double &value)
 // -mu Delta u + grad(p) + sigma u = (f1,f2)
 // div(u) = g
 // ========================================================================
-void LinCoeffs(int n_points, double *x, double *y,
-    double **parameters, double **coeffs)
+void LinCoeffs(int n_points, double *x, double *y, double **, double **coeffs)
 {
   for(int i = 0; i < n_points; i++)
   {

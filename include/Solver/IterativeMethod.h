@@ -167,7 +167,7 @@ class IterativeMethod
      * iterative methods do not need this, so there is a default implementation 
      * here.
      */
-    virtual void update(const LinearOperator& A)
+    virtual void update(const LinearOperator&)
     {
       this->loop_info.restart(this->name, 0.0);
     };

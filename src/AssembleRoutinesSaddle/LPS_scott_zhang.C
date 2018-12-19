@@ -44,7 +44,7 @@ double ComputePSPGParameterLPS(double hK, bool velocity, double nu,
 // implementation like Badia, CMAME 2012
 // ======================================================================
 std::shared_ptr<FEMatrix> LPS_for_pressure_Scott_Zhang(
-  std::shared_ptr<const FEMatrix> C, bool velocity, double nu,
+  std::shared_ptr<const FEMatrix> C, bool velocity, double,
   LPS_parameter_set lps_ps)
 {
   int N_Points;

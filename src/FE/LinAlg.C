@@ -42,7 +42,7 @@ void  dsteqr_(char *compz, int *N, double *D,  double *E, double *Z, int *LDZ, d
 #define AT(i,j) (a[j*LDA+i])
 #define A(i,j) (a[i*LDA+j])
 
-void MatVectFull(TSquareMatrix **A, TMatrix **B, double *x, double *y)
+void MatVectFull(TSquareMatrix **A, TMatrix **, double *x, double *y)
 {
   int dof =  TDatabase::ParamDB->INTERNAL_LOCAL_DOF; 
   double *a = (double *)A[0];
@@ -59,7 +59,7 @@ void MatVectFull(TSquareMatrix **A, TMatrix **B, double *x, double *y)
 
 }
  
-void DefectFull(TSquareMatrix **A, TMatrix **B, double *x, double *b, double *r)
+void DefectFull(TSquareMatrix **A, TMatrix **, double *x, double *b, double *r)
 {
   int dof =  TDatabase::ParamDB->INTERNAL_LOCAL_DOF; 
   double *a = (double *)A[0];
@@ -73,7 +73,7 @@ void DefectFull(TSquareMatrix **A, TMatrix **B, double *x, double *b, double *r)
 
   return;
 }
-void SolveLinearSystemLapack(double *a, double *b, int N_Eqn, int LDA)
+void SolveLinearSystemLapack(double *a, double *b, int N_Eqn, int)
 {
 // Arguments:
 //    a         double array which contains the matrix columnwise
@@ -99,7 +99,7 @@ void SolveLinearSystemLapack(double *a, double *b, int N_Eqn, int LDA)
 
   delete ipivot;
 }
-void SolveLinearSystemTranspose(double *a, double *b, int N_Eqn, int LDA)
+void SolveLinearSystemTranspose(double *a, double *b, int N_Eqn, int)
 {
 // Arguments:
 //    a         double array which contains the matrix columnwise
@@ -551,7 +551,7 @@ void SolveMultipleSystems(double *a, double *b, int N_Eqn,
 }
 
 /** calculate the eigenvalue of the system using Lapack routines*/
-void FindEigenValues(double *ap, int N_Eqn, char &COMPZ, double *d, double *z)
+void FindEigenValues(double *ap, int N_Eqn, char &COMPZ, double *d, double *)
 {
 // Arguments:
 //  ap         double precision array which contains the packed upper triangular matrix column wise
@@ -609,11 +609,11 @@ void FindEigenValues(double *ap, int N_Eqn, char &COMPZ, double *d, double *z)
 
 #ifdef __3D__
 // determine L2 and H1 error
-void L1Int3D(int N_Points, double *X, double *Y, double *Z,
+void L1Int3D(int N_Points, double *, double *, double *,
              double *AbsDetjk,
-             const double *Weights, double hK,
-             double **Der, double **Exact,
-             double **coeffs, double *Loc)
+             const double *Weights, double,
+             double **Der, double **,
+             double **, double *Loc)
 {
   int i;
   double *deriv, w, t;
@@ -849,8 +849,7 @@ void IntoL20FEFunction3D(double *v, int Length, TFESpace3D *FESpace)
 } // IntoL20Function
 
 /** project function v into L20 */
-void IntoL20FEFunction3D(double *v, int Length, TFESpace3D *FESpace,
-                       int velocity_space, int pressure_space)
+void IntoL20FEFunction3D(double *v, int Length, TFESpace3D *FESpace, int, int)
 {
   double s;
   int i,j,l,N_LocalUsedElements;
@@ -1002,9 +1001,9 @@ void IntoL20FEFunction3D(double *v, int Length, TFESpace3D *FESpace,
 
 #ifdef __2D__
 // determine L2 and H1 error
-void L1Int(int N_Points, double *X, double *Y, double *AbsDetjk,
-           const double *Weights, double hK, double **Der, double **Exact,
-           double **coeffs, double *Loc)
+void L1Int(int N_Points, double *, double *, double *AbsDetjk,
+           const double *Weights, double, double **Der, double **,
+           double **, double *Loc)
 {
   int i;
   double *deriv, w, t;
@@ -1332,7 +1331,7 @@ void IntoL20FEFunction_OLD(double *v, int Length, TFESpace2D *FESpace,
 
 /** project function v into L20 */
 void IntoL20FEFunction(double *v, int Length, const TFESpace2D *FESpace,
-                       int velocity_space, int pressure_space
+                       int, int
 #ifdef _MPI
                         , MPI_Comm comm
 #endif

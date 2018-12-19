@@ -208,7 +208,7 @@ namespace Output
   ///
   /// You have to provide a meaningful error message here.
   #define ErrThrow(...) {Output::errThrow(__FILE__, __LINE__, __VA_ARGS__);}
-};
+}
 
 
 // this is an attempt to separate declaration and implementation. The template
@@ -366,7 +366,7 @@ namespace Output
     get_outfile() << stream.str() << "\n";
     throw std::runtime_error(stream.str());
   }
-};
+}
 
 /// @brief old macro to print things into a file and to std::cout, deprecated
 ///

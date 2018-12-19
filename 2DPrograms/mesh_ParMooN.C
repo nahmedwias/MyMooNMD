@@ -19,7 +19,7 @@
 // =======================================================================
 // main program
 // =======================================================================
-int main(int argc, char* argv[])
+int main(int, char* argv[])
 {
     
   //  declaration of database, you need this in every program

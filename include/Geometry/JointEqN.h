@@ -32,7 +32,7 @@ class TJointEqN : public TJoint
                      struct StoreGeom &Tmp);
 
     /** create a new instance of this class */
-    virtual TJoint *NewInst(double T_0, double T_1, TBaseCell *Me)
+    virtual TJoint *NewInst(double, double, TBaseCell *Me)
     {
       return new TJointEqN(Me);
     }

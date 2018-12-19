@@ -215,7 +215,7 @@ static double NF_N_T_P2_3D_W[11] = {
                     .0248888888888888888888888888889,
                     .0248888888888888888888888888889 };
 
-void NF_N_T_P2_3D_EvalAll(TCollection *Coll, TBaseCell *Cell,
+void NF_N_T_P2_3D_EvalAll(TCollection *, TBaseCell *,
                           const double *PointValues, double *Functionals)
 {
   Functionals[0] = ( NF_N_T_P2_3D_W0[0]*PointValues[0]
@@ -319,7 +319,7 @@ void NF_N_T_P2_3D_EvalAll(TCollection *Coll, TBaseCell *Cell,
                      +NF_N_T_P2_3D_W[10]*PointValues[38])*6;
 }
 
-void NF_N_T_P2_3D_EvalFace(TCollection *Coll, TBaseCell *Cell, int Joint, 
+void NF_N_T_P2_3D_EvalFace(TCollection *, TBaseCell *, int,
                            const double *PointValues, double *Functionals)
 {
   Functionals[0] = ( NF_N_T_P2_3D_W0[0]*PointValues[0]

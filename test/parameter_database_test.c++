@@ -55,7 +55,7 @@ bool test_for_parameter_class()
   return true;
 }
 
-int main(int argc, char* argv[])
+int main(int, char**)
 {
   Output::print("starting parameter test");
   if(!test_for_parameter_class())

@@ -45,15 +45,14 @@ TBoundFace::TBoundFace(TBoundComp3D *bdcomp) : TJoint()
 }
 
 // Methods
-int TBoundFace::CheckMatchingRef(TBaseCell *Me, int J_i,
-                  struct StoreGeom &Tmp)
+int TBoundFace::CheckMatchingRef(TBaseCell *, int, struct StoreGeom &Tmp)
 {
   Tmp.Filled = false;
   return 0;
 }
 
 // create a new instance of this class
-TJoint *TBoundFace::NewInst(double newT_0, double newT_1, TBaseCell *Me)
+TJoint *TBoundFace::NewInst(double, double, TBaseCell *)
 {
   return new TBoundFace(BoundComp);
 }

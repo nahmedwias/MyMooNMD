@@ -30,8 +30,7 @@ static void N_H_RT0_3D_Funct(double xi, double eta, double zeta,
   values[17] = 0.125*(zeta+1);
 }
 
-static void N_H_RT0_3D_DeriveXi(double xi, double eta, double zeta,
-                                double *values)
+static void N_H_RT0_3D_DeriveXi(double, double, double, double *values)
 {
   // first component
   values[0] = 0;
@@ -58,8 +57,7 @@ static void N_H_RT0_3D_DeriveXi(double xi, double eta, double zeta,
   values[17] = 0;
 }
 
-static void N_H_RT0_3D_DeriveEta(double xi, double eta, double zeta,
-                                 double *values)
+static void N_H_RT0_3D_DeriveEta(double, double, double, double *values)
 {
   // first component
   values[0] = 0;
@@ -86,8 +84,7 @@ static void N_H_RT0_3D_DeriveEta(double xi, double eta, double zeta,
   values[17] = 0;
 }
 
-static void N_H_RT0_3D_DeriveZeta(double xi, double eta, double zeta,
-                                  double *values)
+static void N_H_RT0_3D_DeriveZeta(double, double, double, double *values)
 {
   // first component
   values[0] = 0;
@@ -114,43 +111,37 @@ static void N_H_RT0_3D_DeriveZeta(double xi, double eta, double zeta,
   values[17] = 0.125;
 }
 
-static void N_H_RT0_3D_DeriveXiXi(double xi, double eta, double zeta,
-                                  double *values)
+static void N_H_RT0_3D_DeriveXiXi(double, double, double, double *values)
 {
   for(int i = 0; i < 18; i++)
     values[i] = 0;
 }
 
-static void N_H_RT0_3D_DeriveXiEta(double xi, double eta, double zeta,
-                                   double *values)
+static void N_H_RT0_3D_DeriveXiEta(double, double, double, double *values)
 {
   for(int i = 0; i < 18; i++)
     values[i] = 0;
 }
 
-static void N_H_RT0_3D_DeriveXiZeta(double xi, double eta, double zeta,
-                                    double *values)
+static void N_H_RT0_3D_DeriveXiZeta(double, double, double, double *values)
 {
   for(int i = 0; i < 18; i++)
     values[i] = 0;
 }
 
-static void N_H_RT0_3D_DeriveEtaEta(double xi, double eta, double zeta,
-                                    double *values)
+static void N_H_RT0_3D_DeriveEtaEta(double, double, double, double *values)
 {
   for(int i = 0; i < 18; i++)
     values[i] = 0;
 }
 
-static void N_H_RT0_3D_DeriveEtaZeta(double xi, double eta, double zeta,
-                                     double *values)
+static void N_H_RT0_3D_DeriveEtaZeta(double, double, double, double *values)
 {
   for(int i = 0; i < 18; i++)
     values[i] = 0;
 }
 
-static void N_H_RT0_3D_DeriveZetaZeta(double xi, double eta, double zeta,
-                                      double *values)
+static void N_H_RT0_3D_DeriveZetaZeta(double, double, double, double *values)
 {
   for(int i = 0; i < 18; i++)
     values[i] = 0;

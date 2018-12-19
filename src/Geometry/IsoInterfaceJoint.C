@@ -82,7 +82,7 @@ void TIsoInterfaceJoint::GenerateVertices(int n_vertices)
 #endif // __2D__
 }
 
-void TIsoInterfaceJoint::GeneratemidVert(int n_vertices, double*X, double*Y)
+void TIsoInterfaceJoint::GeneratemidVert(int n_vertices, double* X, double* Y)
 {
   if(Vertices)
     delete Vertices;
@@ -90,19 +90,17 @@ void TIsoInterfaceJoint::GeneratemidVert(int n_vertices, double*X, double*Y)
   N_Vertices = n_vertices;
   Vertices = new TVertex*[N_Vertices];
 
-#ifdef __2D__
   int i;
-  TVertex *vertex;
   double  x, y;
   for(i=0;i<N_Vertices;i++)
   {
    x = (X[0]+X[1])/2.0;
    y = (Y[0]+Y[1])/2.0;
 
-   vertex = new TVertex(x, y);
-   Vertices[i] = vertex;
+#ifdef __2D__
+   Vertices[i] = new TVertex(x, y);
 //     cout <<N_Vertices << "test ("<< x <<", "<< y << ")"<<endl;
-  } // endfor i
 #endif // __2D__
+  } // endfor i
 }
 

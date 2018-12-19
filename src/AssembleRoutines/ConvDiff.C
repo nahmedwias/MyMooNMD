@@ -537,7 +537,7 @@ double Compute_SDFEM_delta(double hK, double eps,
 template <int d>
 double Compute_SOLD_sigma(double hK, double eps, 
                           std::array<double, d> convection, double c, double f,
-                          double linfb, double deltaK, double *param,
+                          double, double deltaK, double *param,
                           double residual, int residual_computed,
                           int time_dependent_problem)
 {
@@ -1779,19 +1779,19 @@ double ComputeAlpha(double hK) // copy from TCD2D.C
 
   // this is just for the response to the referee and the special example 
   // in [JKL05]
-  double b, eps, Pe, t;
-
-  b = sqrt(5.0);
-  eps = 1/TDatabase::ParamDB->RE_NR;
-  Pe = b*hK/(2*eps);
-  t = 1/tanh(Pe) - 1/Pe;
-  alpha = t*hK/(2*b);
-  return(alpha);
+//   double b, eps, Pe, t;
+// 
+//   b = sqrt(5.0);
+//   eps = 1/TDatabase::ParamDB->RE_NR;
+//   Pe = b*hK/(2*eps);
+//   t = 1/tanh(Pe) - 1/Pe;
+//   alpha = t*hK/(2*b);
+//   return(alpha);
 }
 
 template<>
-void BilinearAssembleGalerkin<2>(double Mult, double *coeff, double* param, 
-                                 double hK, double **OrigValues,
+void BilinearAssembleGalerkin<2>(double Mult, double *coeff, double*,
+                                 double, double **OrigValues,
                                  int *N_BaseFuncts, double ***LocMatrices,
                                  double **LocRhs)
 {
@@ -1853,8 +1853,8 @@ void BilinearAssembleGalerkin<2>(double Mult, double *coeff, double* param,
 }
 
 template<>
-void BilinearAssembleGalerkin<3>(double Mult, double *coeff, double* param, 
-                                 double hK, double **OrigValues,
+void BilinearAssembleGalerkin<3>(double Mult, double *coeff, double*,
+                                 double, double **OrigValues,
                                  int *N_BaseFuncts, double ***LocMatrices,
                                  double **LocRhs)
 {
@@ -1896,7 +1896,7 @@ void BilinearAssembleGalerkin<3>(double Mult, double *coeff, double* param,
 }
 
 template<>
-void BilinearAssemble_SD<2>(double Mult, double *coeff, double* param,
+void BilinearAssemble_SD<2>(double Mult, double *coeff, double*,
                             double hK, double **OrigValues, int *N_BaseFuncts,
                             double ***LocMatrices, double **LocRhs)
 {
@@ -1960,7 +1960,7 @@ void BilinearAssemble_SD<2>(double Mult, double *coeff, double* param,
 }
 
 template<>
-void BilinearAssemble_SD<3>(double Mult, double *coeff, double* param,
+void BilinearAssemble_SD<3>(double Mult, double *coeff, double*,
                             double hK, double **OrigValues, int *N_BaseFuncts,
                             double ***LocMatrices, double **LocRhs)
 {
@@ -2010,7 +2010,7 @@ void BilinearAssemble_SD<3>(double Mult, double *coeff, double* param,
 }
 
 template<>
-void BilinearAssemble_GLS<2>(double Mult, double *coeff, double* param,
+void BilinearAssemble_GLS<2>(double Mult, double *coeff, double*,
                              double hK, double **OrigValues, int *N_BaseFuncts,
                              double ***LocMatrices, double **LocRhs)
 {
@@ -2067,7 +2067,7 @@ void BilinearAssemble_GLS<2>(double Mult, double *coeff, double* param,
 }
 
 template<>
-void BilinearAssemble_GLS<3>(double Mult, double *coeff, double* param,
+void BilinearAssemble_GLS<3>(double Mult, double *coeff, double*,
                              double hK, double **OrigValues, int *N_BaseFuncts,
                              double ***LocMatrices, double **LocRhs)
 {
@@ -2130,7 +2130,7 @@ void BilinearAssemble_GLS<3>(double Mult, double *coeff, double* param,
 }
 
 template<int d>
-void conv_diff_l2_h1_linf_error(int N_Points, std::array<double*, d> xyz,
+void conv_diff_l2_h1_linf_error(int N_Points, std::array<double*, d>,
                                 double *AbsDetjk, const double *Weights,
                                 double hK, double **Der, double **Exact,
                                 double **coeffs, double *LocError)

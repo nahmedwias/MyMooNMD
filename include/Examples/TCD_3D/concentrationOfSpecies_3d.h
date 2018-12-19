@@ -15,7 +15,7 @@ void ExampleFile()
 }
 
 // exact solution
-void Exact(double x, double y, double z, double *values)
+void Exact(double, double, double, double *values)
 {
     values[0] = 0;
     values[1] = 0;
@@ -24,7 +24,7 @@ void Exact(double x, double y, double z, double *values)
     values[4] = 0;
 }
 // exact solution
-void ExactTimeDeriv(double x, double y, double z, double *values)
+void ExactTimeDeriv(double, double, double, double *values)
 {
     values[0] = 0;
     values[1] = 0;
@@ -34,7 +34,7 @@ void ExactTimeDeriv(double x, double y, double z, double *values)
 }
 
 // initial conditon
-void InitialCondition(double x, double y, double z, double *values)
+void InitialCondition(double, double, double, double *values)
 {
     values[0] = 0;
 }
@@ -83,8 +83,8 @@ void BoundValue(double x, double y, double z, double &value)
     value = 0.0;
 }
 
-void BilinearCoeffs(int n_points, double *X, double *Y, double *Z,
-        double **parameters, double **coeffs)
+void BilinearCoeffs(int n_points, double *X, double *Y, double *Z, double **,
+                    double **coeffs)
 {
   double eps = PECLET_NUMBER;
   int i;

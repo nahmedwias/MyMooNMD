@@ -17,7 +17,7 @@ void ExampleFile()
 }
 
 // exact solution
-void Exact(double x, double y, double z, double *values)
+void Exact(double, double, double, double *values)
 {
   values[0] = 1;
   values[1] = 0;
@@ -27,19 +27,19 @@ void Exact(double x, double y, double z, double *values)
 }
 
 // kind of boundary condition (for FE space needed)
-void BoundCondition(double x, double y, double z, BoundCond &cond)
+void BoundCondition(double, double, double, BoundCond &cond)
 {
   cond = DIRICHLET;
 }
 
 // value of boundary condition
-void BoundValue(double x, double y, double z, double &value)
+void BoundValue(double, double, double, double &value)
 {
   value = 1;
 }
 
-void BilinearCoeffs(int n_points, double *x, double *y, double *z,
-        double **parameters, double **coeffs)
+void BilinearCoeffs(int n_points, double *, double *, double *, double **,
+                    double **coeffs)
 {
   double eps=1;
   int i;

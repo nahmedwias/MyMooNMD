@@ -257,9 +257,7 @@ double get_tolerance(std::string solver_name)
   return 0;
 }
 
-void set_errors(int example, int velocity_order, int nstype,
-                int timediscretizationtype, std::string solver_name,
-                bool istetra,
+void set_errors(int example, int, int, int, std::string, bool,
                 std::array<std::array<double, int(4)>,3>& errors)
 {
   // Note that these errors remain the same between NSTypes and between SEQ AND MPI

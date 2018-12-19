@@ -8,7 +8,7 @@
 
 //for f the information at all interface points is used
 int SchemeA(double *r, double *z, double *h_r, double *h_z, 
-	    int N, double hi, double gamma, double W, double tau, double *LL, 
+	    int N, double hi, double, double W, double tau, double *LL, 
 	    int adap, double *a)
 {
   double h = 1./(N-1), eps = 1.e-6;
@@ -324,7 +324,7 @@ int SchemeA(double *r, double *z, double *h_r, double *h_z,
   return ID;
 }
 int SchemeA_ax(double *r, double *z, double *h_r, double *h_z, 
-	    int N, double hi, double gamma, double W, double tau, double *LL, 
+	    int N, double hi, double, double W, double tau, double *LL, 
 	    int adap, double *a)
 {
   double h = 1./(N-1), eps = 1.e-7;
@@ -595,7 +595,7 @@ int SchemeA_ax(double *r, double *z, double *h_r, double *h_z,
 
 // the information about field only in the middle of edges and at last points
 int SchemeA_ax1(double *r, double *z, double *h_s, double *h_n, 
-	    int N, double hi, double gamma, double W, double tau, double *LL, 
+	    int N, double hi, double, double W, double tau, double *LL, 
 	    int adap, double *a)
 {
   double h = 1./(N-1), eps = 1.e-8;
@@ -897,7 +897,7 @@ int SchemeA_ax1(double *r, double *z, double *h_s, double *h_n,
 // a criterion for interrupting the iterative process is the norm for the difference 
 // between an initial surface (r_init,z_init) and a current calculated shape (r,z)
 int SchemeA_ax11(double *r, double *z, double *h_s, double *h_n, 
-	    int N, double hi, double gamma, double W, double tau, double *LL, 
+	    int N, double hi, double, double W, double tau, double *LL, 
 	    int adap, double *a)
 {
   double h = 1./(N-1), eps = 5.e-2;
@@ -1152,7 +1152,7 @@ int SchemeA_ax11(double *r, double *z, double *h_s, double *h_n,
 }
 // the information about field only in the middle of edges and at last points
 int SchemeA_ax2(double *r, double *z, double *h_r, double *h_z, 
-	    int N, double hi, double gamma, double W, double tau, double *LL, 
+	    int N, double hi, double, double W, double tau, double *LL, 
 	    int adap, double *a)
 {
   double h = 1./(N-1), eps = 1.e-8;
@@ -1394,7 +1394,7 @@ int SchemeA_ax2(double *r, double *z, double *h_r, double *h_z,
   return ID;
 }
 int SchemeB(double *r, double *z, double *h_r, double *h_z, 
-        int N, double hi, double gamma, double W, double tau, double *LL)
+        int N, double hi, double, double W, double tau, double *LL)
 {
   double h = 1./(N-1), eps = 1.e-6;
   double *f, *f1, *f2, *c, *d, *e, *b, *temp;
@@ -1578,7 +1578,7 @@ int SchemeB(double *r, double *z, double *h_r, double *h_z,
 }
 
 int SchemeT4(double *r, double *z, double *beta, double *h_r, double *h_z, 
-        int N, double hi, double gamma, double W, double tau, double *LL, 
+        int N, double hi, double, double W, double tau, double *LL, 
         double *F, double *dF)
 {
   double h = 1./(N-1), eps = 1.e-6;
@@ -1781,7 +1781,7 @@ int SchemeT4(double *r, double *z, double *beta, double *h_r, double *h_z,
   return ID;
 }
 int SchemeT4_ax(double *r, double *z, double *beta, double *h_r, double *h_z, 
-        int N, double hi, double gamma, double W, double tau, double *LL, 
+        int N, double hi, double, double W, double tau, double *LL, 
         double *F, double *dF, int adap, double* a, int up)
 {
   double hh = 1./(N-1), eps = 1.e-6;

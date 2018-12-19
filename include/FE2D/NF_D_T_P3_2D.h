@@ -22,7 +22,7 @@ static double NF_D_T_P3_2D_Eta[15] = {
     0.6517753036487957, 0.6510199345893917E-1, 0.345792011168269 };
 
 
-void NF_D_T_P3_2D_EvalAll(TCollection *Coll, TBaseCell *Cell,
+void NF_D_T_P3_2D_EvalAll(TCollection *, TBaseCell *,
                           const double *PointValues, double *Functionals)
 {
   // w = 1
@@ -215,8 +215,8 @@ void NF_D_T_P3_2D_EvalAll(TCollection *Coll, TBaseCell *Cell,
                    +PointValues[14]*w9[14];
 }
 
-void NF_D_T_P3_2D_EvalEdge(TCollection *Coll, TBaseCell *Cell, int Joint,
-                           const double *PointValues, double *Functionals)
+void NF_D_T_P3_2D_EvalEdge(TCollection *, TBaseCell *, int,
+                           const double *, double *)
 {
 }
 

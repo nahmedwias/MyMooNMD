@@ -254,7 +254,7 @@ void TFEVectFunct3D::compute_flux(int surface_id, double& flux) const
 
   TCollection *coll = FESpace3D->GetCollection();
 
-  for(size_t i=0; i< coll->GetN_Cells(); i++) {
+  for(int i=0; i< coll->GetN_Cells(); i++) {
     TBaseCell* cell = coll->GetCell(i); //boundaryCells[i];
 
     int *DOF = FESpace3D->GetGlobalDOF(cell->GetCellIndex());
@@ -290,6 +290,8 @@ void TFEVectFunct3D::compute_flux(int surface_id, double& flux) const
 	    // quadrilateral face
 	    FaceQuadFormula = TFEDatabase3D::GetQFQuadFromDegree(2*fe_degree);
 	    break;
+    default:
+      ErrThrow("wrong number of face vertices ", nFaceVertices);
 	  }
 	  int N_Points;
 	  const double* faceWeights;
@@ -334,11 +336,11 @@ void TFEVectFunct3D::compute_flux(int surface_id, double& flux) const
 	    
 	  // compute \int_F u.n = sum_{gauss pt} w_k \sum_j u_j.n phi_j(x_k)
 	  double value = 0;
-	  for(size_t l=0; l < N_Points; l++) {
+	  for(int l=0; l < N_Points; l++) {
 	    double u_n = 0;
 	    
 	    // compute u.n on l-th Gauss point
-	    for(size_t k=0; k<N_BaseFunct[FEId]; k++) {
+	    for(int k=0; k<N_BaseFunct[FEId]; k++) {
 	      int global_dof_from_local = DOF[k];
 	      for(size_t icoor=0; icoor<3; icoor++) {
 		double *u_icoor_values = this->GetComponent(icoor)->GetValues();

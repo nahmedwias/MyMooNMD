@@ -104,8 +104,8 @@ TAuxParam3D::TAuxParam3D(std::string name, TFEFunction3D **fefunctions3d)
 
 /** return all parameters at all quadrature points */
 void TAuxParam3D::GetParameters(int N_Points, TBaseCell *cell, int cellnum,
-                                const double *Xi, const double *Eta,
-                                const double *Zeta, double *X, double *Y,
+                                const double *, const double *,
+                                const double *, double *X, double *Y,
                                 double *Z, double **Parameters)
 {
   int i, j, k, l, n;

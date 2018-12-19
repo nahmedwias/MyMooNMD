@@ -37,7 +37,7 @@ class TIsoJointEqN : public TJointEqN
 
     // Methods
     /** create a new instance of this class */
-    virtual TJoint *NewInst(double T_0, double T_1, TBaseCell *Me)
+    virtual TJoint *NewInst(double, double, TBaseCell *Me)
     { return new TIsoJointEqN(Me); }
     virtual TJoint *NewInst()
     { return new TIsoJointEqN(nullptr); }

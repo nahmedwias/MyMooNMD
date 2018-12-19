@@ -72,7 +72,6 @@ int main(int argc, char* argv[])
   int maxCellsPerVertex;
   Partition_Mesh3D(comm, &domain, maxCellsPerVertex);
   domain.GenerateEdgeInfo();
-  int maxSubDomainPerDof = MIN(maxCellsPerVertex, mpiSize);
 
   Output::print(" Rank ", mpiRank, ": domain.GetN_OwnCells() = ", domain.GetN_OwnCells());
   //  // this is hardcoded for the 2 processes case - we expect rank 0

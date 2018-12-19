@@ -42,7 +42,7 @@ int TBdSphere::GetXYZofTS(double T, double S,
     combination of vertices */
 int TBdSphere::GetXYZandTS(int N_Points, double *LinComb,
                           double *xp, double *yp, double *zp,
-                          double *tp, double *sp,
+                          double *, double *,
                           double &X, double &Y, double &Z,
                           double &T, double &S) const
 {

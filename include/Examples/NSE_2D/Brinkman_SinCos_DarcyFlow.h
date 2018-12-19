@@ -56,23 +56,23 @@ void ExactP(double x, double y, double *values)
 // ========================================================================
 // boundary conditions (Parametrisation of the boundary); Param \in [0,1]
 // ========================================================================
-void BoundCondition(int i, double Param, BoundCond &cond)
+void BoundCondition(int i, double, BoundCond &cond)
 {
   cond = DIRICHLET; // default
 
   // set Neumann BC
-  for (int j = 0; j < neumann_id.size(); j++)
+  for (unsigned int j = 0; j < neumann_id.size(); j++)
   {
-    if (i == neumann_id[j])
+    if (i == (int)neumann_id[j])
     {
       cond = NEUMANN;
       return;
     }
   }
   // set Nitsche BC
-  for (int j = 0; j < nitsche_id.size(); j++)
+  for (unsigned int j = 0; j < nitsche_id.size(); j++)
   {
-    if (i == nitsche_id[j])
+    if (i == (int)nitsche_id[j])
     {
       cond = DIRICHLET_WEAK;
       return;
@@ -122,7 +122,7 @@ void U2BoundValue(int BdComp, double Param, double &value)
 // div(u) = g
 // ========================================================================
 void LinCoeffs(int n_points, double *x, double *y,
-    double **parameters, double **coeffs)
+    double **, double **coeffs)
 {
   double val_u1[4];
   double val_u2[4];

@@ -695,9 +695,9 @@ void BoundaryAssembling2D::matrix_and_rhs_corner_stabilization(BlockFEMatrix &M,
     TBoundEdge *boundedge_1 = boundaryEdgeList[m];
 
     // Check if boundary edge is on boundary components of Nitsche type
-    for (int km = 0; km < nitsche_id.size(); km++)
+    for (size_t km = 0; km < nitsche_id.size(); km++)
     {
-      if (boundedge_1->GetBoundComp()->GetID() == nitsche_id[km])
+      if (boundedge_1->GetBoundComp()->GetID() == (int)nitsche_id[km])
       {
         TBoundEdge *boundedge_2;
 
@@ -705,10 +705,10 @@ void BoundaryAssembling2D::matrix_and_rhs_corner_stabilization(BlockFEMatrix &M,
         {
           boundedge_2 = boundaryEdgeList[k];
 
-          for (int kl = 0; kl < nitsche_id.size(); kl++)
+          for (size_t kl = 0; kl < nitsche_id.size(); kl++)
           {
             // Check if boundary edge is on boundary components of Nitsche type
-            if (boundedge_2->GetBoundComp()->GetID() == nitsche_id[kl])
+            if (boundedge_2->GetBoundComp()->GetID() == (int)nitsche_id[kl])
             {
 
               // get normals
@@ -1049,7 +1049,7 @@ void BoundaryAssembling2D::matrix_gradu_n_v(BlockFEMatrix &M,
     const TFESpace2D *U_Space,
     std::vector<TBoundEdge*> &boundaryEdgeList,
     double mult,
-    int boundary_component_id)
+    int)
 {
   int *BeginIndex = U_Space->GetBeginIndex();
   int *GlobalNumbers = U_Space->GetGlobalNumbers();

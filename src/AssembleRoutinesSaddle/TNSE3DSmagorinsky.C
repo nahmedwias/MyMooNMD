@@ -901,7 +901,7 @@ void TimeNSType4SmagorinskyDD3D(double Mult, double *coeff,
 void TimeNSType1_2NLSmagorinsky3D(double Mult, double *coeff, 
                 double *param, double hK, 
                 double **OrigValues, int *N_BaseFuncts,
-                double ***LocMatrices, double **LocRhs)
+                double ***LocMatrices, double **)
 {
   double **MatrixA;
   double val;
@@ -968,7 +968,7 @@ void TimeNSType1_2NLSmagorinsky3D(double Mult, double *coeff,
 void TimeNSType3_4NLSmagorinsky3D(double Mult, double *coeff, 
                 double *param, double hK, 
                 double **OrigValues, int *N_BaseFuncts,
-                double ***LocMatrices, double **LocRhs)
+                double ***LocMatrices, double **)
 {
   double **MatrixA11, **MatrixA22, **MatrixA33;
   double val;
@@ -1040,7 +1040,7 @@ void TimeNSType3_4NLSmagorinsky3D(double Mult, double *coeff,
 void TimeNSType3_4NLSmagorinskyDD3D(double Mult, double *coeff, 
                 double *param, double hK, 
                 double **OrigValues, int *N_BaseFuncts,
-                double ***LocMatrices, double **LocRhs)
+                double ***LocMatrices, double **)
 {
   double **MatrixA11, **MatrixA12, **MatrixA13, **MatrixA21;
   double **MatrixA22, **MatrixA23, **MatrixA31, **MatrixA32;

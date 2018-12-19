@@ -86,11 +86,11 @@ void MatVect(TSquareMatrix *A, double *x, double *y)
   } // endfor i
 }
 
-void MatVect_Scalar(TSquareMatrix **A, TMatrix **B, double *x, double *y)
+void MatVect_Scalar(TSquareMatrix **A, TMatrix **, double *x, double *y)
 {
   MatVect(A[0],x,y);
 }
-void Defect_Scalar(TSquareMatrix **A, TMatrix **B, double *x, double *b, 
+void Defect_Scalar(TSquareMatrix **A, TMatrix **, double *x, double *b, 
                    double *r)
 {
   double res;

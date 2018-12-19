@@ -255,8 +255,7 @@ Brinkman2D::~Brinkman2D()
 }
 
 /** ************************************************************************ */
-void Brinkman2D::get_velocity_pressure_orders(std::pair <int,int>
-    &velocity_pressure_orders)
+void Brinkman2D::get_velocity_pressure_orders(std::pair <int,int>&)
 {
   Output::print<1>("velocity space", setw(10), TDatabase::ParamDB->VELOCITY_SPACE);
   Output::print<1>("pressure space", setw(10), TDatabase::ParamDB->PRESSURE_SPACE);
@@ -279,7 +278,7 @@ void Brinkman2D::check_input_parameters()
 }
 
 /** ************************************************************************ */
-void Brinkman2D::assemble(size_t level, TFEFunction2D* coefficient_function)
+void Brinkman2D::assemble(size_t, TFEFunction2D* coefficient_function)
 
 {
   //Valgrind test start
@@ -805,7 +804,7 @@ if (periodic_boundary)
 }
 
 /** ************************************************************************ */
-void Brinkman2D::output(int level, int i)
+void Brinkman2D::output(int level, int)
 {
   bool no_output = !brinkman2d_db["output_write_vtk"] && !brinkman2d_db["output_compute_errors"];
   if( no_output )

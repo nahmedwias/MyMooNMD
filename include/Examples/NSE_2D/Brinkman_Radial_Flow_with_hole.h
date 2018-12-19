@@ -82,7 +82,7 @@ void ExactP(double x, double y, double *values)
 // ========================================================================
 // boundary conditions
 // ========================================================================
-void BoundCondition(int i, double Param, BoundCond &cond)
+void BoundCondition(int i, double, BoundCond &cond)
 {
   cond = DIRICHLET; // default
 
@@ -93,9 +93,9 @@ void BoundCondition(int i, double Param, BoundCond &cond)
   }
 
   // set Nitsche BC
-  if (nitsche_id.size())
+  if(nitsche_id.size())
   {
-    if (i == nitsche_id[0])
+    if(i == (int)nitsche_id[0])
     {
       cond = DIRICHLET_WEAK;
       return;
@@ -163,8 +163,7 @@ void U2BoundValue(int BdComp, double Param, double &value)
 // -mu Delta u + grad(p) + sigma u = (f1,f2)
 // div(u) = g
 // ========================================================================
-void LinCoeffs(int n_points, double *x, double *y,
-    double **parameters, double **coeffs)
+void LinCoeffs(int n_points, double *x, double *y, double **, double **coeffs)
 {
   double val_u1[4];
   double val_u2[4];

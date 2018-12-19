@@ -540,6 +540,9 @@ void TTriaAffin::GetOrigValues(int joint, double zeta,
     case 2:
       xi = 0; eta = 0.5*(1-zeta);
     break;
+    default:
+      ErrThrow("wrong joint number ", joint, " in TTriaAffin::GetOrigValues.");
+      break;
   }
 
   this->GetOrigValues(xi, eta, N_BaseFunct, uref, uxiref, uetaref, 
@@ -591,7 +594,7 @@ void TTriaAffin::SetCell(const TBaseCell *cell)
 }
 
 /** return outer normal vector */
-void TTriaAffin::GetOuterNormal(int j, double zeta, double &n1, double &n2)
+void TTriaAffin::GetOuterNormal(int j, double, double &n1, double &n2)
   const
 {
   double len;
@@ -626,7 +629,7 @@ void TTriaAffin::GetOuterNormal(int j, double zeta, double &n1, double &n2)
 }
 
 /** return tangent */
-void TTriaAffin::GetTangent(int j, double zeta, double &t1, double &t2) const
+void TTriaAffin::GetTangent(int j, double, double &t1, double &t2) const
 {
   // factor 0.5 since edge parameter runs from -1 to +1
   switch(j)
@@ -696,7 +699,7 @@ void TTriaAffin::GetOrigBoundFromRef(int joint, int N_Points, double *zeta, doub
 
 
 /** Piola transformation for vectorial basis functions */
-void TTriaAffin::PiolaMapOrigFromRef(double xi, double eta, int N_Functs,
+void TTriaAffin::PiolaMapOrigFromRef(double, double, int N_Functs,
                                      const double *refD00, double *origD00)
 {
   double a11 = xc1*rec_detjk;
@@ -714,8 +717,8 @@ void TTriaAffin::PiolaMapOrigFromRef(double xi, double eta, int N_Functs,
   }
 }
    
-void TTriaAffin::PiolaMapOrigFromRef(double xi, double eta, int N_Functs,
-                                     const double *refD00, const double *refD10,
+void TTriaAffin::PiolaMapOrigFromRef(double, double, int N_Functs,
+                                     const double *, const double *refD10,
                                      const double *refD01, double *origD10,
                                      double *origD01)
 {

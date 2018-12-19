@@ -375,7 +375,7 @@ void ExactP(double x, double y,  double z, double *values)
 }
 
 // kind of boundary condition (for FE space needed)
-void BoundCondition(double x, double y, double z, BoundCond &cond)
+void BoundCondition(double, double, double, BoundCond &cond)
 {
   cond = DIRICHLET;
 }

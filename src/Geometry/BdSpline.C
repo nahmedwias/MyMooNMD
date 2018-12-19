@@ -60,7 +60,7 @@ int TBdSpline::GetXYofT(double T, double &X, double &Y) const
   return 0;
 }
 
-int TBdSpline::GetTofXY(double X, double Y, double &T) const
+int TBdSpline::GetTofXY(double, double, double &) const
 {
   return -1;
 }

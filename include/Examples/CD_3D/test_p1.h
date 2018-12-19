@@ -27,7 +27,7 @@ void Exact(double x, double y, double z, double *values)
 }
 
 // kind of boundary condition (for FE space needed)
-void BoundCondition(double x, double y, double z, BoundCond &cond)
+void BoundCondition(double, double, double, BoundCond &cond)
 {
   cond = DIRICHLET;
 }
@@ -38,8 +38,8 @@ void BoundValue(double x, double y, double z, double &value)
   value = 1+2*x+3*y+4*z;
 }
 
-void BilinearCoeffs(int n_points, double *x, double *y, double *z,
-        double **parameters, double **coeffs)
+void BilinearCoeffs(int n_points, double *, double *, double *, double **,
+                    double **coeffs)
 {
   double eps = 1; //diffusion coefficient
   double *coeff;

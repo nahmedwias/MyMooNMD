@@ -81,8 +81,9 @@ class TBdPlane : public TBoundComp3D
     /** read parameter from input file */
     virtual int ReadIn(std::istream &dat) override;
 
-    virtual void get_normal_vector(double x, double y, double z,
-				   double& nx, double& ny, double &nz) const override{
+    virtual void get_normal_vector(double, double, double, double& nx,
+                                   double& ny, double &nz) const override
+    {
       nx = N_x;
       ny = N_y;
       nz = N_z;

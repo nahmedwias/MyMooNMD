@@ -36,9 +36,8 @@
 void Assemble2D_edge_Oseen(CoeffFct2D Coeff,int n_fespaces, TFESpace2D **fespaces,
 			   int n_sqmatrices, TSquareMatrix2D **sqmatrices,
 			   int n_matrices, TMatrix2D **matrices,
-			   int n_rhs, double **rhs, TFESpace2D **ferhs,
-			   BoundCondFunct2D **BoundaryConditions,
-			   BoundValueFunct2D **BoundaryValues,
+			   int, double **, TFESpace2D **,
+			   BoundCondFunct2D **, BoundValueFunct2D **,
 			   TAuxParam2D *Parameters)
 {
   const int MaxN_BaseFunctions2D_Ersatz =100;

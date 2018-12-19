@@ -28,21 +28,21 @@ void ExampleFile()
 // exact solution unknown
 // ========================================================================
 
-void ExactU1(double x, double y, double *values)
+void ExactU1(double, double, double *values)
 {
   values[0] = 0; // y/2.*(1-y/2.); 
   values[1] = 0;
   values[2] = 0; // 1./2. - y/2.; 
   values[3] = 0; // -1./2.;         
 }
-void ExactU2(double x, double y, double *values)
+void ExactU2(double, double, double *values)
 {
   values[0] = 0;
   values[1] = 0;
   values[2] = 0;
   values[3] = 0;
 }
-void ExactP(double x, double y, double *values)
+void ExactP(double, double, double *values)
 {
   values[0] = 0; // -x/2+1./2.;   
   values[1] = 0; // -1./2.;      
@@ -54,7 +54,7 @@ void ExactP(double x, double y, double *values)
 // boundary conditions
 // ========================================================================
 
-void BoundCondition(int bdComp, double t, BoundCond &cond)  
+void BoundCondition(int bdComp, double, BoundCond &cond)  
 {
   //cond = DIRICHLET;
   cond = (bdComp==0 || bdComp==2 || bdComp==3 || bdComp==5) ? NEUMANN : DIRICHLET;
@@ -75,7 +75,7 @@ for (int j = 0; j < TDatabase::ParamDB->n_nitsche_boundary; j++)
 // boundary values
 // ========================================================================
 
-void U1BoundValue(int BdComp, double t, double &value)
+void U1BoundValue(int BdComp, double, double &value)
 {
  // loop to impose Neumann boundary conditions
  // Since we are using the Neumann boundary condition via boundaryAssembling2d(), 
@@ -124,7 +124,7 @@ void U1BoundValue(int BdComp, double t, double &value)
 
 
 
-void U2BoundValue(int BdComp, double t, double &value)
+void U2BoundValue(int BdComp, double, double &value)
 {
  // loop to impose Neumann boundary conditions
  // Since we are using the Neumann boundary condition via boundaryAssembling2d(), 

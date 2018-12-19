@@ -910,7 +910,7 @@ void tests_on_triangles_P1P1_GLSStab_cornerstab_PenaltyFreeNonSymmetricNitsche_G
 // main program
 // =======================================================================
 // ========================================================================
-int main(int argc, char* argv[])
+int main(int, char**)
 {
 
   //  declaration of databases

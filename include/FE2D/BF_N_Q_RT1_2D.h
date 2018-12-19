@@ -74,7 +74,7 @@ static void N_Q_RT1_2D_DeriveEta(double xi, double eta, double *values)
 }
 
 // values of derivatives in xi-xi direction
-static void N_Q_RT1_2D_DeriveXiXi(double xi, double eta, double *values)
+static void N_Q_RT1_2D_DeriveXiXi(double, double eta, double *values)
 {
   int nBF = 12; // number of basis functions
   // xi-derivative of monomials x-component and y-component
@@ -93,7 +93,7 @@ static void N_Q_RT1_2D_DeriveXiXi(double xi, double eta, double *values)
 }
 
 // values of derivatives in eta-eta direction
-static void N_Q_RT1_2D_DeriveEtaEta(double xi, double eta, double *values)
+static void N_Q_RT1_2D_DeriveEtaEta(double xi, double, double *values)
 {
   int nBF = 12; // number of basis functions
   // eta-derivative of monomials x-component and y-component

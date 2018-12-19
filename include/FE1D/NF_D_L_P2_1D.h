@@ -21,7 +21,7 @@ void NF_D_L_P2_1D_EvalAll(const double *PointValues, double *Functionals)
                        + 1.27459666924148337703585307995647992*PointValues[2]  );
 }
 
-void NF_D_L_P2_1D_EvalEdge(const double *PointValues, double *Functionals)
+void NF_D_L_P2_1D_EvalEdge(const double *, double *)
 {
 
 }

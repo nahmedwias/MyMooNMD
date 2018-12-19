@@ -770,7 +770,7 @@ void TQuadBilinear::SetCell(const TBaseCell *cell)
 }
 
 /** return outer normal vector */
-void TQuadBilinear::GetOuterNormal(int j, double zeta, double &n1, double &n2)
+void TQuadBilinear::GetOuterNormal(int j, double, double &n1, double &n2)
   const
 {
   double len;
@@ -810,7 +810,7 @@ void TQuadBilinear::GetOuterNormal(int j, double zeta, double &n1, double &n2)
 }
 
 /** return tangent */
-void TQuadBilinear::GetTangent(int j, double zeta, double &t1, double &t2)
+void TQuadBilinear::GetTangent(int j, double, double &t1, double &t2)
   const
 {
   // factor 0.5 since edge parameter runs from -1 to +1

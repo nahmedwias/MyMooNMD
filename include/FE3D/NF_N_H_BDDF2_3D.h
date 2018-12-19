@@ -185,7 +185,7 @@ static double NF_N_H_BDDF2_3D_S[] = {-100};//???
 
 
 
-void NF_N_H_BDDF2_3D_EvalAll(TCollection *Coll, TBaseCell *Cell,
+void NF_N_H_BDDF2_3D_EvalAll(TCollection *, TBaseCell *,
                              const double *PointValues, double *Functionals)
 {
   //face 0
@@ -253,7 +253,7 @@ void NF_N_H_BDDF2_3D_EvalAll(TCollection *Coll, TBaseCell *Cell,
   Functionals[38] = s;
 }
 
-void NF_N_H_BDDF2_3D_EvalFace(TCollection *Coll, TBaseCell *Cell, int face,
+void NF_N_H_BDDF2_3D_EvalFace(TCollection *, TBaseCell *Cell, int face,
                               const double *PointValues, double *Functionals)
 {
   double s; // size of face

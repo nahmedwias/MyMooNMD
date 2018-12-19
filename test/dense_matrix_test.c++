@@ -14,7 +14,7 @@
 #include <vector>
 #include <cmath>
 
-int main(int argc, char* argv[])
+int main(int, char**)
 {
 
   DenseMatrix mat(4,4); //construct a zero-filled 4-by-4 matrix

@@ -16,7 +16,7 @@ static void N_Q_RT0_2D_Funct(double xi, double eta, double *values)
 }
 
 // values of the derivatives in xi direction
-static void N_Q_RT0_2D_DeriveXi(double xi, double eta, double *values)
+static void N_Q_RT0_2D_DeriveXi(double, double, double *values)
 {
   // first component
   values[0]= 0.;
@@ -32,7 +32,7 @@ static void N_Q_RT0_2D_DeriveXi(double xi, double eta, double *values)
 }
 
 // values of the derivatives in eta direction
-static void N_Q_RT0_2D_DeriveEta(double xi, double eta, double *values)
+static void N_Q_RT0_2D_DeriveEta(double, double, double *values)
 {
   // first component
   values[0]= 0.;
@@ -48,21 +48,21 @@ static void N_Q_RT0_2D_DeriveEta(double xi, double eta, double *values)
 }
 
 // values of derivatives in xi-xi direction
-static void N_Q_RT0_2D_DeriveXiXi(double xi, double eta, double *values)
+static void N_Q_RT0_2D_DeriveXiXi(double, double, double *values)
 {
   // all second derivatives vanish
   memset(values, 0.0, 2*4*SizeOfDouble); // 2 is the space dimension
 }
 
 // values of derivatives in eta-eta direction
-static void N_Q_RT0_2D_DeriveEtaEta(double xi, double eta, double *values)
+static void N_Q_RT0_2D_DeriveEtaEta(double, double, double *values)
 {
   // all second derivatives vanish
   memset(values, 0.0, 2*4*SizeOfDouble); // 2 is the space dimension
 }
 
 // values of derivatives in xi-eta direction
-static void N_Q_RT0_2D_DeriveXiEta(double xi, double eta, double *values)
+static void N_Q_RT0_2D_DeriveXiEta(double, double, double *values)
 {
   // all second derivatives vanish
   memset(values, 0.0, 2*4*SizeOfDouble); // 2 is the space dimension

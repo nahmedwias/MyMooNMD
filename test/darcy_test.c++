@@ -345,7 +345,7 @@ void tests_on_different_grids(unsigned int nRefinements, ParameterDatabase& db)
 // =======================================================================
 // main program
 // =======================================================================
-int main(int argc, char** args)
+int main(int, char**)
 {
   //  declaration of old databases
   TDatabase Database;

@@ -101,7 +101,7 @@ void ExactP(double x, double y, double *values)
 // ========================================================================
 // boundary conditions
 // ========================================================================
-void BoundCondition(int i, double t, BoundCond &cond)
+void BoundCondition(int, double, BoundCond &cond)
 {
   cond = DIRICHLET;
 }
@@ -212,8 +212,7 @@ void U2BoundValue_diff(int BdComp, double Param, double &value)
 // ========================================================================
 // coefficients for Stokes form: A, B1, B2, f1, f2
 // ========================================================================
-void LinCoeffs(int n_points, double *X, double *Y,
-               double **parameters, double **coeffs)
+void LinCoeffs(int n_points, double *, double *, double **, double **coeffs)
 {
   int i;
   double *coeff;//, x, y;
@@ -232,12 +231,12 @@ void LinCoeffs(int n_points, double *X, double *Y,
   }
 }
 
-void BoundConditionPressure(int bdcomp, double t, BoundCond &cond)
+void BoundConditionPressure(int, double, BoundCond &cond)
 {
      cond = NEUMANN;
 }
 
-void BoundConditionPressureLaplace(int bdcomp, double t, BoundCond &cond)
+void BoundConditionPressureLaplace(int bdcomp, double, BoundCond &cond)
 {
   switch(bdcomp)
   {
@@ -250,7 +249,7 @@ void BoundConditionPressureLaplace(int bdcomp, double t, BoundCond &cond)
   }      
 }
 
-void PressureBoundValue(int BdComp, double y, double &value)
+void PressureBoundValue(int BdComp, double, double &value)
 {
   switch(BdComp)
   {
@@ -268,7 +267,7 @@ void PressureBoundValue(int BdComp, double y, double &value)
   }
 }
 
-void PressureBoundValueLaplace(int BdComp, double y, double &value)
+void PressureBoundValueLaplace(int BdComp, double, double &value)
 {
   switch(BdComp)
   {
@@ -286,8 +285,7 @@ void PressureBoundValueLaplace(int BdComp, double y, double &value)
   }
 }
 
-void EvaluateSolution(TFEFunction2D **PArray, TFEVectFunct2D  **UArray, double *err, 
-		 int *flags)
+void EvaluateSolution(TFEFunction2D **, TFEVectFunct2D  **, double *, int *)
 {
   // so special evaluations in this example
   return;

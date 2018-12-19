@@ -607,21 +607,6 @@ class BlockFEMatrix : public BlockMatrix
     std::vector<std::shared_ptr<const FEMatrix>> get_blocks() const;
 
     /**
-     * This is an awful method which returns non-const shared pointers to all blocks,
-     * ordered from left to right, top to bottom.
-     * Of course calling this method means you can break your entire
-     * BlockFEMatrix, because whenever you changes something in one
-     * block, you will have no idea which other cells are affected due to
-     * storing the same block.
-     *
-     * At the moment we make use of it, because many of the solvers request
-     * non-const pointers to TMatrices. This must be changed by and by.
-     *
-     * FIXME Fix the solvers (esp. Multigrid!), then delete this method immediately.
-     */
-    [[ deprecated ]] std::vector<std::shared_ptr<FEMatrix>> get_blocks_TERRIBLY_UNSAFE();
-
-    /**
      * This method is the main interface to ParMooN assembling procedures.
      * It traverses the whole matrix from left to right, top to bottom, and fills
      * the return vector with each new block it finds.

@@ -46,7 +46,7 @@ void ExampleFile()
 // multi indices used for various things
 // ========================================================================
 // no exact solution known
-void ExactU1(double x, double y, double *values)
+void ExactU1(double, double, double *values)
 {
   values[0] = 0.0;
   values[1] = 0.0;
@@ -54,7 +54,7 @@ void ExactU1(double x, double y, double *values)
   values[3] = 0.0;
 }
 
-void ExactU2(double x, double y, double *values)
+void ExactU2(double, double, double *values)
 {
   values[0] = 0.0;
   values[1] = 0.0;
@@ -62,7 +62,7 @@ void ExactU2(double x, double y, double *values)
   values[3] = 0.0;
 }
 
-void ExactP(double x, double y, double *values)
+void ExactP(double, double, double *values)
 {
   values[0] = 0.0;
   values[1] = 0.0;
@@ -73,13 +73,13 @@ void ExactP(double x, double y, double *values)
 // ========================================================================
 // boundary conditions
 // ========================================================================
-void BoundCondition(int bdComp, double t, BoundCond &cond)  
+void BoundCondition(int, double, BoundCond &cond)  
 {
   cond = DIRICHLET;
 }
 
 // u \cdot n
-void FluxBoundValue(int bdComp, double Param, double &value)
+void FluxBoundValue(int bdComp, double, double &value)
 {
   switch(bdComp)
   {
@@ -104,7 +104,7 @@ void FluxBoundValue(int bdComp, double Param, double &value)
 // coefficient and right hand side
 // ========================================================================
 void LinCoeffs(int n_points, double *X, double *Y,
-               double **parameters, double **coeffs)
+               double **, double **coeffs)
 {
   static double eps = 1.0/TDatabase::ParamDB->SIGMA_PERM;
   double *coeff;

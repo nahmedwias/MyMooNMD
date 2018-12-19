@@ -46,7 +46,7 @@ int TBdWall::GetXYZofTS(double T, double S,
 /** return parameters and coordinates of a given linear
     combination of vertices */
 int TBdWall::GetXYZandTS(int N_Points, double *LinComb,
-                         double *xp, double *yp, double *zp,
+                         double *, double *, double *,
                          double *tp, double *sp,
                          double &X, double &Y, double &Z,
                          double &T, double &S) const

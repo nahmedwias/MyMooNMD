@@ -46,7 +46,7 @@ void ExampleFile()
 // exact solution
 // ========================================================================
 
-void ExactU1(double x, double y, double *values)
+void ExactU1(double, double y, double *values)
 {
   double K = permeability; // OLD: = TDatabase::ParamDB->PERMEABILITY;
   double mu = viscosity; // OLD: = TDatabase::ParamDB->VISCOSITY;
@@ -78,7 +78,7 @@ void ExactU1(double x, double y, double *values)
   }
 }
 
-void ExactU2(double x, double y, double *values)
+void ExactU2(double, double, double *values)
 {
   values[0] = 0;            //u2
   values[1] = 0;            //u2_x
@@ -86,7 +86,7 @@ void ExactU2(double x, double y, double *values)
   values[3] = 0;            //Delta u2
 }
 
-void ExactP(double x, double y, double *values)
+void ExactP(double x, double, double *values)
 {
   values[0] = 0.5-x;                      //p
   values[1] = -1;                         //p_x
@@ -98,7 +98,7 @@ void ExactP(double x, double y, double *values)
 // boundary conditions
 // ========================================================================
 
-void BoundCondition(int i, double Param, BoundCond &cond)
+void BoundCondition(int i, double, BoundCond &cond)
 {
   cond = DIRICHLET; // default
 
@@ -169,7 +169,7 @@ void U1BoundValue(int BdComp, double Param, double &value)
   }
 }
 
-void U2BoundValue(int BdComp, double Param, double &value)
+void U2BoundValue(int, double, double &value)
 {
   value = 0;
 }

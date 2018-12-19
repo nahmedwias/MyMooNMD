@@ -91,8 +91,8 @@ static double NF_N_H_RT2_3D_S[] = {-100};//???
 
 
 
-void NF_N_H_RT2_3D_EvalAll(TCollection *Coll, TBaseCell *Cell,
-                           const double *PointValues, double *Functionals)
+void NF_N_H_RT2_3D_EvalAll(TCollection *, TBaseCell *,
+                           const double *, double *Functionals)
 {
 	cout << "Raviart-Thomas elements of order 2 on hexaeder: "
 	     << "Nodal functionals are not fully implemented properly!" << endl;
@@ -100,7 +100,7 @@ void NF_N_H_RT2_3D_EvalAll(TCollection *Coll, TBaseCell *Cell,
 	    Functionals[i] = 0;
 }
 
-void NF_N_H_RT2_3D_EvalFace(TCollection *Coll, TBaseCell *Cell, int face,
+void NF_N_H_RT2_3D_EvalFace(TCollection *, TBaseCell *Cell, int face,
                             const double *PointValues, double *Functionals)
 {
   double s; // size of face

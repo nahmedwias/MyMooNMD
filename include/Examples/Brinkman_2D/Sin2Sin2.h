@@ -40,7 +40,7 @@ void ExactU2(double x, double y, double *values)
                 - 4*Pi*Pi*Pi*sin(Pi*y)*sin(Pi*y)*cos(Pi*x)*sin(Pi*x);         //Delta u2=u2_xx + u2_yy
 }
 
-void ExactP(double x, double y, double *values)
+void ExactP(double x, double, double *values)
 {
     values[0] = -sin(2*Pi*x);                     //p
     values[1] = -2*Pi*cos(2*Pi*x);                //p_x
@@ -53,7 +53,7 @@ void ExactP(double x, double y, double *values)
 // boundary conditions (Parametrisierung des Randes); Param \in [0,1]
 // ========================================================================
 
-void BoundCondition(int i, double Param, BoundCond &cond)
+void BoundCondition(int i, double, BoundCond &cond)
 {
     cond = DIRICHLET; // default
 
@@ -76,7 +76,7 @@ void BoundCondition(int i, double Param, BoundCond &cond)
     }
 }
 
-void U1BoundValue(int BdComp, double Param, double &value)
+void U1BoundValue(int BdComp, double, double &value)
 {
     
     // loop to impose Neumann boundary conditions
@@ -115,7 +115,7 @@ void U1BoundValue(int BdComp, double Param, double &value)
     }
 }
 
-void U2BoundValue(int BdComp, double Param, double &value)
+void U2BoundValue(int BdComp, double, double &value)
 {
     
     // loop to impose Neumann boundary conditions
@@ -262,8 +262,7 @@ void U2BoundValue(int BdComp, double Param, double &value)
 // ========================================================================
 // coefficients for Stokes form: A, B1, B2, f1, f2
 // ========================================================================
-void LinCoeffs(int n_points, double *X, double *Y,
-               double **parameters, double **coeffs)
+void LinCoeffs(int n_points, double *X, double *Y, double **, double **coeffs)
 {
     double val_u1[4];
     double val_u2[4];

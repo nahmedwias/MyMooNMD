@@ -552,7 +552,7 @@ void AlgebraicFluxCorrection::fem_tvd_algorithm(
     const std::vector<double>& sol,
     std::vector<double>& rhs,
     //this argument is used in outcommented code block only
-    const std::vector<int>& neum_to_diri,
+    const std::vector<int>&, // neum_to_diri,
     bool continuous_proposal,
     bool nonsymmetric_application)
 {

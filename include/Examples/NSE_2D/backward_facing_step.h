@@ -43,7 +43,7 @@ void ExactP(double x, double y, double *values)
 // ========================================================================
 // boundary conditions
 // ========================================================================
-void BoundCondition(int i, double t, BoundCond &cond)
+void BoundCondition(int i, double, BoundCond &cond)
 {
   cond = i == 3 ? NEUMANN : DIRICHLET;
 }
@@ -53,7 +53,7 @@ void U1BoundValue(int BdComp, double Param, double &value)
   value = BdComp == 5 ? 4.*Param*(1.-Param) : 0.;
 }
 
-void U2BoundValue(int BdComp, double Param, double &value)
+void U2BoundValue(int, double, double &value)
 {
   value = 0.;
 }
@@ -61,8 +61,7 @@ void U2BoundValue(int BdComp, double Param, double &value)
 // ========================================================================
 // coefficients for Stokes form: A, B1, B2, f1, f2
 // ========================================================================
-void LinCoeffs(int n_points, double *x, double *y,
-               double **parameters, double **coeffs)
+void LinCoeffs(int n_points, double *, double *, double **, double **coeffs)
 {
   for(auto i = 0; i < n_points; i++)
   {
@@ -79,7 +78,7 @@ void LinCoeffs(int n_points, double *x, double *y,
 // ========================================================================
 // coefficients for Stokes form: A, B1, B2, f1, f2
 // ========================================================================
-void NonLinCoeffs(int n_points, double *x, double *y,
+void NonLinCoeffs(int n_points, double *, double *,
                   double **parameters, double **coeffs)
 {
   for(auto i = 0; i < n_points; i++)

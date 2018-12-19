@@ -99,7 +99,7 @@ void BilinearAssemble_UPW1(double Mult, double *coeff, double hK,
 }
 */
 
-void BilinearAssemble_UPW2(double Mult, double *coeff, double hK,
+void BilinearAssemble_UPW2(double Mult, double *coeff, double,
 double **OrigValues, int *N_BaseFuncts,
 double ***LocMatrices, double **LocRhs)
 {
@@ -167,7 +167,7 @@ double ***LocMatrices, double **LocRhs)
 void BilinearAssemble_SOLD(double Mult, double *coeff, double *param,
 double hK,
 double **OrigValues, int *N_BaseFuncts,
-double ***LocMatrices, double **LocRhs)
+double ***LocMatrices, double **)
 {
   double **Matrix, val, *MatrixRow;
   double ansatz000, ansatz100, ansatz010, ansatz001;
@@ -243,7 +243,7 @@ double ***LocMatrices, double **LocRhs)
 void BilinearAssemble_SOLD_Orthogonal(double Mult, double *coeff,
 double *param, double hK,
 double **OrigValues, int *N_BaseFuncts,
-double ***LocMatrices, double **LocRhs)
+double ***LocMatrices, double **)
 {
   double **Matrix, val, *MatrixRow;
   double ansatz000, ansatz100, ansatz010, ansatz001;
