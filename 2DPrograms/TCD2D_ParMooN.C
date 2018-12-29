@@ -17,8 +17,7 @@
 #include <sys/types.h>
 
 #include <TimeDiscRout.h>
-#include <SNAPS.h>
-
+// #include <SNAPS.h>
 
 
 using namespace std;
@@ -46,7 +45,7 @@ int main(int argc, char* argv[])
   
   // refine grid
   Domain.refine_and_get_hierarchy_of_collections(parmoon_db);
-  SNAPS snaps( parmoon_db );
+  // SNAPS snaps( parmoon_db );
   // write grid into an Postscript file
   if(parmoon_db["output_write_ps"])
     Domain.PS("Domain.ps", It_Finest, 0);
@@ -66,7 +65,7 @@ int main(int argc, char* argv[])
   TDatabase::TimeDB->CURRENTTIME = start_time;
   tcd.output();
   // store initial condition as snapshot
-  snaps.write_data(tcd.get_solution());
+  // snaps.write_data(tcd.get_solution());
   // ======================================================================
   // time iteration
   // ======================================================================
@@ -86,7 +85,7 @@ int main(int argc, char* argv[])
     tcd.assemble();    
     tcd.solve();
     // write the snap shots
-    snaps.write_data(tcd.get_solution(), tss.current_step_);
+    //snaps.write_data(tcd.get_solution(), tss.current_step_);
     cout<<" current step: "<< tss.current_step_<< endl;
     if((tss.current_step_-1) % TDatabase::TimeDB->STEPS_PER_IMAGE == 0)
       tcd.output();

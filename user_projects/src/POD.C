@@ -489,9 +489,9 @@ void POD::compute_autocorr_mat( ublas::matrix<double> &corr_mat ) {
     if( this->gramian_mat.size1() != this->length_snaps )
     {
       ErrThrow("ERROR: Dimension of inner product matrix and length of "
-    		   "snapshots must coincide!\nCurrently: dim of matrix : ",
-			   this->gramian_mat.size1(), " length of snapshots : ",
-			   this->length_snaps);
+               "snapshots must coincide!\nCurrently: dim of matrix : ",
+               this->gramian_mat.size1(), " length of snapshots : ",
+               this->length_snaps);
     }
     ublas::matrix<double> tmp_mat (this->gramian_mat.size1(), this->snaps_mat.size2());
     noalias(tmp_mat)  = ublas::prod( this->gramian_mat, this->snaps_mat );
