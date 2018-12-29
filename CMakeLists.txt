@@ -219,15 +219,6 @@ target_compile_definitions(tcd2d PUBLIC -D__2D__)
 target_link_libraries(tcd2d parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
 list(APPEND parmoon_main_programs tcd2d)
 
-### TCD2D POD ###
-# Standard executable target.
-add_executable(tcd2d_pod ${PROJECT_SOURCE_DIR}/2DPrograms/TCD2D_POD.C)
-set_target_properties(tcd2d_pod PROPERTIES OUTPUT_NAME parMooN_tcd2d_pod_${PARMOON_PARALLEL_TYPE})
-# Add the correct geometry flag to the target.
-target_compile_definitions(tcd2d_pod PUBLIC -D__2D__)
-# Link in the required libraries.
-target_link_libraries(tcd2d_pod parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
-
 ### TCD2D ROM ###
 # Standard executable target.
 add_executable(tcd2d_rom ${PROJECT_SOURCE_DIR}/2DPrograms/TCD2D_ROM.C)
