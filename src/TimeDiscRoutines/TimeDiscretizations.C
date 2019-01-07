@@ -54,6 +54,11 @@ ParameterDatabase TimeDiscretization::default_TimeDiscretization_database()
          "scheme is used for the nonlinear problem.",
          {true,false});
 
+  db.add("scaling_time_derivative", 1.0,
+         "This parameter can scale the temporal derivative by a constant double",
+         -100000000000.,100000000000.);
+
+
   return db;
 }
 
@@ -342,26 +347,29 @@ void TimeDiscretization::set_time_disc_parameters()
   if(db["time_discretization"].is("backward_euler"))
   {
     this->pre_stage_bdf = false;
-    TDatabase::TimeDB->THETA1 = 1.0;
-    TDatabase::TimeDB->THETA2 = 0.0;
-    TDatabase::TimeDB->THETA3 = 0.0;
-    TDatabase::TimeDB->THETA4 = 1.0;
+    TDatabase::TimeDB->THETA1 = (double) db["scaling_time_derivative"] * 1.0;
+    TDatabase::TimeDB->THETA2 = (double) db["scaling_time_derivative"] * 0.0;
+    TDatabase::TimeDB->THETA3 = (double) db["scaling_time_derivative"] * 0.0;
+    TDatabase::TimeDB->THETA4 = (double) db["scaling_time_derivative"] * 1.0;
+
+    cout <<"TDatabase::TimeDB->THETA1: " << TDatabase::TimeDB->THETA1 << endl;
+    cout <<"TDatabase::TimeDB->THETA2: " << TDatabase::TimeDB->THETA2 << endl;
   }
   if((db["time_discretization"].is("bdf_two"))&& (current_step_<=1) )
   {
-    TDatabase::TimeDB->THETA1 = 1.0;
-    TDatabase::TimeDB->THETA2 = 0.0;
-    TDatabase::TimeDB->THETA3 = 0.0;
-    TDatabase::TimeDB->THETA4 = 1.0;
+    TDatabase::TimeDB->THETA1 = (double) db["scaling_time_derivative"] * 1.0;
+    TDatabase::TimeDB->THETA2 = (double) db["scaling_time_derivative"] * 0.0;
+    TDatabase::TimeDB->THETA3 = (double) db["scaling_time_derivative"] * 0.0;
+    TDatabase::TimeDB->THETA4 = (double) db["scaling_time_derivative"] * 1.0;
   }
   if((db["time_discretization"].is("bdf_two") )&&
           (this->current_step_ >= 2))
   {
     this->pre_stage_bdf = false;
-    TDatabase::TimeDB->THETA1 = 2./3;
-    TDatabase::TimeDB->THETA2 = 0.0;
-    TDatabase::TimeDB->THETA3 = 0.0;
-    TDatabase::TimeDB->THETA4 = 2./3.;
+    TDatabase::TimeDB->THETA1 = (double) db["scaling_time_derivative"] * 2./3;
+    TDatabase::TimeDB->THETA2 = (double) db["scaling_time_derivative"] * 0.0;
+    TDatabase::TimeDB->THETA3 = (double) db["scaling_time_derivative"] * 0.0;
+    TDatabase::TimeDB->THETA4 = (double) db["scaling_time_derivative"] * 2./3.;
     if(current_step_==2)
     {
       Output::print("BDF2 with new parameters : ", bdf_coefficients[0], "  ",
@@ -371,10 +379,10 @@ void TimeDiscretization::set_time_disc_parameters()
   if(db["time_discretization"].is("crank_nicolson"))
   {
     this->pre_stage_bdf = false;
-    TDatabase::TimeDB->THETA1 = 0.5;
-    TDatabase::TimeDB->THETA2 = 0.5;
-    TDatabase::TimeDB->THETA3 = 0.5;
-    TDatabase::TimeDB->THETA4 = 0.5;
+    TDatabase::TimeDB->THETA1 = (double) db["scaling_time_derivative"] * 0.5;
+    TDatabase::TimeDB->THETA2 = (double) db["scaling_time_derivative"] * 0.5;
+    TDatabase::TimeDB->THETA3 = (double) db["scaling_time_derivative"] * 0.5;
+    TDatabase::TimeDB->THETA4 = (double) db["scaling_time_derivative"] * 0.5;
   }
   // set the global parameters used in the local assembling routines 
   // and at some other places

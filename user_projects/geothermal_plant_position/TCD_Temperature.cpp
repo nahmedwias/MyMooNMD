@@ -75,8 +75,10 @@ void temperature_coefficients(int n_points, double *x, double *y,
   for(int i = 0; i < n_points; ++i)
   {
     //another approx. for domain [0, 10] x [0, 6]
+    // bubble diameter = epsDelta
+    // bubble height = 1/(epsDelta*epsDelta)
     double r_well = 0.2; // 20cm
-    double epsDelta = 50*r_well;
+    double epsDelta = 10*r_well; // 25*r_well; //50*r_well;
     double T_in = 303.15; //injection temperature  = 30 + 273.15; 
 
     
