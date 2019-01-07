@@ -122,6 +122,16 @@ get_primal_temperature_database(ParameterDatabase param_db)
   // one has the correct name. Otherwise the default solver database is used.
   cout << "Nested database, name: " << db_name << endl;
 
+
+  tcd_GPPO_db.add("longitudinal_dispersion_factor", 0.,
+       "Use thermal dispersion tensor in the thermal conductivity",
+       -10000000., 10000000.);
+
+  tcd_GPPO_db.add("transversal_dispersion_factor", 0.,
+       "Use thermal dispersion tensor in the thermal conductivity",
+       -10000000., 10000000.);
+
+
   tcd_GPPO_db.merge(param_db,false);
   // replace parameter values if some parameter is specific for tcd problem
   if(param_db.has_nested_database(db_name))
@@ -266,10 +276,10 @@ void approximate_delta_functions(int n_points, double *x, double *y,
     
     // Note: this function should be consistent with the used domain/mesh
     double r_well = 0.2; // 20cm
-    double epsDelta = 25*r_well;
-    double H = 1000.;
-    double Volume = r_well*r_well*Pi*H;
-    double Qin = 150./3600./Volume; // m^3/h thickness = 1000m
+    double epsDelta = 10*r_well;  //25*r_well;  // ~h
+    double H = 75.;
+    double Volume = epsDelta*epsDelta*Pi*H;  //r_well*r_well*Pi*H; //
+    double Qin =  150./3600./Volume; // m^3/h thickness = 1000m
 
     
     std::vector<double> singular_x,singular_y,singular_sign;
@@ -281,25 +291,25 @@ void approximate_delta_functions(int n_points, double *x, double *y,
     singular_x.push_back(5500.);
     singular_y.push_back(3000.);
     singular_sign.push_back(-1.);
-    
+
     for (unsigned int m=0; m<singular_x.size(); m++) {
       double x_center_source = singular_x[m];
       double y_center_source = singular_y[m];
       double x_distance_to_source = std::pow(std::abs(x[i] - x_center_source), 2);
       double y_distance_to_source = std::pow(std::abs(y[i] - y_center_source), 2);
       bool at_source =(x_distance_to_source < epsDelta*epsDelta) *
-	(y_distance_to_source < epsDelta*epsDelta);
-    
+              (y_distance_to_source < epsDelta*epsDelta);
+
 
       if(at_source)
       {
-	double magnitude = cos(Pi*(x[i] - x_center_source)/epsDelta) + 1;
-	magnitude *= cos(Pi*(y[i] - y_center_source)/epsDelta) + 1;
-	magnitude /= 4.*epsDelta*epsDelta;
-	coeffs[i][3] += singular_sign[m] * magnitude * Qin;
-	Output::print<4>(" adding a singular source/sink - point ", m,
-			 " coeff[3] = ", coeffs[i][3]);
-	
+        double magnitude = cos(Pi*(x[i] - x_center_source)/epsDelta) + 1;
+        magnitude *= cos(Pi*(y[i] - y_center_source)/epsDelta) + 1;
+        magnitude /= 4.*epsDelta*epsDelta;
+        coeffs[i][3] += singular_sign[m] * magnitude * Qin;
+        Output::print<4>(" adding a singular source/sink - point ", m,
+                " coeff[3] = ", coeffs[i][3]);
+
       }
     }
   }
@@ -410,6 +420,24 @@ void GeothermalPlantsPositionOptimization<d>::apply_control_and_solve(const doub
 
 
   Output::print<2>(" ****** temperature *******");
+
+
+/*// change the diffusion corfficient by taking into account the thermal dispersion tensor
+  {
+    auto u1 = brinkman_mixed.get_velocity().GetComponent(0);
+    auto u2 = brinkman_mixed.get_velocity().GetComponent(1);
+
+  for (int i = 0; i < u1.size(); i++)
+  {
+
+  }
+
+   std::vector<double> thermal_dispersion_part1 = db["transversal_dispersion_factor"] * abs_u;
+   // (db["longitudinal_dispersion_factor"] - db["transversal_dispersion_factor"]) * u*u^T/abs_u;
+
+    db["diffusion_coefficient"] += thermal_dispersion_part1;
+  }
+  */
   
   TDatabase::TimeDB->TIME_DISC = 2; // Crank-Nicolson
   //double end_time = TDatabase::TimeDB->ENDTIME;
@@ -436,6 +464,8 @@ void GeothermalPlantsPositionOptimization<d>::apply_control_and_solve(const doub
   {
     tss.current_step_++;
     TDatabase::TimeDB->INTERNAL_STARTTIME = TDatabase::TimeDB->CURRENTTIME;
+
+    cout << "db[scaling_time_derivative]: " <<  db["scaling_time_derivative"] <<endl;
     tss.set_time_disc_parameters();
     
     double tau = db["time_step_length"];
@@ -443,7 +473,7 @@ void GeothermalPlantsPositionOptimization<d>::apply_control_and_solve(const doub
     TDatabase::TimeDB->CURRENTTIME += tau;
 
     Output::print<1>("\nCURRENT TIME: ", TDatabase::TimeDB->CURRENTTIME);
-    SetTimeDiscParameters(1);
+    /// OLD: SetTimeDiscParameters(1);
 
     tcd_primal.assemble(brinkman_mixed.get_velocity(), x,
 			  db["diffusion_coefficient"]);
@@ -454,7 +484,7 @@ void GeothermalPlantsPositionOptimization<d>::apply_control_and_solve(const doub
     // Temperature at production well
     auto temperature = tcd_primal.get_function();
     double x_production_well = 5500;
-    double delta_x = 300;
+    double delta_x = 20; //300;
     double y_production_well = 3000;
     double temperature_values[3];
     temperature.FindGradient(x_production_well - delta_x,y_production_well,temperature_values);
