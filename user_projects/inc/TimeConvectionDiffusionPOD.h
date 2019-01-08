@@ -27,7 +27,6 @@
 #include "AlgebraicFluxCorrection.h"
 #include "LocalAssembling.h"
 
-using namespace std;
 namespace ublas = boost::numeric::ublas;
 
 template<int d>

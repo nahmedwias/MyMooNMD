@@ -45,7 +45,7 @@ find_package( BLAS REQUIRED )
 #source files 
 list(APPEND ROM_SOURCES_2D "${pod_rom}/src/SNAPS.C")
 list(APPEND ROM_SOURCES_2D "${pod_rom}/src/POD.C")
-list(APPEND ROM_SOURCES_2D "${pod_rom}/src/Temprary.cpp")
+list(APPEND ROM_SOURCES_2D "${pod_rom}/src/ROM.C")
 list(APPEND ROM_SOURCES_2D "${pod_rom}/src/TimeConvectionDiffusionPOD.C")
 list(APPEND ROM_SOURCES_2D "${pod_rom}/src/TimeConvectionDiffusionROM.C")
 
@@ -66,3 +66,10 @@ set_target_properties(tcdr2d_pod PROPERTIES OUTPUT_NAME
 parMooN_tcdr2d_pod_${PARMOON_PARALLEL_TYPE})
 target_compile_definitions(tcdr2d_pod PUBLIC -D__2D__)
 target_link_libraries(tcdr2d_pod POD_LIB_2D parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
+
+# Add an executable target from TCD
+add_executable(tcdr2d_rom ${pod_rom}/TCDR2D_ROM_ParMooN.C)
+set_target_properties(tcdr2d_rom PROPERTIES OUTPUT_NAME 
+parMooN_tcdr2d_rom_${PARMOON_PARALLEL_TYPE})
+target_compile_definitions(tcdr2d_rom PUBLIC -D__2D__)
+target_link_libraries(tcdr2d_rom POD_LIB_2D parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})

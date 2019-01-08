@@ -21,11 +21,6 @@ ROM::ROM(const ParameterDatabase& param_db)
 }
 
 /**************************************************************************** */
-ROM::~ROM()
-{
-}
-
-/**************************************************************************** */
 void ROM::reduce(std::shared_ptr<TMatrix> full_mat, ublas::matrix<double> &red_mat)
 { 
   ublas::compressed_matrix<double> ublas_mat;
