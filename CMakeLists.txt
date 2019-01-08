@@ -150,8 +150,6 @@ include(cmake/sources_system.cmake)
 include(cmake/sources_matrix.cmake)
 include(cmake/sources_timediscroutines.cmake)
 include(cmake/sources_prepostprocessing.cmake)
-include(cmake/sources_rom.cmake)
-# include(cmake/sources_pbe.cmake)
 
 # Define two static libraries. Each has its own precompiler flag (2D/3D).
 # Adding dummy.f to the libraries is a hack - no automatic fortran linking (lapack!) without fortran compiling.
@@ -218,16 +216,6 @@ target_compile_definitions(tcd2d PUBLIC -D__2D__)
 # Link in the required libraries.
 target_link_libraries(tcd2d parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
 list(APPEND parmoon_main_programs tcd2d)
-
-### TCD2D ROM ###
-# Standard executable target.
-add_executable(tcd2d_rom ${PROJECT_SOURCE_DIR}/2DPrograms/TCD2D_ROM.C)
-set_target_properties(tcd2d_rom PROPERTIES OUTPUT_NAME parMooN_tcd2d_rom_${PARMOON_PARALLEL_TYPE})
-# Add the correct geometry flag to the target.
-target_compile_definitions(tcd2d_rom PUBLIC -D__2D__)
-# Link in the required libraries.
-target_link_libraries(tcd2d_rom parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
-
 
 ### TNSE2D ###
 # Standard executable target.

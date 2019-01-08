@@ -57,7 +57,7 @@ class ROM : public POD
 	/**
 	* @brief default constructor
 	*/
-	~ROM();
+	~ROM()=default;
 
 	/**
 	* @brief Reduce full sparse matrix using POD basis

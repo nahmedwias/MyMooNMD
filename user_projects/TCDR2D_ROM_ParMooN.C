@@ -10,55 +10,42 @@
 #include <Domain.h>
 #include <Database.h>
 #include <FEDatabase2D.h>
-
-#include <ROM_TCDR2D.h>
-#include <ROM_TCDR2D_Rep.h>
-
 #include <Example_TimeCD2D.h>
 #include <TimeDiscRout.h>
-
+#include <TimeConvectionDiffusionROM.h>
 
 using namespace std;
 
 int main(int argc, char* argv[])
 {
   double t_start = GetTime();
-  TDatabase Database;
+  TDatabase Database(argv[1]);
   TFEDatabase2D FEDatabase;
   
   ParameterDatabase parmoon_db = ParameterDatabase::parmoon_default_database();
-  for (int i=1; i<argc; ++i)
-  {
-    std::ifstream fs(argv[i]);
-    parmoon_db.read(fs);
-    fs.close();
-  }
+  parmoon_db.read(argv[1]);
+  
+  Output::set_outfile(parmoon_db["outfile"], parmoon_db["script_mode"]);
+  Output::setVerbosity(parmoon_db["verbosity"]);
 
   // ======================================================================
   // set the database values and generate mesh
   // ======================================================================
-  /** set variables' value in TDatabase using argv[1] (*.dat file), and generate the MESH based */
-  TDomain Domain(parmoon_db, argv[1]);
+  TDomain Domain(parmoon_db);
   
-  Output::set_outfile(parmoon_db["outfile"]);
-  Output::setVerbosity(parmoon_db["verbosity"]);
-
   parmoon_db.write(Output::get_outfile());
   Database.WriteParamDB(argv[0]);
   Database.WriteTimeDB();
-
-  // refine grid up to the coarsest level
-  size_t n_ref = Domain.get_n_initial_refinement_steps();
-  for(unsigned int i=0; i<n_ref; i++){
-    Domain.RegRefineAll();  
-  }
+  
+  // refine grid
+  Domain.refine_and_get_hierarchy_of_collections(parmoon_db);
   // write grid into an Postscript file
   if(parmoon_db["output_write_ps"])
-    Domain.PS("Domain.ps", It_Finest, 0);
-  
+   Domain.PS("Domain.ps", It_Finest, 0);
+   
   Example_TimeCD2D example( parmoon_db );
 
-  ROM_TCDR2D_Rep rom_2d_rep(Domain, parmoon_db, example);
+  TimeConvectionDiffusionROM<2> rom_2d_rep(Domain, parmoon_db, example);
   
   TimeDiscretization& tss = rom_2d_rep.get_time_stepping_scheme();
   tss.current_step_ = 0;
