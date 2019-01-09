@@ -8,9 +8,7 @@
 // Author:      Sashikumaar Ganesan
 // History:      start of implementation  07/09/09 (Sashikumaar Ganesan)
 // =======================================================================
-#ifdef _MPI
-#  include "mpi.h"
-#endif
+#include "mpi.h"
 
 #ifdef _OPENMP
 #  include <omp.h>
@@ -36,14 +34,12 @@
   #include <FEDatabase2D.h>
 #endif
 
-#ifdef _MPI
 extern "C"
 {
   #include <metis.h>
   #include <parmetis.h>
 }
 #include <MeshPartitionInOut.h>
-#endif
 
 #include<algorithm>
 #include<vector>
@@ -127,8 +123,6 @@ int MeshPartitionAuxFunctions::GetIndex(TVertex **Array, int Length, TVertex *El
 
   return m;
 }
-
-#ifdef _MPI
 
 #ifdef __2D__
 
@@ -1121,8 +1115,6 @@ int Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
 
 void Domain_Crop(MPI_Comm comm, TDomain *Domain)
 {
-  
-#if 1
   //Variable list
   
  idx_t *Cell_Rank;
@@ -1172,8 +1164,6 @@ void Domain_Crop(MPI_Comm comm, TDomain *Domain)
   CellDel = new TBaseCell*[N_Cells];
 
    TVertex **Vertices;
-   
-#endif
 
     NumberVertex=new int[N_AllLocVert];
     Vertices=new TVertex*[N_AllLocVert];
@@ -1960,5 +1950,4 @@ void Domain_Crop(MPI_Comm comm, TDomain *Domain)
    MPI_Barrier(comm);
 } // Partition_Mesh2D()
 
-#endif //mpi
 #endif
