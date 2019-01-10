@@ -405,6 +405,79 @@ BlockFEMatrix BlockFEMatrix::Mass_NSE2D_Type4(
 
   return my_matrix;
 }
+/* ************************************************************************* */
+BlockFEMatrix BlockFEMatrix::Stress_NSE2D_Type4( const TFESpace2D& velocity,
+                                         const TFESpace2D& pressure, 
+                                         const TFESpace2D& stress_space)
+{
+  BlockFEMatrix my_matrix({&stress_space, &stress_space, &stress_space,
+                           &velocity, &velocity, &pressure});
+  FEMatrix stress_stress_0_0(&stress_space, &stress_space);
+  FEMatrix stress_stress_1_1(stress_stress_0_0);
+  FEMatrix stress_stress_2_2(stress_stress_0_0);
+  
+  FEMatrix stres_velo_0_0(&stress_space, &velocity);
+  FEMatrix stres_velo_0_1(stres_velo_0_0);
+  FEMatrix stres_velo_1_0(stres_velo_0_0);
+  FEMatrix stres_velo_1_1(stres_velo_0_0);
+  FEMatrix stres_velo_2_0(stres_velo_0_0);
+  FEMatrix stres_velo_2_1(stres_velo_0_0);
+  
+  FEMatrix velo_stres_0_0(&velocity, &stress_space);
+  FEMatrix velo_stres_0_1(velo_stres_0_0);
+  FEMatrix velo_stres_0_2(velo_stres_0_0);
+  FEMatrix velo_stres_1_0(velo_stres_0_0);
+  FEMatrix velo_stres_1_1(velo_stres_0_0);
+  FEMatrix velo_stres_1_2(velo_stres_0_0);
+  
+  
+  FEMatrix velo_velo_0_0(&velocity, &velocity); //A blocks
+  FEMatrix velo_velo_0_1(velo_velo_0_0);
+  FEMatrix velo_velo_1_0(velo_velo_0_0);
+  FEMatrix velo_velo_1_1(velo_velo_0_0); //all copy constructed, share one TStructure
+
+  FEMatrix pressure_velo_1(&pressure, &velocity);
+  FEMatrix pressure_velo_2(pressure_velo_1); // copy constructed, shares TStructure!
+
+  FEMatrix velo_pressure_1(&velocity, &pressure);
+  FEMatrix velo_pressure_2(velo_pressure_1); // copy constructed, shares TStructure!
+
+  //
+  my_matrix.replace_blocks(stress_stress_0_0, {{0,0}}, {false});
+  my_matrix.replace_blocks(stress_stress_1_1, {{1,1}}, {false});
+  my_matrix.replace_blocks(stress_stress_2_2, {{2,2}}, {false});
+
+  my_matrix.replace_blocks(stres_velo_0_0, {{0,3}}, {false});
+  my_matrix.replace_blocks(stres_velo_0_1, {{0,4}}, {false});
+  my_matrix.replace_blocks(stres_velo_1_0, {{1,3}}, {false});
+  my_matrix.replace_blocks(stres_velo_1_1, {{1,4}}, {false});
+  my_matrix.replace_blocks(stres_velo_2_0, {{2,3}}, {false});
+  my_matrix.replace_blocks(stres_velo_2_1, {{2,4}}, {false});
+  //
+  my_matrix.replace_blocks(velo_stres_0_0, {{3,0}}, {false});
+  my_matrix.replace_blocks(velo_stres_0_1, {{3,1}}, {false});
+  my_matrix.replace_blocks(velo_stres_0_2, {{3,2}}, {false});
+  my_matrix.replace_blocks(velo_stres_1_0, {{4,0}}, {false});
+  my_matrix.replace_blocks(velo_stres_1_1, {{4,1}}, {false});
+  my_matrix.replace_blocks(velo_stres_1_2, {{4,2}}, {false});
+  
+  // fill in the velo-velo blocks
+  my_matrix.replace_blocks(velo_velo_0_0, {{3,3}}, {false});
+  my_matrix.replace_blocks(velo_velo_0_1, {{3,4}}, {false});
+  my_matrix.replace_blocks(velo_velo_1_0, {{4,3}}, {false});
+  my_matrix.replace_blocks(velo_velo_1_1, {{4,4}}, {false});
+
+  // fill in the pressure_velo blocks B_1 and B_1^T
+  my_matrix.replace_blocks(pressure_velo_1, {{5,3}}, {false});
+  my_matrix.replace_blocks(velo_pressure_1, {{3,5}}, {false});
+
+  // fill in the pressure_velo blocks B_2 and B_2^T
+  my_matrix.replace_blocks(pressure_velo_2, {{5,4}}, {false});
+  my_matrix.replace_blocks(velo_pressure_2, {{4,5}}, {false});
+  
+  return my_matrix;
+}
+
 #elif __3D__
 //3D named constructors
 BlockFEMatrix BlockFEMatrix::CD3D( const TFESpace3D& space )
@@ -1866,3 +1939,4 @@ bool determine_need_for_pressure_row_correction(std::vector<const TFESpace3D*> s
   return needs_prc;
 
 }
+

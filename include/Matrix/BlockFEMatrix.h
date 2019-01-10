@@ -283,7 +283,25 @@ class BlockFEMatrix : public BlockMatrix
      */
     static BlockFEMatrix Mass_NSE2D_Type3( const TFESpace2D& velocity, const TFESpace2D& pressure);
     static BlockFEMatrix Mass_NSE2D_Type4( const TFESpace2D& velocity, const TFESpace2D& pressure);
-
+/**
+     * Named constructor for a mass matrix type 3, 4
+     * The matrix takes the block structure
+     *
+     *  T11    0     0    S11' S12' 0                    
+     *  0    T22     0    S21' S22' 0
+     *  0      0    T33   S31' S32' 0
+     *  S11  S12    S13   A11  A12  B1T
+     *  S21  S22    S23   A21  A22  B2T
+     *  0      0     0    B1   B2   C
+     *
+     * @param velocity The velocity finite element space.
+     * @param pressure The pressure finite element space.
+     * @param stress The stress finite element space.
+     * @return A newly constructed BlockFEMatrix for NSE2D problems,
+     * whose block structure is of NSE Type 3, 4.
+     */
+    static BlockFEMatrix Stress_NSE2D_Type4( const TFESpace2D& velocity, const TFESpace2D& pressure,
+                                             const TFESpace2D& stress);
 #elif __3D__
     /**
      * @brief Named constructor for a block Matrix used in 3D convection-
