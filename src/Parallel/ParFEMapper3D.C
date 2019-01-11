@@ -1,4 +1,4 @@
-  #ifdef _MPI
+#ifdef _MPI
 
 #include "mpi.h"
 #include <ParFEMapper3D.h>
@@ -19,7 +19,7 @@
 #define NONHALO  1
 
 
-#ifndef _HYBRID
+#ifndef _OMP
 TParFEMapper3D::TParFEMapper3D(int N_dim, TFESpace3D *fespace)
 #else
 TParFEMapper3D::TParFEMapper3D(int N_dim, TFESpace3D *fespace, int *rowptr, int *kcol)
@@ -29,7 +29,7 @@ TParFEMapper3D::TParFEMapper3D(int N_dim, TFESpace3D *fespace, int *rowptr, int 
   Comm        = TDatabase::ParamDB->Comm;
   FESpace     = fespace;
 
-#ifdef _HYBRID
+#ifdef _OMP
   RowPtr      = rowptr;
   KCol        = kcol;
 #endif
@@ -47,7 +47,7 @@ TParFEMapper3D::TParFEMapper3D(int N_dim, TFESpace3D *fespace, int *rowptr, int 
 
     //   if(TDatabase::ParamDB->SOLVER_TYPE == DIRECT)
     Assign_GlobalDofNo();
-#ifdef _HYBRID
+#ifdef _OMP
     Color(N_CInt,ptrCInt,'i');
     Color(N_CMaster,ptrCMaster,'m');
     Color(N_CDept1,ptrCDept1,'D');
@@ -68,7 +68,7 @@ TParFEMapper3D::TParFEMapper3D()
 
 		FESpace = nullptr;
 
-#ifdef _HYBRID
+#ifdef _OMP
 		RowPtr = nullptr;
 		KCol = nullptr;
 #endif
@@ -977,7 +977,7 @@ if(TDatabase::ParamDB->Par_P4){
     }
   }
 
-#ifdef _HYBRID
+#ifdef _OMP
 if(TDatabase::ParamDB->Par_P5 == 1)
 {  
    N_InterfaceM = 0;
@@ -2105,7 +2105,7 @@ void TParFEMapper3D::Assign_GlobalDofNo()
 }
 
 
-#ifdef _HYBRID
+#ifdef _OMP
 void TParFEMapper3D::Color(int &numColors, int *&ptrColors, char type)
 {
   int i,j,k;
@@ -2193,7 +2193,7 @@ TParFEMapper3D::TParFEMapper3D(const TParFEMapper3D& other)
 	//shallow copies
 	FESpace = other.FESpace;
 
-#ifdef _HYBRID
+#ifdef _OMP
 	RowPtr = other.RowPtr; //shallow copy
 	KCol = other.KCol; //shallow copy
 #endif
@@ -2345,7 +2345,7 @@ void swap(TParFEMapper3D& first, TParFEMapper3D& second)
 	std::swap(first.Comm, second.Comm);
 	std::swap(first.N_Dim , second.N_Dim );
 	std::swap(first.N_Dof , second.N_Dof );
-#ifdef _HYBRID
+#ifdef _OMP
 	std::swap(first.RowPtr , second.RowPtr );
 	std::swap(first.KCol , second.KCol );
 #endif

@@ -166,7 +166,7 @@ class Saddle_point_preconditioner : public Preconditioner<BlockVector>
      */
     std::shared_ptr<BlockMatrix> Poisson_solver_matrix;
     
-#ifdef _SEQ
+#ifndef _MPI
     /** @brief storing a factorization for the 'Poisson_solver_matrix' */
     std::shared_ptr<DirectSolver> Poisson_solver;
 #endif

@@ -25,7 +25,7 @@ void ScalarDefect(TSquareMatrix *A, double *sol, double *f, double *d,
   res = 0.0;
   j = RowPtr[0];
  
-#ifdef _HYBRID
+#ifdef _OMP
   numThreads = TDatabase::ParamDB->OMPNUMTHREADS;
   omp_set_num_threads(numThreads);
 #pragma omp parallel default(shared) private(i,s,k,j,index) 
@@ -46,7 +46,7 @@ void ScalarDefect(TSquareMatrix *A, double *sol, double *f, double *d,
     res += s*s;
 #endif      
   } // endfor i
-#ifdef _HYBRID
+#ifdef _OMP
 }
 #endif
   
