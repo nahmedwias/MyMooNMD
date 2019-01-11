@@ -662,7 +662,7 @@ const
   std::shared_ptr<TStructure> productStructure = 
     std::make_shared<TStructure>(knownStructure);
   // create new matrix with this structure
-#ifdef _SEQ
+#ifndef _MPI
   TMatrix* product = new TMatrix(productStructure);
 #endif
 #ifdef _MPI

@@ -16,7 +16,7 @@ class TDatabase;
 #  include "mpi.h"
 #endif
 
-#ifdef _HYBRID
+#ifdef _OMP
   #include <omp.h>
 #endif
 
