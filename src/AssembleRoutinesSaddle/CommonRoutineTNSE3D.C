@@ -408,6 +408,28 @@ double vermanViscosityModel(double delta, double *gradu)
   return viscosity;
 }
 
+double VerstappenModelSimple(double delta, double* gradu, double frobeniusNorm)
+{
+  double a11, a12, a13, a22, a23, a33;
+  if(TDatabase::ParamDB->TURBULENT_VISCOSITY_TENSOR==0)
+  {
+    a11 = gradu[0]+gradu[0];
+    a12 = gradu[1]+gradu[3];
+    a13 = gradu[2]+gradu[6];
+    a22 = gradu[4]+gradu[4];
+    a23 = gradu[5]+gradu[7];
+    a33 = gradu[8]+gradu[8];
+  }
+  else
+    ErrThrow("ERROR: Verstappen model needs a symmetric stress tensor!");
+  double invariant_3 = - (a11 * a22 * a33 + 2.* a12 * a23 * a13 - 
+                          a12 * a12 * a33 - a23 * a23 * a11 - a13 * a13 * a22);
+  invariant_3 /= 8.0;
+  double invariant_2 = frobeniusNorm;
+  double viscosity = (6.0 * delta * delta * fabs(invariant_3) );
+  viscosity /= (Pi * Pi * invariant_2);
+}
+
 double frobeniusNormTensor(double* u, double* gradu, double* uConv, int proj_space)
 {
   int viscosityTensor = TDatabase::ParamDB->TURBULENT_VISCOSITY_TENSOR;
@@ -540,6 +562,9 @@ double turbulentViscosity3D(double hK, double* u, double* gradu,
              // frobenius norm of gradient of velocity
              // use same notations as in paper
       viscosity = vermanViscosityModel(delta, gradu);
+      break;
+    case 17: // simple Verstappen model (J Sci Comput'11, p. 97) 
+      viscosity = VerstappenModelSimple(delta, gradu, frobenius_norm_tensor);
       break;
     default:
       ErrThrow("Turbulent viscosity for viscosity type : ", viscosityType, " is not implemented");
