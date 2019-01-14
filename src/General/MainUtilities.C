@@ -44,7 +44,7 @@
 #include <stdio.h>
 
 #ifdef __MAC64__
-#include <malloc/malloc.h>
+#include <malloc/malloc.h> // defines _MALLOC_MALLOC_H_
 #else
 #include <malloc.h>
 #endif

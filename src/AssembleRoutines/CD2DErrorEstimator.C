@@ -22,9 +22,6 @@
 
 #include <cmath>
 #include <string.h>
-#ifndef __MAC64__
-#include <malloc.h>
-#endif
 
 /**********************************************************************/
 // 0 - gradient indicator
@@ -109,14 +106,6 @@ double *estimated_global_error)
 
   int ee_verbose=1;                               // verbosity
 
-  int memory[3],data_base_memory;
-#ifndef __MAC64__  
-  struct mallinfo MALLINFO;
-
-  MALLINFO = mallinfo();
-  memory[0]=MALLINFO.usmblks+MALLINFO.uordblks;
-  data_base_memory=0;
-#endif 
   // ########################################################################
   // store information in local arrays
   // ########################################################################
@@ -353,10 +342,6 @@ double *estimated_global_error)
   // ########################################################################
   // loop over all cells
   // ########################################################################
-#ifndef __MAC64__
-  MALLINFO = mallinfo();
-  memory[1]=MALLINFO.usmblks+MALLINFO.uordblks;
-#endif  
   for(i=0;i<N_Cells;i++)                          // for all cells on the finest level
   {
     cell = Coll->GetCell(i);                      // next cell
@@ -499,11 +484,6 @@ double *estimated_global_error)
 
     eta_K[i] = estimated_local_errors[current_estimator];
   }                                               // endfor i (loop over cells)
-#ifndef __MAC64__
-  MALLINFO = mallinfo();
-  memory[2]=MALLINFO.usmblks+MALLINFO.uordblks;
-  data_base_memory+= memory[2]-memory[1];
-#endif
   for(i=1;i<N_estimators;i++)                                // compute global error estimates
     estimated_global_error[i]=sqrt(estimated_global_errors[i]);
   estimated_global_error[0]=estimated_global_errors[0];
@@ -545,13 +525,6 @@ double *estimated_global_error)
   }
 
   delete FEFunctValues;
-#ifndef __MAC64__  
-  MALLINFO = mallinfo();
-  memory[1]=MALLINFO.usmblks+MALLINFO.uordblks;
-
-  if ((memory[1]- memory[0])!=data_base_memory)
-    cout << "WARNING : Error Estimator did not set all memory free !!!" <<  memory[1]- memory[0] << endl;
-#endif
 }                                                 // TCD2DErrorEstimator::GetErrorEstimate
 
 /*******************************************************************************/
