@@ -61,8 +61,10 @@ namespace brinkman_expo_poiseuille
 {
 #include "NSE_2D/Brinkman_Exponential_Poiseuille.h"
 }
-
-
+namespace brinkman_darcy_varying_permeability
+{
+#include "NSE_2D/Brinkman_Darcy_varying_permeability.h"
+}
 
 
 //============================================================================
@@ -411,6 +413,36 @@ case 7:
       brinkman_expo_poiseuille::ExampleFile();
       break;
 
+  case 13:
+      /** exact_solution */
+      exact_solution.push_back( brinkman_darcy_varying_permeability::ExactU1 );
+      exact_solution.push_back( brinkman_darcy_varying_permeability::ExactU2 );
+      exact_solution.push_back( brinkman_darcy_varying_permeability::ExactP );
+
+      /** boundary condition */
+      boundary_conditions.push_back( brinkman_darcy_varying_permeability::BoundCondition );
+      boundary_conditions.push_back( brinkman_darcy_varying_permeability::BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+
+      /** boundary values */
+      boundary_data.push_back( brinkman_darcy_varying_permeability::U1BoundValue );
+      boundary_data.push_back( brinkman_darcy_varying_permeability::U2BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+
+      /** coefficients */
+      problem_coefficients = brinkman_darcy_varying_permeability::LinCoeffs;
+
+      // Set dimensionless viscosity
+      brinkman_darcy_varying_permeability::effective_viscosity = get_nu();
+      brinkman_darcy_varying_permeability::sigma = get_inverse_permeability();
+
+      // boundary conditions
+      brinkman_darcy_varying_permeability::neumann_id = get_neumann_id();
+      brinkman_darcy_varying_permeability::nitsche_id = get_nitsche_id();
+      brinkman_darcy_varying_permeability::ExampleFile();
+      break;
+
+
   default:
     ErrThrow("Unknown Navier-Stokes example!");
   }
@@ -467,6 +499,7 @@ double Example_NSE2D::get_nu() const
   case 10:
   case 11:
   case 12:
+  case 13:
     {
       nu = this->example_database["effective_viscosity"];
       break;

@@ -957,6 +957,14 @@ void NavierStokes<d>::output(int i)
   
 #ifdef __2D__
  // velocity_over_line({0.5, 0.}, {0.5, 1.}, 81, velocity_components);
+
+  // geothermal tests flow rate
+ /*velocity_over_line({0.15, 0.4}, {0.15, 0.6}, 30, velocity_components, "velocity_channel_sigmae5_mueffe-1_x0.15.txt");
+ velocity_over_line({0.3, 0.4}, {0.3, 0.6}, 30, velocity_components, "velocity_channel_sigmae5_mueffe-1_x0.3.txt");
+ velocity_over_line({0.45, 0.4}, {0.45, 0.6}, 3, velocity_components, "velocity_channel_sigmae5_mueffe-1_x0.45.txt");
+ velocity_over_line({0.6, 0.4}, {0.6, 0.6}, 30, velocity_components, "velocity_channel_sigmae5_mueffe-1_x0.6.txt");
+ velocity_over_line({0.75, 0.4}, {0.75, 0.4}, 30, velocity_components, "velocity_channel_sigmae5_mueffe-1_x0.75.txt");
+*/
 #endif
 
   // measure errors to known solution
@@ -1421,13 +1429,13 @@ void NavierStokes<d>::assemble_boundary_terms()
 template <int d>
 void NavierStokes<d>::velocity_over_line(
   std::vector<double> start_point, std::vector<double> end_point,
-  size_t number_of_points, std::array<FEFunction*, d> velocity_components)
+  size_t number_of_points, std::array<FEFunction*, d> velocity_components, std::string name_of_file)
 {
   //----------------------------------------------------------------------------------
   // The following output is made for the geometry channel.mesh or channel_simple.mesh
-  Output::print("The values the solution u1, u2 (, u3) takes (and the velocity magnitude) at the line [x1, x2] x [y1, y2] are saved in u_values_over_line.txt.");
+  Output::print("The values the solution u1, u2 (, u3) takes (and the velocity magnitude) at the line between [x1, y1] and [x2, y2] are saved in", name_of_file);
   std::ostringstream oss;
-  oss << "u_values_over_line.txt";
+  oss << name_of_file; //"u_values_over_line.txt";
 
   std::string var = oss.str();
   std::ofstream velfile(var);
