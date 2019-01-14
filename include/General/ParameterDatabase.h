@@ -53,7 +53,10 @@ class ParameterDatabase
     /// regular intervals. TODO CB Build in the parameters needed to control
     /// the same feature in MPI.
     static ParameterDatabase default_solution_in_out_database();
-
+    
+    /// A database to control the writing of snapshots into a file
+    /// This feature is used to build a POD and a reduced-order model
+    static ParameterDatabase get_default_snapshots_parameters();
 
     /// @brief delete all parameters from this database
     ~ParameterDatabase() = default;

@@ -1261,6 +1261,11 @@ ParameterDatabase ParameterDatabase::parmoon_default_database()
   db.add("script_mode", false, "Set ParMooN into script mode. This means all "
          "output is written to the outfile and not to console.");
 
+  db.add("write_snaps", false,
+	 "Write Snapshots. If set to true, snapshots of the numerical solution will "
+	 " be written into a file.",
+	 {true,false});
+
   return db;
 }
 
@@ -1409,5 +1414,27 @@ ParameterDatabase ParameterDatabase::default_solution_in_out_database()
 
   return db;
 }
+
+ParameterDatabase ParameterDatabase::get_default_snapshots_parameters()
+{
+  Output::print<5>("Creating a default parameter database for managing snapshots...");
+  ParameterDatabase db("Default ParMooN parameter database for storing snapshots");
+
+  
+
+  db.add("snaps_directory", ".",
+    	         "This directory is where the snapshots will written. This "
+    	         "directory will be created, if it does not exist already. Files in "
+    	         "this directory will be overwritten without any warning.");
+
+  db.add("snaps_basename", "parmoon_snapshots",
+  		  "Basename for file where the snapshots are stored. The basename should end with a dot.");
+
+  db.add("steps_per_snap", (size_t) 5,
+    	     "This integer specifies how many time steps are performed "
+    		 "before a snapshot has to be written into file. ");
+  return db;
+}
+
 
 
