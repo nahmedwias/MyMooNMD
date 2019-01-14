@@ -33,6 +33,8 @@ project(ParMooN)
 list(APPEND _PAR_LIST "MPI" "OMPONLY" "HYBRID" "SEQUENTIAL")
 set(PARMOON_PARALLEL_TYPE "SEQUENTIAL" 
     CACHE STRING "The used parallelism. Choose between ${_PAR_LIST}.")
+# set the allowed strings as property. This way (graphical) editors for the 
+# cache (CMakeCache.txt) can select only the allowed values
 set_property(CACHE PARMOON_PARALLEL_TYPE PROPERTY STRINGS ${_PAR_LIST})
 list(FIND _PAR_LIST ${PARMOON_PARALLEL_TYPE} _VALID_PAR)
 if(_VALID_PAR EQUAL -1)
@@ -127,8 +129,9 @@ add_subdirectory(test EXCLUDE_FROM_ALL)
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure --exclude-regex all
                   DEPENDS ${parmoon_tests} ${parmoon_main_programs})
 add_custom_target(check_all COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure 
-		  DEPENDS ${parmoon_tests} ${parmoon_main_programs})
+                  DEPENDS ${parmoon_tests} ${parmoon_main_programs})
 
+include(cmake/additional_helper_targets.cmake)
 
 ############
 # End adding executable targets.
