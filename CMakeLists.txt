@@ -71,6 +71,7 @@ endif()
 
 # If we want global compile flags to reach the subdirectories, we have to 
 # run the following includes AFTER setting global flags.
+include(cmake/sources_rom.cmake)
 include(cmake/sources_assembleroutines.cmake)
 include(cmake/sources_assembleroutinessaddle.cmake)
 include(cmake/sources_examples.cmake)
