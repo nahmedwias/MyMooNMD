@@ -115,7 +115,7 @@ class TBaseCell
     
   public:
     // Constructor
-    TBaseCell(TRefDesc *refdesc);
+    explicit TBaseCell(TRefDesc *refdesc);
 
     // Destructor
     virtual ~TBaseCell();

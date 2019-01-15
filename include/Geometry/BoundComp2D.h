@@ -18,7 +18,7 @@ class TBoundComp2D : public TBoundComp
 {
   public:
     // Constructor
-    TBoundComp2D(int id);
+    explicit TBoundComp2D(int id);
 
     // Destructor
     virtual ~TBoundComp2D(){};

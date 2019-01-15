@@ -119,9 +119,9 @@ class TStructure
     /// @name construct square structures using one finite element space
     /// @brief ansatz and test space is the same 
     //@{
-    TStructure(const TFESpace1D * space);
-    TStructure(const TFESpace2D * Space);
-    TStructure(const TFESpace3D * space);
+    explicit TStructure(const TFESpace1D * space);
+    explicit TStructure(const TFESpace2D * Space);
+    explicit TStructure(const TFESpace3D * space);
     //@}
     
     /// @name construct rectangular structures using two finite element spaces

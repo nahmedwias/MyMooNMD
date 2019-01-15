@@ -29,7 +29,7 @@ class Example_NonStationary3D : public Example3D
 protected:
   /** @brief default constructor
    */
-  Example_NonStationary3D(const ParameterDatabase &);
+  explicit Example_NonStationary3D(const ParameterDatabase &);
 
   /** @brief right hand side vector depends on time or not
    * default is true

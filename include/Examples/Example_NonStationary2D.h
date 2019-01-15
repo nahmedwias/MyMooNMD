@@ -20,7 +20,7 @@ class Example_NonStationary2D : public Example2D
      * @brief default constructor
      * 
      */
-    Example_NonStationary2D(const ParameterDatabase &);
+    explicit Example_NonStationary2D(const ParameterDatabase &);
     
     /** @brief right hand side vector depends on time or not
      * default is true

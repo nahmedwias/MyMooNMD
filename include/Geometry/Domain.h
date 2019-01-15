@@ -106,7 +106,7 @@ class TDomain
      * @brief Constructor.
      * @param db A database to be merged into the domain's own.
      */
-     TDomain(const ParameterDatabase& db);
+    explicit TDomain(const ParameterDatabase& db);
      
     /** @brief copy constructor, deleted as a precaution */
     TDomain(const TDomain&) = delete;

@@ -29,7 +29,7 @@ class Example_Darcy3D : public Example3D
      * This intializes a convection-diffusion example in 3D. It is chosen 
      * according to example_code
      */
-    Example_Darcy3D(const ParameterDatabase& user_input_parameter_db);
+    explicit Example_Darcy3D(const ParameterDatabase& user_input_parameter_db);
     
     /** @brief initialize your own example
      * 

@@ -63,7 +63,7 @@ class TBaseFunct3D
                 );
 
     /** constructor without filling data structure */
-    TBaseFunct3D(int dimension);
+    explicit TBaseFunct3D(int dimension);
 
     /** return the dimension of local space */
     int GetDimension() const

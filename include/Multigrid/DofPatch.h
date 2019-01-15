@@ -26,7 +26,7 @@ typedef std::vector<int> intVec;
 public:
 
 	//! Construct a dof patch, reserving space for a vector<int> of size nEntries.
-	DofPatch(const size_t nDofs=1);
+	explicit DofPatch(const size_t nDofs=1);
 
 	//! Add a further dof to the end of the dofList.
 	void addDof(const int newDof);

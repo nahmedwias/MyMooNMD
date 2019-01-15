@@ -45,7 +45,7 @@ class TimeDiscretization
 
 public:
     // 
-    TimeDiscretization(const ParameterDatabase& param_db);
+    explicit TimeDiscretization(const ParameterDatabase& param_db);
 
     /// @brief This parameter is used for time step counter.
     /// It is set to be zero before the time iteration starts

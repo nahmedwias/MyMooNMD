@@ -70,12 +70,12 @@ class BlockVector
     
     /** Construct a BlockVector of length length.size(), where block i has
      * length[i] entries, filled with zeroes.*/
-    BlockVector(std::vector<unsigned int> lengths);
+    explicit BlockVector(std::vector<unsigned int> lengths);
 
     /** constructor for a BlockVector consisting of a single block of length
      * 'l' filled with zeros.
      */
-    BlockVector(unsigned int l);
+    explicit BlockVector(unsigned int l);
     
     /** constructor for a BlockVector consisting of a single block of length
      * 'l' filled with zeros.
@@ -83,7 +83,7 @@ class BlockVector
      * @note This constructor is for backwards compatibility, to avoid
      * explicit casts of integers to unsigned int. Use carefully.
      */
-    BlockVector(int l);
+    explicit BlockVector(int l);
 
 
     /// Construct a BlockVector which is suitable to serve as factor ("false")

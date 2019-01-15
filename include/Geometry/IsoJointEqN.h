@@ -31,7 +31,7 @@ class TIsoJointEqN : public TJointEqN
   public:
     // Constructors
     /** constructor with one initial neighbour */
-    TIsoJointEqN(TBaseCell *neighb0);
+    explicit TIsoJointEqN(TBaseCell *neighb0);
     /** constructor with two initial neighbours */
     TIsoJointEqN(TBaseCell *neighb0, TBaseCell *neighb1);
 

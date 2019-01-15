@@ -35,7 +35,7 @@ class Example2D
     * 
     * This is used only by the classes derived from this class.
     */
-    Example2D(const ParameterDatabase &);
+    explicit Example2D(const ParameterDatabase &);
 
     /** @brief a local parameter database which controls this class
      *

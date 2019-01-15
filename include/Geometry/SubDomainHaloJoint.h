@@ -22,7 +22,7 @@ class TSubDomainHaloJoint : public TJointEqN
 
   public:
     // Constructors
-    TSubDomainHaloJoint(TBaseCell *neighb0);
+    explicit TSubDomainHaloJoint(TBaseCell *neighb0);
 
     /** constructor with one initial neighbour */
     TSubDomainHaloJoint(TBaseCell *neighb0, TBaseCell *neighb1);

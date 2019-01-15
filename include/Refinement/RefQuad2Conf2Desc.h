@@ -31,7 +31,7 @@ class TRefQuad2Conf2Desc : public TRefDesc
   public:
     // Constructor
     /** build a descriptor for conforming closure of a quadrangle */
-    TRefQuad2Conf2Desc(TShapeDesc *shape);
+    explicit TRefQuad2Conf2Desc(TShapeDesc *shape);
       
     // Methods
 };

@@ -102,9 +102,9 @@ class BlockFEMatrix : public BlockMatrix
      * to all blocks of a particular column as ansatz space.
      */
 #ifdef __2D__
-    BlockFEMatrix(std::vector< const TFESpace2D* > spaces);
+    explicit BlockFEMatrix(std::vector< const TFESpace2D* > spaces);
 #elif __3D__
-    BlockFEMatrix(std::vector< const TFESpace3D* > spaces);
+    explicit BlockFEMatrix(std::vector< const TFESpace3D* > spaces);
 #endif // 3D
 
     /**

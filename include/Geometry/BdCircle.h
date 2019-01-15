@@ -31,7 +31,7 @@ class TBdCircle : public TBoundComp2D
 
   public:
     // Constructor
-    TBdCircle(int id);
+    explicit TBdCircle(int id);
 
     // Methods
     /** set all parameters to the given values */

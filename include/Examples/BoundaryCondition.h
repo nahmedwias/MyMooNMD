@@ -47,7 +47,7 @@ class BoundaryCondition
    *
    * @param f function returning the boundary condition at a given component
    */
-  BoundaryCondition(std::function<BoundCond(unsigned int)> f);
+  explicit BoundaryCondition(std::function<BoundCond(unsigned int)> f);
 
   /** @brief constructor using the coordinates on the boundary in 2D and 3D
    *
@@ -56,7 +56,7 @@ class BoundaryCondition
    * boundary component. Otherwise use
    * BoundaryCondition(std::function<BoundCond(unsigned int)> f).
    */
-  BoundaryCondition(std::function<BoundCond(const Point&)> f);
+  explicit BoundaryCondition(std::function<BoundCond(const Point&)> f);
 
   /** @brief constructor in 2D using the parametrization on the boundary
    *
@@ -65,7 +65,7 @@ class BoundaryCondition
    * changes within one boundary component. Otherwise use
    * BoundaryCondition(std::function<BoundCond(unsigned int)> f).
    */
-  BoundaryCondition(std::function<BoundCond(unsigned int, double)> f);
+  explicit BoundaryCondition(std::function<BoundCond(unsigned int, double)> f);
 
   /** @brief constructor in 3D using the parametrization on the boundary
    *
@@ -74,7 +74,8 @@ class BoundaryCondition
    * boundary condition changes within one boundary component. Otherwise use
    * BoundaryCondition(std::function<BoundCond(unsigned int)> f).
    */
-  BoundaryCondition(std::function<BoundCond(unsigned int, double, double)> f);
+  explicit BoundaryCondition(
+    std::function<BoundCond(unsigned int, double, double)> f);
 
   /** @brief Use this for constant boundary condition on all boundary
    * components
@@ -83,7 +84,7 @@ class BoundaryCondition
    * BoundaryCondition([](unsigned int component){ return bc;}). So this is
    * suitable for both 2D and 3D.
    */
-  BoundaryCondition(BoundCond bc);
+  explicit BoundaryCondition(BoundCond bc);
 
   /** @brief copy constructor */
   BoundaryCondition(const BoundaryCondition&) = default;
