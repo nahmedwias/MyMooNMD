@@ -12,11 +12,11 @@
 
 /** ***********************************************************************/
 SnapshotsCollector::SnapshotsCollector( const ParameterDatabase& param_db ) :
-  db(ParameterDatabase::get_default_snapshots_parameters()),snap_count(0)
+  db(ParameterDatabase::get_default_snapshots_database()),snap_count(0)
 {
   this->db.merge(param_db, true);
   snapshot_filename =  this->db["snaps_directory"].get<std::string>() + "/";
-  snapshot_filename += this->db["snaps_basename"].get<std::string>() + "snap";
+  snapshot_filename += this->db["snaps_filename"].get<std::string>();
   
   if (db["write_snaps"])
   {
