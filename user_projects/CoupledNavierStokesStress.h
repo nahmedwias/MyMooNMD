@@ -49,6 +49,13 @@ public:
   
   static ParameterDatabase default_coupled_database();
   
+  /** @brief Assemble those parts which do not contain nonlinearities
+   * like a Stokes or Brinkman problem. When solving a Navier-Stokes problem,
+   * then this must be called once before entering the nonlinear loop.
+   */
+  void assemble_linear_terms();
+  
+  
 protected:
   /// @brief default copy constructor (useful in derived classes)
   CoupledNavierStokesStress(const CoupledNavierStokesStress<d> &) = default;
@@ -98,6 +105,11 @@ protected:
     FEFunction stress1;
     FEFunction stress2;
     FEFunction stress3;
+#ifdef __3D__
+    FEFunction stress4;
+    FEFunction stress5;
+    FEFunction stress6;
+#endif
     /** @brief Finite element function for velocity*/
     FEVectFunct u;
     /** @brief Finite element function for pressure*/
@@ -142,6 +154,37 @@ protected:
   * of multigrid.
   */
   std::deque<System_per_grid> systems;
+  
+  /** @brief set parameters in database
+   * 
+   * This functions checks if the parameters in the database are meaningful
+   * and resets them otherwise. The hope is that after calling this function
+   * this class is fully functional.
+   *
+   * If some parameters are set to unsupported values, an error occurs and
+   * throws an exception.
+   */
+  void check_and_set_parameters();
+
+  /** @brief get velocity and pressure space*/
+  void get_velocity_pressure_orders(
+    std::tuple<int, int, int> &velocity_pressure_orders);
+  
+  /// @brief set the spaces depending on disc types
+  void set_arrays(CoupledNavierStokesStress<d>::System_per_grid& s,
+                  std::vector<const FESpace*> &spaces,
+                  std::vector<const FESpace*>& spaces_rhs,
+                  std::vector<FEFunction*>& functions);
+  
+  using SquareMatrixD = typename Template_names<d>::SquareMatrixD;
+  using MatrixD = typename Template_names<d>::MatrixD; 
+  /// @brief set the matrices and right hand side depending on the
+  /// assemling routines, nstypes and the methods
+  void set_matrices_rhs(CoupledNavierStokesStress<d>::System_per_grid& s,
+                        LocalAssembling_type type,
+                        std::vector<SquareMatrixD*> &sqMat,
+                        std::vector<MatrixD*> &reMat,
+                        std::vector<double*> &rhs);
 };
 
 #endif // COUPLEDNAVIERSTOKESSTRESS_H
