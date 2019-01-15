@@ -76,7 +76,7 @@ public:
     /// is 0. For the bdf schemes,  the scaling will be done at first
     /// two, three ... time steps depending on the order of the scheme
     void scale_descale_all_b_blocks(BlockFEMatrix& matrix, 
-                                    std::string scale_dscale);
+                                    const std::string& scale_dscale);
     
     /// @brief This scales the B, BT or C blocks that are nonlinear. This 
     /// is the special case in the SUPG or Residual based VMS schemes
@@ -90,12 +90,12 @@ public:
     // a function which takes the matrices, right-hand side and solution vector
     // and perform the ...
     void prepare_timestep(BlockFEMatrix& system_matrix, 
-        const BlockFEMatrix& mass_matrix, std::vector<BlockVector> & rhs, 
-        const std::vector<BlockVector> old_solutions);
+        const BlockFEMatrix& mass_matrix, std::vector<BlockVector>& rhs, 
+        const std::vector<BlockVector>& old_solutions);
     //
     void prepare_rhs_from_time_disc(BlockFEMatrix& system_matrix, 
-        const BlockFEMatrix& mass_matrix, std::vector<BlockVector> & rhs, 
-        const std::vector<BlockVector> old_solutions);
+        const BlockFEMatrix& mass_matrix, std::vector<BlockVector>& rhs, 
+        const std::vector<BlockVector>& old_solutions);
     
     /// @brief this function will prepare the BlockFEMatrix 
     /// which passes to the solver. In details, the system_matrix

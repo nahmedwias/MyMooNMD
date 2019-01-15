@@ -37,9 +37,10 @@ public:
      *
      * Create an example with all vectors already defined.
      */
-    Example_Brinkman3D(std::vector <DoubleFunct3D*> exact,
-                       std::vector <BoundCondFunct3D*> bc,
-                       std::vector <BoundValueFunct3D*> bd, CoeffFct3D coeffs)
+    Example_Brinkman3D(const std::vector<DoubleFunct3D*>& exact,
+                       const std::vector<BoundCondFunct3D*>& bc,
+                       const std::vector<BoundValueFunct3D*>& bd,
+                       const CoeffFct3D& coeffs)
     : Example3D(exact, bc, bd, coeffs) {};
     
     /// Apply the function stored as post processing routine.

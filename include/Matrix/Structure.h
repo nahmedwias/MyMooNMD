@@ -357,7 +357,7 @@ class TStructure
      * 
      * @param filename a file with this name will be created (overwritten)s
      */
-    void draw(std::string filename) const;
+    void draw(const std::string& filename) const;
     
     /**
      * @brief return a structure for the matrix-matrix-product A*B

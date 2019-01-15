@@ -97,7 +97,7 @@ TimeDiscretization::TimeDiscretization(const ParameterDatabase & param_db)
 void TimeDiscretization::prepare_timestep(BlockFEMatrix&,
                                           const BlockFEMatrix&,
                                           std::vector<BlockVector>&,
-                                          const std::vector<BlockVector>)
+                                          const std::vector<BlockVector>&)
 {
   //TODO: here the idea can be implemented of multisteps
 }
@@ -105,7 +105,8 @@ void TimeDiscretization::prepare_timestep(BlockFEMatrix&,
 /* ****************************************************************************/
 void TimeDiscretization::prepare_rhs_from_time_disc(
      BlockFEMatrix& system_matrix, const BlockFEMatrix& mass_matrix,
-     std::vector<BlockVector> & rhs, const std::vector<BlockVector> old_solutions)
+     std::vector<BlockVector> & rhs,
+     const std::vector<BlockVector>& old_solutions)
 {
   int n_blocks;
   if(system_matrix.get_n_cell_rows() == 1)
@@ -230,8 +231,8 @@ void TimeDiscretization::reset_linear_matrices(BlockFEMatrix& matrix,
 }
 
 /* ****************************************************************************/
-void TimeDiscretization::scale_descale_all_b_blocks(BlockFEMatrix& matrix, 
-                                          std::string scale_dscale)
+void TimeDiscretization::scale_descale_all_b_blocks(
+  BlockFEMatrix& matrix, const std::string& scale_dscale)
 {
   /// @DETAILS: scaling of the B and BT's blocks (also "C")
   double factor;

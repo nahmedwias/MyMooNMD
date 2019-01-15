@@ -43,11 +43,11 @@ class Boundary
 {
  public:
   Boundary();
-  explicit Boundary(std::string prmfile);
+  explicit Boundary(const std::string& prmfile);
   ~Boundary(){};
 
   ///@ initialize the list of bd components from a PRM file
-  void initFromFile(std::string prmfile);
+  void initFromFile(const std::string& prmfile);
 
   /**
      @brief return the boundary component of point (x,y)

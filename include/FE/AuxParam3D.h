@@ -93,7 +93,7 @@ class TAuxParam3D
      */
     TAuxParam3D();
 
-    TAuxParam3D(std::string name, TFEFunction3D **fefunctions3d);
+    TAuxParam3D(const std::string& name, TFEFunction3D **fefunctions3d);
     
 
     /** destructor */

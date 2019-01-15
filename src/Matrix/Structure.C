@@ -3140,7 +3140,7 @@ void TStructure::info() const
   Output::dash<3>("Number of matrix entries: ", nEntries);
 }
 
-void TStructure::draw(std::string filename) const
+void TStructure::draw(const std::string& filename) const
 {
   std::ofstream out_stream(filename);
   if(!out_stream)

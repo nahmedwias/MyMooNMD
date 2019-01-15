@@ -143,7 +143,7 @@ ParameterDatabase Brinkman2D::get_default_Brinkman2D_parameters()
 /** ************************************************************************ */
 // Constructor of a Brinkman2D::System_per_grid object
 Brinkman2D::System_per_grid::System_per_grid (const Example_Brinkman2D& example,
-    TCollection& coll, std::pair<int,int> velocity_pressure_orders,
+    TCollection& coll, const std::pair<int,int>& velocity_pressure_orders,
     Brinkman2D::Matrix type)
   : velocity_space(&coll, "u", "Brinkman velocity", example.get_bc(0),
       velocity_pressure_orders.first),

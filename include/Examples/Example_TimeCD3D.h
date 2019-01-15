@@ -41,12 +41,12 @@ public:
    * 
    * Create an example with all vectors already defined.
    */
-  Example_TimeCD3D(std::vector <DoubleFunct3D*> exact,
-                   std::vector <BoundCondFunct3D*> bc,
-                   std::vector <BoundValueFunct3D*> bd, 
-                   CoeffFct3D coeffs,                    
+  Example_TimeCD3D(const std::vector<DoubleFunct3D*>& exact,
+                   const std::vector<BoundCondFunct3D*>& bc,
+                   const std::vector<BoundValueFunct3D*>& bd, 
+                   const CoeffFct3D& coeffs,                    
                    bool timedependentrhs, bool timedependentcoeffs, 
-                   std::vector <DoubleFunct3D*> init_cond)
+                   const std::vector<DoubleFunct3D*>& init_cond)
   : Example_NonStationary3D(exact, bc, bd, coeffs,  timedependentrhs, 
                           timedependentcoeffs, init_cond) {};
   

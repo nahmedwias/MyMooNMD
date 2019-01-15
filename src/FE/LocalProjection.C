@@ -2648,7 +2648,7 @@ double UltraLocalErrorStreamlinePWConst(TFEFunction2D *uh, DoubleFunct2D *ExactU
 
 void UltraLocalProjectionStreamlinePLaplacian(TSquareMatrix2D* A, 
                 TFEFunction2D *uh,
-                CoeffFct2D Coeff)
+                const CoeffFct2D& Coeff)
 {
   int i,j,k,l,m;
   int N_Cells;
@@ -3322,7 +3322,7 @@ void UltraLocalProjectionStreamlinePLaplacian(TSquareMatrix2D* A,
 
 void LocalProjectionCoarseGridQ0(TFEFunction2D *uh,
          TFEFunction2D *uh_proj,
-               CoeffFct2D Coeff,
+               const CoeffFct2D& Coeff,
                int convection_flag)
 {
   int i, j, iq, index;
@@ -3474,7 +3474,7 @@ void LocalProjectionCoarseGridQ0(TFEFunction2D *uh,
 void LocalProjectionCrossWindCoarseGridQ0(TDomain *, int,
             TFEFunction2D *uh,
             TFEFunction2D *uh_proj,
-            CoeffFct2D Coeff,
+            const CoeffFct2D& Coeff,
             double *rhs,
                         int convection_flag) 
 {

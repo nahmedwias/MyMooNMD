@@ -1420,7 +1420,7 @@ void NavierStokes<d>::assemble_boundary_terms()
 /* ************************************************************************* */
 template <int d>
 void NavierStokes<d>::velocity_over_line(
-  std::vector<double> start_point, std::vector<double> end_point,
+  const std::vector<double>& start_point, const std::vector<double>& end_point,
   size_t number_of_points, std::array<FEFunction*, d> velocity_components)
 {
   //----------------------------------------------------------------------------------

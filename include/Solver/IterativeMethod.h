@@ -141,7 +141,7 @@ class IterativeMethod
   public:
     /** @brief constructor */
     IterativeMethod(std::shared_ptr<Preconditioner<Vector>> prec,
-                    std::string name = "")
+                    const std::string& name = "")
       : prec(prec), name(name), residual_tolerance(1.e-8),
         residual_reduction(0.), divergence_factor(1.e10), stagnation_factor(1.e10),
         max_n_iterations(100), min_n_iterations(0), restart(10), damping(1.0),

@@ -29,7 +29,7 @@ public:
   void rhs_g_v_n(BlockVector &rhs,
 		 const TFESpace3D *U_Space,
 		 BoundValueFunct3D *given_boundary_data,
-		 std::vector<TBaseCell*> &boundaryCells,
+		 std::vector<TBaseCell*>& boundaryCells,
 		 int bd_component_id, double mult
 		 );
 
@@ -37,7 +37,7 @@ public:
   void rhs_g_v_n(BlockVector &rhs,
 		 const TFESpace3D *U_Space,
 		 BoundValueFunct3D *given_boundary_data,
-		 std::vector<TBoundFace*> boundaryFaceList,
+		 std::vector<TBoundFace*>& boundaryFaceList,
 		 int componentID,
 		 double mult);
 
@@ -52,7 +52,7 @@ public:
      */
     void matrix_u_v(BlockFEMatrix &M,
                     const TFESpace3D *U_Space,
-                    std::vector<TBoundFace*> boundaryFaceList,
+                    std::vector<TBoundFace*>& boundaryFaceList,
                     int componentID,
                     double mult,
                     bool rescale_by_h);
@@ -70,7 +70,7 @@ public:
                  BoundValueFunct3D *given_boundary_data1,
                  BoundValueFunct3D *given_boundary_data2,
                  BoundValueFunct3D *given_boundary_data3,
-                 std::vector<TBoundFace*> boundaryFaceList,
+                 std::vector<TBoundFace*>& boundaryFaceList,
                  int componentID,
                  double mult,
                  bool rescale_by_h);
@@ -82,7 +82,7 @@ public:
      */
     void matrix_gradu_n_v(BlockFEMatrix &M,
                           const TFESpace3D *U_Space,
-                          std::vector<TBoundFace*> boundaryFaceList,
+                          std::vector<TBoundFace*>& boundaryFaceList,
                           int componentID,
                           double mult);
     
@@ -93,7 +93,7 @@ public:
      */
     void matrix_gradv_n_u(BlockFEMatrix &M,
                           const TFESpace3D *U_Space,
-                          std::vector<TBoundFace*> boundaryFaceList,
+                          std::vector<TBoundFace*>& boundaryFaceList,
                           int componentID,
                           double mult);
     
@@ -107,7 +107,7 @@ public:
                         BoundValueFunct3D *given_boundary_data1,
                         BoundValueFunct3D *given_boundary_data2,
                         BoundValueFunct3D *given_boundary_data3,
-                        std::vector<TBoundFace*> boundaryFaceList,
+                        std::vector<TBoundFace*>& boundaryFaceList,
                         int componentID,
                         double mult);
 
@@ -119,7 +119,7 @@ public:
     void matrix_p_v_n(BlockFEMatrix &M,
                       const TFESpace3D *U_Space,
                       const TFESpace3D *P_Space,
-                      std::vector<TBoundFace*> boundaryFaceList,
+                      std::vector<TBoundFace*>& boundaryFaceList,
                       int componentID,
                       double mult);
     
@@ -131,7 +131,7 @@ public:
     void matrix_q_u_n(BlockFEMatrix &M,
                       const TFESpace3D *U_Space,
                       const TFESpace3D *P_Space,
-                      std::vector<TBoundFace*> boundaryFaceList,
+                      std::vector<TBoundFace*>& boundaryFaceList,
                       int componentID,
                       double mult);
     
@@ -146,7 +146,7 @@ public:
                     BoundValueFunct3D *given_boundary_data1,
                     BoundValueFunct3D *given_boundary_data2,
                     BoundValueFunct3D *given_boundary_data3,
-                    std::vector<TBoundFace*> boundaryFaceList,
+                    std::vector<TBoundFace*>& boundaryFaceList,
                     int componentID,
                     double mult);
 
@@ -217,7 +217,7 @@ public:
     void nitsche_bc(BlockFEMatrix &s_matrix,BlockVector &s_rhs,
         const TFESpace3D * v_space, const TFESpace3D *p_space,
         BoundValueFunct3D * U1, BoundValueFunct3D *U2, BoundValueFunct3D *U3,
-        std::vector<TBoundFace*> boundaryFaceList,
+        std::vector<TBoundFace*>& boundaryFaceList,
         int bd_comp, double gamma, double mu,
         int sym_u, int sym_p);
 
@@ -241,7 +241,7 @@ protected:
     /** @brief access to the coordinates and first order partial derivatives of the solution (e.g. u or p) on joint with joint_id in reference element and transformation to the actual element with output of the coordinates [u00] and partial first order derivatives [u10],[u01] of the actual solution (e.g. u or p)
      */
     void get_original_values(FE3D FEId, int joint_id, TBaseCell *cell,
-                             std::vector<double> quadPoints, int BaseVectDim,
+                             const std::vector<double>& quadPoints, int BaseVectDim,
                              std::vector< std::vector<double> > &u000,
                              std::vector< std::vector<double> > &u100,
                              std::vector< std::vector<double> > &u010,

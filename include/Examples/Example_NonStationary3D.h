@@ -64,12 +64,12 @@ public:
   /**
    * @brief constructor
    */
-  Example_NonStationary3D(std::vector <DoubleFunct3D*> exact,
-                          std::vector <BoundCondFunct3D*> bc,
-                          std::vector <BoundValueFunct3D*> bd, 
-                          CoeffFct3D coeffs,
-                          bool timedependentrhs = true, bool timedependentcoeffs=true,
-                          std::vector <DoubleFunct3D*> init_cond=std::vector<DoubleFunct3D*>());
+  Example_NonStationary3D(
+    const std::vector<DoubleFunct3D*>& exact,
+    const std::vector<BoundCondFunct3D*>& bc,
+    const std::vector<BoundValueFunct3D*>& bd, const CoeffFct3D& coeffs,
+    bool timedependentrhs = true, bool timedependentcoeffs = true,
+    const std::vector<DoubleFunct3D*>& init_cond = std::vector<DoubleFunct3D*>());
   // getters
   //TODO
   bool rhs_depends_on_time();

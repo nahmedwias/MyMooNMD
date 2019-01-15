@@ -652,7 +652,7 @@ void BoundaryAssembling2D::matrix_and_rhs_corner_stabilization(BlockFEMatrix &M,
         const TFESpace2D *U_Space,
         BoundValueFunct2D *given_boundary_data1,
         BoundValueFunct2D *given_boundary_data2,
-        std::vector<size_t> nitsche_id,
+        const std::vector<size_t>& nitsche_id,
         double mult)
 { 
 
@@ -676,7 +676,7 @@ void BoundaryAssembling2D::matrix_and_rhs_corner_stabilization(BlockFEMatrix &M,
         BoundValueFunct2D *given_boundary_data1,
         BoundValueFunct2D *given_boundary_data2,
         std::vector<TBoundEdge*> &boundaryEdgeList,
-        std::vector<size_t> nitsche_id,
+        const std::vector<size_t>& nitsche_id,
         double mult)
 {
   int *BeginIndex = U_Space->GetBeginIndex();
@@ -838,7 +838,8 @@ void BoundaryAssembling2D::matrix_and_rhs_corner_stabilization(BlockFEMatrix &M,
 
 
 //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-void BoundaryAssembling2D::find_cornerDofs_in_boundarycells(std::vector<double> xc, std::vector<double> yc, 
+void BoundaryAssembling2D::find_cornerDofs_in_boundarycells(
+    const std::vector<double>& xc, const std::vector<double>& yc,
     const TFESpace2D *U_Space,
     TBoundEdge *boundedge_1, TBoundEdge *boundedge_2, 
     int &locdof_corner_1, int &locdof_corner_2)
@@ -1751,7 +1752,7 @@ void BoundaryAssembling2D::get_quadrature_formula_data(std::vector<double> &P,
 //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 void BoundaryAssembling2D::get_original_values(FE2D FEId, int joint_id,
     TBaseCell *cell,
-    std::vector<double> quadPoints,
+    const std::vector<double>& quadPoints,
     int BaseVectDim,
     std::vector< std::vector<double> > &originalValues,
     std::vector< std::vector<double> > &originalValues_x,

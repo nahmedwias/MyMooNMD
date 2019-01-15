@@ -32,7 +32,7 @@
 #include <stdlib.h>
 
 //helper method for printing "registered something" infos
-void print_registered_message_3D(std::string entities)
+void print_registered_message_3D(const std::string& entities)
 {
 #ifdef _MPI
   int my_rank;

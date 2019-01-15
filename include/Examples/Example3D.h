@@ -49,9 +49,10 @@ class Example3D
      * 
      * Create an example with all vectors already defined.
      */
-    Example3D(std::vector <DoubleFunct3D*> exact,
-              std::vector <BoundCondFunct3D*> bc,
-              std::vector <BoundValueFunct3D*> bd, CoeffFct3D coeffs);
+    Example3D(const std::vector<DoubleFunct3D*>& exact,
+              const std::vector<BoundCondFunct3D*>& bc,
+              const std::vector<BoundValueFunct3D*>& bd,
+              const CoeffFct3D& coeffs);
 
     /* functions representing the exact solution */
     std::vector <DoubleFunct3D*> exact_solution;
