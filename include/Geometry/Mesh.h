@@ -141,7 +141,7 @@ class Mesh
    *   the boundary description.
    */
   Mesh();
-  Mesh(std::string f);
+  explicit Mesh(std::string f);
   Mesh(std::string filename,std::string filenameBoundary);
   // Destructor
   ~Mesh(){};

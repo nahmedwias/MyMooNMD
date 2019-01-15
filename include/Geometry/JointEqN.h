@@ -22,7 +22,7 @@ class TJointEqN : public TJoint
   public:
     // Constructors
     /** constructor with one initial neighbour */
-    TJointEqN(TBaseCell *neighb0);
+    explicit TJointEqN(TBaseCell *neighb0);
     /** constructor with two initial neighbours */
     TJointEqN(TBaseCell *neighb0, TBaseCell *neighb1);
 

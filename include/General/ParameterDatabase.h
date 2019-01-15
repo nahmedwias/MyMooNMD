@@ -28,7 +28,7 @@ class ParameterDatabase
 {
   public:
     /// @brief construct an empty parameter database with a given name
-    ParameterDatabase(std::string name);
+    explicit ParameterDatabase(std::string name);
     
     /// @brief construct a database filled with parameters of general interest
     ///

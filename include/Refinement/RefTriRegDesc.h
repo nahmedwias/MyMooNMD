@@ -29,7 +29,7 @@ class TRefTriRegDesc : public TRefDesc
   public:
     // Constructor
     /** build a descriptor for a regular refinement of a triangle */
-    TRefTriRegDesc(TShapeDesc *shape);
+    explicit TRefTriRegDesc(TShapeDesc *shape);
 
     // Methods
 };

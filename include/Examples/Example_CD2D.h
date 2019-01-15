@@ -46,7 +46,7 @@ class Example_CD2D : public Example2D
      * This intializes a convection-diffusion example in 2D. It is chosen 
      * according to example_code.
      */
-    Example_CD2D(const ParameterDatabase& user_input_parameter_db);
+    explicit Example_CD2D(const ParameterDatabase& user_input_parameter_db);
     
     /** @brief initialize your own example
      * 

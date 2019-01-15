@@ -902,7 +902,7 @@ class TDatabase
      * using the method 'SetDefaultParameters'. If a valid file is given as 
      * 'ParamFile', the respective default values are overwritten.
      */
-    TDatabase(const char *ParamFile = nullptr);
+    explicit TDatabase(const char *ParamFile = nullptr);
     
     ~TDatabase();
 

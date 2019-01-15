@@ -34,7 +34,7 @@ class Example3D
     * 
     * This is used only by the classes derived from this class.
     */
-    Example3D(const ParameterDatabase &);
+    explicit Example3D(const ParameterDatabase &);
 
     /** @brief a local parameter database which controls this class
      *

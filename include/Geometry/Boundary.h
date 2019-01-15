@@ -43,7 +43,7 @@ class Boundary
 {
  public:
   Boundary();
-  Boundary(std::string prmfile);
+  explicit Boundary(std::string prmfile);
   ~Boundary(){};
 
   ///@ initialize the list of bd components from a PRM file

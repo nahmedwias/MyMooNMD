@@ -19,7 +19,7 @@ class TRefNoRef : public TRefDesc
   public:
     // Constructor
     /** build a descriptor for a nonrefined object */
-    TRefNoRef(TShapeDesc *shape);
+    explicit TRefNoRef(TShapeDesc *shape);
 
     // Methods
     /** return true because object is to refine */

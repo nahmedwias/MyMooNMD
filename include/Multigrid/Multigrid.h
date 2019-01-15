@@ -43,7 +43,7 @@ class Multigrid
      * 
      * To really use it, you have to call initialize as well.
      */
-    Multigrid(const ParameterDatabase& db);
+    explicit Multigrid(const ParameterDatabase& db);
 
     /** @brief Actual set up a multigrid object. 
      *

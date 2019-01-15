@@ -29,7 +29,7 @@ class TRefTetraBis4Desc : public TRefDesc
   public:
     // Constructor
     /** build a descriptor for a regular refinement of a tetrahedron */
-    TRefTetraBis4Desc(TShapeDesc *shape);
+    explicit TRefTetraBis4Desc(TShapeDesc *shape);
 
     // Methods
 };

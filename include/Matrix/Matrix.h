@@ -86,7 +86,7 @@ class TMatrix
     
   public:
     /** @brief generate the matrix, initialize entries with zeros */
-    TMatrix(std::shared_ptr<TStructure> structure
+    explicit TMatrix(std::shared_ptr<TStructure> structure
 #ifdef _MPI
             , const SparsityType& sparse_type = SparsityType::STANDARD
 #endif

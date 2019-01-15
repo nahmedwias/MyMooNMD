@@ -8,9 +8,9 @@ class LoopInfo
 {
 public:
   /// @brief Constructor. This also sets the initial_time
-  LoopInfo(std::string name);
+  explicit LoopInfo(std::string name);
   /// @brief Constructor for convenience, this calls the other constructor
-  LoopInfo(const char* name);
+  explicit LoopInfo(const char* name);
   /// @brief Constructor which allows setting some of the member variables.
   LoopInfo(std::string name,
            bool print_time_every_step,

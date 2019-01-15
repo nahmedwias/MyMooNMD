@@ -26,7 +26,7 @@ class DataWriter
 {
   public:
   ///@brief default constructor: parameter are copied from Database
-  DataWriter(const ParameterDatabase& param_db);
+  explicit DataWriter(const ParameterDatabase& param_db);
 
   using FEFunction = typename Template_names<d>::FEFunction;
   using FEVectFunct = typename Template_names<d>::FEVectFunct;

@@ -29,7 +29,7 @@ class JacobiSmoother : public Smoother
 
     /// Constructor takin only a damping parameter.
     /// @param[in] damp Damping for update. Must lie in (0,1].
-    JacobiSmoother(double damp);
+    explicit JacobiSmoother(double damp);
 
     /// Apply one step of Jacobi iteration with the stored operator
     /// to the iterate "solution"

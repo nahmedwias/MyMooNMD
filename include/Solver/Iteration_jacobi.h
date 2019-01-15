@@ -10,7 +10,7 @@ class Iteration_jacobi : public IterativeMethod<LinearOperator, Vector>,
 {
   public:
     /** constructor, this uses NoPreconditioner<Vector> ! */
-    Iteration_jacobi(const LinearOperator & mat);
+    explicit Iteration_jacobi(const LinearOperator & mat);
     
     void apply(const Vector & z, Vector & r) const override final;
     

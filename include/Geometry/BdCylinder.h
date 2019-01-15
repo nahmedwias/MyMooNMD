@@ -36,7 +36,7 @@ class TBdCylinder : public TBoundComp3D
     
   public:
     // CTOR
-    TBdCylinder (int id);
+    explicit TBdCylinder (int id);
     
     virtual ~TBdCylinder () {};
     
