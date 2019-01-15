@@ -27,6 +27,7 @@
 #include <TNSE3D_ParamRout.h>
 #include <TNSE2DGalerkin.h>
 #include <Brinkman2D_Mixed.h>
+#include <Coupled_NS_Stress_Local_routines.h>
 
 #include <numeric> // std::iota
 #include <algorithm>
@@ -53,6 +54,7 @@ std::ostream& operator<<(std::ostream& out, const LocalAssembling_type value)
     PROCESS_VAL(TNSE3D_LinGAL);
     PROCESS_VAL(TNSE3D_NLGAL);
     PROCESS_VAL(TNSE3D_Rhs);
+    PROCESS_VAL(CoupledStressNS);
     PROCESS_VAL(Custom);
     default: s = "unknown LocalAssembling_type type"; break;
   }
@@ -70,6 +72,7 @@ Template_names<2>::MultiIndex_vector indices_up_to_order<2>(int order)
     case 0: return { D00 }; break;
     case 1: return { D00, D10, D01 }; break;
     case 2: return { D00, D10, D01, D20, D11, D02 }; break;
+    case 3: return {D00, D10, D01, D10, D01, D20, D11, D02}; break;
     default:
       ErrThrow("Multi-indices only available for orders 0,1, and 2");
       break;
@@ -85,6 +88,8 @@ Template_names<3>::MultiIndex_vector indices_up_to_order<3>(int order)
     case 2:
       return { D000, D100, D010, D001, D200, D110, D101, D020, D011, D002 };
       break;
+    case 3: return {}; 
+    break;
     default:
       ErrThrow("Multi-indices only available for orders 0,1, and 2");
       break;
@@ -455,6 +460,9 @@ LocalAssembling<d>::LocalAssembling(ParameterDatabase param_db,
         default:
           ErrThrow("DISCTYPE", this->discretization_type , "is not supported yet!!");
       }
+      break;
+    case LocalAssembling_type::CoupledStressNS:
+      this->set_parameters_for_stress_simple(type);
       break;
     default:
       ErrThrow("Unknown or unhandled LocalAssembling_type case. ", type);
@@ -1641,6 +1649,48 @@ void LocalAssembling<3>::set_parameters_for_tnse_smagorinsky( LocalAssembling_ty
         default:
           ErrThrow("Unknown LocalAssembling3D_type");
   }
+}
+
+template<>
+void LocalAssembling<2>::set_parameters_for_stress_simple(LocalAssembling_type type)
+{
+  //bool with_coriolis = db["with_coriolis_force"];
+  //bool laplace_type_deformation = (TDatabase::ParamDB->LAPLACETYPE == 1);
+  bool laplace_type_deformation = this->db["laplace_type_deformation"];
+  std::string disc_type = this->db["space_discretization_type"];
+  bool galerkin = (disc_type == std::string("galerkin"));
+  bool pspg = (disc_type == std::string("pspg"));
+  bool local_projection = (disc_type == std::string("local_projection"));
+  int nstype = TDatabase::ParamDB->NSTYPE;
+  int problem_type = db["problem_type"];
+  
+  if(nstype != 4 || nstype != 14)
+    ErrThrow("NSTYPE: ", nstype," is not implemented")
+  
+  this->N_Rhs = 6;
+  this->RhsSpace = {0, 0, 0, 1, 1, 2};
+  this->N_Terms = 9;
+  //                     s,   u,   p,   s_x, s_y, u_x, u_y, p_x, p_y
+  this->Derivatives   = {D00, D00, D00, D10, D01, D10, D01, D10, D01}; //, D20, D02};
+  this->FESpaceNumber = {0,   1,   2,   0,   0,   1,   1,   2,   2};
+  
+  this->N_Parameters = 2;
+  this->N_ParamFct = 1;
+  this->ParameterFct =  { NSParamsVelocity<2> };
+  this->N_FEValues = 2;
+  this->FEValue_FctIndex = std::vector<int>(2);
+  std::iota(this->FEValue_FctIndex.begin(), this->FEValue_FctIndex.end(), 0);
+  this->FEValue_MultiIndex = MultiIndex_vector(2, indices_up_to_order<2>(0)[0]);
+  this->BeginParameter = { 0 };
+  this->N_Matrices = 15;
+  
+  this->RowSpace    = { 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0};
+  this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1 };
+  
+  using namespace std::placeholders;
+  double eta = db["eta_non_newt"];
+  this->local_assemblings_routines.push_back(
+        std::bind(Stress_Stress<2>, _1, _2, _3, _4, _5, _6, _7, _8, eta));
 }
 
 #ifdef __3D__

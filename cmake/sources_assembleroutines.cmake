@@ -7,6 +7,7 @@
 
 # Include header files. 
 include_directories("${CMAKE_SOURCE_DIR}/include/AssembleRoutines")
+include_directories("${CMAKE_SOURCE_DIR}/user_projects")
 
 # Source files used in 2D and 3D.
 list(APPEND ASSEMBLE_SOURCES "${PROJECT_SOURCE_DIR}/src/AssembleRoutines/AlgebraicFluxCorrection.C") 
