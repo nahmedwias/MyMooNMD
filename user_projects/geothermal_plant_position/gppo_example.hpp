@@ -119,7 +119,11 @@ void doublet_p_solution(double x, double y, double *values)
 }
 #endif
 
-void unknown_solution(double, double, double *values)
+void unknown_solution(double, double,
+#ifdef __3D__
+        double,
+#endif
+        double *values)
 {
   values[0] = 0.;
   values[1] = 0.;
@@ -327,15 +331,16 @@ Example_TimeCD2D get_gppo_temperature_example(const ParameterDatabase & db)
  Example_NSE3D get_gppo_flow_example(const ParameterDatabase & db)
 {
   //int example = db["example"];
-  std::vector<DoubleFunct3D *> exact(4, unknown_solution_3D);
+  std::vector<DoubleFunct3D *> exact(4, unknown_solution);
   std::vector<BoundCondFunct3D *> bc{{all_Dirichlet_boundary_condition, all_Dirichlet_boundary_condition, 
                                       all_Dirichlet_boundary_condition, all_Neumann_boundary_condition}};
-  std::vector<BoundValueFunct3D *> bd_3D(4, zero_boundary_value_3D); 
+  std::vector<BoundValueFunct3D *> bd_3D(4, zero_boundary_value);
   
   double reynolds_number = db["reynolds_number"];
   double sigma = db["inverse_permeability"];
   using namespace std::placeholders;
-  CoeffFct3D coeffs = std::bind(pde_coefficients_flow, _1, _2, _3, _4, _5, _6, 1./reynolds_number, sigma);
+  bool use_coeff_fct = false; // db["variable_sigma_fct_type"];
+  CoeffFct3D coeffs = std::bind(pde_coefficients_flow, _1, _2, _3, _4, _5, _6, 1./reynolds_number, sigma, use_coeff_fct);
   
   //cout << " **********INSIDE 3D_gppo_flow_example************"<< endl;
   return Example_NSE3D(exact, bc, bd_3D, coeffs, 1./reynolds_number);
@@ -345,10 +350,10 @@ Example_TimeCD2D get_gppo_temperature_example(const ParameterDatabase & db)
 Example_TimeCD3D get_gppo_temperature_example(const ParameterDatabase & db)
 {
   //int example = db["example"];
-  std::vector<DoubleFunct3D *> exact(1, unknown_solution_3D);
+  std::vector<DoubleFunct3D *> exact(1, unknown_solution);
   std::vector<BoundCondFunct3D *> bc(1, all_Dirichlet_boundary_condition);
-  std::vector<BoundValueFunct3D *> bd(1, temperature_boundary_value_3D);
-  std::vector <DoubleFunct3D*> ic(1, initial_condition_temperature_3D);
+  std::vector<BoundValueFunct3D *> bd(1, temperature_boundary_value);
+  std::vector <DoubleFunct3D*> ic(1, initial_condition_temperature);
   
   double nu = db["diffusion_coefficient"];
   using namespace std::placeholders;

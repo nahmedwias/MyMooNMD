@@ -49,7 +49,7 @@ public:
           Example_TimeCD example,
           int maxSubDomainPerDof);
 #else
-  TCD_Temperature( TDomain& domain,
+  TCD_Temperature(const TDomain& domain,
           const ParameterDatabase& param_db,
           Example_TimeCD example);
 #endif

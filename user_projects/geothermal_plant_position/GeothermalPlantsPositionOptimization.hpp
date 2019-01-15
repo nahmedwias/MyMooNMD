@@ -24,7 +24,7 @@ public:
   GeothermalPlantsPositionOptimization(const TDomain& domain,
           const ParameterDatabase& param_db);
 #else
-  GeothermalPlantsPositionOptimization( TDomain& domain,
+  GeothermalPlantsPositionOptimization(const TDomain& domain,
                                        const ParameterDatabase& param_db);
 #endif
 
