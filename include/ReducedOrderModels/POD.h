@@ -23,7 +23,6 @@
 #include <Matrix.h>
 #include <ParameterDatabase.h>
 #include <fstream>
-#include <memory>
 
 
 // lapack

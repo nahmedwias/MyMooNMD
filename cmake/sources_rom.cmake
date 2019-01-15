@@ -6,6 +6,8 @@ include_directories("${CMAKE_SOURCE_DIR}/include/ReducedOrderModels")
 
 # Source files to be added to the 2D and 3D library.
 list(APPEND ROM_SOURCES "${PROJECT_SOURCE_DIR}/src/ReducedOrderModels/SnapshotsCollector.C")
+list(APPEND ROM_SOURCES "${PROJECT_SOURCE_DIR}/src/ReducedOrderModels/POD.C")
+list(APPEND ROM_SOURCES "${PROJECT_SOURCE_DIR}/src/ReducedOrderModels/TimeConvectionDiffusionPOD.C")
 
 
 

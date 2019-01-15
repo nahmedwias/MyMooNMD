@@ -17,59 +17,18 @@ extern "C"
 }
 
 /** ***********************************************************************/
-ParameterDatabase get_default_rom_parameters()
-{
-  Output::print<5>("Creating a default POD-ROM parameter database...");
-  ParameterDatabase db("Default ParMooN parameter database for POD-based ROM problems");
 
-  db.add("pod_directory", ".",
-      	         "This directory is where the POD basis and Co. are written. This "
-      	         "directory will be created, if it does not exist already. Files in "
-      	         "this directory will be overwritten without any warning.");
-
-  db.add("pod_basename", "parmoon_pod",
-  		  "Basename for pod basis and related files.");
-
-  db.add("pod_rank", (size_t) 0,
-      	         "This integer specifies the dimension of the POD space to be computed. "
-      		 "If pod_rank <= 0, then all possible POD modes will be computed. ");
-
-  db.add("pod_fluctuations_only", true,
-	 "This is the flag whether the POD basis should be computed only "
-	 " fluctuation part (without average) of the snapshots "
-	 " (also central trajectory method).",
-	 {true,false});
-
-  db.add("pod_inner_product", "euclidean",
-               "Specification of the inner product which is used to compute POD basis."
-  		  "Besides default value, only 'l2' is possible at the moment.",
-  		  {"euclidean", "L2"});
-
-  db.add("rom_init_regularized", false,
-  		 "This is the flag whether the the ROM initial condition should be regularized.",
-  		 {true,false});
-
-  db.add("differential_filter_width", 1.0,
-           "Filter width for the differential filter (Helmoltz equation) for the computation "
-           "of of the regularized ROM initial condition.",
-             0., 10.);
-
-  // Merge with other databases
-  db.merge(ParameterDatabase::default_output_database(), true);
-
-  return db;
-}
 
 /** ***********************************************************************/
 POD::POD(const ParameterDatabase& param_db) :
-		rom_db(get_default_rom_parameters()),
-		length(0),
-		rank(0),
-		length_snaps(0),
-		number_snaps(0),
-		eigen_threshold(1.0e-10),
-		valid_eigs(0),
-		eigs(NULL)
+  rom_db(ParameterDatabase::get_default_pod_database()),
+  length(0),
+  rank(0),
+  length_snaps(0),
+  number_snaps(0),
+  eigen_threshold(1.0e-10),
+  valid_eigs(0),
+  eigs(NULL)
 {
   this->rom_db.merge(param_db, true);
   rank = rom_db["pod_rank"];
@@ -87,12 +46,12 @@ POD::~POD() {
 /** ***********************************************************************/
 void POD::read_snapshots() {
 
+  // read snapshots from file
   string snap_filename = this->rom_db["snaps_directory"].get<std::string>();
   snap_filename += "/";
-  snap_filename += this->rom_db["snaps_basename"].get<std::string>();
-  snap_filename += "snap";
+  snap_filename += this->rom_db["snaps_filename"].get<std::string>();
 
-  Output::print<1>("Reading snapshots from file: ", snap_filename);
+  Output::print<1>("Reading snapshots from file: ", snap_filename, " ...");
 
   std::vector < std::vector<double> > tmp_snaps;
   read_data( snap_filename, tmp_snaps);
@@ -109,8 +68,9 @@ void POD::read_snapshots() {
     	this->snaps_mat(j,i)=tmp_snaps[i][j];
   }
   
-  Output::print<1>("Length of snapshots : ", this->length_snaps);
-  Output::print<1>("Number of snapshots : ", this->number_snaps);
+  Output::print<1>("... done");
+  Output::print<1>("  * Length of snapshots : ", this->length_snaps);
+  Output::print<1>("  * Number of snapshots : ", this->number_snaps);
 }
 
 /** ***********************************************************************/
@@ -122,7 +82,7 @@ void POD::compute_basis() {
   this->snaps_mean.resize(this->length_snaps);
   this->snaps_mean.clear();
   
-  if( this->rom_db["pod_fluct"] ) {
+  if( this->rom_db["pod_fluctuations_only"] ) {
     Output::print<1>("POD will be computed from fluctuating part of snapshots.");
     decompose_snaps();
   }
@@ -272,7 +232,7 @@ void POD::write_pod( std::string basename ) {
   }
   ofile << setprecision( 12 );
   Output::print<1>( "Writing POD basis into file: ", pod_filename );
-  if(rom_db["pod_fluct"]){
+  if(rom_db["pod_fluctuations_only"]){
     ofile << "POD basis: fluctuating field" << "\n";
     /* write averages of snapshots into file */
     write_averages( basename );
@@ -452,13 +412,14 @@ void POD::decompose_snaps() {
     ErrThrow("Error: Snapshots are not available. Before computing POD basis "
     		 "read_snapshots() has to be called!");
   }
-  this->snaps_mean.resize(this->length_snaps);
-  this->snaps_mean.clear();
+  // this was done already before calling the function decompose_snaps()
+  //this->snaps_mean.resize(this->length_snaps);
+  //this->snaps_mean.clear();
 
-  /* compute snaps' mean */
+  /* compute snapshots mean */
   for(int i = 0; i < length_snaps; i++)
   {
-	//get ith row of snapshot matrix
+    //get ith row of snapshot matrix
     ublas::matrix_row<ublas::matrix<double>> snap_row(this->snaps_mat,i);
     this->snaps_mean(i) = (1./this->number_snaps) * sum(snap_row);//compute the time-mean in ith node
   }

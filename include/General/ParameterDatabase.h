@@ -56,7 +56,11 @@ class ParameterDatabase
     
     /// A database to control the writing of snapshots into a file
     /// This feature is used to build a POD and a reduced-order model
-    static ParameterDatabase get_default_snapshots_parameters();
+    static ParameterDatabase get_default_snapshots_database();
+
+    /// A database to control the computation, writing, and reading
+    /// of POD basis
+    static ParameterDatabase get_default_pod_database();
 
     /// @brief delete all parameters from this database
     ~ParameterDatabase() = default;
