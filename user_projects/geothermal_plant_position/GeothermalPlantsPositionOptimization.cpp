@@ -5,11 +5,11 @@
 
 #ifdef __2D__
 #include "Assemble2D.h"
-#include "gppo_example.hpp"
 #else
 #include "Assemble3D.h"
-#include "gppo_example3D.hpp"
 #endif
+
+#include "gppo_example.hpp"
 #include "LoopInfo.h"
 #include "Database.h"
 #include "TimeDiscRout.h"
@@ -258,6 +258,9 @@ double GeothermalPlantsPositionOptimization<d>::compute_functional_and_derivativ
 
 /** ************************************************************************ */
 void approximate_delta_functions(int n_points, double *x, double *y,
+#ifdef __3D__
+        double *z,
+#endif
         double **parameters, double **coeffs,
         double distance)
 {
@@ -266,50 +269,87 @@ void approximate_delta_functions(int n_points, double *x, double *y,
      (e.g. distance or position of sources)
   */
 
-  for(int i = 0; i < n_points; ++i)
+  for (int i = 0; i < n_points; ++i)
   {
-
     coeffs[i][0] = 0.;
     coeffs[i][1] = 0.;
     coeffs[i][2] = 0.;
     coeffs[i][3] = 0.;
+#ifdef __3D__
+    coeffs[i][4] = 0.;
+#endif
     
     // Note: this function should be consistent with the used domain/mesh
-    double r_well = 0.2; // 20cm
+    double u_in = 1.e-6;
+    double r_well = 0.1; // 10cm
     double epsDelta = 10*r_well;  //25*r_well;  // ~h
-    double H = 75.;
+    /*double H = 75.;
     double Volume = epsDelta*epsDelta*Pi*H;  //r_well*r_well*Pi*H; //
     double Qin =  150./3600./Volume; // m^3/h thickness = 1000m
-
+    */
+    double Qin = u_in * (2/r_well);
     
-    std::vector<double> singular_x,singular_y,singular_sign;
+    std::vector<double> singular_x, singular_y,
+#ifdef __3D__
+    singular_z,
+#endif
+    singular_sign;
+
     // source in (xi,yi)
     singular_x.push_back(4500.); 
     singular_y.push_back(3000.);
     singular_sign.push_back(1.);
+#ifdef __3D__
+    singular_z.push_back(3000.);
+#endif
+
     // sink in (xe,ye)    
     singular_x.push_back(5500.);
     singular_y.push_back(3000.);
     singular_sign.push_back(-1.);
+#ifdef __3D__
+    singular_z.push_back(3000.);
+#endif
 
-    for (unsigned int m=0; m<singular_x.size(); m++) {
+    for (unsigned int m = 0; m < singular_x.size(); m++)
+    {
       double x_center_source = singular_x[m];
       double y_center_source = singular_y[m];
+#ifdef __3D__
+      double z_center_source = singular_z[m];
+#endif
       double x_distance_to_source = std::pow(std::abs(x[i] - x_center_source), 2);
       double y_distance_to_source = std::pow(std::abs(y[i] - y_center_source), 2);
-      bool at_source =(x_distance_to_source < epsDelta*epsDelta) *
-              (y_distance_to_source < epsDelta*epsDelta);
+#ifdef __3D__
+      double z_distance_to_source = std::pow(std::abs(z[i] - z_center_source), 2);
+#endif
+
+      bool at_source = (x_distance_to_source < epsDelta*epsDelta) *
+              (y_distance_to_source < epsDelta*epsDelta)
+#ifdef __3D__
+      * (z_distance_to_source < epsDelta*epsDelta)
+#endif
+              ;
 
 
       if(at_source)
       {
         double magnitude = cos(Pi*(x[i] - x_center_source)/epsDelta) + 1;
         magnitude *= cos(Pi*(y[i] - y_center_source)/epsDelta) + 1;
+#ifdef __3D__
+        magnitude *= cos(Pi*(z[i] - z_center_source)/epsDelta) + 1;
+#endif
         magnitude /= 4.*epsDelta*epsDelta;
+
+#ifdef __2D__
         coeffs[i][3] += singular_sign[m] * magnitude * Qin;
         Output::print<4>(" adding a singular source/sink - point ", m,
                 " coeff[3] = ", coeffs[i][3]);
-
+#else
+        coeffs[i][4] += singular_sign[m] * magnitude * Qin;
+        Output::print<4>(" adding a singular source/sink - point ", m,
+                " coeff[4] = ", coeffs[i][4]);
+#endif
       }
     }
   }
@@ -330,7 +370,7 @@ void GeothermalPlantsPositionOptimization<d>::apply_control_and_solve(const doub
   
 #ifdef __2D__
   CoeffFct2D coeff = std::bind(approximate_delta_functions,
-			       _1, _2, _3, _4, _5,distance);
+			       _1, _2, _3, _4, _5, distance);
   // try to generalize to more wells
   //   CoeffFct2D coeff = std::bind(approximate_delta_functions_3,
   //_1, _2, _3, _4, _5, x_i, x_p1, x_p2, y_i, y_p1, y_p2);
@@ -486,8 +526,21 @@ void GeothermalPlantsPositionOptimization<d>::apply_control_and_solve(const doub
     double x_production_well = 5500;
     double delta_x = 20; //300;
     double y_production_well = 3000;
-    double temperature_values[3];
-    temperature.FindGradient(x_production_well - delta_x,y_production_well,temperature_values);
+#ifdef __3D__
+    double z_production_well = 3000;
+#endif
+
+#ifdef __2D__
+    double temperature_values[d+1];
+#else
+    std::vector<double> temperature_values(d+1);
+#endif
+
+    temperature.FindGradient(x_production_well - delta_x, y_production_well,
+#ifdef __3D__
+            z_production_well,
+#endif
+    temperature_values);
     Output::print(" *** T(well) = ",temperature_values[0]);
     
     

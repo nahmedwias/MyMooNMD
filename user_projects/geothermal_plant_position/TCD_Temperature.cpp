@@ -256,7 +256,7 @@ void TCD_Temperature<d>::reset_for_output()
 
 
 template <int d>
-TCD_Temperature<d>::TCD_Temperature(TDomain& domain,
+TCD_Temperature<d>::TCD_Temperature(const TDomain& domain,
                                    const ParameterDatabase& param_db,
                                     Example_TimeCD example
 //#ifdef _MPI
@@ -342,10 +342,10 @@ param_db, example)
 //*************************************************************************//
 void mapping_local_parameters(const double *in, double *out)
 {
-  // coordinates:  x at in[0], y at in[1], z at in[3]
-  out[0] = in[2];
-  out[1] = in[3];
-  out[2] = in[4];
+  // coordinates:  x at in[0], y at in[1], z at in[2]
+  out[0] = in[3];
+  out[1] = in[4];
+  out[2] = in[5];
 }
 
 //*************************************************************************//
@@ -405,6 +405,20 @@ void TCD_Temperature<d>::assemble(FEVectFunct& convection, const double * x, dou
 
   using namespace std::placeholders;
   la.ResetCoeffFct(std::bind(temperature_coefficients, _1, _2, _3, _4, _5, _6, distance, nu));
+
+ /*// Start velocity dependent thermal diffusivity
+  // diffusion_coefficient = this->db["diffusion_coefficient"] + alpha *
+  #ifdef __2D__
+
+  auto abs_u = sqrt(u1*u1 + u2*u2);
+  std::vector<double> thermal_dispersion_part1 = db["transversal_dispersion_factor"] * abs_u;
+   // (db["longitudinal_dispersion_factor"] - db["transversal_dispersion_factor"]) * u*u^T/abs_u;
+
+    db["diffusion_coefficient"] += thermal_dispersion_part1;
+
+  #endif
+
+    */
 
   la.setBeginParameter({0});
   la.SetN_Parameters(3);

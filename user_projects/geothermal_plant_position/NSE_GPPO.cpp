@@ -245,7 +245,7 @@ NSE3D_GPPO::NSE3D_GPPO( TDomain &domain, const ParameterDatabase& param_db, cons
 }
 #else*/
 template<int d>
-NSE_GPPO<d>::NSE_GPPO( TDomain &domain, const ParameterDatabase& param_db, Example_NSE example)
+NSE_GPPO<d>::NSE_GPPO( const TDomain &domain, const ParameterDatabase& param_db, const Example_NSE& example)
 :NavierStokes<d>(domain, param_db, example) //(domain.refine_and_get_hierarchy_of_collections(param_db), param_db, example)
 {
 }
