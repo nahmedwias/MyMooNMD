@@ -79,7 +79,7 @@ class Saddle_point_preconditioner : public Preconditioner<BlockVector>
 
     /* @brief get the augmentated rhs in case of augmented Lagrangian preconditioner:
      * (f_1,f_2,f_3,g) -> (f_1 + gamma * B_1^T * W^{-1} g, f_2 + gamma * B_2^T * W^{-1} g, g) */
-    BlockVector get_augmented_blockvector(BlockVector right_hand_side);
+    BlockVector get_augmented_blockvector(const BlockVector& right_hand_side);
   
   protected:
     // saddle point preconditioner (spp) type

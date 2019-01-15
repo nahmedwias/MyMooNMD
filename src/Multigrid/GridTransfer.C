@@ -1510,12 +1510,12 @@ void GridTransfer::RestrictFunction(
 
 void GridTransfer::RestrictFunctionRepeatedly(
 #ifdef __2D__
-  std::vector<const TFESpace2D*> space_hierarchy,
+  const std::vector<const TFESpace2D*>& space_hierarchy,
 #elif __3D__
-  std::vector<const TFESpace3D*> space_hierarchy,
+  const std::vector<const TFESpace3D*>& space_hierarchy,
 #endif
-  std::vector<double*> function_entries,
-  std::vector<size_t> function_n_dofs)
+  const std::vector<double*>& function_entries,
+  const std::vector<size_t>& function_n_dofs)
 {
   size_t n_levels =space_hierarchy.size();
   if (n_levels < 2)

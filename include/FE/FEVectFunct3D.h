@@ -29,8 +29,9 @@ class TFEVectFunct3D : public TFEFunction3D
     TFEVectFunct3D();
 
     /** constructor with vector initialization */
-    TFEVectFunct3D(TFESpace3D *fespace3D, std::string name, std::string description,
-                  double *values, int length, int n_components);
+    TFEVectFunct3D(TFESpace3D *fespace3D, const std::string& name,
+                   const std::string& description, double *values, int length,
+                   int n_components);
 
     /// Copy assignment operator. Shallow copy, as the
     /// FEFunction does not take any memory responsibility.
@@ -78,7 +79,7 @@ class TFEVectFunct3D : public TFEFunction3D
         int N_Derivatives,
         MultiIndex3D *NeededDerivatives,
         int N_Errors, TFEFunction3D::ErrorMethod *ErrorMeth, 
-        CoeffFct3D Coeff, TAuxParam3D *Aux,
+        const CoeffFct3D& Coeff, TAuxParam3D *Aux,
         int n_fespaces, TFESpace3D **fespaces,
         double *errors);
     
@@ -95,11 +96,11 @@ class TFEVectFunct3D : public TFEFunction3D
         
     /** write the solution into a data file **/
     void WriteSol(double t,
-    		std::string directory=std::string("."),
-    		std::string basename=std::string("parmoon_solution"));
+                  const std::string& directory=std::string("."),
+                  const std::string& basename=std::string("parmoon_solution"));
 
     /** Read the solution from a given data file **/
-    void ReadSol(std::string BaseName);
+    void ReadSol(const std::string& BaseName);
    
 };
 

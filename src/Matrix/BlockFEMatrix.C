@@ -11,9 +11,9 @@
 #include <algorithm>
 
 #ifdef __2D__
-bool determine_need_for_pressure_row_correction(std::vector<const TFESpace2D*> spaces);
+bool determine_need_for_pressure_row_correction(const std::vector<const TFESpace2D*>& spaces);
 #else //__3D__
-bool determine_need_for_pressure_row_correction(std::vector<const TFESpace3D*> spaces);
+bool determine_need_for_pressure_row_correction(const std::vector<const TFESpace3D*>& spaces);
 #endif
 
 /* ************************************************************************* */
@@ -21,15 +21,13 @@ bool determine_need_for_pressure_row_correction(std::vector<const TFESpace3D*> s
 /* ************************************************************************* */
 
 #ifdef __2D__
-BlockFEMatrix::BlockFEMatrix(
-    std::vector< const TFESpace2D*  > spaces) :
+BlockFEMatrix::BlockFEMatrix(const std::vector<const TFESpace2D*>& spaces)
 #else
-    BlockFEMatrix::BlockFEMatrix(
-        std::vector< const TFESpace3D*  > spaces) :
+BlockFEMatrix::BlockFEMatrix(const std::vector<const TFESpace3D*>& spaces)
 #endif
-    BlockMatrix(), //base class object is default (empty) constructed
-    test_spaces_rowwise_(spaces),
-    ansatz_spaces_columnwise_(spaces)
+: BlockMatrix(), //base class object is default (empty) constructed
+  test_spaces_rowwise_(spaces),
+  ansatz_spaces_columnwise_(spaces)
 {
   Output::print<5>("BlockFEMatrix constructor");
   // class invariant: testspaces are not allowed to hold hanging nodes,
@@ -1025,7 +1023,7 @@ std::vector<std::shared_ptr<FEMatrix>> BlockFEMatrix::get_blocks_uniquely(
 /* ************************************************************************* */
 
 std::vector<std::shared_ptr<FEMatrix>> BlockFEMatrix::get_blocks_uniquely(
-    std::vector<std::vector<size_t>> cells, bool include_zeroes)
+    const std::vector<std::vector<size_t>>& cells, bool include_zeroes)
 {
   // stuff the input into a tuple which includes transposed states
   // - for our purpose it is not necessary, but thus we can make use
@@ -1367,7 +1365,7 @@ size_t BlockFEMatrix::get_n_row_actives(size_t cell_row) const
 }
 
 /* ************************************************************************* */
-void BlockFEMatrix::print_matrix_info(std::string name) const
+void BlockFEMatrix::print_matrix_info(const std::string& name) const
 {
   //Gather some information to be printed.
   int n_spaces_row = this->get_n_cell_rows();
@@ -1647,7 +1645,7 @@ const TFESpace3D& BlockFEMatrix::get_ansatz_space(size_t cell_row, size_t cell_c
 // are code dupes of the non-active base class methods...
 void BlockFEMatrix::add_scaled_actives(
     const FEMatrix& summand, double scaling_factor,
-    std::vector<grid_place_and_mode> row_column_transpose_tuples)
+    std::vector<grid_place_and_mode>& row_column_transpose_tuples)
 {
   // first of all check the input, modify if reparable or throw if not so.
   check_grid_fit(summand, row_column_transpose_tuples);
@@ -1707,8 +1705,9 @@ std::shared_ptr<TMatrix> BlockFEMatrix::create_block_shared_pointer(const TMatri
 }
 /* ************************************************************************* */
 
-void BlockFEMatrix::scale_blocks_actives( double scaling_factor,
-                   std::vector<grid_place_and_mode> row_column_transpose_tuples)
+void BlockFEMatrix::scale_blocks_actives(
+  double scaling_factor,
+  std::vector<grid_place_and_mode>& row_column_transpose_tuples)
 {
   // first of all check the input, modify if reparable or throw if not so.
   check_and_edit_input( row_column_transpose_tuples );
@@ -1783,9 +1782,9 @@ void BlockFEMatrix::add_blockfe_matrix(const BlockFEMatrix& Matrix, double facto
 // whether this is an enclosed flow problem, and hence pressure correction is
 // needed.
 #ifdef __2D__
-bool determine_need_for_pressure_row_correction(std::vector<const TFESpace2D*> spaces)
+bool determine_need_for_pressure_row_correction(const std::vector<const TFESpace2D*>& spaces)
 #else //__3D__
-bool determine_need_for_pressure_row_correction(std::vector<const TFESpace3D*> spaces)
+bool determine_need_for_pressure_row_correction(const std::vector<const TFESpace3D*>& spaces)
 #endif
 {
   int my_rank = 0;

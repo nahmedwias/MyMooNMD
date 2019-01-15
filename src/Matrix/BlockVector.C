@@ -19,7 +19,7 @@ BlockVector::BlockVector() : entries(), lengths(), actives()
 }
 
 /** ************************************************************************ */
-BlockVector::BlockVector(std::vector<unsigned int> lengths)
+BlockVector::BlockVector(const std::vector<unsigned int>& lengths)
 {
   unsigned int n_entries = std::accumulate(lengths.begin(), lengths.end(), 0);
   entries = std::vector<double>(n_entries , 0.0);
@@ -277,7 +277,7 @@ void BlockVector::add(const double* x, const int i, double a)
 
 
 /** ************************************************************************ */
-double BlockVector::norm(std::vector<unsigned int> blocks
+double BlockVector::norm(const std::vector<unsigned int>& blocks
 #ifdef _MPI
    , std::vector<const TParFECommunicator3D*> comms
 #endif
@@ -315,15 +315,16 @@ double BlockVector::norm(std::vector<unsigned int> blocks
   }
   else
   {
-    if(blocks.empty())
+    auto blocks_copy = blocks; // work on a copy
+    if(blocks_copy.empty())
     {
-      blocks.resize(this->n_blocks(), 0);
-      std::iota (std::begin(blocks), std::end(blocks), 0); // {0, 1, 2, ...}
+      blocks_copy.resize(this->n_blocks(), 0);
+      std::iota (std::begin(blocks_copy), std::end(blocks_copy), 0); // {0, 1, 2, ...}
     }
     // This MPI method makes only use of values of master dofs, therefore
     // "this" does not have to be updated, consistency level 0 is enough.
 
-    auto n_considered_blocks = blocks.size();
+    auto n_considered_blocks = blocks_copy.size();
     /// First check if vector and communicators fit
     if(comms.size() != n_considered_blocks)
     {
@@ -332,11 +333,11 @@ double BlockVector::norm(std::vector<unsigned int> blocks
     }
     for(size_t i = 0; i < n_considered_blocks; ++i)
     {
-      if(comms[i]->GetNDof() != (int) length(blocks[i]))
+      if(comms[i]->GetNDof() != (int) length(blocks_copy[i]))
       {
-        ErrThrow("Length of Block ", blocks[i], " and comms ", i,
+        ErrThrow("Length of Block ", blocks_copy[i], " and comms ", i,
                  " do not match. ", comms[i]->GetNDof(), " ",
-                 length(blocks[i]));
+                 length(blocks_copy[i]));
       }
     }
 
@@ -348,8 +349,8 @@ double BlockVector::norm(std::vector<unsigned int> blocks
     for(size_t i = 0; i < n_considered_blocks; ++i)
     {
       const int* masters = comms[i]->GetMaster();
-      size_t offset = this->offset(blocks[i]);
-      size_t length_of_block = length(blocks[i]);
+      size_t offset = this->offset(blocks_copy[i]);
+      size_t length_of_block = length(blocks_copy[i]);
       for(size_t j = 0; j < length_of_block; ++j)
       {
         if(masters[j] == my_rank)
@@ -371,7 +372,7 @@ double BlockVector::norm(std::vector<unsigned int> blocks
 }
 
 /** ************************************************************************ */
-void BlockVector::print(const std::string name, const int iB) const
+void BlockVector::print(const std::string& name, const int iB) const
 {
   if(iB < 0)
   { // print full BlockVector
@@ -389,7 +390,7 @@ void BlockVector::print(const std::string name, const int iB) const
 }
 
 /** ************************************************************************ */
-void BlockVector::write(std::string filename) const
+void BlockVector::write(const std::string& filename) const
 {
   std::ofstream vectorfile;
   vectorfile.open(filename.c_str());
@@ -642,7 +643,7 @@ void BlockVector::read_from_stream(std::istream& is)
 
 
 /** ************************************************************************ */
-void BlockVector::write_to_file(std::string filename) const
+void BlockVector::write_to_file(const std::string& filename) const
 {
   std::ofstream dat(filename);
   if(!dat)
@@ -655,7 +656,7 @@ void BlockVector::write_to_file(std::string filename) const
 }
 
 /** ************************************************************************ */
-void BlockVector::read_from_file(std::string filename)
+void BlockVector::read_from_file(const std::string& filename)
 {
   std::ifstream dat(filename);
   if(!dat)

@@ -32,8 +32,9 @@ class TFEVectFunct2D : public TFEFunction2D
     TFEVectFunct2D();
 
     /** constructor with vector initialization */
-    TFEVectFunct2D(const TFESpace2D *fespace2D, std::string name, std::string description,
-        double *values, int length, int n_components);
+    TFEVectFunct2D(const TFESpace2D *fespace2D, const std::string& name,
+                   const std::string& description, double *values, int length,
+                   int n_components);
 
     /// Copy assignment operator. Shallow copy, as the
     /// FEFunction does not take any memory responsibility.
@@ -65,7 +66,7 @@ class TFEVectFunct2D : public TFEFunction2D
         int N_Derivatives,
         MultiIndex2D *NeededDerivatives,
         int N_Errors, TFEFunction2D::ErrorMethod *ErrorMeth, 
-        CoeffFct2D Coeff, TAuxParam2D *Aux,
+        const CoeffFct2D& Coeff, TAuxParam2D *Aux,
         int n_fespaces, TFESpace2D **fespaces,
         double *errors);
 
@@ -87,7 +88,7 @@ class TFEVectFunct2D : public TFEFunction2D
     /// Check the implementation of TFEVectFunct2D::get_L2_norm_divergence_curl
     /// to see an example.
     void get_functional_value(std::vector<double>& values,
-                              std::function<void(std::vector<double>&, std::array<double, 8>)> functional) const;
+                              const std::function<void(std::vector<double>&, std::array<double, 8>)>& functional) const;
 
     /** calculate L2-norm of divergence error */
     double GetL2NormDivergenceError(DoubleFunct2D *Exact_u1, DoubleFunct2D *Exact_u2);
@@ -100,11 +101,11 @@ class TFEVectFunct2D : public TFEFunction2D
 
     /** write the solution into a data file **/
     void WriteSol(double t,
-        std::string directory=std::string("."),
-        std::string basename=std::string("parmoon_solution"));
+        const std::string& directory=std::string("."),
+        const std::string& basename=std::string("parmoon_solution"));
 
     /** Read the solution from a given data file - written by Sashi **/
-    void ReadSol(std::string BaseName);
+    void ReadSol(const std::string& BaseName);
 
     /** determine the value of a vect function and its first derivatives at
       the given point */

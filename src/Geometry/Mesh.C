@@ -22,7 +22,7 @@ Mesh::Mesh() {
 
 // initialize from a file
 // note: dimension is set to 2, but it will be changed (if necessary) reading the file
-Mesh::Mesh(std::string filename) {
+Mesh::Mesh(const std::string& filename) {
   dimension = -1;
   vertex.resize(0);
   edge.resize(0);
@@ -39,7 +39,7 @@ Mesh::Mesh(std::string filename) {
   readFromFile(filename);
 }
 
-Mesh::Mesh(std::string filename,std::string filenameBoundary) {
+Mesh::Mesh(const std::string& filename, const std::string& filenameBoundary) {
   dimension = -1;
   vertex.resize(0);
   edge.resize(0);
@@ -59,7 +59,7 @@ Mesh::Mesh(std::string filename,std::string filenameBoundary) {
 
 
 // read the mesh data from a file (.mesh)
-void Mesh::readFromFile(std::string filename)
+void Mesh::readFromFile(const std::string& filename)
 {
   std::ifstream ifile;
   ifile.open(filename.c_str());
@@ -555,13 +555,13 @@ void Mesh::createInnerFaces()
   
 }
 // read a PRM file into a Boundary class
-void Mesh::setBoundary(std::string PRM)
+void Mesh::setBoundary(const std::string& PRM)
 {
   boundary.initFromFile(PRM);
 }
 
 // write the mesh onto a .mesh file
-void Mesh::writeToMesh(std::string filename)
+void Mesh::writeToMesh(const std::string& filename)
 {
   std::ofstream ofile;
   ofile.open(filename.c_str(),std::ios::out);
@@ -650,7 +650,7 @@ void Mesh::writeToMesh(std::string filename)
 // write the mesh onto a .(x)GEO file
 // note: in 2D it needs the boundary description. If the boundary
 // has not been initialized, the function returns an error
-void Mesh::writeToGEO(std::string geoFilename)
+void Mesh::writeToGEO(const std::string& geoFilename)
 {
   bool writeXgeo = false;
   std::ofstream geofile;

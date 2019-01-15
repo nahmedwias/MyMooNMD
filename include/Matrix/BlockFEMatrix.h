@@ -102,9 +102,9 @@ class BlockFEMatrix : public BlockMatrix
      * to all blocks of a particular column as ansatz space.
      */
 #ifdef __2D__
-    explicit BlockFEMatrix(std::vector< const TFESpace2D* > spaces);
+    explicit BlockFEMatrix(const std::vector<const TFESpace2D*>& spaces);
 #elif __3D__
-    explicit BlockFEMatrix(std::vector< const TFESpace3D* > spaces);
+    explicit BlockFEMatrix(const std::vector<const TFESpace3D*>& spaces);
 #endif // 3D
 
     /**
@@ -639,8 +639,9 @@ class BlockFEMatrix : public BlockMatrix
      * Structure or skip them. Defaults to "false" (skipping zero-map blocks).
      * @return A list of pointers to the matrix blocks. Each (relevant) blocks appears once.
      */
-    std::vector<std::shared_ptr<FEMatrix>> get_blocks_uniquely(std::vector<std::vector<size_t>> cells,
-                                                               bool include_zeroes = false);
+    std::vector<std::shared_ptr<FEMatrix>> get_blocks_uniquely(
+      const std::vector<std::vector<size_t>>& cells,
+      bool include_zeroes = false);
 
     /// @return The column (means: ansatz-)space of a certain cell column.
 #ifdef __2D__
@@ -767,7 +768,7 @@ class BlockFEMatrix : public BlockMatrix
      *
      * TODO Might be extended by further info and depend on verbosity.
      */
-    void print_matrix_info(std::string name) const;
+    void print_matrix_info(const std::string& name) const;
 
     /**
      * Overrides the method from the base class
@@ -879,7 +880,7 @@ class BlockFEMatrix : public BlockMatrix
      */
     void add_scaled_actives(
         const FEMatrix& summand, double scaling_factor,
-        std::vector<grid_place_and_mode> row_column_transpose_tuples);
+        std::vector<grid_place_and_mode>& row_column_transpose_tuples);
 
     /**
      * Try if a given TMatrix can be cast to an FEMatrix (this meaning the object actually is
@@ -895,8 +896,9 @@ class BlockFEMatrix : public BlockMatrix
      * Actual implementation of the scale actives method, whose interface is given
      * in the public part.
      */
-    void scale_blocks_actives( double scaling_factor,
-                               std::vector<grid_place_and_mode> row_column_transpose_tuples);
+    void scale_blocks_actives(
+      double scaling_factor,
+      std::vector<grid_place_and_mode>& row_column_transpose_tuples);
 
 
 };

@@ -100,7 +100,8 @@ class TMatrix
     /**
      * @brief Generates a diagonal matrix with entries from input std::vector<double> diag
      */
-    TMatrix(std::vector<double> diag, std::shared_ptr<TStructure> Structure);
+    TMatrix(const std::vector<double>& diag,
+            std::shared_ptr<TStructure> Structure);
 
     /// @brief Default copy constructor
     ///
@@ -227,7 +228,7 @@ class TMatrix
      *
      * @param[in] filename The filename where to write the matrix.
      */
-    void write(std::string filename) const;
+    void write(const std::string& filename) const;
     
     /// @brief Print matrix into the shell
     void Print(const char *name = "a") const;
@@ -236,7 +237,7 @@ class TMatrix
      * 
      * This is only meaningful for very small matrices.
      */
-    void PrintFull(std::string name="", int fieldWidth=4) const;
+    void PrintFull(const std::string& name="", int fieldWidth=4) const;
 
     /// @brief add a value at selected entry
     void add(int i,int j, double val);
@@ -245,11 +246,11 @@ class TMatrix
      * 
      * This should be faster than adding all values in 'vals' individually
      */
-    void add(int i, std::map<int,double> vals, double factor = 1.0);
+    void add(int i, const std::map<int,double>& vals, double factor = 1.0);
     /** @brief add values `vals[i][j]` to this matrix at the positions `(i,j)`
      * for all `i,j` defined in the map `vals`
      */
-    void add(std::map<int, std::map<int,double> > vals, double factor = 1.0);
+    void add(const std::map<int, std::map<int,double>>& vals, double factor = 1.0);
     /// @brief set a value at selected entry
     void set(int i, int j, double val);
     /// @brief get a value at selected entry
@@ -278,10 +279,10 @@ class TMatrix
      *@param[in] j The column index.
      *@return A matrix column as an std::vector<double>.
      */
-    void set_matrix_column(size_t j, std::vector<double> col);
+    void set_matrix_column(size_t j, const std::vector<double>& col);
 
     /// @brief reset the entries, the given vector must be of the same size
-    void setEntries(std::vector<double> entries);
+    void setEntries(const std::vector<double>& entries);
     
     /** @brief reorders the Matrix to comply with direct solvers. 
      * 
@@ -305,7 +306,7 @@ class TMatrix
     *
     * @param entries for every row a map of columns-to-entries map
     */
-    void changeRows(std::map<int,std::map<int,double> > entries);
+    void changeRows(const std::map<int,std::map<int,double>>& entries);
     ///////////////// ///////////////// ///////////////// /////////////////
 
     /// @brief return ordering of columns, see TStructure::ColOrder
@@ -398,7 +399,8 @@ class TMatrix
         * @param B matrix to be multiplied (from right) to this matrix
         * @param d vector
         */
-       TMatrix* multiply(const TMatrix * const B, std::vector< double > d) const;
+       TMatrix* multiply(const TMatrix * const B,
+                         const std::vector<double>& d) const;
 
     /**
      * @brief multiply this matrix B with its transposed B^T from the right

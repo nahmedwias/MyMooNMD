@@ -54,7 +54,7 @@ TAuxParam3D::TAuxParam3D()
 
 
 /** set aux parameters giving a keyword*/
-TAuxParam3D::TAuxParam3D(std::string name, TFEFunction3D **fefunctions3d)
+TAuxParam3D::TAuxParam3D(const std::string& name, TFEFunction3D **fefunctions3d)
 {
   if(name=="Velocity") // for Navier-Stokes
   {

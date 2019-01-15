@@ -2456,7 +2456,7 @@ void ReadData(char *name, int N_Array, double **sol, int *N_Unknowns)
 }
 
 // save sol into a file
-void SaveData(std::string basename, double *sol, int nDOF)
+void SaveData(const std::string& basename, double *sol, int nDOF)
 {
   std::string filename = basename + "init";
   std::ofstream ofile;
@@ -2472,7 +2472,7 @@ void SaveData(std::string basename, double *sol, int nDOF)
   OutPut("saving data into file: " << filename << endl);
 }
 
-void ReadData(std::string filename, double *sol, int nDOF)
+void ReadData(const std::string& filename, double *sol, int nDOF)
 {
   std::ifstream ifile(filename.c_str());
   if(!ifile)

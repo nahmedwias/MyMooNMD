@@ -75,9 +75,9 @@ void DefectRestriction(
  * TODO First function should be const.
  */
 void RestrictFunctionRepeatedly(
-  std::vector<const TFESpaceXD*> space_hierarchy,
-  std::vector<double*> function_entries,
-  std::vector<size_t> function_n_dofs);
+  const std::vector<const TFESpaceXD*>& space_hierarchy,
+  const std::vector<double*>& function_entries,
+  const std::vector<size_t>& function_n_dofs);
 
 
 /** Restrict a function from coarse to fine level.

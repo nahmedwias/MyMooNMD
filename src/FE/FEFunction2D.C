@@ -56,8 +56,10 @@ TFEFunction2D::TFEFunction2D() :
 }
 
 /** constructor with vector initialization */
-TFEFunction2D::TFEFunction2D(const TFESpace2D *fespace2D, std::string name,
-    std::string description, double *values, int length)
+TFEFunction2D::TFEFunction2D(const TFESpace2D *fespace2D,
+                             const std::string& name,
+                             const std::string& description, double *values,
+                             int length)
 : Name(name), Description(description)
 {
   Output::print<5>("Constructor of TFEFunction2D");
@@ -1626,7 +1628,8 @@ void TFEFunction2D::GetErrorsForVectorValuedFunction(
 
 
 /** write the solution into a data file - written by Sashi **/
-void TFEFunction2D::WriteSol(std::string directory, std::string basename)
+void TFEFunction2D::WriteSol(const std::string& directory,
+                             const std::string& basename)
 {
   int i, N_Joints, N_Cells;
   static int img=0;
@@ -2142,7 +2145,7 @@ void TFEFunction2D::MinMax(double & min, double & max) const
   }
 }
 
-void TFEFunction2D::PrintMinMax(std::string name) const
+void TFEFunction2D::PrintMinMax(const std::string& name) const
 {
   double min, max;
   this->MinMax(min, max);

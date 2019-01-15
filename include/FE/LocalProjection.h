@@ -81,15 +81,15 @@ void UltraLocalProjectionFunction(void* A, bool ForPressure);
 
 void UltraLocalProjectionStreamlinePLaplacian(TSquareMatrix2D* A, 
                                               TFEFunction2D *uh, 
-                                              CoeffFct2D *Coeff);
+                                              const CoeffFct2D& Coeff);
 
 void LocalProjectionCoarseGridQ0(TFEFunction2D *uh, TFEFunction2D *uh_proj,
-                                 CoeffFct2D *Coeff, int convection_flag);  
+                                 const CoeffFct2D& Coeff, int convection_flag);  
          
 void LocalProjectionCrossWindCoarseGridQ0(TDomain *Domain, int mg_level,
                                           TFEFunction2D *uh,
                                           TFEFunction2D *uh_proj,
-                                          CoeffFct2D *Coeff,
+                                          const CoeffFct2D& Coeff,
                                           double *rhs, int convection_flag); 
 
 

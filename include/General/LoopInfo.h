@@ -8,11 +8,11 @@ class LoopInfo
 {
 public:
   /// @brief Constructor. This also sets the initial_time
-  explicit LoopInfo(std::string name);
+  explicit LoopInfo(const std::string& name);
   /// @brief Constructor for convenience, this calls the other constructor
   explicit LoopInfo(const char* name);
   /// @brief Constructor which allows setting some of the member variables.
-  LoopInfo(std::string name,
+  LoopInfo(const std::string& name,
            bool print_time_every_step,
            bool print_reduction_rates,
            size_t verbosity_threshold);
@@ -20,7 +20,7 @@ public:
   /// @brief use this object again in another iteration. This resets the 
   /// initial_time as well.
   /// @details You can call this even if the loop has never started.
-  void restart(std::string name, double initial_residual);
+  void restart(const std::string& name, double initial_residual);
   
   /// @brief write out some information during the loop
   void print(unsigned int loop_index, double current_residual);

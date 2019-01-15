@@ -1157,9 +1157,9 @@ double Compute_SOLD_sigma<3>(double hK, double eps,
 /*************************************************************************/
 double EstimateCoercivityConstant(TCollection *Coll,
 #ifdef __2D__
-                                  CoeffFct2D Coeffs
+                                  const CoeffFct2D& Coeffs
 #else // 3D
-                                  CoeffFct3D Coeffs
+                                  const CoeffFct3D& Coeffs
 #endif
                                   )
 {
@@ -1315,7 +1315,8 @@ void SetSoldParameters(int i)
 
 #ifdef __2D__
 void EdgeStabilization(TFESpace2D *fespace, TFEFunction2D *u, 
-                       CoeffFct2D Coeffs, double *rhs, int time_dependent,
+                       const CoeffFct2D& Coeffs, double *rhs,
+                       int time_dependent,
                        double *time_step, TFEFunction2D *old_u)
 {
   int i, j, ii, N_Cells, *GlobalNumbers, *BeginIndex;

@@ -30,9 +30,9 @@ double Compute_SOLD_sigma(double hK, double eps, std::array<double, d> b,
  * used eg for residual based estimator of Verf"uhrt 2005 */
 double EstimateCoercivityConstant(TCollection *Coll, 
 #ifdef __2D__
-                                  CoeffFct2D *Coeff
+                                  const CoeffFct2D& Coeff
 #else // 3D
-                                  CoeffFct3D *Coeff
+                                  const CoeffFct3D& Coeff
 #endif
                                  );
 
@@ -42,7 +42,8 @@ void SetSoldParameters(int i);
 
 #ifdef __2D__
 void EdgeStabilization(TFESpace2D *fespace,  TFEFunction2D *u, 
-                       CoeffFct2D *Coeffs, double *rhs, int time_dependent,
+                       const CoeffFct2D& Coeffs, double *rhs,
+                       int time_dependent,
                        double *time_step, TFEFunction2D *old_u);
 #endif
 

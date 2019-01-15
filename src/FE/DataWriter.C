@@ -229,7 +229,7 @@ int n_local_vertices_to_type(int n_loc_vert)
 }
 
 template <int d>
-void DataWriter<d>::writeMesh(std::string name)
+void DataWriter<d>::writeMesh(const std::string& name)
 {
   std::ofstream dat(name);
   if(!dat)
@@ -272,7 +272,7 @@ void DataWriter<d>::writeMesh(std::string name)
 }
 
 template <int d>
-void DataWriter<d>::writeVtk(std::string name)
+void DataWriter<d>::writeVtk(const std::string& name)
 {
   // determine data for vtk file
   unsigned int N_Elements = Coll->GetN_Cells();
@@ -379,9 +379,9 @@ void DataWriter<d>::writeVtk(std::string name)
   Also note that in each element the function is projected onto P1/Q1.
 */
 template <int d>
-void DataWriter<d>::writeVtkDiscontinuous(std::string fileName,
-                                          int N_LocVertices,
-                                          std::vector<const TVertex*> Vertices)
+void DataWriter<d>::writeVtkDiscontinuous(
+  const std::string& fileName, int N_LocVertices,
+  const std::vector<const TVertex*>& Vertices)
 {
   // copy the file name add a string to the output file name
   std::string disc = fileName + std::string("_disc.vtk");
@@ -512,7 +512,7 @@ void DataWriter<d>::writeVtkDiscontinuous(std::string fileName,
 }
 
 template<int d>
-void DataWriter<d>::writeVtu(std::string name) const
+void DataWriter<d>::writeVtu(const std::string& name) const
 {
   std::ofstream f(name);
   
@@ -1784,10 +1784,11 @@ void DataWriter<d>::computeNodeValues(const T* function,
 // scalar components of vector variables
 // ****************
 template <int d>
-void DataWriter<d>::printVectCompwise(std::ofstream& dat, std::string name,
+void DataWriter<d>::printVectCompwise(std::ofstream& dat,
+                                      const std::string& name,
                                       unsigned int N_Vertices,
                                       unsigned int N_Comp,
-                                      std::vector<double> solutionAtNode)
+                                      const std::vector<double>& solutionAtNode)
 {
   for(unsigned int ncomp = 0; ncomp < N_Comp; ncomp++)
   {
@@ -1809,10 +1810,9 @@ void DataWriter<d>::printVectCompwise(std::ofstream& dat, std::string name,
 // absolute value of vector variables
 // ***************
 template <int d>
-void DataWriter<d>::printVectAbsValue(std::ofstream& dat, std::string name,
-                                      unsigned int N_Vertices,
-                                      unsigned int N_Comp,
-                                      std::vector<double> solutionAtNode)
+void DataWriter<d>::printVectAbsValue(
+  std::ofstream& dat, const std::string& name, unsigned int N_Vertices,
+  unsigned int N_Comp, const std::vector<double>& solutionAtNode)
 {
   dat << "SCALARS |" << name << "|";
   dat << " double\n";
@@ -1834,10 +1834,9 @@ void DataWriter<d>::printVectAbsValue(std::ofstream& dat, std::string name,
 // VECTORS
 // ***************
 template <int d>
-void DataWriter<d>::printVectPointwise(std::ofstream& dat, std::string name,
-                                       unsigned int N_Vertices,
-                                       unsigned int N_Comp,
-                                       std::vector<double> solutionAtNode)
+void DataWriter<d>::printVectPointwise(
+  std::ofstream& dat, const std::string& name, unsigned int N_Vertices,
+  unsigned int N_Comp, const std::vector<double>& solutionAtNode)
 {
   dat << "VECTORS " << name;
   dat << " double\n";
@@ -1871,7 +1870,7 @@ void printEntry(std::ofstream& dat, double value, int counter)
 template <int d>
 void DataWriter<d>::writeVectCase(std::ofstream& dat, unsigned int N_Vertices,
                                   unsigned int N_Comp,
-                                  std::vector<double> solutionAtNode)
+                                  const std::vector<double>& solutionAtNode)
 {
   for(unsigned int nvert = 0; nvert < N_Vertices; nvert++)
   {

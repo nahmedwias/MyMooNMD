@@ -36,10 +36,10 @@ class Example_NSE2D : public Example2D
      * 
      * Create an example with all vectors already defined.
      */
-    Example_NSE2D(std::vector <DoubleFunct2D*> exact,
-                  std::vector <BoundCondFunct2D*> bc,
-                  std::vector <BoundValueFunct2D*> bd, CoeffFct2D coeffs,
-                  double nu = 1.);
+    Example_NSE2D(const std::vector<DoubleFunct2D*>& exact,
+                  const std::vector<BoundCondFunct2D*>& bc,
+                  const std::vector<BoundValueFunct2D*>& bd,
+                  const CoeffFct2D& coeffs, double nu = 1.);
   
     /// Apply the function stored as post processing routine.
     void do_post_processing(NavierStokes<2>& nse2d) const;

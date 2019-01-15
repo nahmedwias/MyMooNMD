@@ -33,12 +33,12 @@ public:
    * 
    * Create an example with all vectors already defined.
    */
-  Example_TimeNSE2D(std::vector <DoubleFunct2D*> exact,
-                   std::vector <BoundCondFunct2D*> bc,
-                   std::vector <BoundValueFunct2D*> bd, 
-                   CoeffFct2D coeffs,
-                   bool timedependentrhs, bool timedependentcoeffs,
-                   std::vector <DoubleFunct2D*> init_cond);
+  Example_TimeNSE2D(const std::vector<DoubleFunct2D*>& exact,
+                    const std::vector<BoundCondFunct2D*>& bc,
+                    const std::vector<BoundValueFunct2D*>& bd, 
+                    const CoeffFct2D& coeffs,
+                    bool timedependentrhs, bool timedependentcoeffs,
+                    const std::vector<DoubleFunct2D*>& init_cond);
 
   /// Apply the function stored as post processing routine.
   void do_post_processing(TimeNavierStokes<2>& tnse2d, double& val) const;

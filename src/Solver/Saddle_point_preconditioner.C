@@ -1396,7 +1396,7 @@ void Saddle_point_preconditioner::fill_augmented_matrix_and_rhs()
 }
 
 /* **************************************************************************************************** */
-BlockVector Saddle_point_preconditioner::get_augmented_blockvector(const BlockVector right_hand_side)
+BlockVector Saddle_point_preconditioner::get_augmented_blockvector(const BlockVector& right_hand_side)
 {
 	BlockVector aug_right_hand_side(right_hand_side);//BlockVector(this->M);
 	const double* g = right_hand_side.block(2);

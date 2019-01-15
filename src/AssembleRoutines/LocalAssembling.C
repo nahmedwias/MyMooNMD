@@ -95,7 +95,7 @@ template<int d>
 LocalAssembling<d>::LocalAssembling(ParameterDatabase param_db,
                                     LocalAssembling_type t,
                                     FEFunction **fefunctions3d,
-                                    CoeffFct coeffs, int disctype)
+                                    const CoeffFct& coeffs, int disctype)
  : db(default_local_assembling_database()), type(t),
    discretization_type(disctype), Coeffs(coeffs), FEFunctions3D(fefunctions3d)
 {

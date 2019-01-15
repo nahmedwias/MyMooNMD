@@ -192,7 +192,7 @@ class LocalAssembling
      *
      */
     LocalAssembling(ParameterDatabase param_db, LocalAssembling_type type,
-                    FEFunction **fefunctions3d, CoeffFct coeffs,
+                    FEFunction **fefunctions3d, const CoeffFct& coeffs,
                     int disctype = 1);
     
     /** @brief custom constuctor setting all variables 
