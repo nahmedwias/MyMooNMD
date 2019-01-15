@@ -28,21 +28,22 @@ ParameterDatabase get_default_rom_parameters()
       	         "this directory will be overwritten without any warning.");
 
   db.add("pod_basename", "parmoon_pod",
-  		  "Basename for file where the pod basis and Co. are stored.");
+  		  "Basename for pod basis and related files.");
 
   db.add("pod_rank", (size_t) 0,
       	         "This integer specifies the dimension of the POD space to be computed. "
       		 "If pod_rank <= 0, then all possible POD modes will be computed. ");
 
-  db.add("pod_fluct", true,
-               "This is the flag whether the POD basis should be computed from the "
-  		  "part of the snapshots (also also central trajectory method).",
-    		   {true,false});
+  db.add("pod_fluctuations_only", true,
+	 "This is the flag whether the POD basis should be computed only "
+	 " fluctuation part (without average) of the snapshots "
+	 " (also central trajectory method).",
+	 {true,false});
 
-  db.add("pod_inner_product", "eucl",
+  db.add("pod_inner_product", "euclidean",
                "Specification of the inner product which is used to compute POD basis."
   		  "Besides default value, only 'l2' is possible at the moment.",
-  		  {"eucl", "l2"});
+  		  {"euclidean", "L2"});
 
   db.add("rom_init_regularized", false,
   		 "This is the flag whether the the ROM initial condition should be regularized.",
