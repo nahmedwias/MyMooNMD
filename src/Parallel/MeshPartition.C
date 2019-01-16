@@ -66,7 +66,7 @@ int manual_cell_rank(TDomain *Domain, TCollection *coll, int cell)
     length_x = 12.5663706143;
     xt = 6.2831853071;
   }
-  else if(re_nr == 395.)
+  else if(re_nr == 395. || re_nr == 590.)
   {
     length_x = 6.2831853071;
     xt = 3.1415926535;

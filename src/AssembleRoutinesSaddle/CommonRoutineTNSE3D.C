@@ -428,6 +428,8 @@ double VerstappenModelSimple(double delta, double* gradu, double frobeniusNorm)
   double invariant_2 = frobeniusNorm;
   double viscosity = (6.0 * delta * delta * fabs(invariant_3) );
   viscosity /= (Pi * Pi * invariant_2);
+  
+  return viscosity;
 }
 
 double frobeniusNormTensor(double* u, double* gradu, double* uConv, int proj_space)
