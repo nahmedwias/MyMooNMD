@@ -158,34 +158,6 @@ int main(int argc, char* argv[])
   // assemble the initial matrices 
   tnse3d.assemble_initial_time();
 
-  //CB DEBUG
-  for(int v=0;v<3;++v)
-  {
-    auto velo_func = tnse3d.get_velocity_component(v);
-    auto velo_spac = velo_func->GetFESpace3D();
-    auto velo_vals = velo_func->GetValues();
-    for(int d = 0;d<velo_spac->GetN_DegreesOfFreedom();++d)
-    {
-      double x,y,z;
-      velo_spac->GetDOFPosition(d,x,y,z);
-      // the velocity solution at dof d is set to "v+1" times the norm of the position of dof d.
-      // this is the same in SEQ and MPI and can therefore be used as a test example
-      velo_vals[d] = (v + 1) * sqrt(x*x + y*y + z*z);
-    }
-  }
-  // Call the function which should be parallelized.
-  Cylinder_Square::setParameters(parmoon_db);
-  Cylinder_Square::PrepareVelocityAtCylinder(coll);
-  Cylinder_Square::PrepareCenterlineVelocities(coll);
-  Cylinder_Square::PreparePressureAtCylinder(coll);
-  Cylinder_Square::CenterlineVelocities(tnse3d);
-#ifdef _MPI
-  MPI_Finalize();
-#endif
-  exit(0);
-  //END DEBUG
-
-
   double end_time = tss.get_end_time();
   int n_substeps = GetN_SubSteps();
 
