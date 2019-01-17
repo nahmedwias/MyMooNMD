@@ -27,6 +27,8 @@ include_directories(${non_newt})
 #source files
 list(APPEND NON_NEWT2D "${non_newt}/CoupledNavierStokesStress.cpp")
 list(APPEND NON_NEWT2D "${non_newt}/Coupled_NS_Stress_Local_routines.cpp")
+list(APPEND NON_NEWT2D "${non_newt}/LocalAssembleCoupledStressNS.cpp")
+list(APPEND NON_NEWT2D "${non_newt}/Example_CoupledNS_Stress.cpp")
 
 add_library(NON_NEWT_LIB_2D STATIC ${NON_NEWT2D})
 target_compile_definitions(NON_NEWT_LIB_2D PUBLIC -D__2D__)
