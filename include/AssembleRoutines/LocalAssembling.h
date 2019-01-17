@@ -63,13 +63,13 @@ std::ostream& operator<<(std::ostream& out, const LocalAssembling_type value);
 template <int d>
 class LocalAssembling
 {
-  using FEFunction = typename Template_names<d>::FEFunction;
-  using MultiIndex_vector = typename Template_names<d>::MultiIndex_vector;
-  using CoeffFct = typename Template_names<d>::CoeffFct;
-  using ManipulateFct = typename Template_names<d>::ManipulateFct;
-  using BaseFunct = typename Template_names<d>::BaseFunct;
-  
   protected:
+    using FEFunction = typename Template_names<d>::FEFunction;
+    using MultiIndex_vector = typename Template_names<d>::MultiIndex_vector;
+    using CoeffFct = typename Template_names<d>::CoeffFct;
+    using ManipulateFct = typename Template_names<d>::ManipulateFct;
+    using BaseFunct = typename Template_names<d>::BaseFunct;
+    
     /// @brief a local parameter database
     ParameterDatabase db;
     
@@ -156,6 +156,9 @@ class LocalAssembling
     
     static constexpr int n_local_coefficients = 40;
     std::vector<std::array<double, n_local_coefficients>> local_coefficients;
+
+    // default constructor useable in derived classes
+    explicit LocalAssembling(ParameterDatabase db); 
     
     void set_parameters_for_tcd(LocalAssembling_type type);
 
