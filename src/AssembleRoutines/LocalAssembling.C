@@ -560,7 +560,12 @@ LocalAssembling<d>::LocalAssembling(
   }
 }
 
-
+template<int d>
+LocalAssembling<d>::LocalAssembling(ParameterDatabase param_db)
+: db(default_local_assembling_database()), type{LocalAssembling_type::Custom}
+{
+  db.merge(param_db, false);
+}
 //========================================================================
 template<int d>
 LocalAssembling<d>::~LocalAssembling()
