@@ -3,11 +3,11 @@
 
 #include "BlockFEMatrix.h"
 #ifdef __2D__
-#include "Example_TimeNSE2D.h"
+#include "Example_NSE2D.h"
 #include "FEFunction2D.h"
 #include "FEVectFunct2D.h"
 #else
-#include "Example_TimeNSE3D.h"
+#include "Example_NSE3D.h"
 #include "FEFunction3D.h"
 #include "FEVectFunct3D.h"
 #endif
@@ -20,6 +20,7 @@
 #include "Residuals.h"
 #include "MainUtilities.h" // FixedSizeQueue
 #include "TimeDiscretizations.h"
+#include "Example_CoupledNS_Stress.h"
 
 
 template<int d>
@@ -29,7 +30,7 @@ public:
   using FEFunction = typename Template_names<d>::FEFunction;
   using FEVectFunct = typename Template_names<d>::FEVectFunct;
   using FESpace = typename Template_names<d>::FESpace;
-  using Example_TimeNSE = typename Template_names<d>::Example_TimeNSE;
+  using Example_NSE = typename Template_names<d>::Example_NSE;
   
   /** @brief see the other constructor */
   CoupledNavierStokesStress(const TDomain& domain, const ParameterDatabase& param_db);
@@ -45,7 +46,7 @@ public:
    * @param example The example to use
    */
   CoupledNavierStokesStress(const TDomain& domain, const ParameterDatabase& param_db,
-                     const Example_TimeNSE& ex);
+                     const Example_CoupledNS_Stress& ex);
   
   static ParameterDatabase default_coupled_database();
   
@@ -55,7 +56,63 @@ public:
    */
   void assemble_linear_terms();
   
+  // getters and setters
+  const BlockFEMatrix & get_matrix() const
+  { return this->systems.front().matrix; }
+  BlockFEMatrix & get_matrix()
+  { return this->systems.front().matrix; }
   
+  const BlockVector & get_rhs() const
+  { return this->systems.front().rhs; }
+  BlockVector & get_rhs()
+  { return this->systems.front().rhs; }
+  
+  const FEFunction & get_stress_xx() const
+  {return this->systems.front().stress1;}
+  FEFunction & get_stress_xx() 
+  {return this->systems.front().stress1;}
+  
+  const FEFunction & get_stress_xy() const
+  {return this->systems.front().stress2;}
+  FEFunction & get_stress_xy() 
+  {return this->systems.front().stress2;}
+  
+  const FEFunction & get_stress_yy() const
+  {return this->systems.front().stress3;}
+  FEFunction & get_stress_yy() 
+  {return this->systems.front().stress3;}
+  
+  const FEVectFunct & get_velocity() const
+  { return this->systems.front().u; }
+  FEVectFunct & get_velocity()
+  { return this->systems.front().u; }
+  
+  // try not to use this as it is not const
+  FEFunction *get_velocity_component(int i);
+  
+  const FEFunction & get_pressure() const
+  { return this->systems.front().p; }
+  FEFunction & get_pressure()
+  { return this->systems.front().p; }
+  
+  const FESpace & get_velocity_space() const
+  { return *this->systems.front().velocity_space.get(); }
+  const FESpace & get_pressure_space() const
+  { return *this->systems.front().pressure_space.get(); }
+  
+  const BlockVector & get_solution() const
+  { return this->systems.front().solution; }
+  BlockVector & get_solution()
+  { return this->systems.front().solution; }
+  
+  const LoopInfo& get_it_solver_info()
+  {return solver.get_solver_loop_info();}
+  
+  unsigned int get_size() const
+  { return this->systems.front().solution.length(); }
+  
+  const Example_CoupledNS_Stress & get_example() const
+  { return example; }
 protected:
   /// @brief default copy constructor (useful in derived classes)
   CoupledNavierStokesStress(const CoupledNavierStokesStress<d> &) = default;
@@ -95,7 +152,7 @@ protected:
      * This additionaly created due to the struture of the
      * residual based Variational Multiscale Method:
      */
-    BlockFEMatrix mass_matrix;
+    // BlockFEMatrix mass_matrix;
     
     /** @brief right hand side vector*/
     BlockVector rhs;
@@ -118,7 +175,7 @@ protected:
     
     
     /** @brief constructor*/
-    System_per_grid(const Example_TimeNSE& example, TCollection& coll,
+    System_per_grid(const Example_CoupledNS_Stress& example, TCollection& coll,
                     std::tuple<int,int,int> order);
     
     /** @brief copy constructor*/
@@ -155,6 +212,24 @@ protected:
   */
   std::deque<System_per_grid> systems;
   
+  /** @brief Definition of the used example */
+  Example_CoupledNS_Stress example;
+  
+  /** @brief a solver object which will solve the linear system
+   * 
+   * Storing it means that for a direct solver we also store the factorization
+   * which is usually not necessary.
+   */
+  Solver<BlockFEMatrix, BlockVector> solver;
+  
+  /** @brief output object */
+  DataWriter<d> outputWriter;
+    
+  /// this is for setting the discretization type globally, since the DISCTYPE 
+  /// is removed fromt the global database but it's not simple/possible to use
+  /// different space discretization in the LocalAssembling2D
+  int space_disc_global;
+  
   /** @brief set parameters in database
    * 
    * This functions checks if the parameters in the database are meaningful
@@ -166,6 +241,9 @@ protected:
    */
   void check_and_set_parameters();
 
+  /** @brief write some information (number of cells, dofs, ...) */
+  void output_problem_size_info() const;
+    
   /** @brief get velocity and pressure space*/
   void get_velocity_pressure_orders(
     std::tuple<int, int, int> &velocity_pressure_orders);
@@ -185,6 +263,9 @@ protected:
                         std::vector<SquareMatrixD*> &sqMat,
                         std::vector<MatrixD*> &reMat,
                         std::vector<double*> &rhs);
+  
+  /// @brief this routines wraps up the call to Assemble2D
+    void call_assembling_routine(CoupledNavierStokesStress<d>::System_per_grid& s);
 };
 
 #endif // COUPLEDNAVIERSTOKESSTRESS_H

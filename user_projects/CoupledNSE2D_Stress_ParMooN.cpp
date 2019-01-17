@@ -1,7 +1,7 @@
 #include <Domain.h>
 #include <Database.h>
 #include <FEDatabase2D.h>
-#include <Example_TimeNSE2D.h>
+#include <Example_CoupledNS_Stress.h>
 #include <TimeDiscretizations.h>
 #include <TimeDiscRout.h>
 #include <LoopInfo.h>
@@ -40,8 +40,10 @@ int main(int argc, char* argv[])
   SetTimeDiscParameters(0);
 
   // create an object of TimeNavierStokes<2> class
-  Example_TimeNSE2D ex(parmoon_db);
-  CoupledNavierStokesStress<2> tnse2d(Domain, parmoon_db, ex);
+  Example_CoupledNS_Stress ex(parmoon_db);
+  CoupledNavierStokesStress<2> nse2d(Domain, parmoon_db, ex);
+  
+  nse2d.assemble_linear_terms();
   
   return 0;
 }
