@@ -888,7 +888,7 @@ void LocalAssembling<d>::set_parameters_for_tcd(LocalAssembling_type type)
       break;
     case LocalAssembling_type::TCDMassOnly:
       N_Rhs = 0;
-      this->local_assemblings_routines.push_back(TCDMass<d>);
+      this->local_assemblings_routines.push_back(TCDMassPOD<d>);
       break;
       
     default:

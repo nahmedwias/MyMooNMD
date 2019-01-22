@@ -1438,7 +1438,7 @@ ParameterDatabase ParameterDatabase::get_default_snapshots_database()
 
 
 
-ParameterDatabase get_default_pod_database()
+ParameterDatabase ParameterDatabase::get_default_pod_database()
 {
   Output::print<5>("Creating a default POD-ROM parameter database...");
   ParameterDatabase db("Default ParMooN parameter database for POD-based ROM problems");

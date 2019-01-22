@@ -21,7 +21,7 @@ extern "C"
 
 /** ***********************************************************************/
 POD::POD(const ParameterDatabase& param_db) :
-  rom_db(ParameterDatabase::get_default_pod_database()),
+  db(ParameterDatabase::get_default_pod_database()),
   length(0),
   rank(0),
   length_snaps(0),
@@ -30,8 +30,8 @@ POD::POD(const ParameterDatabase& param_db) :
   valid_eigs(0),
   eigs(NULL)
 {
-  this->rom_db.merge(param_db, true);
-  rank = rom_db["pod_rank"];
+  this->db.merge(param_db, true);
+  rank = db["pod_rank"];
   //TODO set gramian_mat, snaps_mat, pod_basis, snaps_mean to zero
 }
 
@@ -47,9 +47,9 @@ POD::~POD() {
 void POD::read_snapshots() {
 
   // read snapshots from file
-  string snap_filename = this->rom_db["snaps_directory"].get<std::string>();
+  string snap_filename = this->db["snaps_directory"].get<std::string>();
   snap_filename += "/";
-  snap_filename += this->rom_db["snaps_filename"].get<std::string>();
+  snap_filename += this->db["snaps_filename"].get<std::string>();
 
   Output::print<1>("Reading snapshots from file: ", snap_filename, " ...");
 
@@ -82,7 +82,7 @@ void POD::compute_basis() {
   this->snaps_mean.resize(this->length_snaps);
   this->snaps_mean.clear();
   
-  if( this->rom_db["pod_fluctuations_only"] ) {
+  if( this->db["pod_fluctuations_only"] ) {
     Output::print<1>("POD will be computed from fluctuating part of snapshots.");
     decompose_snaps();
   }
@@ -220,7 +220,7 @@ void POD::convert_to_ublas( std::shared_ptr<TMatrix> mat,
 void POD::write_pod( std::string basename ) {
   
   /* writing into basis into file */
-  std::string pod_filename = this->rom_db["pod_directory"].get<std::string>();
+  std::string pod_filename = this->db["pod_directory"].get<std::string>();
   pod_filename += "/";
   pod_filename += basename;
   pod_filename += "pod";
@@ -232,7 +232,7 @@ void POD::write_pod( std::string basename ) {
   }
   ofile << setprecision( 12 );
   Output::print<1>( "Writing POD basis into file: ", pod_filename );
-  if(rom_db["pod_fluctuations_only"]){
+  if(db["pod_fluctuations_only"]){
     ofile << "POD basis: fluctuating field" << "\n";
     /* write averages of snapshots into file */
     write_averages( basename );
@@ -255,8 +255,8 @@ void POD::write_pod( std::string basename ) {
 
 /** ***********************************************************************/
 void POD::read_basis() {
-  std::string filename = this->rom_db["pod_directory"].get<std::string>();
-  filename += "/" + this->rom_db["pod_basename"].get<std::string>();
+  std::string filename = this->db["pod_directory"].get<std::string>();
+  filename += "/" + this->db["pod_basename"].get<std::string>();
   filename += "pod";
   vector < vector<double> > tmp_basis;
   ifstream podfile(filename.c_str());
@@ -336,7 +336,7 @@ void POD::write_data( ublas::matrix<double> &mat, std::string filename) {
 
 /* used only internally by the class */
 void POD::write_averages( string basename ) {
-  std::string avr_filename = this->rom_db["pod_directory"].get<std::string>();
+  std::string avr_filename = this->db["pod_directory"].get<std::string>();
   avr_filename += "/";
   avr_filename += basename;
   avr_filename += "mean";
@@ -361,7 +361,7 @@ void POD::write_averages( string basename ) {
 
 /** ***********************************************************************/
 void POD::write_eigenvalues( string basename ) {
-  std::string eig_filename = this->rom_db["pod_directory"].get<std::string>();
+  std::string eig_filename = this->db["pod_directory"].get<std::string>();
   eig_filename += "/";
   eig_filename += basename;
   eig_filename += "eigs";
@@ -391,9 +391,9 @@ void POD::write_eigenvalues( string basename ) {
 
 /** ***********************************************************************/
 void POD::read_averages() {
-  std::string filename = this->rom_db["pod_directory"].get<std::string>();
+  std::string filename = this->db["pod_directory"].get<std::string>();
   filename += "/";
-  filename += this->rom_db["pod_basename"].get<std::string>();
+  filename += this->db["pod_basename"].get<std::string>();
   filename += "mean";
   Output::print<1>("Reading averages of snapshots from file ", filename);
 
@@ -444,7 +444,7 @@ void POD::compute_autocorr_mat( ublas::matrix<double> &corr_mat ) {
     		 "basis read_snapshots() must be called!");
   }
   
-  if( this->rom_db["pod_inner_product"].get<std::string>() == "eucl" ){
+  if( db["pod_inner_product"].is("euclidean") ){
     noalias(corr_mat) = prod( trans( this->snaps_mat ), this->snaps_mat );
   }
   else{
