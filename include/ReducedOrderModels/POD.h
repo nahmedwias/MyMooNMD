@@ -73,12 +73,12 @@ class POD
     * @brief compute POD basis
     *
     * Compute POD basis from snapshots stored in
-    * rom_db["snaps_directory"] + '/' + rom_db["snaps_basename"] + "snap".
-    * If this->pod_fluct (rom_db["pod_fluct"]) is set to true then POD
+    * db["snaps_directory"] + '/' + db["snaps_basename"] + "snap".
+    * If this->pod_fluct (db["pod_fluct"]) is set to true then POD
     * basis will be computed from the fluctuating part of the snapshots and the
     * time average of the snapshots will be stored in the class member
     * variable this->snaps_mean. The rank of the basis is given by the class
-    * member variable this->rank (or rom_db["pod_rank"]). If this->rank<=0, then
+    * member variable this->rank (or db["pod_rank"]). If this->rank<=0, then
     * all possible POD basis functions will be computed and stored.
     */
     void compute_basis();
@@ -87,10 +87,10 @@ class POD
     * @brief read basis from file
     * 
     * Read POD basis from the file with the name
-    * this->rom_db["pod_directory"] + "/" + this->rom_db["pod_basename"] + ".pod"
-    * If this->rom_db["pod_fluct"] is set to true, then the average
+    * this->db["pod_directory"] + "/" + this->db["pod_basename"] + ".pod"
+    * If this->db["pod_fluct"] is set to true, then the average
     * of the snapshots will be automatically read from the file 
-    * this->rom_db["pod_directory"] + "/" + this->rom_db["pod_directory"] + ".mean"
+    * this->db["pod_directory"] + "/" + this->db["pod_directory"] + ".mean"
     * and stored in the member variable snaps_mean.
     */
     void read_basis();
@@ -99,13 +99,13 @@ class POD
     * @brief Write POD data into file
     * 
     * Write POD basis functions(row-wise) into
-    * this->rom_db["pod_directory"] + "/" + this->rom_db["pod_basename"] + this->rom_db["pod_inner_product"] + ".pod",
-    * time average of snapshots (if this->rom_db["pod_fluct"]==true) into
-    * this->rom_db["pod_directory"] + "/" + this->rom_db["pod_basename"] + this->rom_db["pod_inner_product"] + ".mean",
+    * this->db["pod_directory"] + "/" + this->db["pod_basename"] + this->db["pod_inner_product"] + ".pod",
+    * time average of snapshots (if this->db["pod_fluct"]==true) into
+    * this->db["pod_directory"] + "/" + this->db["pod_basename"] + this->db["pod_inner_product"] + ".mean",
     * [time, POD eigenvalues, missing energy ratio] into
-    * this->rom_db["pod_directory"] + "/" + this->rom_db["pod_basename"] + this->rom_db["pod_inner_product"] + ".eigs".
+    * this->db["pod_directory"] + "/" + this->db["pod_basename"] + this->db["pod_inner_product"] + ".eigs".
     *
-    * @param basename = this->rom_db["pod_basename"] + this->rom_db["pod_inner_product"] + "."
+    * @param basename = this->db["pod_basename"] + this->db["pod_inner_product"] + "."
     * TODO at the momnet basename is set in class POD_TCDR2D. It is not necessary. DO it in this class.
     */
     void write_pod( std::string basename );
@@ -128,7 +128,7 @@ class POD
       return length;
     }
     const ParameterDatabase & get_db() const
-           { return rom_db; }
+           { return db; }
 
     const ublas::matrix<double> get_basis() const {
           return pod_basis;
@@ -142,7 +142,7 @@ class POD
     // memeber variables
 
     /* parameter database */
-    ParameterDatabase rom_db;
+    ParameterDatabase db;
     /* rank of pod basis */
     int rank;
     /* dof of pod basis functions */
@@ -175,7 +175,7 @@ class POD
     * @brief read snapshots
     *
     * Read snapshots from file
-    * this->rom_db["snaps_directory"] + "/" + this->rom_db["snaps_basename"] + "snap".
+    * this->db["snaps_directory"] + "/" + this->db["snaps_basename"] + "snap".
     * This function is called by the constructor.
     * The snapshots will be stored into the class member this->snaps_mat colomn-wise.
     *  
@@ -221,8 +221,8 @@ class POD
     * @brief Read time average of snapshots from file
     *
     * Read snapshots mean from the file
-    * this->rom_db["pod_directory"] + "/" + this->rom_db["pod_basename"] + ".mean".
-    * It is automatically called from read_basis() if rom_db["pod_fluct"]==true.
+    * this->db["pod_directory"] + "/" + this->db["pod_basename"] + ".mean".
+    * It is automatically called from read_basis() if db["pod_fluct"]==true.
     */
     void read_averages();
     
