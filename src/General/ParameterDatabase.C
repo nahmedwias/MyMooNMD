@@ -1361,6 +1361,20 @@ ParameterDatabase ParameterDatabase::default_output_database()
 		"initial time was 0, and starts the numbering at 0, leading "
 		"sometimes to overwritting existing files.", 
 		 {true,false});
+	 
+          db.add("output_compute_time_average", false,
+                 "Do or do not compute time average of the solution.",
+                 {true,false});
+
+          db.add("line_output_for_time_average", false,
+                 "Do or do not write the time averaged solution over lines, "
+                 "according to the lines defined in the nested database used "
+                 "by the class LinesEval, see EvalTools.h",
+                 {true,false});
+
+          db.add("start_time_averaging_at", 0.,
+                 "Time at which the time averaging will start.",
+                 0., std::numeric_limits<double>::max());
 
 	  db.add("output_write_exact_solution", false,
 		 " If set to true, this parameter allows to write the exact solution "

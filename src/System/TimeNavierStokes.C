@@ -1,5 +1,10 @@
 #include "TimeNavierStokes.h"
 #include "Database.h"
+
+#include "LocalProjection.h"
+#include "Hotfixglobal_AssembleNSE.h"
+#include "GridTransfer.h"
+#include "Multigrid.h"
 #ifdef __2D__
 #include "Upwind.h"
 #include "Matrix2D.h"
@@ -13,10 +18,6 @@
 #include "Assemble3D.h"
 #include "AuxParam3D.h"
 #endif
-#include "LocalProjection.h"
-#include "Hotfixglobal_AssembleNSE.h"
-#include "GridTransfer.h"
-#include "Multigrid.h"
 #ifdef _MPI
 #include "ParFECommunicator3D.h"
 #endif
@@ -110,6 +111,13 @@ TimeNavierStokes<d>::System_per_grid::System_per_grid(
                      solution_m2.length(0), d);
   p_m2 = FEFunction(pressure_space.get(), "p", "p", this->solution_m2.block(d),
                     solution_m2.length(d));
+
+  time_avg_sol = BlockVector(matrix, false);
+  u_time_avg = FEVectFunct(velocity_space.get(), "u_t_avg", "u time averaged",
+                           time_avg_sol.block(0), time_avg_sol.length(0), d);
+  p_time_avg = FEFunction(pressure_space.get(), "p_t_avg", "p time averaged",
+                          this->time_avg_sol.block(d), time_avg_sol.length(d));
+
   combined_old_sols = BlockVector(matrix, false);
   comb_old_u = FEVectFunct(velocity_space.get(), "u", "u",
                            combined_old_sols.block(0),
@@ -156,6 +164,9 @@ TimeNavierStokes<d>::TimeNavierStokes(const TDomain& domain,
  : db(default_tnse_database()), systems(), outputWriter(param_db), example(ex),
    solver(param_db), defect(), old_residuals(), initial_residual(1e10),
    time_stepping_scheme(param_db), is_rhs_and_mass_matrix_nonlinear(false)
+#ifdef __3D__
+   , Lines()
+#endif
 {
   db.merge(param_db);
   this->check_and_set_parameters();
@@ -271,6 +282,13 @@ TimeNavierStokes<d>::TimeNavierStokes(const TDomain& domain,
   // print out the information (cells, dofs, etc)
   this->output_problem_size_info();
   this->errors.fill(0.);
+
+#ifdef __3D__  
+  if( db["line_output_for_time_average"] )
+  {
+    Lines = LinesEval<d>(domain, param_db);
+  }
+#endif
 }
 
 /* ************************************************************************** */
@@ -1046,7 +1064,7 @@ void TimeNavierStokes<d>::set_matrices_rhs(
           if(db["space_discretization_type"].is("smagorinsky"))
           {
             sqMat.resize(d*d);
-	    rhs_array.resize(0);
+            rhs_array.resize(0);
             for(int i = 0, j = 0; i < d*d; ++i, ++j)
             {
               if(i%d == 0 && i > 0)
@@ -1477,11 +1495,18 @@ void TimeNavierStokes<d>::output()
     }
   }
 
+#ifdef __3D__
+  if( db["output_compute_time_average"] )
+  {
+    this->time_averaging();
+  }
+#endif
+
   example.do_post_processing(*this);
 
   for(int i = 0; i < d; ++i)
     delete velocity_components[i];
-
+  
   outputWriter.write(t);
 
   if(db["write_solution_binary"].is(true))
@@ -1812,6 +1837,82 @@ void TimeNavierStokes<d>::update_matrices_lps(System_per_grid &s)
            "2D.");
 #endif
 }
+
+/* ************************************************************************** */
+template <int d>
+void TimeNavierStokes<d>::time_averaging()
+{
+#ifdef __3D__
+  double t           = time_stepping_scheme.current_time_;
+  double tau         = TDatabase::TimeDB->TIMESTEPLENGTH;
+  double t0          = db["time_start"];
+  double t0_avg      = db["start_time_averaging_at"];
+  System_per_grid& s = this->systems.front();
+
+  if( t == t0 )
+  {
+    return; // in case of restart (i.e. continue_output_after_restart)
+  }
+  else if( t-tau >= t0_avg )
+  {
+    s.time_avg_sol.scale(t - t0_avg - tau);
+    s.time_avg_sol.add_scaled(s.solution_m2, tau/2.);
+    s.time_avg_sol.add_scaled(s.solution, tau/2.);
+    s.time_avg_sol.scale(1./(t - t0_avg));
+
+    this->t_avg_output();
+  }
+#endif
+}
+
+/* ************************************************************************** */
+template <int d>
+void TimeNavierStokes<d>::t_avg_output()
+{  
+#ifdef __3D__
+  std::vector<const FEFunction*> fe_functions;
+
+  bool   i_am_root   = true;
+  double t           = time_stepping_scheme.current_time_;
+  double tau         = TDatabase::TimeDB->TIMESTEPLENGTH;
+  System_per_grid& s = this->systems.front();
+
+#ifdef _MPI
+  int my_rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+  i_am_root = (my_rank == 0);
+#endif
+
+  for( int i = 0 ; i < d ; ++i )
+  {
+    fe_functions.push_back(s.u_time_avg.GetComponent(i));
+  }
+  fe_functions.push_back(&s.p_time_avg);
+  Lines.write_fe_values(fe_functions, t);
+  
+  if( i_am_root )
+  {
+    // write the time averaged solution only for the last time step
+    if( t+tau > double(db["time_end"]) )
+    {
+      // create separate DataWrite object for writing the time average values, 
+      // because it would not work with the case format in this->outputWriter.
+      ParameterDatabase tmp(this->db);
+      std::string basename = tmp["output_basename"];
+      tmp["output_basename"].set(basename + "_time_average", false);
+      tmp["output_write_case"] = false;
+      if(tmp["output_write_vtk"].is(false) && tmp["output_write_vtu"].is(false))
+      {
+        tmp["output_write_vtu"] = true;
+      }
+      DataWriter<d> avg_writer(tmp);
+      avg_writer.add_fe_vector_function(&this->systems.front().u_time_avg);
+      avg_writer.add_fe_function(&this->systems.front().p_time_avg);
+      avg_writer.write();
+    }
+  }
+#endif /** #ifdef __3D__ */
+} 
 
 #ifdef __3D__
 template class TimeNavierStokes<3>;

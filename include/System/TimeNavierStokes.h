@@ -12,6 +12,7 @@
 #include "FEVectFunct3D.h"
 #endif
 #include "BlockVector.h"
+#include "LinesEval.h"
 #include "ParameterDatabase.h"
 #include "Solver.h"
 #include "templateNames.h"
@@ -223,6 +224,10 @@ class TimeNavierStokes
       FEVectFunct u_m2;
       FEFunction p_m2;
 
+      BlockVector time_avg_sol;
+      FEVectFunct u_time_avg;
+      FEFunction  p_time_avg;
+
       BlockVector combined_old_sols;
       FEVectFunct comb_old_u;
 
@@ -373,6 +378,18 @@ class TimeNavierStokes
     void modify_slip_bc(bool BT_Mass = false, bool slip_A_nl = false);
     
     void prepare_postprocessing(TCollection *coll);
+
+#ifdef __3D__
+    /** @brief LineEval object to store the lines where evalation has to be done
+     */
+    LinesEval<d> Lines;
+#endif
+
+    /** @brief calculate the time averaging of the solution in time_avg_sol */
+    void time_averaging();
+
+    /** @brief write the time averaging of the solution */
+    void t_avg_output();
 };
 
 
