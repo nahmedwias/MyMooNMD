@@ -1872,17 +1872,10 @@ void TimeNavierStokes<d>::t_avg_output()
 #ifdef __3D__
   std::vector<const FEFunction*> fe_functions;
 
-  bool   i_am_root   = true;
   double t           = time_stepping_scheme.current_time_;
   double tau         = TDatabase::TimeDB->TIMESTEPLENGTH;
   System_per_grid& s = this->systems.front();
-
-#ifdef _MPI
-  int my_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-  i_am_root = (my_rank == 0);
-#endif
-
+  
   for( int i = 0 ; i < d ; ++i )
   {
     fe_functions.push_back(s.u_time_avg.GetComponent(i));
@@ -1890,26 +1883,23 @@ void TimeNavierStokes<d>::t_avg_output()
   fe_functions.push_back(&s.p_time_avg);
   Lines.write_fe_values(fe_functions, t);
   
-  if( i_am_root )
+  // write the time averaged solution only for the last time step
+  if( t+tau > double(db["time_end"]) )
   {
-    // write the time averaged solution only for the last time step
-    if( t+tau > double(db["time_end"]) )
+    // create separate DataWrite object for writing the time average values, 
+    // because it would not work with the case format in this->outputWriter.
+    ParameterDatabase tmp(this->db);
+    std::string basename = tmp["output_basename"];
+    tmp["output_basename"].set(basename + "_time_average", false);
+    tmp["output_write_case"] = false;
+    if(tmp["output_write_vtk"].is(false) && tmp["output_write_vtu"].is(false))
     {
-      // create separate DataWrite object for writing the time average values, 
-      // because it would not work with the case format in this->outputWriter.
-      ParameterDatabase tmp(this->db);
-      std::string basename = tmp["output_basename"];
-      tmp["output_basename"].set(basename + "_time_average", false);
-      tmp["output_write_case"] = false;
-      if(tmp["output_write_vtk"].is(false) && tmp["output_write_vtu"].is(false))
-      {
-        tmp["output_write_vtu"] = true;
-      }
-      DataWriter<d> avg_writer(tmp);
-      avg_writer.add_fe_vector_function(&this->systems.front().u_time_avg);
-      avg_writer.add_fe_function(&this->systems.front().p_time_avg);
-      avg_writer.write();
+      tmp["output_write_vtu"] = true;
     }
+    DataWriter<d> avg_writer(tmp);
+    avg_writer.add_fe_vector_function(&this->systems.front().u_time_avg);
+    avg_writer.add_fe_function(&this->systems.front().p_time_avg);
+    avg_writer.write();
   }
 #endif /** #ifdef __3D__ */
 } 

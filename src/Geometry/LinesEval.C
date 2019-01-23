@@ -183,12 +183,22 @@ LinesEval<d>::LinesEval(const TDomain&           domain,
               P);
 
     LineEval line(domain, LinesEval::db["line_direction"], P, refi);
+
     lines_for_postprocess.emplace_back(line);
   }
-  
+
   // create a directory for the data to be saved
-  std::string directory_name = db["directory_name"];
-  mkdir(directory_name.c_str(), 0777);
+  bool i_am_root = true;
+#ifdef _MPI
+  int my_rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+  i_am_root = (my_rank == 0);
+#endif
+  if( i_am_root )
+  {
+    std::string directory_name = db["directory_name"];
+    mkdir(directory_name.c_str(), 0777);
+  }
 }
 
 /* ************************************************************************** */
@@ -308,6 +318,11 @@ void LinesEval<d>::write_fe_values(std::vector<const FEFunction*> fe_functions,
   double default_val    = -1.e32;
   auto   n_fe_functions = fe_functions.size();
 
+  if( n_fe_functions==0 )
+  {
+    return;
+  }
+
   // loop over all lines
   for(int l_i=0 ; l_i < this->GetLength() ; l_i++)
   {
@@ -326,18 +341,20 @@ void LinesEval<d>::write_fe_values(std::vector<const FEFunction*> fe_functions,
     for( int j=0 ; j<size_li ; j++ )
     {
       j_cell = line.GetCellIdx(j);
+      P[direction] = line.GetPosition(j);
 
+      for(int i = 0; i < d; ++i)
+      {
+        values[i][j] = P[i];
+      }
+      
       if( j_cell==-1 ) //only append in case of many processes
       {
         continue;
       }
 
       const TBaseCell* cell = line.GetCell(j_cell);
-      P[direction] = line.GetPosition(j);
-      for(int i = 0; i < d; ++i)
-      {
-        values[i][j] = P[i];
-      }
+
       for(int i = 0; i < n_fe_functions; ++i)
       {
 #ifdef __3D__
@@ -376,14 +393,19 @@ void LinesEval<d>::write_fe_values(std::vector<const FEFunction*> fe_functions,
     {
       std::stringstream s_out;
 
-      bool        flag_print = false;
-      std::string dir_name = db["directory_name"];
+      bool        flag_print  = false;
+      std::string dir_name    = db["directory_name"];
       std::string file_prefix = db["file_prefix"];
-      std::string file_name  = dir_name + "/" + file_prefix + "_l"
-                             + std::to_string(l_i)
-                             + "_t" + std::to_string(time_step) + ".txt";
+      std::string file_name   = dir_name + "/" + file_prefix + "_l"
+                              + std::to_string(l_i)
+                              + "_t" + std::to_string(time_step) + ".txt";
 
+#ifdef _MPI
+      s_out << "#" << setw(10) << "x0" << setw(15) << "x1" << setw(15) << "x2";
+#else
       s_out << "#" << setw(13) << "x0" << setw(15) << "x1" << setw(15) << "x2";
+#endif
+
       for(int i = 0; i < n_fe_functions; ++i)
       {
         s_out << setw(15) << fe_functions[i]->GetName();
@@ -563,12 +585,9 @@ LineEval::LineEval(const TDomain& domain,
   // add points from other processes in order to keep the point ordering
   int mpi_size;
   
-  int     totlength = 0;
-  int     size_l    = line_for_postprocess.size();
-  int*    displs    = nullptr;
-  int*    rlengths  = nullptr;
-  double* rlmin     = nullptr;
-  double* rlmax     = nullptr;
+  int totlength = 0;
+  int size_l    = line_for_postprocess.size();
+
   std::vector<double> slmin(size_l,0.);
   std::vector<double> slmax(size_l,0.);
 
@@ -579,26 +598,34 @@ LineEval::LineEval(const TDomain& domain,
   }
   
   MPI_Comm_size( MPI_COMM_WORLD, &mpi_size );
-  
+  std::vector<int> displs(mpi_size, 0);
+  std::vector<int> rlengths(mpi_size, 0);
+
   // gather lengths of line on every process
-  MPI_Allgather(&size_l, 1, MPI_INT, &rlengths, 1, MPI_INT, MPI_COMM_WORLD);
-  
+  MPI_Allgather(&size_l, 1, MPI_INT, &rlengths[0], 1, MPI_INT, MPI_COMM_WORLD);
+
   for( int i_mpi=0 ; i_mpi<mpi_size ; i_mpi++ )
   {
     displs[i_mpi] = totlength;
     totlength    += rlengths[i_mpi];
   }
 
-  MPI_Allgatherv(&slmin, size_l, MPI_DOUBLE,
-                 &rlmin, rlengths, displs, MPI_DOUBLE, MPI_COMM_WORLD);
-  MPI_Allgatherv(&slmax, size_l, MPI_DOUBLE,
-                 &rlmax, rlengths, displs, MPI_DOUBLE, MPI_COMM_WORLD);
+  std::vector<double> rlmin(totlength, 0.);
+  std::vector<double> rlmax(totlength, 0.);
+
+  MPI_Allgatherv(&slmin[0], size_l, MPI_DOUBLE,
+                 &rlmin[0], &rlengths[0], &displs[0], MPI_DOUBLE,
+                 MPI_COMM_WORLD);
+  MPI_Allgatherv(&slmax[0], size_l, MPI_DOUBLE,
+                 &rlmax[0], &rlengths[0], &displs[0], MPI_DOUBLE,
+                 MPI_COMM_WORLD);
 
   // only add new points by skipping points already in process according to
   // ordering from MPI_Allgatherv (i.e. according to rank order)
   int start_pos = std::accumulate(rlengths.begin(),
                                   rlengths.begin()+my_rank,
                                   0);
+
   for( int i=0 ; i<totlength ; i++ )
   {
     if( (i>=start_pos) && (i<start_pos+rlengths[my_rank]) )
@@ -616,7 +643,6 @@ LineEval::LineEval(const TDomain& domain,
   auto it = std::unique(line_for_postprocess.begin(),
                         line_for_postprocess.end());
   line_for_postprocess.erase(it, line_for_postprocess.end());
-  
 }
 
 /* ************************************************************************** */
@@ -630,12 +656,6 @@ int LineEval::GetDirection() const
 {
   return direction;
 }
-
-/* ************************************************************************** */
-// int LineEval::GetLength() const
-// {
-//   return this->line_for_postprocess.size();
-// }
 
 /* ************************************************************************** */
 int LineEval::GetNbPoints() const
@@ -816,9 +836,9 @@ double LineEval::space_average_value(const TFEFunction3D& f) const
                      "quadrature formula.");
 
     // loop over all cells cuting the line
-    for( int i=0 ; i<GetNbPoints()-1 ; i++ )
+    for( int i=0 ; i<line_for_postprocess.size() ; i++ )
     {
-      i_cell = GetCellIdx(i);
+      i_cell = line_for_postprocess.at(i).cell_index;
 
       if( i_cell<0 ) //only append in case of many processes
       {
@@ -827,8 +847,8 @@ double LineEval::space_average_value(const TFEFunction3D& f) const
 
       cell = coll->GetCell(i_cell);
 
-      p0 = GetPosition(i);
-      p1 = GetPosition(i+1);
+      p0 = line_for_postprocess.at(i).lmin_cell;
+      p1 = line_for_postprocess.at(i).lmax_cell;
 
       // get polynomial degree of finite element in current cell
       CurrentElement = FSpace->GetFE3D(i_cell, cell);
