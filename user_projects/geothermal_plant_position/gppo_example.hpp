@@ -248,7 +248,8 @@ void pde_coefficients_temperature(int n_points, double *, double *,
 				  double *,
 #endif
                                   double **parameters, double **coeffs,
-                                  double nu)
+                                  double nu,
+                                  double transversal_dispersion_factor)
 {
   int dim=2;
 #ifdef __3D__
@@ -268,6 +269,13 @@ void pde_coefficients_temperature(int n_points, double *, double *,
     }
     else
     {
+
+      coeffs[i][0] += transversal_dispersion_factor * sqrt(parameters[i][0]*parameters[i][0] + parameters[i][1]*parameters[i][1]
+#ifdef __3D__
+      + parameters[i][2]*parameters[i][2]
+#endif
+      );
+
       coeffs[i][1] = parameters[i][0]; // convection, x-direction
       coeffs[i][2] = parameters[i][1]; // convection, y-direction
 #ifdef __3D__
@@ -321,8 +329,9 @@ Example_TimeCD2D get_gppo_temperature_example(const ParameterDatabase & db)
   std::vector<BoundValueFunct2D *> bd(1, temperature_boundary_value);
   std::vector <DoubleFunct2D*> ic(1, initial_condition_temperature);
   double nu = db["diffusion_coefficient"];
+  double transversal_dispersion_factor = db["transversal_dispersion_factor"];
   using namespace std::placeholders;
-  CoeffFct2D coeffs = std::bind(pde_coefficients_temperature, _1, _2, _3, _4, _5, nu);
+  CoeffFct2D coeffs = std::bind(pde_coefficients_temperature, _1, _2, _3, _4, _5, nu, transversal_dispersion_factor);
   return Example_TimeCD2D(exact, bc, bd, coeffs, false, false, ic);
 }
  
@@ -356,8 +365,9 @@ Example_TimeCD3D get_gppo_temperature_example(const ParameterDatabase & db)
   std::vector <DoubleFunct3D*> ic(1, initial_condition_temperature);
   
   double nu = db["diffusion_coefficient"];
+  double transversal_dispersion_factor = db["transversal_dispersion_factor"];
   using namespace std::placeholders;
-  CoeffFct3D coeffs = std::bind(pde_coefficients_temperature, _1, _2, _3, _4, _5, _6, nu);
+  CoeffFct3D coeffs = std::bind(pde_coefficients_temperature, _1, _2, _3, _4, _5, _6, nu, transversal_dispersion_factor);
   //cout << " **********INSIDE 3D_gppo_temperature_example************"<< endl;
   return Example_TimeCD3D(exact, bc, bd, coeffs, false, false, ic);
 }

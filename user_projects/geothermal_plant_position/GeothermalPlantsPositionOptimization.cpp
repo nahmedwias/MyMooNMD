@@ -32,8 +32,6 @@ constexpr char GeothermalPlantsPositionOptimization<d>::required_database_name_T
 
 
 
-
-
 /** ************************************************************************ */
 template <int d>
 ParameterDatabase GeothermalPlantsPositionOptimization<d>::default_GPPO_database()
@@ -55,15 +53,55 @@ ParameterDatabase GeothermalPlantsPositionOptimization<d>::default_GPPO_database
 
   db.add("n_control",1u,
 	 " Dimension of the control space",0u,10000u);
-	
   
   db.add("alpha_cost", 1., 
           "The scalar alpha in the functional J_hat, which is multiplied with "
           "the control term.", 0., 1.0e10);
+  
   db.add("cost_functional", {1., 0.},
           "Switch between a few possible cost functionals via weights. The "
           "order of the functionals is: L2_norm_of_curl, backward_facing_step, ",
           0., 1.);
+  
+  db.add("longitudinal_dispersion_factor", 0.,
+       "Use thermal dispersion tensor in the thermal conductivity",
+       -10000000., 10000000.);
+
+  db.add("transversal_dispersion_factor", 0.,
+       "Use thermal dispersion tensor in the thermal conductivity",
+       -10000000., 10000000.);
+  
+  db.add("temperature_injection_well", 303.15, // = 30 °C + 273.15;
+          "The temperature of the injected fluid in Kelvin",
+          -400., 400.);
+  
+  db.add("fluid_density", 1050.,
+          "The density of the fluid (e.g., brine)",
+          0., 10000.);
+  
+  db.add("fluid_heat_capacity", 4200.,
+          "The heat capacity of the injected fluid (e.g., brine)",
+         0., 10000.);
+  
+  db.add("pump_efficiency", 1.,
+          "The efficiency of the pumps",
+          0., 1.);
+  
+  db.add("minimum_temperature_production_well",  343.15, // = 70 °C + 273.15;
+          "The temperature of the fluid at the production well necessery to continue with production",
+          0., 500.);
+  
+  db.add("x_distance_form_well_center",  20., // meters
+          "The distance from the center of the injection (+) and production (-) well, used to compute temperatures and pressures.",
+          0., 500.);
+  
+  db.add("well_radius",  0.2, // meters
+          "The radius of the bore holes.",
+          0., 100.);
+  
+  // epsDelta
+  
+  
   return db;
 }
 
@@ -122,17 +160,9 @@ get_primal_temperature_database(ParameterDatabase param_db)
   // one has the correct name. Otherwise the default solver database is used.
   cout << "Nested database, name: " << db_name << endl;
 
+  //OLD 15.01.19:tcd_GPPO_db.merge(param_db,false);
+  tcd_GPPO_db.merge(param_db, true);
 
-  tcd_GPPO_db.add("longitudinal_dispersion_factor", 0.,
-       "Use thermal dispersion tensor in the thermal conductivity",
-       -10000000., 10000000.);
-
-  tcd_GPPO_db.add("transversal_dispersion_factor", 0.,
-       "Use thermal dispersion tensor in the thermal conductivity",
-       -10000000., 10000000.);
-
-
-  tcd_GPPO_db.merge(param_db,false);
   // replace parameter values if some parameter is specific for tcd problem
   if(param_db.has_nested_database(db_name))
     {
@@ -140,7 +170,6 @@ get_primal_temperature_database(ParameterDatabase param_db)
     }
 
   return tcd_GPPO_db;
-  
 }
 
 /** ************************************************************************ */
@@ -266,7 +295,7 @@ void approximate_delta_functions(int n_points, double *x, double *y,
 {
   /**
      @todo this function should be adapted to make delta-fct depending on input parameter 
-     (e.g. distance or position of sources)
+     (e.g. distance or position of sources) in 3D
   */
 
   for (int i = 0; i < n_points; ++i)
@@ -296,7 +325,7 @@ void approximate_delta_functions(int n_points, double *x, double *y,
     singular_sign;
 
     // source in (xi,yi)
-    singular_x.push_back(4500.); 
+    singular_x.push_back(5000. - (distance*1000.)/2.); 
     singular_y.push_back(3000.);
     singular_sign.push_back(1.);
 #ifdef __3D__
@@ -304,7 +333,7 @@ void approximate_delta_functions(int n_points, double *x, double *y,
 #endif
 
     // sink in (xe,ye)    
-    singular_x.push_back(5500.);
+    singular_x.push_back(5000.+ (distance*1000.)/2.);
     singular_y.push_back(3000.);
     singular_sign.push_back(-1.);
 #ifdef __3D__
@@ -459,25 +488,7 @@ void GeothermalPlantsPositionOptimization<d>::apply_control_and_solve(const doub
   time.restart_and_print("solving the stationary flow problem");
 
 
-  Output::print<2>(" ****** temperature *******");
-
-
-/*// change the diffusion corfficient by taking into account the thermal dispersion tensor
-  {
-    auto u1 = brinkman_mixed.get_velocity().GetComponent(0);
-    auto u2 = brinkman_mixed.get_velocity().GetComponent(1);
-
-  for (int i = 0; i < u1.size(); i++)
-  {
-
-  }
-
-   std::vector<double> thermal_dispersion_part1 = db["transversal_dispersion_factor"] * abs_u;
-   // (db["longitudinal_dispersion_factor"] - db["transversal_dispersion_factor"]) * u*u^T/abs_u;
-
-    db["diffusion_coefficient"] += thermal_dispersion_part1;
-  }
-  */
+  Output::print<2>(" ******   temperature   *******");
   
   TDatabase::TimeDB->TIME_DISC = 2; // Crank-Nicolson
   //double end_time = TDatabase::TimeDB->ENDTIME;
@@ -485,6 +496,12 @@ void GeothermalPlantsPositionOptimization<d>::apply_control_and_solve(const doub
   
   TimeDiscretization& tss = tcd_primal.get_time_stepping_scheme();
   tss.current_step_ = 0;
+  
+  //New LB: 22.03.19 start
+  this->temperature_production_well_at_time_steps.resize( ((double) db["time_end"]- (double) db["time_start"])/ (double) db["time_step_length"]);
+  std::fill(temperature_production_well_at_time_steps.begin(), temperature_production_well_at_time_steps.end(), 0);
+  //New LB: 22.03.19 end
+  
   tss.set_time_disc_parameters();
   Output::print<2>("  --> assemble ");
   tcd_primal.assemble_initial_time();
@@ -512,22 +529,22 @@ void GeothermalPlantsPositionOptimization<d>::apply_control_and_solve(const doub
 
     TDatabase::TimeDB->CURRENTTIME += tau;
 
-    Output::print<1>("\nCURRENT TIME: ", TDatabase::TimeDB->CURRENTTIME);
+    Output::print<1>("\nCURRENT time: ", TDatabase::TimeDB->CURRENTTIME);
+    Output::print<1>("CURRENT well distance: ", distance);
     /// OLD: SetTimeDiscParameters(1);
 
-    tcd_primal.assemble(brinkman_mixed.get_velocity(), x,
-			  db["diffusion_coefficient"]);
+    tcd_primal.assemble(brinkman_mixed.get_velocity(), x,  db["diffusion_coefficient"]);
+
     tcd_primal.solve();
     if((tss.current_step_-1) % TDatabase::TimeDB->STEPS_PER_IMAGE == 0)
       tcd_primal.output();
 
     // Temperature at production well
     auto temperature = tcd_primal.get_function();
-    double x_production_well = 5500;
-    double delta_x = 20; //300;
-    double y_production_well = 3000;
+    double x_production_well = 5000. + (distance*1000.)/2.;
+    double y_production_well = 3000.;
 #ifdef __3D__
-    double z_production_well = 3000;
+    double z_production_well = 3000.;
 #endif
 
 #ifdef __2D__
@@ -536,14 +553,22 @@ void GeothermalPlantsPositionOptimization<d>::apply_control_and_solve(const doub
     std::vector<double> temperature_values(d+1);
 #endif
 
-    temperature.FindGradient(x_production_well - delta_x, y_production_well,
+    temperature.FindGradient(x_production_well - (double) db["x_distance_form_well_center"], y_production_well,
 #ifdef __3D__
             z_production_well,
 #endif
     temperature_values);
-    Output::print(" *** T(well) = ",temperature_values[0]);
-    
-    
+
+    Output::print(" *** T(well) = ", temperature_values[0]);
+ 
+    if (temperature_values[0] >= (double) db["minimum_temperature_production_well"])
+     {
+      this->temperature_production_well_at_time_steps.push_back(temperature_values[0]);
+     }
+    else
+    {
+      Output::print("Minimum production temperature obtained at time ", TDatabase::TimeDB->CURRENTTIME, " .");
+    }
   }
   // ======================================================================
   Output::print("MEMORY: ", setw(10), GetMemory()/(1048576.0), " MB");
@@ -568,64 +593,65 @@ const
 #endif
   auto pressure = brinkman_mixed.get_pressure();
 
-  auto temperature = tcd_primal.get_function();
 
   double alpha = db["alpha_cost"];
 
+ 
+  //New LB 22.03.19 START
+  double x_production_well = 5000. + (distance*1000.0)/2.; //5.5;
+  double y_production_well = 3000.; //3.;
+  double x_injection_well = 5000. - (distance*1000.0)/2.; //4.5;
+  double y_injection_well = 3000.; //3.;
+#ifdef __3D__
+  double z_production_well = 3000.;
+  double z_injection_well = 3000.; 
+#endif
   
-  /*
-  //New LB 19.11.18 START
-  double pressure_prod[1], pressure_inj[1], temperature_prod[1];
-  double x_prod = 5000.0 + distance/2.; //5.5;
-  double y_prod = 3000.; //3.;
-  double x_inj = 5000.0 - distance/2.; //4.5;
-  double y_inj = 3000.; //3.;
+ #ifdef __2D__
+     double pressure_values_production_well[d+1], pressure_values_injection_well[d+1];
+ #else
+     std::vector<double> pressure_values_production_well(d+1), pressure_values_injection_well(d+1);
+ #endif
 
+pressure.FindGradient(x_production_well - (double) db["x_distance_form_well_center"], y_production_well, 
+     #ifdef __3D__
+                 z_production_well,
+     #endif
+                 pressure_values_production_well);
+      
+pressure.FindGradient(x_injection_well + (double) db["x_distance_form_well_center"], y_injection_well, 
+     #ifdef __3D__
+                 z_injection_well,
+     #endif
+                 pressure_values_injection_well);
+          
+  //todo: compute Q from u_in
+ /// double Q = 150/360;//24 * 50; // 50 - 300
 
-  TBaseCell *cell;
-  TBaseCell *cell_prod, *cell_inj;
-  int cell_prod_num, cell_inj_num;
+  int number_of_time_steps_for_production;
+  double Delta_Temp = 0;
+  for (int i = 0; i < this->temperature_production_well_at_time_steps.size(); i++)
+  {
+    if (this->temperature_production_well_at_time_steps.at(i) >= (double) db["minimum_temperature_production_well"])
+      Delta_Temp += this->temperature_production_well_at_time_steps.at(i) -  (double)  db["temperature_inj"];
+    else 
+      number_of_time_steps_for_production = i;
+    break;
+  }
+  /* 
+   * double functional_value_new // = Q/(0.6)* Delta t * (pressure_prod[1] - pressure_inj[1])  -  Q * Delta t * fluid_density * fluid_heat_capacity * (temperature_prod[1] - temperature_inj); // Net energy AFTER 50 years
+                                 //= Q * Delta t * (   1/(0.6) * (pressure_prod[1] - pressure_inj[1])  - fluid_density * fluid_heat_capacity * (temperature_prod[1] - temperature_inj)   );
+ //since Q_i=const, Delta t = const we can minimize
+    */
+  double functional_value =  (number_of_time_steps_for_production * 1/(double)db["pump_efficiency"] * ( pressure_values_injection_well[1] - pressure_values_production_well[1])  
+          - (double) db["fluid_density"] * (double) db["fluid_heat_capacity"] * Delta_Temp);
+ 
+ //New LB 22.03.19 END
 
-
-  TCollection *coll_pressure, *coll_temperature;
-  coll_pressure = brinkman_mixed.get_pressure_space().GetCollection();
-  coll_temperature = tcd_primal.get_space().GetCollection();
-
-  for (int j = 0; j < coll_pressure->GetN_Cells(); j++)
-    {
-      cell = coll_pressure->GetCell(j);
-      if (cell->PointInCell(x_prod, y_prod))
-      {
-        cell_prod = cell;
-        cell_prod_num = j;
-      }
-      else if (cell->PointInCell(x_inj, y_inj))
-      {
-       cell_inj = cell;
-       cell_inj_num = j;
-      }
-    }
-
-
-  pressure.FindValueLocal(cell_prod, cell_prod_num, x_prod, y_prod, pressure_prod);
-  pressure.FindValueLocal(cell_inj, cell_inj_num, x_inj, y_inj, pressure_inj);
-
-  temperature.FindValueLocal(cell_prod, cell_prod_num, x_prod, y_prod, temperature_prod);
-  //temperature->FindValueLocal (const TBaseCell *cell, int cell_no, x_inj, inj, values);
-
-
-  double temperature_inj = 303.15; // = 30 + 273.15;
-  double Q = 150/360;//24 * 50; // 50 - 300
-  double dens = 1050;
-  double Cap = 4200; // 4200/(24*3600*24*3600);
-  double functional_value_new = Q/(0.6) * alpha * (pressure_prod[1] - pressure_inj[1])  -  Q * dens * Cap * (temperature_prod[1] - temperature_inj); // Net energy AFTER 50 years
- //New LB 19.11.18 END
-
- */
 
   std::vector<double> cost_functional = db["cost_functional"];
 
-
+  auto temperature = tcd_primal.get_function();
   auto temperature_at_sink = 
           [&](){
     double mean = temperature.compute_mean();
@@ -645,7 +671,7 @@ const
   */
 
   
-  double functional_value = 1.;
+//  double functional_value = 1.;
   delete u1;
   delete u2;
 #ifdef __3D__
