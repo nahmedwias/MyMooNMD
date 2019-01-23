@@ -16,8 +16,8 @@
 ///************************************************************************** */
 template<int d>
 NSE_GPPO<d>::NSE_GPPO(const TDomain &domain,
-		      const ParameterDatabase& param_db,
-		      const Example_NSE& example)
+          const ParameterDatabase& param_db,
+          const Example_NSE& example)
   :NavierStokes<d>(domain, param_db, example),
  coefficient_function_FEspace(new FESpace(this->get_pressure_space().GetCollection(),
          "coefficient_function_FEspace", "s",  BoundConditionNoBoundCondition, 1))
@@ -45,15 +45,27 @@ NSE2D_GPPO::~NSE2D_GPPO()
   //  delete coefficient_function_FEspace;
 }
  */
+#else
+template<int d>
+NSE_GPPO<d>::NSE_GPPO( const TDomain &domain, const ParameterDatabase& param_db, const Example_NSE& example)
+:NavierStokes<d>(domain, param_db, example) //(domain.refine_and_get_hierarchy_of_collections(param_db), param_db, example)
+{
+}
+#endif
 
 // ********************// START READ IN PERMEABILITY // ********************* //
 
+
 /** ************************************************************************ */
+
+template<int d>
 void mapping_local_parameters_NSE(const double *in, double *out)
 {
-  // coordinates:  x at in[0], y at in[1]
-  out[0] = in[2];
+  // coordinates:  x at in[0]
+  out[0] = in[d];
 }
+
+
 
 /** ************************************************************************ */
 template<int d>
@@ -65,15 +77,16 @@ void NSE_GPPO<d>::assemble_with_coefficient_fct(bool read_coeff_fct)
                "multigrid");
     }
 
-  TFEFunction2D* coefficient_function =nullptr;
+#ifdef __2D__
+  TFEFunction2D* coefficient_function = nullptr;
   if (read_coeff_fct) {
     coefficient_function = &(this->get_coefficient_function());
   }
-  
   cout << "coefficient_function: "<< coefficient_function << endl;
   const TFESpace2D *coefficient_function_space;
-
-  for(auto& s : this->NavierStokes<d>::systems) //OLD: (System_per_grid& s : this->NavierStokes<d>::systems)
+#endif
+  
+  for( auto& s : this->NavierStokes<d>::systems ) //OLD: (System_per_grid& s : this->NavierStokes<d>::systems)
   {
     s.rhs.reset(); //right hand side reset (TODO: is that necessary?)
     s.matrix.reset(); // reset matrix (needed for mdml where this is called)
@@ -86,31 +99,47 @@ void NSE_GPPO<d>::assemble_with_coefficient_fct(bool read_coeff_fct)
 
     const FESpace *fespmat[3] = {v_space, p_space, nullptr};
 
+#ifdef __2D__
     if (coefficient_function)
     {
       fespmat[2] = coefficient_function_space;
     }
-
+#endif
+    
     size_t n_sq_mat;
     SquareMatrixD *sq_matrices[5]{nullptr};//it's five pointers maximum (Type14)
 
     size_t n_rect_mat;
     MatrixD *rect_matrices[4]{nullptr};//it's four pointers maximum (Types 2, 4, 14)
 
-    size_t N_Rhs = 3;
-    double *RHSs[3] = {s.rhs.block(0), s.rhs.block(1), s.rhs.block(2)};
-    const FESpace *fesprhs[3] = {v_space, v_space, p_space};
+    size_t N_Rhs = d+1;
+    double *RHSs[d+1] = {s.rhs.block(0), s.rhs.block(1), s.rhs.block(2)
+#ifdef __3D__
+            , s.rhs.block(3)
+#endif
+            };
+    const FESpace *fesprhs[d+1] = {v_space, v_space,
+#ifdef __3D__
+            v_space,
+#endif
+            p_space};
 
-    BoundaryConditionFunction* boundary_conditions[3] = {
+    BoundaryConditionFunction* boundary_conditions[d+1] = {
             v_space->get_boundary_condition(), v_space->get_boundary_condition(),
+#ifdef __3D__
+            v_space->get_boundary_condition(),
+#endif
             p_space->get_boundary_condition() };
 
-    std::array<BoundaryValuesFunction*, 3> non_const_bound_values;
+    std::array<BoundaryValuesFunction*, d+1> non_const_bound_values;
     non_const_bound_values[0] = this->example.get_bd()[0];
     non_const_bound_values[1] = this->example.get_bd()[1];
     non_const_bound_values[2] = this->example.get_bd()[2];
+#ifdef __3D__
+    non_const_bound_values[d] = this->example.get_bd()[d];
+#endif
 
-
+#ifdef __2D__
     //same for all: the local assembling object
     TFEFunction2D *fe_functions[4] =
     { s.u.GetComponent(0), s.u.GetComponent(1), &s.p, NULL };
@@ -120,79 +149,92 @@ void NSE_GPPO<d>::assemble_with_coefficient_fct(bool read_coeff_fct)
       coefficient_function_space = coefficient_function->GetFESpace2D(); // ->GetFESpace2D();
       fe_functions[3] = coefficient_function;
     }
+#else
+    //same for all: the local assembling object
+    TFEFunction3D *fe_functions[d+2] =
+    { s.u.GetComponent(0), s.u.GetComponent(1), s.u.GetComponent(2), &s.p, NULL };
+#endif
 
     LocalAssembling<d> la(this->db, LocalAssembling_type::NSE3D_Linear,
             fe_functions, this->example.get_coeffs());
 
+#ifdef __2D__
     if (coefficient_function)
     {
       // modify la such that it includes the TFEFunction2D coefficient_function
       la.setBeginParameter({0});
       la.SetN_Parameters(1);
       la.setN_ParamFct(1);
-      la.setParameterFct({mapping_local_parameters_NSE});
+      la.setParameterFct({mapping_local_parameters_NSE<d>});
       la.setN_FeValues(1);
       la.setFeValueFctIndex({3});
       la.setFeValueMultiIndex({D00});
     }
 
-    std::vector<std::shared_ptr<FEMatrix>> blocks =
-            s.matrix.get_blocks_uniquely();
+#endif
+    
+    std::vector<std::shared_ptr<FEMatrix>> blocks = s.matrix.get_blocks_uniquely();
 
-    n_sq_mat = 5;
-    n_rect_mat = 4;
+    n_sq_mat = d*d+1;
+    n_rect_mat = 2*d;
+
+
     switch(TDatabase::ParamDB->NSTYPE)
-    {// switch over known Block Matrix types, treat each one individually,
-    // using a priori knowledge about the structure and the way it fits
-    // to the LocalAssembling2D object
-    // TODO remove all reinterpret_casts as soon as Assembling process takes only FEMatrices
-    // we have to use reinterpret_casts because dynamic downcasting won't work here
-    // FIXME replace global switch by local checking of blockmatrix type!
-    case 1:
-      sq_matrices[0] =  reinterpret_cast<SquareMatrixD*>(blocks.at(0).get());
-      rect_matrices[0] = reinterpret_cast<MatrixD*>(blocks.at(1).get());
-      rect_matrices[1] = reinterpret_cast<MatrixD*>(blocks.at(2).get());
-      break;
-    case 2:
-      sq_matrices[0] =  reinterpret_cast<SquareMatrixD*>(blocks.at(0).get());
-      rect_matrices[0] = reinterpret_cast<MatrixD*>(blocks.at(3).get()); //first the lying B blocks
-      rect_matrices[1] = reinterpret_cast<MatrixD*>(blocks.at(4).get());
-      rect_matrices[2] = reinterpret_cast<MatrixD*>(blocks.at(1).get()); //than the standing B blocks
-      rect_matrices[3] = reinterpret_cast<MatrixD*>(blocks.at(2).get());
-      break;
-    case 3:
-      sq_matrices[0] = reinterpret_cast<SquareMatrixD*>(blocks.at(0).get());
-      sq_matrices[1] = reinterpret_cast<SquareMatrixD*>(blocks.at(1).get());
-      sq_matrices[2] = reinterpret_cast<SquareMatrixD*>(blocks.at(3).get());
-      sq_matrices[3] = reinterpret_cast<SquareMatrixD*>(blocks.at(4).get());
-      rect_matrices[0] = reinterpret_cast<MatrixD*>(blocks.at(2).get());
-      rect_matrices[1] = reinterpret_cast<MatrixD*>(blocks.at(5).get());
-      break;
-    case 4:
-      sq_matrices[0] = reinterpret_cast<SquareMatrixD*>(blocks.at(0).get());
-      sq_matrices[1] = reinterpret_cast<SquareMatrixD*>(blocks.at(1).get());
-      sq_matrices[2] = reinterpret_cast<SquareMatrixD*>(blocks.at(3).get());
-      sq_matrices[3] = reinterpret_cast<SquareMatrixD*>(blocks.at(4).get());
-      rect_matrices[0] = reinterpret_cast<MatrixD*>(blocks.at(6).get()); //first the lying B blocks
-      rect_matrices[1] = reinterpret_cast<MatrixD*>(blocks.at(7).get());
-      rect_matrices[2] = reinterpret_cast<MatrixD*>(blocks.at(2).get()); //than the standing B blocks
-      rect_matrices[3] = reinterpret_cast<MatrixD*>(blocks.at(5).get());
-      break;
-    case 14:
-      sq_matrices[0] = reinterpret_cast<SquareMatrixD*>(blocks.at(0).get());
-      sq_matrices[1] = reinterpret_cast<SquareMatrixD*>(blocks.at(1).get());
-      sq_matrices[2] = reinterpret_cast<SquareMatrixD*>(blocks.at(3).get());
-      sq_matrices[3] = reinterpret_cast<SquareMatrixD*>(blocks.at(4).get());
-      sq_matrices[4] = reinterpret_cast<SquareMatrixD*>(blocks.at(8).get());
-      rect_matrices[0] = reinterpret_cast<MatrixD*>(blocks.at(6).get()); //first the lying B blocks
-      rect_matrices[1] = reinterpret_cast<MatrixD*>(blocks.at(7).get());
-      rect_matrices[2] = reinterpret_cast<MatrixD*>(blocks.at(2).get()); //than the standing B blocks
-      rect_matrices[3] = reinterpret_cast<MatrixD*>(blocks.at(5).get());
+        {
+          case 1:
+            sq_matrices[0] = reinterpret_cast<SquareMatrixD*>(blocks[0].get());
+            for(int i = 0; i < d; ++i)
+              rect_matrices[i] = reinterpret_cast<MatrixD*>(blocks[1+i].get());
+            break;
+          case 2:
+            sq_matrices[0] = reinterpret_cast<SquareMatrixD*>(blocks[0].get());
+            for(int i = 0; i < d; ++i)
+              rect_matrices[i] = reinterpret_cast<MatrixD*>(blocks[d+1+i].get());
+            for(int i = 0; i < d; ++i)
+              rect_matrices[i+d] = reinterpret_cast<MatrixD*>(blocks[1+i].get());
+            break;
+          case 3:
+            for(int i = 0, j = 0; i < d*d; ++i, ++j)
+            {
+              if(i%d == 0 && i > 0)
+                j++;
+              sq_matrices[i] = reinterpret_cast<SquareMatrixD*>(blocks[j].get());
+            }
+            for(int i = 0; i < d; ++i)
+              rect_matrices[i] = reinterpret_cast<MatrixD*>(blocks[d+(d+1)*i].get());
+            break;
+          case 4:
+            for(int i = 0, j = 0; i < d*d; ++i, ++j)
+            {
+              if(i%d == 0 && i > 0)
+                j++;
+              sq_matrices[i] = reinterpret_cast<SquareMatrixD*>(blocks[j].get());
+            }
+            for(int i = 0; i < d; ++i)
+              rect_matrices[i] = reinterpret_cast<MatrixD*>(blocks[d*(d+1)+i].get());
+            for(int i = 0; i < d; ++i)
+              rect_matrices[d+i] = reinterpret_cast<MatrixD*>(blocks[d+(d+1)*i].get());
+            break;
+          case 14:        
+            for(int i = 0, j = 0; i < d*d; ++i, ++j)
+            {
+              if(i%d == 0 && i > 0)
+                j++;
+              sq_matrices[i] = reinterpret_cast<SquareMatrixD*>(blocks[j].get());
+            }
+            sq_matrices[d*d] = reinterpret_cast<SquareMatrixD*>(blocks[(d+1)*(d+1)-1].get());
+            for(int i = 0; i < d; ++i)
+              rect_matrices[i] = reinterpret_cast<MatrixD*>(blocks[d*(d+1)+i].get());
+            for(int i = 0; i < d; ++i)
+              rect_matrices[d+i] = reinterpret_cast<MatrixD*>(blocks[d+(d+1)*i].get());
       break;
     default:
-      ErrThrow("Sorry, the structure of that BlockMatrix is unknown to class NSE2D. "
-              "I don't know how to pass its blocks to Assemble2D.");
+      ErrThrow("Sorry, the structure of that BlockMatrix is unknown to class NSE2D respectively NSE3D. "
+              "I don't know how to pass its blocks to Assemble2D respectively Assemble3D.");
     }
+
+    
+  
 
     //HOTFIX: Check the documentation!
     assemble_nse = Hotfixglobal_AssembleNSE::WITHOUT_CONVECTION;
@@ -221,35 +263,43 @@ void NSE_GPPO<d>::assemble_with_coefficient_fct(bool read_coeff_fct)
     //tidy up
     delete fe_functions[0];
     delete fe_functions[1];
+#ifdef __3D__
+    delete fe_functions[2];
+#endif
 
     if(this->db["space_discretization_type"].is("local_projection"))
     {
+      if(d == 3)
+        ErrThrow("local_projection stabilization is not implemented in 3D");
       LPS_parameter_set lp{this->db["lps_coeff_type"], this->db["lps_delta0"],
         this->db["lps_delta1"]};
       auto C = LPS_for_pressure_Scott_Zhang(blocks.at(8), false,
-              this->example.get_nu(), lp);
-      s.matrix.replace_blocks(*C, {{2,2}}, {false}); // creates a copy
+                                            this->example.get_nu(), lp);
+      s.matrix.replace_blocks(*C, {{d,d}}, {false}); // creates a copy
     }
-  }
+  }// endfor auto grid
 }
 
 
 
-#else
-
 /*
+
+#ifdef __3D__
+
 #ifdef _MPI
 NSE3D_GPPO::NSE3D_GPPO( TDomain &domain, const ParameterDatabase& param_db, const Example_NSE3D& example)
 :NSE3D(domain.refine_and_get_hierarchy_of_collections(param_db, 0), param_db, example)
 {
 }
-#else*/
+#else
 template<int d>
 NSE_GPPO<d>::NSE_GPPO( const TDomain &domain, const ParameterDatabase& param_db, const Example_NSE& example)
 :NavierStokes<d>(domain, param_db, example) //(domain.refine_and_get_hierarchy_of_collections(param_db), param_db, example)
 {
 }
 //#endif
+ *
+ */
 
 /*
 void read_coefficient_function(std::string read_coefficient_function_directory, TCollection *coll, TFEFunction3D *coefficient_function_ptr)
@@ -492,11 +542,11 @@ void assemble(TFEFunction3D* coefficient_function)
   }
 }
 
-*/
+
 
 
 #endif
-
+*/
 
 
 #ifdef __3D__

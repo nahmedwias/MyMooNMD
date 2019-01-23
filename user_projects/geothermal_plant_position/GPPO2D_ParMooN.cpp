@@ -37,6 +37,8 @@ int main(int argc, char* argv[])
   // create a default database
   ParameterDatabase db = GeothermalPlantsPositionOptimization<2>::default_GPPO_database();
 
+    cout << "transversal_dispersion_factor in GPPO2D_ParMooN: " << db["transversal_dispersion_factor"] << endl;
+
   if(argc < 2)
   {
     Output::print("Please provide an input file with parameters to run the "

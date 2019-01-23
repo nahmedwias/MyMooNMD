@@ -25,17 +25,29 @@
 
 // see https://stackoverflow.com/a/8016853
 
-#ifdef __2D__
-
-//constexpr char TCD_Temperature<2>::required_database_name[];
-
 /** ************************************************************************ */
 template <int d>
 TCD_Temperature<d>::TCD_Temperature(const TDomain& domain,
         const ParameterDatabase& param_db,
-        Example_TimeCD example)
-: TimeConvectionDiffusion<d>(domain, param_db, example)
+        Example_TimeCD example
+        //#ifdef _MPI
+        //                                    ,int maxSubDomainPerDof
+        //#endif
+        )
+: TimeConvectionDiffusion<d>(domain, param_db, example
+        //#ifdef _MPI
+        //                                    ,int maxSubDomainPerDof
+        //#endif
+        //                                    )
+        //                                    , param_db, example
+        //#ifdef _MPI
+        //                                    ,int maxSubDomainPerDof
+        //#endif
+        )
 {
+
+ // this->TimeConvectionDiffusion<d>::db.merge(param_db, true);
+
   if(this->solver.is_using_multigrid())
   {
     ErrThrow("assembling with a finite element function as convection is not "
@@ -60,12 +72,23 @@ TCD_Temperature<d>::TCD_Temperature(const TDomain& domain,
 }
 
 /** ************************************************************************ */
+template <int d>
 void mapping_local_parameters(const double *in, double *out)
 {
   // coordinates:  x at in[0], y at in[1]
-  out[0] = in[2];
-  out[1] = in[3];
+  out[0] = in[d];
+  out[1] = in[d+1];
+  if (d == 3)
+  {
+    //z at in[2]
+    out[2] = in[d+2];
+  }
 }
+
+
+#ifdef __2D__
+
+
 
 /** ************************************************************************ */
 void temperature_coefficients(int n_points, double *x, double *y,
@@ -130,7 +153,7 @@ void TCD_Temperature<d>::assemble(const FEVectFunct& convection,
   auto u2 = convection.GetComponent(1);
 ;
   
-  
+
 
   std::array<TFEFunction2D*, 2> fe_functions_pointers{{u1, u2}};
 
@@ -160,7 +183,7 @@ void TCD_Temperature<d>::assemble(const FEVectFunct& convection,
     la.setBeginParameter({0});
     la.SetN_Parameters(2);
     la.setN_ParamFct(1);
-    la.setParameterFct({mapping_local_parameters});
+    la.setParameterFct({mapping_local_parameters<d>});
     la.setN_FeValues(2);
     la.setFeValueFctIndex({0, 1});
     la.setFeValueMultiIndex({D00, D00});
@@ -237,116 +260,12 @@ void TCD_Temperature<d>::assemble(const FEVectFunct& convection,
   s.solution.copy_nonactive(s.rhs);
 }
 
-/** ************************************************************************ */
-template <int d>
-void TCD_Temperature<d>::reset_for_output()
-{
-  this->outputWriter = DataWriter2D(this->db);
-  ///OLD this->timeDependentOutput = DataWriter2D(this->db);
-  FEFunction & fe_function = this->systems.front().fe_function;
-  this->outputWriter.add_fe_function(&fe_function);
-  auto& s = this->systems.front();
-  s.stiffness_matrix.reset();
-  s.mass_matrix.reset();
-  s.rhs.reset();
-}
+
 
 /* ****************************** 3D ***************************************** */
 #else
 
 
-template <int d>
-TCD_Temperature<d>::TCD_Temperature(const TDomain& domain,
-                                   const ParameterDatabase& param_db,
-                                    Example_TimeCD example
-//#ifdef _MPI
-//                                    ,int maxSubDomainPerDof
-//#endif
-                                   )
- :TimeConvectionDiffusion<d>( domain, param_db, example //(domain.refine_and_get_hierarchy_of_collections(param_db
-//#ifdef _MPI
-//                                    ,int maxSubDomainPerDof
-//#endif
-//                                    )
-//                                    , param_db, example
-//#ifdef _MPI
-//                                    ,int maxSubDomainPerDof
-//#endif
-)
-{
-  if(this->solver.is_using_multigrid())
-  {
-    ErrThrow("assembling with a finite element function as convection is not "
-             "implemented for multigrid");
-  }
-}
-
-/*
-#ifdef _MPI
-CD3D_Temperature::CD3D_Temperature(TDomain& domain,
-                                   const ParameterDatabase& param_db,
-                                    Example_TimeCD3D example,
-                                   int maxSubDomainPerDof)
- : Time_CD3D(domain.refine_and_get_hierarchy_of_collections(param_db, maxSubDomainPerDof), param_db, example, maxSubDomainPerDof)
-{
-  if(this->solver.is_using_multigrid())
-  {
-    ErrThrow("assembling with a finite element function as convection is not "
-             "implemented for multigrid");
-  }
-}
-#else
-CD3D_Temperature::CD3D_Temperature( TDomain& domain,
-                                   const ParameterDatabase& param_db,
-                                    Example_TimeCD3D example)
-:Time_CD3D(domain.refine_and_get_hierarchy_of_collections(param_db), param_db, Example_TimeCD3D(param_db))
-{
-  if(this->solver.is_using_multigrid())
-  {
-    ErrThrow("assembling with a finite element function as convection is not "
-             "implemented for multigrid");
-  }
-}
-#endif
-*/
-
-/*
-#ifdef _MPI
-CD3D_Temperature::CD3D_Temperature( TDomain &domain, const ParameterDatabase& param_db, int maxSubDomainPerDof)
-:Time_CD3D(domain.refine_and_get_hierarchy_of_collections(param_db, maxSubDomainPerDof), param_db, Example_TimeCD3D(param_db), maxSubDomainPerDof)
-}
-#else
-CD3D_Temperature::CD3D_Temperature(TDomain &domain, const ParameterDatabase& param_db)
-:Time_CD3D(domain.refine_and_get_hierarchy_of_collections(param_db), param_db, Example_TimeCD3D(param_db))
-{
-}
-#endif
-*/
-
-
-/*
-CD3D_Temperature::CD3D_Temperature(std::list< TCollection* > collections, //const TDomain& domain,
-                                   const ParameterDatabase& param_db,
-                                   const Example_TimeCD3D& example)
- : Time_CD3D(collections, //domain,
-param_db, example)
-{
-  if(this->solver.is_using_multigrid())
-  {
-    ErrThrow("assembling with a finite element function as convection is not "
-             "implemented for multigrid");
-  }
-}
-*/
-
-//*************************************************************************//
-void mapping_local_parameters(const double *in, double *out)
-{
-  // coordinates:  x at in[0], y at in[1], z at in[2]
-  out[0] = in[3];
-  out[1] = in[4];
-  out[2] = in[5];
-}
 
 //*************************************************************************//
 void temperature_coefficients(int n_points, double *x, double *y, double *z,
@@ -423,7 +342,7 @@ void TCD_Temperature<d>::assemble(FEVectFunct& convection, const double * x, dou
   la.setBeginParameter({0});
   la.SetN_Parameters(3);
   la.setN_ParamFct(1);
-  la.setParameterFct({mapping_local_parameters});
+  la.setParameterFct({mapping_local_parameters<d>});
   la.setN_FeValues(3);
   la.setFeValueFctIndex({0, 1, 2});
   la.setFeValueMultiIndex({D000, D000, D000});
@@ -486,23 +405,31 @@ void TCD_Temperature<d>::assemble(FEVectFunct& convection, const double * x, dou
   s.solution.copy_nonactive(s.rhs);
 }
 
-//*************************************************************************//
-template <int d>
-void TCD_Temperature<d>::reset_for_output()
-{
-  this->outputWriter = DataWriter3D(this->db);
-  TFEFunction3D & feFunction = this->systems.front().fe_function;
-  this->outputWriter.add_fe_function(&feFunction);
-  auto& s = this->systems.front();
-  s.stiffness_matrix.reset();
-  s.mass_matrix.reset();
-  s.rhs.reset();
-}
 
 
 #endif
 
 
+
+/** ************************************************************************ */
+template <int d>
+void TCD_Temperature<d>::reset_for_output()
+{
+#ifdef __2D__
+    this->outputWriter = DataWriter2D(this->db);
+  ///OLD this->timeDependentOutput = DataWriter2D(this->db);
+  FEFunction & fe_function = this->systems.front().fe_function;
+#else
+    this->outputWriter = DataWriter3D(this->db);
+  TFEFunction3D & fe_function = this->systems.front().fe_function;
+#endif
+
+  this->outputWriter.add_fe_function(&fe_function);
+  auto& s = this->systems.front();
+  s.stiffness_matrix.reset();
+  s.mass_matrix.reset();
+  s.rhs.reset();
+}
 
 
 #ifdef __3D__
