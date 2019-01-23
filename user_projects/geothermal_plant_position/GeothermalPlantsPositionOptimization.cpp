@@ -628,7 +628,7 @@ pressure.FindGradient(x_injection_well + (double) db["x_distance_form_well_cente
   //todo: compute Q from u_in
  /// double Q = 150/360;//24 * 50; // 50 - 300
 
-  int number_of_time_steps_for_production;
+  int number_of_time_steps_for_production = 0;
   double Delta_Temp = 0;
   for (int i = 0; i < this->temperature_production_well_at_time_steps.size(); i++)
   {
