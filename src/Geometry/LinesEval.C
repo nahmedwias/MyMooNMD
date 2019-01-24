@@ -19,6 +19,9 @@
 #else
 #include "FEFunction3D.h"
 #endif
+#ifdef _MPI
+  #include <numeric> // std::accumulate
+#endif // _MPI
 #include <limits>
 #include <sys/stat.h>
 
