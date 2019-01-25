@@ -48,6 +48,7 @@ std::ostream& operator<<(std::ostream& out, const LocalAssembling_type value)
     PROCESS_VAL(ConvDiff);
     PROCESS_VAL( Darcy );
     PROCESS_VAL(TCDStiffMassRhs);
+    PROCESS_VAL(TCDMassOnly);
     PROCESS_VAL(NSE3D_Linear);
     PROCESS_VAL(NSE3D_NonLinear);
     PROCESS_VAL(TNSE3D_LinGAL);
@@ -397,6 +398,7 @@ LocalAssembling<d>::LocalAssembling(ParameterDatabase param_db,
     }
     case LocalAssembling_type::TCDStiffMassRhs:
     case LocalAssembling_type::TCDStiffRhs:
+    case LocalAssembling_type::TCDMassOnly:
       this->set_parameters_for_tcd(type);
      break;    
     ///////////////////////////////////////////////////////////////////////////
@@ -889,7 +891,12 @@ void LocalAssembling<d>::set_parameters_for_tcd(LocalAssembling_type type)
       {
       }
       break;
-      default:
+    case LocalAssembling_type::TCDMassOnly:
+      N_Rhs = 0;
+      this->local_assemblings_routines.push_back(TCDMassPOD<d>);
+      break;
+      
+    default:
       ErrThrow("unknown LocalAssembling_type ", this->type);
       break;
   }

@@ -1264,6 +1264,11 @@ ParameterDatabase ParameterDatabase::parmoon_default_database()
   db.add("script_mode", false, "Set ParMooN into script mode. This means all "
          "output is written to the outfile and not to console.");
 
+  db.add("write_snaps", false,
+	 "Write Snapshots. If set to true, snapshots of the numerical solution will "
+	 " be written into a file.",
+	 {true,false});
+
   return db;
 }
 
@@ -1413,4 +1418,71 @@ ParameterDatabase ParameterDatabase::default_solution_in_out_database()
   return db;
 }
 
+ParameterDatabase ParameterDatabase::get_default_snapshots_database()
+{
+  Output::print<5>("Creating a default parameter database for managing snapshots...");
+  ParameterDatabase db("Default ParMooN parameter database for storing snapshots");
 
+  
+
+  db.add("snaps_directory", ".",
+    	         "This directory is where the snapshots will written. This "
+    	         "directory will be created, if it does not exist already. Files in "
+    	         "this directory will be overwritten without any warning.");
+
+  db.add("snaps_basename", "parmoon_snapshots",
+  		  "Basename for file where the snapshots are stored. The basename should end with a dot.");
+
+  db.add("steps_per_snap", (size_t) 5,
+    	     "This integer specifies how many time steps are performed "
+    		 "before a snapshot has to be written into file. ");
+  return db;
+}
+
+
+
+ParameterDatabase ParameterDatabase::get_default_pod_database()
+{
+  Output::print<5>("Creating a default POD-ROM parameter database...");
+  ParameterDatabase db("Default ParMooN parameter database for POD-based ROM problems");
+
+  db.add("pod_directory", ".",
+      	         "This directory is where the POD basis and Co. are written. This "
+      	         "directory will be created, if it does not exist already. Files in "
+      	         "this directory will be overwritten without any warning.");
+  
+  db.add("pod_basename", "parmoon_pod",
+	 "Basename for pod basis and related files."
+	 " When writing the POD basis, the basis elements will be written into pod_basename.pod, "
+	 " the average (if needed) into pod_basename.mean"
+	 " When reading the basis, the program expect to find files ending with .pod and .mean");
+
+  db.add("pod_rank", (size_t) 0,
+      	         "This integer specifies the dimension of the POD space to be computed. "
+      		 "If pod_rank <= 0, then all possible POD modes will be computed. ");
+
+  db.add("pod_fluctuations_only", true,
+	 "This is the flag whether the POD basis should be computed only "
+	 " fluctuation part (without average) of the snapshots "
+	 " (also central trajectory method).",
+	 {true,false});
+
+  db.add("pod_inner_product", "euclidean",
+               "Specification of the inner product which is used to compute POD basis."
+  		  "Besides default value, only 'l2' is possible at the moment.",
+  		  {"euclidean", "L2"});
+
+  db.add("rom_init_regularized", false,
+	 "This is the flag whether the the ROM initial condition should be regularized.",
+	 {true,false});
+
+  db.add("differential_filter_width", 1.0,
+           "Filter width for the differential filter (Helmoltz equation) for the computation "
+           "of of the regularized ROM initial condition.",
+             0., 10.);
+
+  // Merge with other databases
+  db.merge(ParameterDatabase::default_output_database(), true);
+
+  return db;
+}

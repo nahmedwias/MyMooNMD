@@ -10,6 +10,11 @@ void TCDStiff(double Mult, double *coeff, double *param, double hK, double**Orig
 template <int d>
 void TCDMass(double Mult, double *coeff, double *param, double hK, double**OrigValues, 
              int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
+
+template <int d>
+void TCDMassPOD(double Mult, double *coeff, double *param, double hK, double**OrigValues, 
+             int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
+
 template <int d>
 void TCDRhs(double Mult, double *coeff, double *param, double hK, double**OrigValues, 
              int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
