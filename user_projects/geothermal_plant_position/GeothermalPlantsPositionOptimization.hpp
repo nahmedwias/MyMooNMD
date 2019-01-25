@@ -8,6 +8,7 @@
 
 #include "NSE_GPPO.hpp"
 
+#include "templateNames.h"
 
 class ParameterDatabase;
 
@@ -17,6 +18,8 @@ class GeothermalPlantsPositionOptimization
 {
 
 public:
+  
+  using CoeffFct = typename Template_names<d>::CoeffFct;
 
   constexpr static char required_database_name_TCD_GPPO[] = "TCD parameter database";
 
