@@ -59,9 +59,8 @@ int main(int, char* argv[])
   loop_info_time.verbosity_threshold = 1;
   int linear_iteration=0;
   
-  double end_time = tss.get_end_time();
   TDatabase::TimeDB->CURRENTTIME = tss.get_start_time();
-  while(TDatabase::TimeDB->CURRENTTIME < end_time - 1e-10)
+  while(!tss.reached_final_time_step())
   {
     tss.current_step_++;
 

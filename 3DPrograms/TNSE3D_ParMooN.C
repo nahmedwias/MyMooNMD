@@ -118,12 +118,12 @@ int main(int argc, char* argv[])
   int linear_iterations = 0; 
 
   timer.restart_and_print("setting up spaces, matrices and initial assembling");
-  double end_time = tss.get_end_time();
   TDatabase::TimeDB->CURRENTTIME = tss.get_start_time();  
   //======================================================================
   // time iteration
   //======================================================================
-  while(TDatabase::TimeDB->CURRENTTIME < end_time - 1e-10)
+  //while(TDatabase::TimeDB->CURRENTTIME < end_time - 1e-10)
+  while(!tss.reached_final_time_step())
   {
     // time measuring during every time iteration
     Chrono timer_timeit;
