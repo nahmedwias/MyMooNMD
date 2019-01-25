@@ -123,6 +123,19 @@ LinesEval<d>::LinesEval(const TDomain&           domain,
 
   int refi = this->db["line_refinement"];
 
+  // create a directory for the data to be saved
+  bool i_am_root = true;
+#ifdef _MPI
+  int my_rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+  i_am_root = (my_rank == 0);
+#endif
+  if( i_am_root )
+  {
+    std::string directory_name = db["directory_name"];
+    mkdir(directory_name.c_str(), 0777);
+  }
+  
   std::string filename = this->db["position_file"];
 
   // define lines from file
@@ -164,11 +177,12 @@ LinesEval<d>::LinesEval(const TDomain&           domain,
   // define lines from nested database
   std::vector<double> line_position = LinesEval::db["line_position"];
 
-  // Check parameters compatibility and define N_line
+  // skip definition of lines from nested database if no positions are given
   if( (line_position.size()==1) && (std::isnan(line_position.at(0))) )
   {
     return;
   }
+  // Check parameters compatibility and define N_line
   if( (line_position.size())%3 != 0 )
   {
     ErrThrow("LineEval: ", "Some coordinates in parameter: line_position "
@@ -188,19 +202,6 @@ LinesEval<d>::LinesEval(const TDomain&           domain,
     LineEval line(domain, LinesEval::db["line_direction"], P, refi);
 
     lines_for_postprocess.emplace_back(line);
-  }
-
-  // create a directory for the data to be saved
-  bool i_am_root = true;
-#ifdef _MPI
-  int my_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-  i_am_root = (my_rank == 0);
-#endif
-  if( i_am_root )
-  {
-    std::string directory_name = db["directory_name"];
-    mkdir(directory_name.c_str(), 0777);
   }
 }
 
@@ -839,7 +840,7 @@ double LineEval::space_average_value(const TFEFunction3D& f) const
                      "quadrature formula.");
 
     // loop over all cells cuting the line
-    for( int i=0 ; i<line_for_postprocess.size() ; i++ )
+    for( unsigned int i=0 ; i<line_for_postprocess.size() ; i++ )
     {
       i_cell = line_for_postprocess.at(i).cell_index;
 
