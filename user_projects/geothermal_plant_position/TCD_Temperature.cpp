@@ -92,7 +92,7 @@ void temperature_coefficients(int n_points, double *x, double *y,
            double *z,
 #endif
         double **parameters, double **coeffs,
-        double distance, double nu, double transversal_dispersion_factor, double well_radius, double temperature_injection_well)
+        double distance, double nu, double transversal_dispersion_factor, double well_radius, double temperature_injection_well, double delta_fct_eps_factor)
 {
   for(int i = 0; i < n_points; ++i)
   {
@@ -100,7 +100,7 @@ void temperature_coefficients(int n_points, double *x, double *y,
     // bubble diameter = epsDelta
     // bubble height = 1/(epsDelta*epsDelta)
     //double r_well = 0.2; // 20cm
-    double epsDelta = 10*well_radius; //10*r_well; // 25*r_well; //50*r_well;
+    double epsDelta = delta_fct_eps_factor * well_radius; //10*r_well; // 25*r_well; //50*r_well;
     //double T_in = 303.15; //injection temperature  = 30 + 273.15;
 
 
@@ -185,14 +185,10 @@ void TCD_Temperature<d>::assemble(const FEVectFunct& convection,
   {
     ErrThrow("SUPG is not yet supported");
   }
-
   
   double distance = x[0];
   auto u1 = convection.GetComponent(0);
   auto u2 = convection.GetComponent(1);
-
-  
-
 
 #ifdef __3D__
   auto u3 = convection.GetComponent(2);
@@ -200,7 +196,6 @@ void TCD_Temperature<d>::assemble(const FEVectFunct& convection,
 #else
   std::array<TFEFunction2D*, 2> fe_functions_pointers{{u1, u2}};
   #endif
-
   
   auto& s = this->TCD_Temperature<d>::systems.front();
 
@@ -233,7 +228,7 @@ void TCD_Temperature<d>::assemble(const FEVectFunct& convection,
 #ifdef __3D__
             _6,
 #endif
-            distance, nu, (double) this->db["transversal_dispersion_factor"], (double) this->db["well_radius"], (double) this->db["temperature_injection_well"] ));
+            distance, nu, (double) this->db["transversal_dispersion_factor"], (double) this->db["well_radius"], (double) this->db["temperature_injection_well"], (double) this->db["delta_fct_eps_factor"] ));
 
 
     la.setBeginParameter({0});

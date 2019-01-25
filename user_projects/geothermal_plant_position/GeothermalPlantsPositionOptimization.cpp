@@ -23,6 +23,8 @@
 #include "TimeConvectionDiffusion.h"
 #include "NSE_GPPO.hpp"
 
+#include <fstream>
+#include <iterator>
 
 const std::string path = parmoon::source_directory;
 const std::string path_to_repo = path + "/user_projects/geothermal_plant_position/";
@@ -48,15 +50,16 @@ ParameterDatabase GeothermalPlantsPositionOptimization<d>::default_GPPO_database
   db.merge(Example3D::default_example_database());
 #endif
   db.merge(TimeConvectionDiffusion<d>::default_tcd_database());
-  
   db.merge(LocalAssembling<d>::default_local_assembling_database());
 
   db.add("n_control",1u,
-	 " Dimension of the control space",0u,10000u);
+	 " Dimension of the control space.",
+	 0u, 10000u);
   
   db.add("alpha_cost", 1., 
           "The scalar alpha in the functional J_hat, which is multiplied with "
-          "the control term.", 0., 1.0e10);
+          "the control term.",
+          0., 1.0e10);
   
   db.add("cost_functional", {1., 0.},
           "Switch between a few possible cost functionals via weights. The "
@@ -95,16 +98,16 @@ ParameterDatabase GeothermalPlantsPositionOptimization<d>::default_GPPO_database
           "The distance from the center of the injection (+) and production (-) well, used to compute temperatures and pressures.",
           0., 500.);
   
-  db.add("well_radius",  0.2, // meters
+  db.add("well_radius",  0.1, // meters
           "The radius of the bore holes.",
           0., 100.);
   
-  // epsDelta
-  
-  
+  db.add("delta_fct_eps_factor", 1., // epsDelta
+          "The scaling of the delta-distribution, given by epsDelta = delta_fct_eps_factor * db[well_radius].",
+          0., 10000000.);
+
   return db;
 }
-
 
 
 /** ************************************************************************ */
@@ -291,7 +294,7 @@ void approximate_delta_functions(int n_points, double *x, double *y,
         double *z,
 #endif
         double **parameters, double **coeffs,
-        double distance)
+        double distance, double well_radius, double delta_fct_eps_factor)
 {
   /**
      @todo this function should be adapted to make delta-fct depending on input parameter 
@@ -310,13 +313,13 @@ void approximate_delta_functions(int n_points, double *x, double *y,
     
     // Note: this function should be consistent with the used domain/mesh
     double u_in = 1.e-6;
-    double r_well = 0.1; // 10cm
-    double epsDelta = 10*r_well;  //25*r_well;  // ~h
+    //double r_well = 0.1; // 10cm
+    double epsDelta = delta_fct_eps_factor * well_radius;  //25*r_well;  // ~h
     /*double H = 75.;
     double Volume = epsDelta*epsDelta*Pi*H;  //r_well*r_well*Pi*H; //
     double Qin =  150./3600./Volume; // m^3/h thickness = 1000m
     */
-    double Qin = u_in * (2/r_well);
+    double Qin = u_in * (2/well_radius);
     
     std::vector<double> singular_x, singular_y,
 #ifdef __3D__
@@ -397,16 +400,24 @@ void GeothermalPlantsPositionOptimization<d>::apply_control_and_solve(const doub
   Output::print("current control: ", std::setprecision(14), distance);
   using namespace std::placeholders;
   
-#ifdef __2D__
+/*
+ #ifdef __2D__
   CoeffFct2D coeff = std::bind(approximate_delta_functions,
-			       _1, _2, _3, _4, _5, distance);
+			       _1, _2, _3, _4, _5, distance, (double) this->db["well_radius"], (double) this->db["delta_fct_eps_factor"]);
   // try to generalize to more wells
   //   CoeffFct2D coeff = std::bind(approximate_delta_functions_3,
   //_1, _2, _3, _4, _5, x_i, x_p1, x_p2, y_i, y_p1, y_p2);
 #else
   CoeffFct3D coeff = std::bind(approximate_delta_functions,
-			       _1, _2, _3, _4, _5, _6, distance);
+			       _1, _2, _3, _4, _5, _6, distance, (double) this->db["well_radius"], (double) this->db["delta_fct_eps_factor"]);
 #endif
+  */
+  
+  CoeffFct coeff = std::bind(approximate_delta_functions, _1, _2, _3, _4, _5,
+#ifdef __3D__
+          _6,
+#endif
+          distance, (double) this->db["well_radius"], (double) this->db["delta_fct_eps_factor"]);
   
   std::string disc_type = this->db["space_discretization_type"];
   bool nonsymm_gls = (disc_type == std::string("nonsymm_gls"));
@@ -568,7 +579,9 @@ void GeothermalPlantsPositionOptimization<d>::apply_control_and_solve(const doub
     else
     {
       Output::print("Minimum production temperature obtained at time ", TDatabase::TimeDB->CURRENTTIME, " .");
+      break;
     }
+
   }
   // ======================================================================
   Output::print("MEMORY: ", setw(10), GetMemory()/(1048576.0), " MB");
@@ -633,7 +646,7 @@ pressure.FindGradient(x_injection_well + (double) db["x_distance_form_well_cente
   for (int i = 0; i < this->temperature_production_well_at_time_steps.size(); i++)
   {
     if (this->temperature_production_well_at_time_steps.at(i) >= (double) db["minimum_temperature_production_well"])
-      Delta_Temp += this->temperature_production_well_at_time_steps.at(i) -  (double)  db["temperature_inj"];
+      Delta_Temp += this->temperature_production_well_at_time_steps.at(i) -  (double) db["temperature_inj"];
     else 
       number_of_time_steps_for_production = i;
     break;
@@ -646,9 +659,27 @@ pressure.FindGradient(x_injection_well + (double) db["x_distance_form_well_cente
   double functional_value =  (number_of_time_steps_for_production * 1/(double)db["pump_efficiency"] * ( pressure_values_injection_well[1] - pressure_values_production_well[1])  
           - (double) db["fluid_density"] * (double) db["fluid_heat_capacity"] * Delta_Temp);
  
+  cout <<"!!!!!!!!!!!!!! functional_value: "<<  functional_value <<endl;
+  
+  //write to stream
+ /* std::stringstream temperature_values_at_production_well_and_net_energy;
+  temperature_values_at_production_well_and_net_energy<< "temperature_values_at_production_well_and_net_energy_for_disctance"  << distance;
+  this->temperature_production_well_at_time_steps.write(temperature_values_at_production_well_and_net_energy.str());
+  functional_value.write(temperature_values_at_production_well_and_net_energy.str());
+  */
+  
+  /*std::ofstream output_file("temperature_values_at_production_well_and_net_energy_for_disctance_", distance, ".txt");
+  std::ostream_iterator<std::string> output_iterator(output_file, "\n");
+  std::copy(temperature_values_at_production_well_and_net_energy.begin(), temperature_values_at_production_well_and_net_energy.end(), output_iterator);
+  */
+  std::ofstream outputFile("temperature_values_at_production_well_and_net_energy_for_disctance" + std::to_string(distance) +  ".txt");
+  std::copy(this->temperature_production_well_at_time_steps.begin(), this->temperature_production_well_at_time_steps.end(), std::ostream_iterator<int>(outputFile, "\n"));
+  //std::copy(functional_value, std::ostream_iterator<int>(outputFile, "\n"));
+  outputFile << functional_value;
+  
  //New LB 22.03.19 END
-
-
+  
+  
   std::vector<double> cost_functional = db["cost_functional"];
 
   auto temperature = tcd_primal.get_function();
