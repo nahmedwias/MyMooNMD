@@ -17,7 +17,7 @@
 #include <sys/types.h>
 
 #include <TimeDiscRout.h>
-
+#include <SnapshotsCollector.h>
 
 using namespace std;
 
@@ -44,6 +44,10 @@ int main(int, char* argv[])
   
   // refine grid
   Domain.refine_and_get_hierarchy_of_collections(parmoon_db);
+
+  // initialize snapshot writer
+  SnapshotsCollector snaps( parmoon_db );
+  
   // write grid into an Postscript file
   if(parmoon_db["output_write_ps"])
     Domain.PS("Domain.ps", It_Finest, 0);
@@ -62,6 +66,11 @@ int main(int, char* argv[])
   double end_time   = parmoon_db["time_end"];
   TDatabase::TimeDB->CURRENTTIME = start_time;
   tcd.output();
+
+  // store initial condition as snapshot
+  if (parmoon_db["write_snaps"])
+    snaps.write_data(tcd.get_solution());
+  
   // ======================================================================
   // time iteration
   // ======================================================================
@@ -81,6 +90,11 @@ int main(int, char* argv[])
     tcd.solve();
     if((tss.current_step_-1) % TDatabase::TimeDB->STEPS_PER_IMAGE == 0)
       tcd.output();
+
+    // write the snap shots
+    if (parmoon_db["write_snaps"])
+      snaps.write_data(tcd.get_solution(), tss.current_step_);
+    
   }
   // ======================================================================
   Output::print("MEMORY: ", setw(10), GetMemory()/(1048576.0), " MB");
