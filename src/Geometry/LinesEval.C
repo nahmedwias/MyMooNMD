@@ -83,10 +83,6 @@ ParameterDatabase LinesEval<d>::default_lineseval_parameters()
   db.add("directory_name", "line_evaluations", "Name of the directory where "
          "the files of LinesEval::write_fe_values are written to.");
 
-  db.add("file_prefix", "line_evaluation", "The prefix of the files where the "
-         "evaluations of fe functions in LinesEval::write_fe_values are "
-         "written to.");
-
   return db;
 }
 
@@ -309,7 +305,8 @@ void LinesEval<d>::check_position(const std::string         filename,
 /* ************************************************************************** */
 template <int d>
 void LinesEval<d>::write_fe_values(std::vector<const FEFunction*> fe_functions,
-                                   double time_step) const
+                                   double      time_step,
+                                   std::string file_prefix) const
 {
   bool i_am_root = true;
 
@@ -399,9 +396,12 @@ void LinesEval<d>::write_fe_values(std::vector<const FEFunction*> fe_functions,
 
       bool        flag_print  = false;
       std::string dir_name    = db["directory_name"];
-      std::string file_prefix = db["file_prefix"];
+
+      std::ostringstream l_i_format;
+      l_i_format << std::setfill('0') << std::setw(2) << std::to_string(l_i);
+
       std::string file_name   = dir_name + "/" + file_prefix + "_l"
-                              + std::to_string(l_i)
+                              + l_i_format.str()
                               + "_t" + std::to_string(time_step) + ".txt";
 
 #ifdef _MPI

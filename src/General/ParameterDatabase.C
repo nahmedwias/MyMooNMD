@@ -1366,8 +1366,8 @@ ParameterDatabase ParameterDatabase::default_output_database()
                  "Do or do not compute time average of the solution.",
                  {true,false});
 
-          db.add("line_output_for_time_average", false,
-                 "Do or do not write the time averaged solution over lines, "
+          db.add("output_along_line", false,
+                 "Do or do not write the solution along lines, "
                  "according to the lines defined in the nested database used "
                  "by the class LinesEval, see EvalTools.h",
                  {true,false});
