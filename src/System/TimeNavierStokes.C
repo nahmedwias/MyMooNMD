@@ -1495,21 +1495,19 @@ void TimeNavierStokes<d>::output()
     }
   }
 
-#ifdef __3D__
-  if( db["output_along_line"] )
-  {
-    std::vector<const FEFunction*> fe_functions;
-    for( int i = 0 ; i < d ; ++i )
-    {
-      fe_functions.push_back(s.u.GetComponent(i));
-    }
-    fe_functions.push_back(&s.p);
-    Lines.write_fe_values(fe_functions, t, "solution");
-  }
-
-  if( db["output_compute_time_average"] )
+  if(db["output_compute_time_average"])
   {
     this->time_averaging();
+    this->t_avg_output();
+  }
+#ifdef __3D__
+  if(db["output_along_line"])
+  {
+    // fill a vector with all fe functions to be evaluated using this->Lines
+    std::vector<const FEFunction*> fe_functions(velocity_components.begin(),
+                                                velocity_components.end());
+    fe_functions.push_back(&s.p);
+    Lines.write_fe_values(fe_functions, t, "solution");
   }
 #endif
 
@@ -1870,8 +1868,6 @@ void TimeNavierStokes<d>::time_averaging()
     s.time_avg_sol.add_scaled(s.solution_m2, tau/2.);
     s.time_avg_sol.add_scaled(s.solution, tau/2.);
     s.time_avg_sol.scale(1./(t - t0_avg));
-
-    this->t_avg_output();
   }
 #endif
 }
@@ -1881,25 +1877,26 @@ template <int d>
 void TimeNavierStokes<d>::t_avg_output()
 {  
 #ifdef __3D__
-  std::vector<const FEFunction*> fe_functions;
-
-  double t           = time_stepping_scheme.current_time_;
-  double tau         = TDatabase::TimeDB->TIMESTEPLENGTH;
-  System_per_grid& s = this->systems.front();    
-  
-  if( db["output_along_line"] )
-  {
-    for( int i = 0 ; i < d ; ++i )
-    {
-      fe_functions.push_back(s.u_time_avg.GetComponent(i));
-    }
-    fe_functions.push_back(&s.p_time_avg);
-    Lines.write_fe_values(fe_functions, t, "time_average");
-  }
-
   // write the time averaged solution only for the last time step
-  if( t+tau > double(db["time_end"]) )
+  if(time_stepping_scheme.reached_final_time_step())
   {
+    double t           = time_stepping_scheme.current_time_;
+    System_per_grid& s = this->systems.front();
+    if(db["output_along_line"])
+    {
+      std::vector<const FEFunction*> fe_functions;
+      for( int i = 0 ; i < d ; ++i )
+      {
+        fe_functions.push_back(s.u_time_avg.GetComponent(i));
+      }
+      fe_functions.push_back(&s.p_time_avg);
+      Lines.write_fe_values(fe_functions, t, "time_average");
+      for( int i = 0 ; i < d ; ++i )
+      {
+        delete fe_functions[i];
+      }
+    }
+    
     // create separate DataWrite object for writing the time average values, 
     // because it would not work with the case format in this->outputWriter.
     ParameterDatabase tmp(this->db);

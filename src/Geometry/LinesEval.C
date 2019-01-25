@@ -356,7 +356,7 @@ void LinesEval<d>::write_fe_values(std::vector<const FEFunction*> fe_functions,
 
       const TBaseCell* cell = line.GetCell(j_cell);
 
-      for(int i = 0; i < n_fe_functions; ++i)
+      for(unsigned int i = 0; i < n_fe_functions; ++i)
       {
 #ifdef __3D__
         fe_functions[i]->FindValueLocal(cell, j_cell, P[0], P[1], P[2],
@@ -374,7 +374,7 @@ void LinesEval<d>::write_fe_values(std::vector<const FEFunction*> fe_functions,
 
     if( i_am_root )
     {
-      for(int i = 0; i < n_fe_functions; ++i)
+      for(unsigned int i = 0; i < n_fe_functions; ++i)
       {
         MPI_Reduce(MPI_IN_PLACE, &values[i+d][0], size_li, MPI_DOUBLE,
                    MPI_MAX, 0, MPI_COMM_WORLD);
@@ -382,7 +382,7 @@ void LinesEval<d>::write_fe_values(std::vector<const FEFunction*> fe_functions,
     }
     else
     {
-      for(int i = 0; i < n_fe_functions; ++i)
+      for(unsigned int i = 0; i < n_fe_functions; ++i)
       {
         MPI_Reduce(&values[i+d][0], &rbuf, size_li, MPI_DOUBLE, MPI_MAX, 0,
                    MPI_COMM_WORLD);
@@ -410,7 +410,7 @@ void LinesEval<d>::write_fe_values(std::vector<const FEFunction*> fe_functions,
       s_out << "#" << setw(13) << "x0" << setw(15) << "x1" << setw(15) << "x2";
 #endif
 
-      for(int i = 0; i < n_fe_functions; ++i)
+      for(unsigned int i = 0; i < n_fe_functions; ++i)
       {
         s_out << setw(15) << fe_functions[i]->GetName();
       }
@@ -421,7 +421,7 @@ void LinesEval<d>::write_fe_values(std::vector<const FEFunction*> fe_functions,
         if(values[d][j] != default_val)
         {
           flag_print = true;
-          for(int i = 0; i < d + n_fe_functions; ++i)
+          for(unsigned int i = 0u; i < d + n_fe_functions; ++i)
           {
             s_out << setprecision(7) << setw(14) << values[i][j] << " ";
           }
