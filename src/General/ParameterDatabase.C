@@ -1415,7 +1415,7 @@ ParameterDatabase ParameterDatabase::default_solution_in_out_database()
       "will be written into the file each 0.1s.", 1u, 1000000u);
 
   // into which file to write
-  db.add("write_solution_binary_file", "my_solution_out.txt", "If "
+  db.add("write_solution_binary_file", "parmoon_solution_binary", "If "
       "'write_solution_binary' is set to 'true', this parameter sets the name"
       " (and path) of the file to write the solution into.");
 
