@@ -234,7 +234,7 @@ TimeNavierStokes<d>::TimeNavierStokes(const TDomain& domain,
   // initial solution on finest grid - read-in or interpolation
   if(db["read_initial_solution"].is(true))
   {
-    if(!this->time_stepping_scheme.get_start_time())
+    if(this->time_stepping_scheme.get_start_time() == 0.)
     {
       Output::warn<1>("Initial Solution",
         "Restarting from existing solution but initial time is 0! This is "
@@ -249,15 +249,40 @@ TimeNavierStokes<d>::TimeNavierStokes(const TDomain& domain,
         "from old simulation).");
     }
     std::string file = db["initial_solution_file"];
-    Output::root_info("Initial Solution", "Reading initial solution from file ", file);
+    Output::root_info("Initial Solution", "Reading initial solution from file ",
+                      file);
 #ifdef _MPI
     int my_rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
     file += ".proc" + std::to_string(my_rank);
     Output::root_info("Initial Solution", "Appending .proc<RANK> to the "
-        "expected initial solution file name.");
+                      "expected initial solution file name.");
 #endif
     systems.front().solution.read_from_file(file);
+    
+    
+    // read time average solution if it exists
+    if(db["output_compute_time_average"])
+    {
+      Output::root_info("Time averaged solution",
+                        "Appending _time_average.proc<RANK> to the expected "
+                        "initial solution file name.");
+      std::string file_average = db["initial_solution_file"];
+      file_average += "_time_average";
+#ifdef _MPI
+      file_average += ".proc" + std::to_string(my_rank);
+#endif
+      try
+      {
+        systems.front().time_avg_sol.read_from_file(file_average);
+      }
+      catch(...)
+      {
+        Output::warn("Reading time averaged solution", " Could not open a "
+                     "file ", file_average, ". Now I start with a zero time "
+                     "average.");
+      }
+    }
   }
   else
   {
@@ -278,6 +303,11 @@ TimeNavierStokes<d>::TimeNavierStokes(const TDomain& domain,
 
   outputWriter.add_fe_vector_function(&this->get_velocity());
   outputWriter.add_fe_function(&this->get_pressure());
+  if(db["output_compute_time_average"])
+  {
+    outputWriter.add_fe_vector_function(&systems.front().u_time_avg);
+    outputWriter.add_fe_function(&systems.front().p_time_avg);
+  }
 
   // print out the information (cells, dofs, etc)
   this->output_problem_size_info();
@@ -1498,7 +1528,6 @@ void TimeNavierStokes<d>::output()
   if(db["output_compute_time_average"])
   {
     this->time_averaging();
-    this->t_avg_output();
   }
 #ifdef __3D__
   if(db["output_along_line"])
@@ -1507,7 +1536,18 @@ void TimeNavierStokes<d>::output()
     std::vector<const FEFunction*> fe_functions(velocity_components.begin(),
                                                 velocity_components.end());
     fe_functions.push_back(&s.p);
+    if(db["output_compute_time_average"])
+    {
+      for(int i = 0; i < d; ++i)
+        fe_functions.push_back(s.u_time_avg.GetComponent(i));
+      fe_functions.push_back(&s.p_time_avg);
+    }
     Lines.write_fe_values(fe_functions, t, "solution");
+    if(db["output_compute_time_average"])
+    {
+      for(int i = 0; i < d; ++i)
+        delete fe_functions[d+1+i];
+    }
   }
 #endif
 
@@ -1529,12 +1569,29 @@ void TimeNavierStokes<d>::output()
       {
         file += ".";
         file += std::to_string(t);
-#ifdef _MPI
-        file += ".proc" + std::to_string(my_rank);
-#endif
       }
+#ifdef _MPI
+      file += ".proc" + std::to_string(my_rank);
+#endif
       Output::info("output", "Writing current solution to file ", file);
       systems.front().solution.write_to_file(file);
+      
+      if(db["output_compute_time_average"])
+      {
+        std::string file_average = db["write_solution_binary_file"];
+        if(!db["overwrite_solution_binary"]) // create a new file every time
+        {
+          file_average += ".";
+          file_average += std::to_string(t);
+        }
+        file_average += "_time_average";
+#ifdef _MPI
+        file_average += ".proc" + std::to_string(my_rank);
+#endif
+        Output::info("output", "Writing time averaged solution to file ",
+                     file_average);
+        s.time_avg_sol.write_to_file(file_average);
+      }
     }
   }
 }
@@ -1872,63 +1929,6 @@ void TimeNavierStokes<d>::time_averaging()
 #endif
 }
 
-/* ************************************************************************** */
-template <int d>
-void TimeNavierStokes<d>::t_avg_output()
-{  
-#ifdef __3D__
-  // write the time averaged solution only for the last time step
-  if(time_stepping_scheme.reached_final_time_step())
-  {
-    double t           = time_stepping_scheme.current_time_;
-    System_per_grid& s = this->systems.front();
-    if(db["output_along_line"])
-    {
-      std::vector<const FEFunction*> fe_functions;
-      for( int i = 0 ; i < d ; ++i )
-      {
-        fe_functions.push_back(s.u_time_avg.GetComponent(i));
-      }
-      fe_functions.push_back(&s.p_time_avg);
-      Lines.write_fe_values(fe_functions, t, "time_average");
-      for( int i = 0 ; i < d ; ++i )
-      {
-        delete fe_functions[i];
-      }
-    }
-    
-    // create separate DataWrite object for writing the time average values, 
-    // because it would not work with the case format in this->outputWriter.
-    ParameterDatabase tmp(this->db);
-    std::string basename = tmp["output_basename"];
-    tmp["output_basename"].set(basename + "_time_average", false);
-    tmp["output_write_case"] = false;
-    if(tmp["output_write_vtk"].is(false) && tmp["output_write_vtu"].is(false))
-    {
-      tmp["output_write_vtu"] = true;
-    }
-    DataWriter<d> avg_writer(tmp);
-    avg_writer.add_fe_vector_function(&s.u_time_avg);
-    avg_writer.add_fe_function(&s.p_time_avg);
-    avg_writer.write();
-
-    //write solution to a binary file
-    if(tmp["write_solution_binary"].is(true))
-    {
-      std::string file = tmp["write_solution_binary_file"];
-      file += "_time_average.";
-      file += std::to_string(t);
-#ifdef _MPI
-      int my_rank;
-      MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-      file += ".proc" + std::to_string(my_rank);
-#endif
-      Output::info("output", "Writing time averaged solution to file ", file);
-      s.time_avg_sol.write_to_file(file);
-    }
-  }
-#endif /** #ifdef __3D__ */
-} 
 
 #ifdef __3D__
 template class TimeNavierStokes<3>;

@@ -387,9 +387,6 @@ class TimeNavierStokes
 
     /** @brief calculate the time averaging of the solution in time_avg_sol */
     void time_averaging();
-
-    /** @brief write the time averaging of the solution */
-    void t_avg_output();
 };
 
 
