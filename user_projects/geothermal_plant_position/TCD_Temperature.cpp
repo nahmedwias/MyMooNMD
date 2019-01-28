@@ -174,8 +174,6 @@ void temperature_coefficients(int n_points, double *x, double *y,
   }
 }
 
-
-
 /** ************************************************************************ */
 template <int d>
 void TCD_Temperature<d>::assemble(const FEVectFunct& convection,
@@ -192,9 +190,9 @@ void TCD_Temperature<d>::assemble(const FEVectFunct& convection,
 
 #ifdef __3D__
   auto u3 = convection.GetComponent(2);
-  std::array<FEFunction*, 3> fe_functions_pointers{{u1, u2, u3}};
+  std::array<FEFunction*, d> fe_functions_pointers{{u1, u2, u3}};
 #else
-  std::array<TFEFunction2D*, 2> fe_functions_pointers{{u1, u2}};
+  std::array<FEFunction*, d> fe_functions_pointers{{u1, u2}};
   #endif
   
   auto& s = this->TCD_Temperature<d>::systems.front();
@@ -228,7 +226,9 @@ void TCD_Temperature<d>::assemble(const FEVectFunct& convection,
 #ifdef __3D__
             _6,
 #endif
-            distance, nu, (double) this->db["transversal_dispersion_factor"], (double) this->db["well_radius"], (double) this->db["temperature_injection_well"], (double) this->db["delta_fct_eps_factor"] ));
+            distance, nu, (double) this->db["transversal_dispersion_factor"],
+            (double) this->db["well_radius"], (double) this->db["temperature_injection_well"],
+            (double) this->db["delta_fct_eps_factor"] ));
 
 
     la.setBeginParameter({0});
@@ -245,14 +245,11 @@ void TCD_Temperature<d>::assemble(const FEVectFunct& convection,
     la.setFeValueMultiIndex({D000, D000, D000});
 #endif
 
-
     auto fe_space = &this->get_space();
     double * rhs_entries = s.rhs.get_entries();
     auto * boundary_conditions = fe_space->get_boundary_condition();
     BoundaryValuesFunction * non_const_bound_value[1] {this->example.get_bd()[0]};
     auto blocks_stiff = s.stiffness_matrix.get_blocks_uniquely();
-
-
 
 /*    auto mass_blocks = s.mass_matrix.get_blocks_uniquely();// s.stiffness_matrix.get_blocks_uniquely();
     auto matrix_mass = reinterpret_cast<TSquareMatrix2D*>(mass_blocks.at(0).get());
@@ -267,12 +264,7 @@ void TCD_Temperature<d>::assemble(const FEVectFunct& convection,
                nullptr, &boundary_conditions, non_const_bound_value, la);
 */
 
-
-#ifdef __2D__
-    auto matrix_stiff = reinterpret_cast<TSquareMatrix2D*>(blocks_stiff.at(0).get());
-#else
-    auto matrix_stiff = reinterpret_cast<TSquareMatrix3D*>(blocks_stiff.at(0).get());
-#endif
+auto matrix_stiff = reinterpret_cast<SquareMatrixD*>(blocks_stiff.at(0).get());
 
 
 #ifdef __3D__

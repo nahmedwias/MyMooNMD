@@ -20,7 +20,10 @@ class GeothermalPlantsPositionOptimization
 public:
   
   using CoeffFct = typename Template_names<d>::CoeffFct;
-
+  using FESpace = typename Template_names<d>::FESpace;
+  using BoundaryConditionFunction = typename Template_names<d>::BoundaryConditionFunction;
+  using BoundaryValuesFunction = typename Template_names<d>::BoundaryValuesFunction;
+  
   constexpr static char required_database_name_TCD_GPPO[] = "TCD parameter database";
 
 #ifdef __2D__
