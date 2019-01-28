@@ -3,8 +3,6 @@
 
 #include "TimeConvectionDiffusion.h"
 
-
-
 #ifdef __2D__
 #include "Example_TimeCD2D.h"
 #include "FEFunction2D.h"
@@ -27,10 +25,9 @@ public:
   using FESpace = typename Template_names<d>::FESpace;
   using Example_TimeCD = typename Template_names<d>::Example_TimeCD;
   using BoundaryValuesFunction = typename Template_names<d>::BoundaryValuesFunction;
+  using SquareMatrixD = typename Template_names<d>::SquareMatrixD;
 
   //constexpr static char required_database_name[] = "TCD parameter database";
-
-
 
 #ifdef _MPI
   TCD_Temperature(TDomain& domain,
