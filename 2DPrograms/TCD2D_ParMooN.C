@@ -12,6 +12,7 @@
 #include <Database.h>
 #include <FEDatabase2D.h>
 #include "TimeConvectionDiffusion.h"
+#include <TimeConvectionDiffusionROM.h>
 
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -57,6 +58,7 @@ int main(int, char* argv[])
   TimeDiscretization& tss = tcd.get_time_stepping_scheme();
   tss.current_step_ = 0;
   tss.set_time_disc_parameters();
+
   // ======================================================================
   // assemble matrices and right hand side at start time  
   tcd.assemble_initial_time();
@@ -87,6 +89,7 @@ int main(int, char* argv[])
     
     tcd.assemble();    
     tcd.solve();
+
     if((tss.current_step_-1) % TDatabase::TimeDB->STEPS_PER_IMAGE == 0)
       tcd.output();
 
