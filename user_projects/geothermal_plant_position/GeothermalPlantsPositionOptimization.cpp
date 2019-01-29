@@ -94,7 +94,7 @@ ParameterDatabase GeothermalPlantsPositionOptimization<d>::default_GPPO_database
           "The temperature of the fluid at the production well necessery to continue with production",
           0., 500.);
   
-  db.add("x_distance_form_well_center",  20., // meters
+  db.add("x_distance_from_well_center",  20., // meters
           "The distance from the center of the injection (+) and production (-) well, used to compute temperatures and pressures.",
           0., 500.);
   
@@ -328,7 +328,7 @@ void approximate_delta_functions(int n_points, double *x, double *y,
     singular_sign;
 
     // source in (xi,yi)
-    singular_x.push_back(5000. - (distance*1000.)/2.); 
+    singular_x.push_back(5000. - (distance)/2.);
     singular_y.push_back(3000.);
     singular_sign.push_back(1.);
 #ifdef __3D__
@@ -336,7 +336,7 @@ void approximate_delta_functions(int n_points, double *x, double *y,
 #endif
 
     // sink in (xe,ye)    
-    singular_x.push_back(5000.+ (distance*1000.)/2.);
+    singular_x.push_back(5000.+ (distance)/2.);
     singular_y.push_back(3000.);
     singular_sign.push_back(-1.);
 #ifdef __3D__
@@ -505,16 +505,7 @@ void GeothermalPlantsPositionOptimization<d>::apply_control_and_solve(const doub
   TimeDiscretization& tss = tcd_primal.get_time_stepping_scheme();
   tss.current_step_ = 0;
   
-  
   this->temperature_production_well_at_time_steps.clear();
-  //New LB: 22.03.19 start
-  //this->temperature_production_well_at_time_steps.resize( ((double) db["time_end"]- (double) db["time_start"])/ (double) db["time_step_length"]);
-  //std::fill(temperature_production_well_at_time_steps.begin(), temperature_production_well_at_time_steps.end(), 0);
-  //New LB: 22.03.19 end
-  
-  cout <<"!!!!!!!!!!!!!! this->temperature_production_well_at_time_steps.size(): "<<  this->temperature_production_well_at_time_steps.size() <<endl;
-  //for (int j = 0; j<this->temperature_production_well_at_time_steps.size();j++)
-  //  cout <<"!!!!!!!!!!!!!! temperature_production_well_at_time_steps: "<<  this->temperature_production_well_at_time_steps.at(j) << ", step: "<< j <<endl;
   
   tss.set_time_disc_parameters();
   Output::print<2>("  --> assemble ");
@@ -555,7 +546,7 @@ void GeothermalPlantsPositionOptimization<d>::apply_control_and_solve(const doub
 
     // Temperature at production well
     auto temperature = tcd_primal.get_function();
-    double x_production_well = 5000. + (distance*1000.)/2.;
+    double x_production_well = 5000. + (distance)/2.;
     double y_production_well = 3000.;
 #ifdef __3D__
     double z_production_well = 3000.;
@@ -567,7 +558,7 @@ void GeothermalPlantsPositionOptimization<d>::apply_control_and_solve(const doub
     std::vector<double> temperature_values(d+1);
 #endif
 
-    temperature.FindGradient(x_production_well - (double) db["x_distance_form_well_center"], y_production_well,
+    temperature.FindGradient(x_production_well - (double) db["x_distance_from_well_center"], y_production_well,
 #ifdef __3D__
             z_production_well,
 #endif
@@ -610,13 +601,10 @@ const
   auto pressure = brinkman_mixed.get_pressure();
 
 
-  double alpha = db["alpha_cost"];
 
- 
-  //New LB 22.03.19 START
-  double x_production_well = 5000. + (distance*1000.0)/2.; //5.5;
+  double x_production_well = 5000. + (distance)/2.; //5.5;
   double y_production_well = 3000.; //3.;
-  double x_injection_well = 5000. - (distance*1000.0)/2.; //4.5;
+  double x_injection_well = 5000. - (distance)/2.; //4.5;
   double y_injection_well = 3000.; //3.;
 #ifdef __3D__
   double z_production_well = 3000.;
@@ -629,13 +617,13 @@ const
      std::vector<double> pressure_values_production_well(d+1), pressure_values_injection_well(d+1);
  #endif
 
-pressure.FindGradient(x_production_well - (double) db["x_distance_form_well_center"], y_production_well, 
+pressure.FindGradient(x_production_well - (double) db["x_distance_from_well_center"], y_production_well,
      #ifdef __3D__
                  z_production_well,
      #endif
                  pressure_values_production_well);
       
-pressure.FindGradient(x_injection_well + (double) db["x_distance_form_well_center"], y_injection_well, 
+pressure.FindGradient(x_injection_well + (double) db["x_distance_from_well_center"], y_injection_well,
      #ifdef __3D__
                  z_injection_well,
      #endif
@@ -647,21 +635,23 @@ pressure.FindGradient(x_injection_well + (double) db["x_distance_form_well_cente
   int number_of_time_steps_for_production = 0;
   double Delta_Temp = 0;
   
-  cout <<"!!!!!!!!!!!!!! this->temperature_production_well_at_time_steps.size(): "<<  this->temperature_production_well_at_time_steps.size() <<endl;
+ /* cout <<"!!!!!!!!!!!!!! this->temperature_production_well_at_time_steps.size(): "<<  this->temperature_production_well_at_time_steps.size() <<endl;
   cout <<"!!!!!!!!!!!!!! minimum_temperature_production_well: "<<  (double) db["minimum_temperature_production_well"] <<endl;
+  */
   for (int i = 0; i < this->temperature_production_well_at_time_steps.size(); i++)
   {
     if (this->temperature_production_well_at_time_steps.at(i) >= (double) db["minimum_temperature_production_well"])
     { 
-      cout <<"!!!!!!!!!!!!!! WARUM: "<<endl;
       Delta_Temp += this->temperature_production_well_at_time_steps.at(i) -  (double) db["temperature_injection_well"];
-    cout <<"!!!!!!!!!!!!!! temperature_production_well_at_time_steps: "<<  this->temperature_production_well_at_time_steps.at(i) << ", step: "<< i <<endl;
+    cout <<" temperature_production_well_at_time_steps: "<<  this->temperature_production_well_at_time_steps.at(i) << ", step: "<< i <<endl;
     }
     else 
     break;
     
     number_of_time_steps_for_production = i+1;
   }
+
+  double alpha = db["alpha_cost"];
   /* 
    * double functional_value_new // = Q/(0.6)* Delta t * (pressure_prod[1] - pressure_inj[1])  -  Q * Delta t * fluid_density * fluid_heat_capacity * (temperature_prod[1] - temperature_inj); // Net energy AFTER 50 years
                                  //= Q * Delta t * (   1/(0.6) * (pressure_prod[1] - pressure_inj[1])  - fluid_density * fluid_heat_capacity * (temperature_prod[1] - temperature_inj)   );
@@ -669,31 +659,24 @@ pressure.FindGradient(x_injection_well + (double) db["x_distance_form_well_cente
     */
   double functional_value =  (number_of_time_steps_for_production * 1/(double)db["pump_efficiency"] * 
           (pressure_values_injection_well[0] - pressure_values_production_well[0])  
-          - (double) db["fluid_density"] * (double) db["fluid_heat_capacity"] * Delta_Temp);
-  
+          - (double) db["fluid_density"] * (double) db["fluid_heat_capacity"] * Delta_Temp) 
+                  +  alpha * abs(distance - 2000.);
+  /*cout << "!!!!!!!!!!!!!!  alpha:  " <<  alpha  << endl;
+  cout << "!!!!!!!!!!!!!!  distance:: " <<  distance << endl;
+  cout << "!!!!!!!!!!!!!!  alpha * abs(distance - 2000.): " <<  alpha * abs(distance - 2000.) << endl;
   cout << "!!!!!!!!!!!!!! (pressure_values_injection_well[0] - pressure_values_production_well[0]): " << (pressure_values_injection_well[0] - pressure_values_production_well[0]) << endl;
   cout << "!!!!!!!!!!!!!! Delta_Temp: " << Delta_Temp << endl;
   cout << "!!!!!!!!!!!!!! fluid_density* fluid_heat_capacity* Delta_Temp: " << (double) db["fluid_density"] * (double) db["fluid_heat_capacity"] * Delta_Temp << endl;
-  
-  cout << "!!!!!!!!!!!!!! functional_value: " << functional_value << endl;
-  cout << "!!!!!!!!!!!!!! number_of_time_steps_for_production: " << number_of_time_steps_for_production << endl;
+  */
+  cout << "functional_value: " << functional_value << endl;
+  /*cout << "!!!!!!!!!!!!!! number_of_time_steps_for_production: " << number_of_time_steps_for_production << endl;
   cout << "!!!!!!!!!!!!!! pump_efficiency " << (double)db["pump_efficiency"] << endl;
   cout << "!!!!!!!!!!!!!! pressure_values_injection_well[0]: " << pressure_values_injection_well[0] << endl;
   cout << "!!!!!!!!!!!!!! pressure_values_production_well[0]: " << pressure_values_production_well[0] << endl;
   cout << "!!!!!!!!!!!!!! fluid_density: " << (double) db["fluid_density"] << endl;
   cout << "!!!!!!!!!!!!!! fluid_heat_capacity: " << (double) db["fluid_heat_capacity"] << endl;
-  
+  */
   //write to stream
- /* std::stringstream temperature_values_at_production_well_and_net_energy;
-  temperature_values_at_production_well_and_net_energy<< "temperature_values_at_production_well_and_net_energy_for_disctance"  << distance;
-  this->temperature_production_well_at_time_steps.write(temperature_values_at_production_well_and_net_energy.str());
-  functional_value.write(temperature_values_at_production_well_and_net_energy.str());
-  */
-  
-  /*std::ofstream output_file("temperature_values_at_production_well_and_net_energy_for_disctance_", distance, ".txt");
-  std::ostream_iterator<std::string> output_iterator(output_file, "\n");
-  std::copy(temperature_values_at_production_well_and_net_energy.begin(), temperature_values_at_production_well_and_net_energy.end(), output_iterator);
-  */
   std::ofstream outputFile("temperature_values_at_production_well_and_net_energy_for_disctance" + std::to_string(distance) +  ".txt");
   std::copy(this->temperature_production_well_at_time_steps.begin(), this->temperature_production_well_at_time_steps.end(), std::ostream_iterator<int>(outputFile, "\n"));
   //std::copy(functional_value, std::ostream_iterator<int>(outputFile, "\n"));
