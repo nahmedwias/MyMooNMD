@@ -84,8 +84,7 @@ class LinesEval
      * lines
      */
     void write_fe_values(std::vector<const FEFunction*> fe_functions,
-                         double      time_step,
-                         std::string file_prefix) const;
+                         double time_step) const;
     
     /**
      * @brief return the number of defines lines
