@@ -83,6 +83,10 @@ ParameterDatabase LinesEval<d>::default_lineseval_parameters()
   db.add("directory_name", "line_evaluations", "Name of the directory where "
          "the files of LinesEval::write_fe_values are written to.");
 
+  db.add("file_prefix", "line_evaluation", "The prefix of the files where the "
+         "evaluations of fe functions in LinesEval::write_fe_values are "
+         "written to.");
+  
   return db;
 }
 
@@ -305,8 +309,7 @@ void LinesEval<d>::check_position(const std::string         filename,
 /* ************************************************************************** */
 template <int d>
 void LinesEval<d>::write_fe_values(std::vector<const FEFunction*> fe_functions,
-                                   double      time_step,
-                                   std::string file_prefix) const
+                                   double time_step) const
 {
   bool i_am_root = true;
 
@@ -323,6 +326,23 @@ void LinesEval<d>::write_fe_values(std::vector<const FEFunction*> fe_functions,
   {
     return;
   }
+  
+  std::stringstream s_out;
+  std::string dir_name = db["directory_name"];
+  std::string file_prefix = db["file_prefix"];
+  std::string file_name = dir_name + "/" + file_prefix + "_t" 
+                          + std::to_string(time_step) + ".txt";
+  // header:
+#ifdef _MPI
+  s_out << "#" << setw(10) << "x0" << setw(15) << "x1" << setw(15) << "x2";
+#else
+  s_out << "#" << setw(13) << "x0" << setw(15) << "x1" << setw(15) << "x2";
+#endif
+  for(unsigned int i = 0; i < n_fe_functions; ++i)
+  {
+    s_out << setw(15) << fe_functions[i]->GetName();
+  }
+  s_out << "\n";
 
   // loop over all lines
   for(int l_i=0 ; l_i < this->GetLength() ; l_i++)
@@ -392,50 +412,26 @@ void LinesEval<d>::write_fe_values(std::vector<const FEFunction*> fe_functions,
 
     if( i_am_root )
     {
-      std::stringstream s_out;
-
-      bool        flag_print  = false;
-      std::string dir_name    = db["directory_name"];
-
-      std::ostringstream l_i_format;
-      l_i_format << std::setfill('0') << std::setw(2) << std::to_string(l_i);
-
-      std::string file_name   = dir_name + "/" + file_prefix + "_l"
-                              + l_i_format.str()
-                              + "_t" + std::to_string(time_step) + ".txt";
-
-#ifdef _MPI
-      s_out << "#" << setw(10) << "x0" << setw(15) << "x1" << setw(15) << "x2";
-#else
-      s_out << "#" << setw(13) << "x0" << setw(15) << "x1" << setw(15) << "x2";
-#endif
-
-      for(unsigned int i = 0; i < n_fe_functions; ++i)
-      {
-        s_out << setw(15) << fe_functions[i]->GetName();
-      }
-      s_out << "\n";
-      
       for( int j=0 ; j < size_li ; j++ )
       {
-        if(values[d][j] != default_val)
+        if(values[d][j] == default_val)
         {
-          flag_print = true;
-          for(unsigned int i = 0u; i < d + n_fe_functions; ++i)
-          {
-            s_out << setprecision(7) << setw(14) << values[i][j] << " ";
-          }
-          s_out << "\n";
+          ErrThrow("values for line ", l_i, " at point ", j, " is not correct");
         }
+        for(unsigned int i = 0u; i < d + n_fe_functions; ++i)
+        {
+          s_out << setprecision(7) << setw(14) << values[i][j] << " ";
+        }
+        s_out << "\n";
       }
-
-      if( flag_print )
-      {
-        Output::redirect(file_name);
-        Output::print<1>(s_out.str());
-        Output::resetOutfile();
-      }
+      s_out << "\n";
     }
+  }
+  if(i_am_root)
+  {
+    Output::redirect(file_name);
+    Output::print<1>(s_out.str());
+    Output::resetOutfile();
   }
 }
 

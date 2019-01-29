@@ -1555,7 +1555,7 @@ void TimeNavierStokes<d>::output()
         fe_functions.push_back(s.u_time_avg.GetComponent(i));
       fe_functions.push_back(&s.p_time_avg);
     }
-    Lines.write_fe_values(fe_functions, t, "solution");
+    Lines.write_fe_values(fe_functions, t);
     if(db["output_compute_time_average"])
     {
       for(int i = 0; i < d; ++i)
