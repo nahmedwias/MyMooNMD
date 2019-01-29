@@ -92,7 +92,9 @@ void temperature_coefficients(int n_points, double *x, double *y,
            double *z,
 #endif
         double **parameters, double **coeffs,
-        double distance, double nu, double transversal_dispersion_factor, double well_radius, double temperature_injection_well, double delta_fct_eps_factor)
+        double distance, double nu, double transversal_dispersion_factor, double longitudinal_dispersion_factor,
+        double well_radius, double temperature_injection_well, double delta_fct_eps_factor,
+        double fluid_density, double fluid_heat_capacity )
 {
   for(int i = 0; i < n_points; ++i)
   {
@@ -105,9 +107,9 @@ void temperature_coefficients(int n_points, double *x, double *y,
 
 
 #ifdef __2D__
-      std::array<double, 2> center_source = {{5000. - (distance*1000.)/2., 3000.}};
+      std::array<double, 2> center_source = {{5000. - (distance)/2., 3000.}};
 #else
-      std::array<double, 3> center_source = {{5000. - (distance*1000./2.), 3000., 3000.}};
+      std::array<double, 3> center_source = {{5000. - (distance/2.), 3000., 3000.}};
       double z_distance_to_source = std::pow(std::abs(z[i]-center_source[2]), 2);
 #endif
       double x_distance_to_source = std::pow(std::abs(x[i]-center_source[0]), 2);
@@ -127,26 +129,42 @@ void temperature_coefficients(int n_points, double *x, double *y,
     #endif
      ;
 
-
-
-      coeffs[i][0] = nu + transversal_dispersion_factor * sqrt(parameters[i][0]*parameters[i][0] + parameters[i][1]*parameters[i][1]
+double norm_u = sqrt(parameters[i][0]*parameters[i][0] + parameters[i][1]*parameters[i][1]
 #ifdef __3D__
               + parameters[i][2]*parameters[i][2]
 #endif
-      ); // diffusion
+);
+    coeffs[i][0] = nu + transversal_dispersion_factor * norm_u;  // diffusion
     coeffs[i][1] = parameters[i][0]; // convection, x-direction
     coeffs[i][2] = parameters[i][1]; // convection, y-direction
 
 #ifdef __2D__
       coeffs[i][3] = 0.; // reaction
       coeffs[i][4] = 0.; // right-hand side
+      if(norm_u)
+      coeffs[i][5] = //fluid_density * fluid_heat_capacity *
+              (longitudinal_dispersion_factor - transversal_dispersion_factor) * 1/norm_u;
+      else
+      coeffs[i][5] = 0.;
+
+     /* cout << "!!!!      !!!!     !!!! parameters[i][0]: " << parameters[i][0] <<"parameters[i][1]: "<< parameters[i][1] <<endl;
+      cout << "!!!!      !!!!     !!!!parameters[i][0]*parameters[i][0] + parameters[i][1]*parameters[i][1]: " << parameters[i][0]*parameters[i][0] + parameters[i][1]*parameters[i][1]<<endl;
+      cout << "!!!!      !!!!     !!!! fluid_density * fluid_heat_capacity * (longitudinal_dispersion_factor - transversal_dispersion_factor): " <<  fluid_density * fluid_heat_capacity * (longitudinal_dispersion_factor - transversal_dispersion_factor)<<endl;
+      cout << "!!!!      !!!!     !!!! coeffs[i][5]: " <<  coeffs[i][5] <<endl;
+      */
 #else
       coeffs[i][3] = parameters[i][2]; // convection, z-direction
       coeffs[i][4] = 0.; // reaction
       coeffs[i][5] = 0.; // right-hand side
+
+      if(norm_u)
+      coeffs[i][6] = //fluid_density * fluid_heat_capacity *
+              (longitudinal_dispersion_factor - transversal_dispersion_factor) * 1/norm_u;
+      else
+      coeffs[i][6] = 0.;
 #endif
 
-    if(at_source)
+      if(at_source)
     {
 #ifdef __2D__
         double magnitude = cos(Pi*(x[i] - center_source[0])/epsDelta) + 1;
@@ -226,9 +244,11 @@ void TCD_Temperature<d>::assemble(const FEVectFunct& convection,
 #ifdef __3D__
             _6,
 #endif
-            distance, nu, (double) this->db["transversal_dispersion_factor"],
+            distance, nu,
+            (double) this->db["transversal_dispersion_factor"], (double) this->db["longitudinal_dispersion_factor"],
             (double) this->db["well_radius"], (double) this->db["temperature_injection_well"],
-            (double) this->db["delta_fct_eps_factor"] ));
+            (double) this->db["delta_fct_eps_factor"], (double) this->db["fluid_density"],
+            (double) this->db["fluid_heat_capacity"] ));
 
 
     la.setBeginParameter({0});
@@ -342,10 +362,18 @@ void TCD_Temperature<d>::reset_for_output()
 
   this->outputWriter.add_fe_function(&fe_function);
   auto& s = this->systems.front();
+
+  //reload the initial condition as fe_function for the next optimization loop
+  s.fe_function.Interpolate(this->example.get_initial_cond(0));
   s.stiffness_matrix.reset();
   s.mass_matrix.reset();
   s.rhs.reset();
 }
+
+
+
+
+
 
 
 #ifdef __3D__
