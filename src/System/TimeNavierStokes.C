@@ -1215,20 +1215,26 @@ bool TimeNavierStokes<d>::stop_it(unsigned int it_counter)
   const double impulse_residual = this->get_impuls_residual();
   const double mass_residual = this->get_mass_residual();
   
-  // some output:
-  if(i_am_root)
-  {
-    Output::print<3>("nonlinear step  : " , setw(3), it_counter);
-    Output::print<3>("impulse_residual: " , setw(12), impulse_residual);
-    Output::print<3>("mass_residual   : " , setw(12), mass_residual);
-    Output::print<3>("full residual   : " , setw(12), norm_of_residual);
-  }
-
   if(it_counter == 0)
+  {
     initial_residual = norm_of_residual;
+    if(i_am_root)
+    {
+      Output::print<2>("nonlinear step  : " , setw(3), it_counter, setw(12),
+                       impulse_residual, setw(12), mass_residual, setw(12),
+                       norm_of_residual);
+    }
+  }
   else
-    Output::print<3>("rate:           : " , setw(12),
-                     norm_of_residual/old_norm_of_residual);
+  {
+    if(i_am_root)
+    {
+      Output::print<2>("nonlinear step  : " , setw(3), it_counter, setw(12),
+                       impulse_residual, setw(12), mass_residual, setw(12),
+                       norm_of_residual, setw(12),
+                       norm_of_residual/old_norm_of_residual);  
+    }
+  }
 
   // check if minimum number of iterations was performed already
   size_t min_it = db["nonlinloop_minit"];
@@ -1258,6 +1264,13 @@ bool TimeNavierStokes<d>::stop_it(unsigned int it_counter)
   }
   if(norm_of_residual <= limit || it_counter == max_it || slow_convergence)
   {
+    if(i_am_root)
+    {
+      Output::print<2>(setw(6), time_stepping_scheme.current_time_,
+                       " last nonlinear step  : " , setw(3), it_counter,
+                       setw(12), impulse_residual, setw(12), mass_residual,
+                       setw(12), norm_of_residual);
+    }
     reset_residuals();
     for(System_per_grid& s: this->systems)
     {
