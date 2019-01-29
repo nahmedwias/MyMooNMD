@@ -90,7 +90,7 @@ int main(int argc, char *argv[])
   
   double start_time = parmoon_db["time_start"];
   TDatabase::TimeDB->CURRENTTIME = start_time;
-  while(tss.current_time_ < tss.get_end_time() - 1e-10)
+  while(!tss.reached_final_time_step())
   {
     tss.current_step_++;
     TDatabase::TimeDB->INTERNAL_STARTTIME = tss.current_time_;

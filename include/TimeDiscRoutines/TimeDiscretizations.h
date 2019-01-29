@@ -141,17 +141,22 @@ public:
     }
    
     //getters
-    double get_step_length()
+    double get_step_length() const
     {
       return current_time_step_length;
     }
-    double get_start_time()
+    double get_start_time() const
     {
       return start_time;
     }
-    double get_end_time()
+    double get_end_time() const
     {
       return end_time;
+    }
+    
+    bool reached_final_time_step() const
+    {
+      return current_time_ > end_time - 1e-10;
     }
 };
 
