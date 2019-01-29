@@ -63,7 +63,6 @@ int main(int, char* argv[])
   // ======================================================================
   
   double start_time = parmoon_db["time_start"];
-  double end_time   = parmoon_db["time_end"];
   TDatabase::TimeDB->CURRENTTIME = start_time;
   tcd.output();
 
@@ -74,7 +73,7 @@ int main(int, char* argv[])
   // ======================================================================
   // time iteration
   // ======================================================================
-  while(TDatabase::TimeDB->CURRENTTIME < end_time - 1e-10)
+  while(!tss.reached_final_time_step())
   {
     tss.current_step_++;
     // Output::print("mem before: ", GetMemory());
