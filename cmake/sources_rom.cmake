@@ -8,7 +8,7 @@ include_directories("${CMAKE_SOURCE_DIR}/include/ReducedOrderModels")
 list(APPEND ROM_SOURCES "${PROJECT_SOURCE_DIR}/src/ReducedOrderModels/SnapshotsCollector.C")
 list(APPEND ROM_SOURCES "${PROJECT_SOURCE_DIR}/src/ReducedOrderModels/POD.C")
 list(APPEND ROM_SOURCES "${PROJECT_SOURCE_DIR}/src/ReducedOrderModels/TimeConvectionDiffusionPOD.C")
-
+list(APPEND ROM_SOURCES "${PROJECT_SOURCE_DIR}/src/ReducedOrderModels/ROM.C")
 
 
 list(APPEND PARMOON_SOURCES_2D ${ROM_SOURCES})
