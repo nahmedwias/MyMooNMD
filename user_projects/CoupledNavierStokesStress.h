@@ -249,23 +249,38 @@ protected:
     std::tuple<int, int, int> &velocity_pressure_orders);
   
   /// @brief set the spaces depending on disc types
-  void set_arrays(CoupledNavierStokesStress<d>::System_per_grid& s,
+  void set_arrays_stress(CoupledNavierStokesStress<d>::System_per_grid& s,
                   std::vector<const FESpace*> &spaces,
                   std::vector<const FESpace*>& spaces_rhs,
                   std::vector<FEFunction*>& functions);
-  
+  /// @brief set the spaces depending on disc types
+  void set_arrays_ns(CoupledNavierStokesStress<d>::System_per_grid& s,
+                  std::vector<const FESpace*> &spaces,
+                  std::vector<const FESpace*>& spaces_rhs,
+                  std::vector<FEFunction*>& functions);
   using SquareMatrixD = typename Template_names<d>::SquareMatrixD;
   using MatrixD = typename Template_names<d>::MatrixD; 
   /// @brief set the matrices and right hand side depending on the
-  /// assemling routines, nstypes and the methods
-  void set_matrices_rhs(CoupledNavierStokesStress<d>::System_per_grid& s,
+  /// assemling routines, for stress part
+  void set_matrices_rhs_stress(CoupledNavierStokesStress<d>::System_per_grid& s,
                         LocalAssembling_type type,
                         std::vector<SquareMatrixD*> &sqMat,
                         std::vector<MatrixD*> &reMat,
-                        std::vector<double*> &rhs);
+                        std::vector<double*> &rhs_array);
+  /// @brief set the matrices and right hand side depending on the
+  /// assemling routines, for navier stokes part
+  void set_matrices_rhs_ns(CoupledNavierStokesStress<d>::System_per_grid& s,
+                        LocalAssembling_type type,
+                        std::vector<SquareMatrixD*> &sqMat,
+                        std::vector<MatrixD*> &reMat,
+                        std::vector<double*> &rhs_array);
   
   /// @brief this routines wraps up the call to Assemble2D
-    void call_assembling_routine(CoupledNavierStokesStress<d>::System_per_grid& s);
+  void call_assembling_routine_stress(CoupledNavierStokesStress<d>::System_per_grid& s);
+  
+  /// @brief this routines wraps up the call to Assemble2D
+  void call_assembling_routine_ns(CoupledNavierStokesStress<d>::System_per_grid& s, 
+                                  LocalAssembling_type type);
 };
 
 #endif // COUPLEDNAVIERSTOKESSTRESS_H
