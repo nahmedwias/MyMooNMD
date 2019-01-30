@@ -30,7 +30,16 @@ class TGridCell : public TBaseCell
     virtual TBaseCell *GetParent() override;
     
     friend class TDomain;
-    
+
+    /**  @brief used by IsLineCutingCell() to test/apply the constraints (i.e.
+     * for x in [range_m, range_M] then range_m <= A*x + b <= range_M)
+     * and restrict the interval [range_m, range_M] if necessary */
+    bool test_constraint(double  A,
+                         double  B, 
+                         double& range_m,
+                         double& range_M) const;
+
+
   public:
     // Constructor
     TGridCell(TRefDesc *refdesc, int reflevel);
@@ -94,6 +103,16 @@ class TGridCell : public TBaseCell
     /**  @brief check whether exist some children */
     virtual int ExistChildren() const override
     { return Children == nullptr ? false : true; }
+
+#ifdef __3D__
+    /**  @brief check if the line define by the position P and the direction is
+     * intersecting this cell.
+     * If so, lmin and lmax are the intersecting points */     
+    virtual bool IsLineCutingCell(int                  direction,
+                                  std::array<double,3> P,
+                                  double&              lmin,
+                                  double&              lmax) const override;
+#endif /** #ifdef __3D__ */
 
 #ifdef __2D__
     /**  @brief return coordinates of mid point P\_j on edge J\_i */

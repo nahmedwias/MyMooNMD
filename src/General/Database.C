@@ -2966,6 +2966,7 @@ void TDatabase::SetDefaultParameters()
   ParamDB->INTERNAL_PRESSURE_SPACE = 0;
   ParamDB->INTERNAL_SLIP_WITH_FRICTION = 0;
   ParamDB->INTERNAL_SLIP_WITH_FRICTION_IDENTITY = 0;
+  ParamDB->INTERNAL_SLIP_WEAK_FORM = 0;// 1=weak penetr.(original),0=strong penetr.(like 2D)
   ParamDB->INTERNAL_QUAD_HEXA = 0;
   ParamDB->INTERNAL_QUAD_TETRA = 0;
   ParamDB->INTERNAL_QUAD_QUAD = 0;

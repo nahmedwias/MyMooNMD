@@ -96,7 +96,6 @@ Saddle_point_preconditioner::Saddle_point_preconditioner(
 		}
 		else if(db.has_nested_database(db_name))
 		{//...the input database has a nested database of the required name
-			cout<< "!!!!!!!!!!!!!  JAAAAAAAAAAAA"<<endl;
 			vs_db.merge(db.get_nested_database(db_name), false);
 		}
 
