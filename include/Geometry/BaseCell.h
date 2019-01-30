@@ -298,6 +298,16 @@ class TBaseCell
      */
     double Get_hK(int cell_measure) const;
 
+#ifdef __3D__
+    /**  @brief check if the line define by the position P and the direction is
+     * intersecting this cell.
+     * If so, lmin and lmax are the intersecting points */     
+    virtual bool IsLineCutingCell(int                  direction,
+                                  std::array<double,3> P,
+                                  double&              lmin,
+                                  double&              lmax) const = 0;
+#endif /** #ifdef __3D__ */
+
     /**  @brief return whether a point is inside a cell */
     virtual bool PointInCell(double X, double Y) const = 0;
 
@@ -408,13 +418,13 @@ class TBaseCell
 #ifdef __3D__
 
     /** @brief 
-	compute normal to m-th face and transformation (for face integral) 
-	@attention The normal to boundary faces might not be directed outward. For this, use
-	the function get_normal_vector for TBoundFace objects.	
+        compute normal to m-th face and transformation (for face integral) 
+        @attention The normal to boundary faces might not be directed outward. For this, use
+        the function get_normal_vector for TBoundFace objects.  
      */
     void computeNormalAndTransformationData(int m,
-					    std::vector<double>& normal,
-					    double &transformationDeterminant) const;
+                                            std::vector<double>& normal,
+                                            double &transformationDeterminant) const;
     
     /** @brief get number of vertices on m-th face */
     int getNumberOfFaceVertices(int m) const
