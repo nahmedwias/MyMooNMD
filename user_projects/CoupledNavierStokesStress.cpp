@@ -295,16 +295,21 @@ void CoupledNavierStokesStress<d>::get_velocity_pressure_orders(
 template<int d>
 void CoupledNavierStokesStress<d>::assemble_linear_terms()
 {
-  System_per_grid& s = this->systems.front();
-  // assemble the stress matrices
-  call_assembling_routine(s);
+  for(System_per_grid & s : systems)
+  {
+    // assemble the stress matrices
+    this->call_assembling_routine_stress(s);
+    // assembling all matrices from NavierStokes model
+    this->call_assembling_routine_ns(s, LocalAssembling_type::NSE3D_Linear);
+  }
   
-  s.matrix.get_combined_matrix()->GetStructure().draw("A1");
+  
+  // s.matrix.get_combined_matrix()->GetStructure().draw("A1");
 }
 
 
 template<int d>
-void CoupledNavierStokesStress<d>::call_assembling_routine(CoupledNavierStokesStress<d>::System_per_grid& s)
+void CoupledNavierStokesStress<d>::call_assembling_routine_stress(CoupledNavierStokesStress<d>::System_per_grid& s)
 {
   using SquareMatrixD = typename Template_names<d>::SquareMatrixD;
   using MatrixD = typename Template_names<d>::MatrixD;
@@ -318,14 +323,14 @@ void CoupledNavierStokesStress<d>::call_assembling_routine(CoupledNavierStokesSt
   std::vector<const FESpace*> spaces_rhs;
   std::vector<FEFunction*> fefunctions;
   // call to routine to set arrays
-  set_arrays(s, spaces_mat, spaces_rhs, fefunctions);
+  set_arrays_stress(s, spaces_mat, spaces_rhs, fefunctions);
   
   // prepare matrices and rhs for assembling
   std::vector<SquareMatrixD*> sqMatrices;
   std::vector<MatrixD*> rectMatrices;
   std::vector<double*> rhs_array;
   // call the routine to prepare the matrices
-  set_matrices_rhs(s, LocalAssembling_type::CoupledStressNS, 
+  set_matrices_rhs_stress(s, LocalAssembling_type::CoupledStressNS, 
                    sqMatrices, rectMatrices, rhs_array);
   std::array<BoundaryConditionFunction*, 3> boundCondition;
   std::array<BoundaryValuesFunction*, 3> boundValues;
@@ -344,9 +349,53 @@ void CoupledNavierStokesStress<d>::call_assembling_routine(CoupledNavierStokesSt
                boundCondition.data(), boundValues.data(), la);
 }
 
+template<int d>
+void CoupledNavierStokesStress<d>::call_assembling_routine_ns(
+  CoupledNavierStokesStress<d>::System_per_grid& s, LocalAssembling_type type)
+{
+  using SquareMatrixD = typename Template_names<d>::SquareMatrixD;
+  using MatrixD = typename Template_names<d>::MatrixD;
+  using BoundaryValuesFunction
+    = typename Template_names<d>::BoundaryValuesFunction;
+  using BoundaryConditionFunction 
+    = typename Template_names<d>::BoundaryConditionFunction;
+  
+  // set arrays of spaces for matrices and rhs
+  std::vector<const FESpace*> spaces_mat;
+  std::vector<const FESpace*> spaces_rhs;
+  std::vector<FEFunction*> fefunctions;
+  
+  // call routine to set arratys
+  this->set_arrays_ns(s, spaces_mat, spaces_rhs, fefunctions);
+  
+  
+  // prepare matrices and rhs for assembling
+  std::vector<SquareMatrixD*> sqMatrices;
+  std::vector<MatrixD*> rectMatrices;
+  std::vector<double*> rhs_array;
+  // call the routine to prepare the matrices
+  this->set_matrices_rhs_ns(s, type, sqMatrices, rectMatrices, rhs_array);
+  
+  std::array<BoundaryConditionFunction*, d+1> boundCondition;
+  std::array<BoundaryValuesFunction*, d+1> boundValues;
+  for(int i = 0; i < d; ++i)
+    boundCondition[i] = s.velocity_space->get_boundary_condition();
+  boundCondition[d] = s.pressure_space->get_boundary_condition();
+  for(int i = 0; i < d+1; ++i)
+    boundValues[i] = example.get_bd(i);
+  
+  // local assembling settings
+  LocalAssembling<d> la(this->db, type, fefunctions.data(),
+                        this->example.get_coeffs(), space_disc_global);
+
+  Assemble2D(spaces_mat.size(), spaces_mat.data(), sqMatrices.size(),
+               sqMatrices.data(), rectMatrices.size(), rectMatrices.data(),
+               rhs_array.size(), rhs_array.data(), spaces_rhs.data(),
+               boundCondition.data(), boundValues.data(), la);
+}
 
 template<int d>
-void CoupledNavierStokesStress<d>::set_arrays(CoupledNavierStokesStress<d>::System_per_grid& s, 
+void CoupledNavierStokesStress<d>::set_arrays_stress(CoupledNavierStokesStress<d>::System_per_grid& s, 
  std::vector< const FESpace* >& spaces, std::vector< const FESpace* >& spaces_rhs, 
  std::vector< FEFunction* >& functions)
 {
@@ -355,16 +404,12 @@ void CoupledNavierStokesStress<d>::set_arrays(CoupledNavierStokesStress<d>::Syst
   spaces[1] = s.velocity_space.get();
   spaces[2] = s.pressure_space.get();
 #ifdef __2D__
-  spaces_rhs.resize(3); // 3 stress, 2 velocity, 1 pressure
+  spaces_rhs.resize(3); 
   spaces_rhs[0] = s.stress_space.get();
   spaces_rhs[1] = s.stress_space.get();
-  spaces_rhs[2] = s.stress_space.get();
-  
-//   spaces_rhs[3] = s.velocity_space.get();
-//   spaces_rhs[4] = s.velocity_space.get();
-//   
-//   spaces_rhs[5] = s.pressure_space.get();
+  spaces_rhs[2] = s.stress_space.get();  
 #else
+  Output::print("  ");
 #endif
   // simplest model where the nonlinearity is in 
   // the convective part of the velocity
@@ -374,8 +419,29 @@ void CoupledNavierStokesStress<d>::set_arrays(CoupledNavierStokesStress<d>::Syst
   functions[d] = &s.p;
 }
 
+template<int d>
+void CoupledNavierStokesStress<d>::set_arrays_ns(CoupledNavierStokesStress<d>::System_per_grid& s, 
+ std::vector< const FESpace* >& spaces, std::vector< const FESpace* >& spaces_rhs, 
+ std::vector< FEFunction* >& functions)
+{
+  spaces.resize(2);  
+  spaces[0] = s.velocity_space.get();
+  spaces[1] = s.pressure_space.get();
+  
+  spaces_rhs.resize(d+1);
+  for(int i = 0; i < d; ++i)
+    spaces_rhs[i] = s.velocity_space.get();
+  spaces_rhs[d] = s.pressure_space.get();
+  
+  // simplest model where the nonlinearity is in 
+  // the convective part of the velocity
+  functions.resize(d+1);
+  for(int i=0; i<d; ++i)
+    functions[i] = s.u.GetComponent(i);
+  functions[d] = &s.p;
+}
 template <int d>
-void CoupledNavierStokesStress<d>::set_matrices_rhs(CoupledNavierStokesStress<d>::System_per_grid& s, 
+void CoupledNavierStokesStress<d>::set_matrices_rhs_stress(CoupledNavierStokesStress<d>::System_per_grid& s, 
   LocalAssembling_type type, std::vector< SquareMatrixD* >& sqMat, std::vector< MatrixD* >& reMat, 
   std::vector< double* >& rhs_array)
 {
@@ -405,17 +471,60 @@ void CoupledNavierStokesStress<d>::set_matrices_rhs(CoupledNavierStokesStress<d>
   reMat[10] = reinterpret_cast<MatrixD*>(blocks.at(16).get());
   reMat[11] = reinterpret_cast<MatrixD*>(blocks.at(17).get());
   
-  for(int i=0; i<3; i++)
-    sqMat[i]->reset();
+  for(auto sm : sqMat)
+    sm->reset();
   
-  for(int i=0; i<12; i++)
-    reMat[i]->reset();
+  for(auto rm : reMat)
+    rm->reset();
   
   rhs_array[0] = s.rhs.block(0);
   rhs_array[1] = s.rhs.block(1);
   rhs_array[2] = s.rhs.block(2);
   
   s.rhs.reset();
+}
+
+template<int d>
+void CoupledNavierStokesStress<d>::set_matrices_rhs_ns(CoupledNavierStokesStress<d>::System_per_grid& s,
+ LocalAssembling_type type, std::vector< SquareMatrixD* >& sqMat, std::vector< MatrixD* >& reMat, 
+ std::vector< double* >& rhs_array)
+{
+  int nstype = TDatabase::ParamDB->NSTYPE;
+  if(nstype != 4 )
+    ErrThrow("Nstype: ", nstype, " is not supported ");
+  
+  sqMat.resize(0);
+  reMat.resize(0);
+  // right hand side: for NSTYPE: 1,2 and 3, size is 2
+  rhs_array.resize(3, 0);
+  rhs_array[0] = s.rhs.block(3);
+  rhs_array[1] = s.rhs.block(4);
+  rhs_array[2] = s.rhs.block(5);
+  
+  auto blocks = s.matrix.get_blocks_uniquely();
+
+  sqMat.resize(5);
+  sqMat[0] = reinterpret_cast<SquareMatrixD*>(blocks.at(12).get());
+  sqMat[1] = reinterpret_cast<SquareMatrixD*>(blocks.at(13).get());
+  sqMat[2] = reinterpret_cast<SquareMatrixD*>(blocks.at(18).get());
+  sqMat[2] = reinterpret_cast<SquareMatrixD*>(blocks.at(19).get());
+  
+  reMat.resize(4);
+  reMat[0] = reinterpret_cast<MatrixD*>(blocks.at(21).get());
+  reMat[1] = reinterpret_cast<MatrixD*>(blocks.at(22).get());
+  reMat[2] = reinterpret_cast<MatrixD*>(blocks.at(14).get());
+  reMat[3] = reinterpret_cast<MatrixD*>(blocks.at(20).get());
+  
+  for(auto* mat : sqMat)
+  {
+    if(mat != nullptr)
+      mat->reset();    
+  }
+  for(auto* mat : reMat)
+  {
+    if(mat != nullptr)
+      mat->reset();    
+  }
 }
 
 #ifdef __3D__
