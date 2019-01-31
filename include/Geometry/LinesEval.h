@@ -14,6 +14,7 @@
 #include <Collection.h>
 #include "templateNames.h"
 #include <ParameterDatabase.h>
+#include <array>
 
 class LineEval;
 
