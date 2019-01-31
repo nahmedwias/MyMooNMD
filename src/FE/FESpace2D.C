@@ -38,8 +38,8 @@
 
 /** Constructor */
 TFESpace2D::TFESpace2D(TCollection *coll,
-                       std::string name,
-                       std::string description) :
+                       const std::string& name,
+                       const std::string& description) :
      TFESpace(coll, name, description)
 {
   N_ActiveDegrees = 0;
@@ -55,7 +55,8 @@ TFESpace2D::TFESpace2D(TCollection *coll,
 // =====================================================================
 
 /** constructor for building a space with elements of order k */
-TFESpace2D::TFESpace2D(TCollection *coll, std::string name, std::string description,
+TFESpace2D::TFESpace2D(TCollection *coll, const std::string& name,
+                       const std::string& description,
                        BoundCondFunct2D *BoundaryCondition, int ord) :
      TFESpace(coll, name, description)
 {
@@ -564,7 +565,8 @@ TFESpace2D::TFESpace2D(TCollection *coll, std::string name, std::string descript
 }
 
 /** constructor for building a space with elements of order k */
-TFESpace2D::TFESpace2D(TCollection *coll,  std::string name, std::string description,
+TFESpace2D::TFESpace2D(TCollection *coll,  const std::string& name,
+                       const std::string& description,
                        BoundCondFunct2D *BoundaryCondition, SpaceType type,
                        int ord) :
      TFESpace(coll, name, description)
@@ -1154,9 +1156,9 @@ TFESpace2D::TFESpace2D(TCollection *coll,  std::string name, std::string descrip
 }
 
 /** constructor for building a space with the given elements */
-TFESpace2D::TFESpace2D(TCollection *coll, std::string name, std::string description,
-               BoundCondFunct2D *BoundaryCondition,
-               FE2D *fes) :
+TFESpace2D::TFESpace2D(TCollection *coll, const std::string& name,
+                       const std::string& description,
+                       BoundCondFunct2D *BoundaryCondition, FE2D *fes) :
     TFESpace(coll, name, description)
 {
   int i, N_;

@@ -42,7 +42,7 @@ struct FixedSizeQueue : private std::queue<T>
   /// @brief add an element to the queue
   ///
   /// This adds a new elements to the back and removes one from the front.
-  void add(T t)
+  void add(const T& t)
   {
     this->push(t);
     this->pop();
@@ -277,8 +277,8 @@ void CheckMaximumPrinciple(TSquareMatrix *A, double *sol, int N_Active,
 void SaveData(char *name, int N_Array, double **sol, int *N_Unknowns);
 void ReadData(char *name, int N_Array, double **sol, int *N_Unknowns);
 
-void SaveData(std::string basename, double *sol, int nDOF);
-void ReadData(std::string filename, double *sol, int nDOF);
+void SaveData(const std::string& basename, double *sol, int nDOF);
+void ReadData(const std::string& filename, double *sol, int nDOF);
 /******************************************************************************/
 //
 // sets the nodes with global dof neum_to_diri to Dirichlet nodes 

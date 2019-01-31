@@ -72,7 +72,7 @@ public:
     /** the estimator */
     void GetErrorEstimate(int N_Derivatives,
                           MultiIndex2D *NeededDerivatives,
-                          CoeffFct2D Coeff,
+                          const CoeffFct2D& Coeff,
                           BoundCondFunct2D **BoundaryConds,
                           BoundValueFunct2D **BoundaryValues,
                           TAuxParam2D *Aux,

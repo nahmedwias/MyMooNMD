@@ -720,7 +720,7 @@ void GridTransfer::Prolongate(
 
   memset(FineFunction, 0, SizeOfDouble*N_FineDOFs);
 
-#ifdef _HYBRID
+#ifdef _OMP
 #pragma omp parallel default(shared) private(i,j,k,l,cell,DOF,FineId,FineElement,FineBF,N_Fine, \
                                              parent, N_Children, CoarseNumber, CoarseId, CoarseElement, \
                                              CoarseBF, BaseFunctions, Ref, FineNumber,\
@@ -741,13 +741,13 @@ void GridTransfer::Prolongate(
     FineBF = FineElement->GetBaseFunct3D_ID();
     N_Fine = TFEDatabase3D::GetBaseFunct3D(FineBF)->GetDimension();
     for(j=0;j<N_Fine;j++)
-#ifdef _HYBRID
+#ifdef _OMP
       #pragma omp atomic
 #endif
       aux[DOF[j]] += 1;
   }
 
-#ifdef _HYBRID
+#ifdef _OMP
 #pragma omp for schedule(guided)
 #endif
   // set coarse grid clipboard to implicit number
@@ -758,7 +758,7 @@ void GridTransfer::Prolongate(
   }
 
 
-#ifdef _HYBRID
+#ifdef _OMP
 #pragma omp for schedule(guided)
 #endif
   // if a cell with clipboard==-1 is found
@@ -771,7 +771,7 @@ void GridTransfer::Prolongate(
     if(k==-1) cell->SetClipBoard(-i-10);
   }
 
-#ifdef _HYBRID
+#ifdef _OMP
 #pragma omp for schedule(guided)
 #endif
   for(i=0;i<N_FineCells;i++)
@@ -813,7 +813,7 @@ void GridTransfer::Prolongate(
       {
         // cout << "child: " << j << endl;
         cell = parent->GetChild(j);
-// #ifdef _HYBRID
+// #ifdef _OMP
 //  #pragma omp critical
 // #endif
         {
@@ -821,7 +821,7 @@ void GridTransfer::Prolongate(
          cell->SetClipBoard(-2);
         }
 
-#ifdef _HYBRID
+#ifdef _OMP
     if(k==-2) continue;
 #endif
   FineNumber = -(k+10);
@@ -830,7 +830,7 @@ void GridTransfer::Prolongate(
         FineBF = FineElement->GetBaseFunct3D_ID();
         N_Fine = TFEDatabase3D::GetBaseFunct3D(FineBF)->GetDimension();
 
-#ifdef _HYBRID
+#ifdef _OMP
        #pragma omp critical
 #endif
   {
@@ -860,7 +860,7 @@ void GridTransfer::Prolongate(
         {
           Index = FineDOF[k];
    {
-#ifdef _HYBRID
+#ifdef _OMP
        #pragma omp atomic
 #endif
           FineFunction[Index] += Val2[k];
@@ -887,7 +887,7 @@ void GridTransfer::Prolongate(
       BaseFunctions = TFEDatabase3D::GetBaseFunct3D(CoarseBF);
       N_Coarse = BaseFunctions->GetDimension();
 
-#ifdef _HYBRID
+#ifdef _OMP
        #pragma omp critical
 #endif
   {
@@ -920,7 +920,7 @@ void GridTransfer::Prolongate(
       {
         Index = FineDOF[k];
   {
-#ifdef _HYBRID
+#ifdef _OMP
        #pragma omp atomic
 #endif
          FineFunction[Index] += Val2[k];
@@ -929,14 +929,14 @@ void GridTransfer::Prolongate(
     } // endelse
   } // endfor i
 
-#ifdef _HYBRID
+#ifdef _OMP
 #pragma omp for schedule(guided)
 #endif
   for(i=0;i<N_FineDOFs;i++)
   {
     FineFunction[i] /= aux[i];
   }
-#ifdef _HYBRID
+#ifdef _OMP
 }
 #endif
 
@@ -1004,7 +1004,7 @@ void GridTransfer::DefectRestriction(
   memset(CoarseFunction, 0, SizeOfDouble*N_CoarseDOFs);
 
 
-#ifdef _HYBRID
+#ifdef _OMP
 #pragma omp parallel default(shared) private(i,j,k,l,cell,DOF,FineId,FineElement,FineBF,N_Fine, \
                                              parent, N_Children, CoarseNumber, CoarseId, CoarseElement, \
                                              CoarseBF, BaseFunctions, Ref, FineNumber,\
@@ -1025,13 +1025,13 @@ void GridTransfer::DefectRestriction(
     FineBF = FineElement->GetBaseFunct3D_ID();
     N_Fine = TFEDatabase3D::GetBaseFunct3D(FineBF)->GetDimension();
     for(j=0;j<N_Fine;j++)
-#ifdef _HYBRID
+#ifdef _OMP
       #pragma omp atomic
 #endif
       aux[DOF[j]] += 1;
   }
 
-#ifdef _HYBRID
+#ifdef _OMP
 #pragma omp for schedule(guided) nowait
 #endif
 
@@ -1040,7 +1040,7 @@ void GridTransfer::DefectRestriction(
     FineFunction_copy[i] /= aux[i];
   }
 
-#ifdef _HYBRID
+#ifdef _OMP
 #pragma omp for schedule(guided)
 #endif
   // set coarse grid clipboard to implicit number
@@ -1050,7 +1050,7 @@ void GridTransfer::DefectRestriction(
     cell->SetClipBoard(i);
   }
 
-#ifdef _HYBRID
+#ifdef _OMP
 #pragma omp for schedule(guided)
 #endif
   // if a cell with clipboard==-1 is found
@@ -1063,7 +1063,7 @@ void GridTransfer::DefectRestriction(
     if(k==-1) cell->SetClipBoard(-i-10);
   }
 
-#ifdef _HYBRID
+#ifdef _OMP
 #pragma omp for schedule(guided)
 #endif
   for(i=0;i<N_FineCells;i++)
@@ -1097,7 +1097,7 @@ void GridTransfer::DefectRestriction(
       for(j=0;j<N_Children;j++)
       {
         cell = parent->GetChild(j);
-// #ifdef _HYBRID
+// #ifdef _OMP
 //  #pragma omp critical
 // #endif
   {
@@ -1105,7 +1105,7 @@ void GridTransfer::DefectRestriction(
          cell->SetClipBoard(-2);
   }
 
-#ifdef _HYBRID
+#ifdef _OMP
     if(k==-2) continue;
 #endif
 
@@ -1114,7 +1114,7 @@ void GridTransfer::DefectRestriction(
         FineElement = TFEDatabase3D::GetFE3D(FineId);
         FineBF = FineElement->GetBaseFunct3D_ID();
         N_Fine = TFEDatabase3D::GetBaseFunct3D(FineBF)->GetDimension();
-#ifdef _HYBRID
+#ifdef _OMP
        #pragma omp critical
 #endif
   {
@@ -1147,7 +1147,7 @@ void GridTransfer::DefectRestriction(
         for(k=0;k<N_Coarse;k++)
         {
           Index = CoarseDOF[k];
-#ifdef _HYBRID
+#ifdef _OMP
        #pragma omp atomic
 #endif
            CoarseFunction[Index] += Val2[k];
@@ -1172,7 +1172,7 @@ void GridTransfer::DefectRestriction(
       N_Coarse = BaseFunctions->GetDimension();
 
       Ref = NoRef;
-#ifdef _HYBRID
+#ifdef _OMP
        #pragma omp critical
 #endif
   {
@@ -1204,7 +1204,7 @@ void GridTransfer::DefectRestriction(
 
       for(k=0;k<N_Coarse;k++)
       {
-#ifdef _HYBRID
+#ifdef _OMP
        #pragma omp atomic
 #endif
   CoarseFunction[CoarseDOF[k]] += Val2[k];
@@ -1213,7 +1213,7 @@ void GridTransfer::DefectRestriction(
   } // endfor i
 
 
-#ifdef _HYBRID
+#ifdef _OMP
 }
 #endif
   delete[] aux;
@@ -1272,7 +1272,7 @@ void GridTransfer::RestrictFunction(
 
   memset(CoarseFunction, 0, SizeOfDouble*N_CoarseDOFs);
 
-#ifdef _HYBRID
+#ifdef _OMP
 #pragma omp parallel default(shared) private(i,cell,k)
 {
 #pragma omp for schedule(static) nowait
@@ -1283,7 +1283,7 @@ void GridTransfer::RestrictFunction(
     cell = FineColl->GetCell(i);
     cell->SetClipBoard(-1);
   }
-#ifdef _HYBRID
+#ifdef _OMP
 #pragma omp for schedule(static) nowait
 #endif
   // set coarse grid clipboard to implicit number
@@ -1292,7 +1292,7 @@ void GridTransfer::RestrictFunction(
     cell = CoarseColl->GetCell(i);
     cell->SetClipBoard(i);
   }
-#ifdef _HYBRID
+#ifdef _OMP
 #pragma omp for schedule(static) nowait
 #endif
   // if a cell with clipboard==-1 is found
@@ -1304,7 +1304,7 @@ void GridTransfer::RestrictFunction(
     k = cell->GetClipBoard();
     if(k==-1) cell->SetClipBoard(-i-10);
   }
-#ifdef _HYBRID
+#ifdef _OMP
 }
 #endif
   for(i=0;i<N_FineCells;i++)
@@ -1340,7 +1340,7 @@ void GridTransfer::RestrictFunction(
       Ref = parent->GetRefDesc()->GetType();
 
       memset(Val2, 0, MaxN_BaseFunctions3D*SizeOfDouble);
-#ifdef _HYBRID
+#ifdef _OMP
 // #pragma omp parallel default(shared) private(j,k,s,l,cell,FineNumber,FineId,FineElement,FineBF,N_Fine,QQ,FineDOF,Val2,Index)
 // #pragma omp for schedule(guided) nowait
 #endif
@@ -1388,7 +1388,7 @@ void GridTransfer::RestrictFunction(
       TFEDatabase3D::GetBaseFunct3D(CoarseBF)
                       ->ChangeBF(CoarseColl, parent, Val2);
 
-#ifdef _HYBRID
+#ifdef _OMP
 // #pragma omp parallel default(shared) private(k,l)
 // #pragma omp for schedule(guided) nowait
 #endif
@@ -1433,7 +1433,7 @@ void GridTransfer::RestrictFunction(
       FineDOF = FineGlobalNumbers+FineBeginIndex[FineNumber];
       CoarseDOF = CoarseGlobalNumbers+CoarseBeginIndex[CoarseNumber];
 
-#ifdef _HYBRID
+#ifdef _OMP
 // #pragma omp parallel default(shared) private(k,s,l,Val2,Index)
 {
 // #pragma omp for schedule(guided) nowait
@@ -1444,7 +1444,7 @@ void GridTransfer::RestrictFunction(
       TFEDatabase3D::GetBaseFunct3D(FineBF)
                       ->ChangeBF(FineColl, cell, Val);
 
-#ifdef _HYBRID
+#ifdef _OMP
 // #pragma omp for schedule(guided) nowait
 #endif
       for(k=0;k<N_Coarse;k++)
@@ -1460,13 +1460,13 @@ void GridTransfer::RestrictFunction(
       TFEDatabase3D::GetBaseFunct3D(CoarseBF)
                       ->ChangeBF(CoarseColl, cell, Val2);
 
-#ifdef _HYBRID
+#ifdef _OMP
 // #pragma omp for schedule(guided) nowait
 #endif
       for(k=0;k<N_Coarse;k++)
       {
         l=CoarseDOF[k];
-#ifdef _HYBRID
+#ifdef _OMP
   #pragma omp critical
 #endif
   {
@@ -1474,12 +1474,12 @@ void GridTransfer::RestrictFunction(
          aux[l] += 1;
   }
       } // endfor k
-#ifdef _HYBRID
+#ifdef _OMP
 }
 #endif
     } // endelse
   } // endfor i
-#ifdef _HYBRID
+#ifdef _OMP
 #pragma omp parallel default(shared) private(i)
 #pragma omp for schedule(static) nowait
 #endif
@@ -1510,12 +1510,12 @@ void GridTransfer::RestrictFunction(
 
 void GridTransfer::RestrictFunctionRepeatedly(
 #ifdef __2D__
-  std::vector<const TFESpace2D*> space_hierarchy,
+  const std::vector<const TFESpace2D*>& space_hierarchy,
 #elif __3D__
-  std::vector<const TFESpace3D*> space_hierarchy,
+  const std::vector<const TFESpace3D*>& space_hierarchy,
 #endif
-  std::vector<double*> function_entries,
-  std::vector<size_t> function_n_dofs)
+  const std::vector<double*>& function_entries,
+  const std::vector<size_t>& function_n_dofs)
 {
   size_t n_levels =space_hierarchy.size();
   if (n_levels < 2)

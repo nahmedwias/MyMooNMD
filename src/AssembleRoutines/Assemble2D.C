@@ -3798,13 +3798,12 @@ double *rhs_for_stress_other)
 //
 // =======================================================================
 
-void Assemble2D_DG(CoeffFct2D Coeff,int n_fespaces, TFESpace2D **fespaces,
-int n_sqmatrices, TSquareMatrix2D **sqmatrices,
-int n_matrices, TMatrix2D **matrices,
-int n_rhs, double **rhs, TFESpace2D **ferhs,
-BoundCondFunct2D **BoundaryConditions,
-BoundValueFunct2D **BoundaryValues,
-TAuxParam2D *Parameters)
+void Assemble2D_DG(const CoeffFct2D& Coeff, int n_fespaces,
+                   TFESpace2D **fespaces, int n_sqmatrices,
+                   TSquareMatrix2D **sqmatrices, int n_matrices,
+                   TMatrix2D **matrices, int n_rhs, double **rhs,
+                   TFESpace2D **ferhs, BoundCondFunct2D **BoundaryConditions,
+                   BoundValueFunct2D **BoundaryValues, TAuxParam2D *Parameters)
 {
   double w,integrant,tau_par;
   int N_AllMatrices = n_sqmatrices+n_matrices,out;
@@ -5292,13 +5291,13 @@ TAuxParam2D *Parameters)
 //
 // =======================================================================
 
-void Assemble2D_CIP(CoeffFct2D Coeff,int n_fespaces, TFESpace2D **fespaces,
-int n_sqmatrices, TSquareMatrix2D **sqmatrices,
-int n_matrices, TMatrix2D **matrices,
-int n_rhs, double **rhs, TFESpace2D **ferhs,
-BoundCondFunct2D **BoundaryConditions,
-BoundValueFunct2D **BoundaryValues,
-TAuxParam2D *Parameters)
+void Assemble2D_CIP(const CoeffFct2D& Coeff, int n_fespaces,
+                    TFESpace2D **fespaces, int n_sqmatrices,
+                    TSquareMatrix2D **sqmatrices, int n_matrices,
+                    TMatrix2D **matrices, int n_rhs, double **rhs,
+                    TFESpace2D **ferhs, BoundCondFunct2D **BoundaryConditions,
+                    BoundValueFunct2D **BoundaryValues,
+                    TAuxParam2D *Parameters)
 {
   const int MaxN_BaseFunctions2D_Ersatz =100;
 

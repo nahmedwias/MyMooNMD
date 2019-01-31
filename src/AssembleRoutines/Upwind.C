@@ -52,7 +52,7 @@ void GetUpwindValue(double UPWIND_ORDER,double t,double *phi)
 // =======================================================================
 // do upwind assembling for first order nonconforming elements
 // =======================================================================
-void UpwindForNavierStokes(CoeffFct2D Coeff, TSquareMatrix2D *sqmatrix,
+void UpwindForNavierStokes(const CoeffFct2D& Coeff, TSquareMatrix2D *sqmatrix,
 TFEFunction2D *u1, TFEFunction2D *u2)
 {
   double RE;
@@ -321,7 +321,7 @@ TFEFunction2D *u1, TFEFunction2D *u2)
 }                                                 // end of UpwindForNavierStokes
 
 
-void UpwindForConvDiff(CoeffFct2D Coeff, TSquareMatrix2D *sqmatrix, 
+void UpwindForConvDiff(const CoeffFct2D& Coeff, TSquareMatrix2D *sqmatrix, 
                        double *, const TFESpace2D *fespace,
                        const TFEFunction2D *u1, const TFEFunction2D *u2, 
                        bool ConvIsVelo)
@@ -733,7 +733,7 @@ void UpwindForConvDiff(CoeffFct2D Coeff, TSquareMatrix2D *sqmatrix,
 /******************************************************************************/
 
 void ComputeParametersMizukamiHughes(TBaseCell *cell, int cell_no,
-TFEFunction2D *u, CoeffFct2D Coeffs,
+TFEFunction2D *u, const CoeffFct2D& Coeffs,
 BoundCondFunct2D *,
 int *dof, int ActiveBound,
 double *c_mh)
@@ -1177,7 +1177,7 @@ void MizukamiHughes(TSquareMatrix2D *sqmatrix,
 double *RHS,
 TFESpace2D *fespace,
 TFEFunction2D *u,
-CoeffFct2D Coeffs,
+const CoeffFct2D& Coeffs,
 BoundCondFunct2D *BoundaryCondition)
 {
   TBaseCell *cell;

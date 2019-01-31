@@ -287,7 +287,7 @@ protected:
         
         /** @brief constructor */
         System_per_grid(const Example_Brinkman2D& example, TCollection& coll,
-                        std:: pair <int,int> velocity_pressure_orders,
+                        const std:: pair <int,int>& velocity_pressure_orders,
                         Brinkman2D::Matrix type);
         
         /**

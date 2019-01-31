@@ -60,9 +60,9 @@ public:
 
 	/// Print the matrix the console.
 	/// The method is not perfect and is intended for testing and debugging only.
-	void print(std::string name) const;
+	void print(const std::string& name) const;
 
-	void printLU(std::string name) const;
+	void printLU(const std::string& name) const;
 
 	/// Calculates the matrix' Frobenius norm. We implement only Frobenius,
 	/// because this one is independent on d.o.f. numbering and therefore

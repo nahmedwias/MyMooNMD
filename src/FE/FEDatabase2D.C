@@ -39,7 +39,7 @@
 // #define __ULTRA_LOCAL_PROJECTION__
 
 //helper method for printing "registered something" infos
-void print_registered_message_2D(std::string entities)
+void print_registered_message_2D(const std::string& entities)
 {
 #ifdef _MPI
   int my_rank;

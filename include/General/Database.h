@@ -16,7 +16,7 @@ class TDatabase;
 #  include "mpi.h"
 #endif
 
-#ifdef _HYBRID
+#ifdef _OMP
   #include <omp.h>
 #endif
 
@@ -555,6 +555,7 @@ bool SOURCE_SINK_FUNCTION;
   int    INTERNAL_PRESSURE_SPACE;
   int    INTERNAL_SLIP_WITH_FRICTION;
   int    INTERNAL_SLIP_WITH_FRICTION_IDENTITY;
+  int    INTERNAL_SLIP_WEAK_FORM;
   int    INPUT_QUAD_RULE;
   int    INTERNAL_QUAD_HEXA;
   int    INTERNAL_QUAD_TETRA;
@@ -902,7 +903,7 @@ class TDatabase
      * using the method 'SetDefaultParameters'. If a valid file is given as 
      * 'ParamFile', the respective default values are overwritten.
      */
-    TDatabase(const char *ParamFile = nullptr);
+    explicit TDatabase(const char *ParamFile = nullptr);
     
     ~TDatabase();
 

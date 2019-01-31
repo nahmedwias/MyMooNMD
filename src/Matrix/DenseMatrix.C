@@ -181,7 +181,7 @@ void DenseMatrix::decomposeLU(){
 	  ErrThrow("LAPACK dgetrf (factorize) failed with info = ", info);
 }
 
-void DenseMatrix::print(std::string name) const
+void DenseMatrix::print(const std::string& name) const
 {
 	Output::info("DenseMatrix: ", name);
 	for (size_t i = 0; i < nRows_ ;++i){
@@ -193,7 +193,7 @@ void DenseMatrix::print(std::string name) const
 	}
 }
 
-void DenseMatrix::printLU(std::string name) const
+void DenseMatrix::printLU(const std::string& name) const
 {
   assert(entriesLU_ && pivotsLU_);
 

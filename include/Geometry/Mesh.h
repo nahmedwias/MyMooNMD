@@ -141,8 +141,8 @@ class Mesh
    *   the boundary description.
    */
   Mesh();
-  Mesh(std::string f);
-  Mesh(std::string filename,std::string filenameBoundary);
+  explicit Mesh(const std::string& f);
+  Mesh(const std::string& filename, const std::string& filenameBoundary);
   // Destructor
   ~Mesh(){};
 
@@ -150,10 +150,10 @@ class Mesh
      @brief read mesh from a file
      @note supported formats: .mesh
   */
-  void readFromFile(std::string filename);
+  void readFromFile(const std::string& filename);
 
   ///@brief write mesh to a file .mesh
-  void writeToMesh(std::string filename);
+  void writeToMesh(const std::string& filename);
 
   /**
      @brief write mesh to a file .xGEO (extended ParMooN format)
@@ -162,13 +162,13 @@ class Mesh
      (from a  prm file consistent with the geometry)
      @warning it works only in 2D at the moment
   */
-  void writeToGEO(std::string filename);
+  void writeToGEO(const std::string& filename);
 
   /**
      @brief initialize the Boundary class reading a PRM file 
      @warning it works only in 2D at the moment
    */
-  void setBoundary(std::string PRM);
+  void setBoundary(const std::string& PRM);
 
 
   /** 

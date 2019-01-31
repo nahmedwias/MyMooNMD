@@ -20,7 +20,7 @@ class TBdNoPRM : public TBoundComp3D
 
   public:
     // Constructor
-    TBdNoPRM(int id);
+    explicit TBdNoPRM(int id);
 
     virtual ~TBdNoPRM() {};
     

@@ -44,7 +44,7 @@ class TParFEMapper3D
     //! Number of degrees of freedom in the process.
     int N_Dof;
     
-#ifdef _HYBRID
+#ifdef _OMP
     int* RowPtr;
 
     //! THIS IS UNUSED EXCEPT FOR ONE PLACE IN HYBRID - REMOVE!
@@ -114,7 +114,7 @@ class TParFEMapper3D
      * the ParFEMapper is for the velocity of a 3D NSE problem or "1" for a 3D CDR problem.
      * @param[in] fespace the FE space the dofs belong to.
      */
-#ifndef _HYBRID
+#ifndef _OMP
     TParFEMapper3D(int N_dim, TFESpace3D *fespace);
 #else
     TParFEMapper3D(int N_dim, TFESpace3D *fespace, int *rowptr, int *kcol);
@@ -239,7 +239,7 @@ class TParFEMapper3D
       return FESpace;
     }
 
-#ifdef _HYBRID
+#ifdef _OMP
     void Color(int &numColors, int *&ptrColors, char type);
     
     int GetN_CMaster()

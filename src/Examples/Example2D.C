@@ -112,9 +112,10 @@ ParameterDatabase Example2D::default_example_database()
   this->example_database.merge(db, false);
 }
 
-Example2D::Example2D(std::vector <DoubleFunct2D*> exact,
-    std::vector <BoundCondFunct2D*> bc,
-    std::vector <BoundValueFunct2D*> bd, CoeffFct2D coeffs)
+Example2D::Example2D(const std::vector<DoubleFunct2D*>& exact,
+                     const std::vector<BoundCondFunct2D*>& bc,
+                     const std::vector<BoundValueFunct2D*>& bd,
+                     const CoeffFct2D& coeffs)
 : example_database(Example2D::default_example_database()), exact_solution(exact),
   boundary_conditions(bc), boundary_data(bd), problem_coefficients(coeffs)
 { 

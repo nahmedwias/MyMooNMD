@@ -27,11 +27,6 @@
 #include <math.h>
 #include <string.h>
 #include <stdlib.h>
-#ifdef __MAC64__
-#include <malloc/malloc.h>
-#else
-#include <malloc.h>
-#endif
 
 TNS2DErrorEstimator::TNS2DErrorEstimator( int fe_local_estimator,
                                       TFEVectFunct2D *u,
@@ -109,16 +104,6 @@ void TNS2DErrorEstimator::GetErrorEstimate(int N_Derivatives,
   int ee_verbose=2;                             // verbosity
 
   int memory[3],data_base_memory;
-#ifdef _MALLOC_MALLOC_H_
- struct mstats info;
- info = mstats();
- 
- memory[0]=memory[1]=memory[2]=0.;
-#else    
-  struct mallinfo MALLINFO;
-  MALLINFO = mallinfo();
-  memory[0]=MALLINFO.usmblks+MALLINFO.uordblks;
-#endif
 // ########################################################################
 // store information in local arrays
 // ########################################################################
@@ -324,13 +309,6 @@ void TNS2DErrorEstimator::GetErrorEstimate(int N_Derivatives,
 // ########################################################################
 // loop over all cells
 // ########################################################################
-#ifdef _MALLOC_MALLOC_H_
- info = mstats();
- 
-#else  
-  MALLINFO = mallinfo();
-  memory[1]=MALLINFO.usmblks+MALLINFO.uordblks;
-#endif  
   for(i=0;i<N_Cells;i++)                      // for all cells on the finest level
   {
      cell = Coll->GetCell(i);                        // next cell 
@@ -531,14 +509,6 @@ void TNS2DErrorEstimator::GetErrorEstimate(int N_Derivatives,
     
     eta_K[i] = estimated_local_errors[current_estimator];
   }                 // endfor i (loop over cells)
-#ifdef _MALLOC_MALLOC_H_
- info = mstats();
- 
-#else    
-  MALLINFO = mallinfo();   
-  memory[2]=MALLINFO.usmblks+MALLINFO.uordblks;
-#endif  
-  data_base_memory+= memory[2]-memory[1];
   
   for(i=1;i<4;i++)  // compute global error estimates
     estimated_global_error[i]=sqrt(estimated_global_errors[i]);
@@ -568,18 +538,6 @@ void TNS2DErrorEstimator::GetErrorEstimate(int N_Derivatives,
   delete Param[0];
   delete Derivatives[0];
    delete AuxArray[0];
-  
-#ifdef _MALLOC_MALLOC_H_
- info = mstats();
- 
-#else  
-   MALLINFO = mallinfo();
-   memory[1]=MALLINFO.usmblks+MALLINFO.uordblks;
-#endif   
-   if (memory[1]- memory[0]!=data_base_memory)
-     cout << "WARNING : Error Estimator did not set all memory free !!!" <<  memory[1]- memory[0] << 
-       "  " << data_base_memory << endl;
-  
 } // TCDErrorEstimator::GetErrorEstimate
 
 

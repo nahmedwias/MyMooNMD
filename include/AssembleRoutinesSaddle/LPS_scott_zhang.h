@@ -13,7 +13,7 @@ struct LPS_parameter_set
 
 // this replaces the matrix C!
 std::shared_ptr<FEMatrix> LPS_for_pressure_Scott_Zhang(
-  std::shared_ptr<const FEMatrix> C, bool velocity, double nu,
-  LPS_parameter_set lps_ps);
+  const std::shared_ptr<const FEMatrix>& C, bool velocity, double nu,
+  const LPS_parameter_set& lps_ps);
 
 #endif // LPS_SCOTT_ZHANG_H

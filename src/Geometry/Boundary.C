@@ -9,14 +9,14 @@ Boundary::Boundary()
   parts.resize(0);
 }
 
-Boundary::Boundary(std::string PRM)
+Boundary::Boundary(const std::string& PRM)
 {
   parts.resize(0);
   initFromFile(PRM);
 }
 
 // read a PRM file (2D)
-void Boundary::initFromFile(std::string PRM)
+void Boundary::initFromFile(const std::string& PRM)
 {
   std::ifstream ifile;
   ifile.open(PRM.c_str());

@@ -8,7 +8,7 @@ class TSquareMatrix2D : public TSquareMatrix
 {
   public:
     /** generate the matrix */
-    TSquareMatrix2D(const TFESpace2D * space);
+    explicit TSquareMatrix2D(const TFESpace2D * space);
     
     TSquareMatrix2D(const TSquareMatrix2D & m) = default;
 

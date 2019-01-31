@@ -44,8 +44,8 @@ TFEVectFunct3D::TFEVectFunct3D()
 
 
 /** constructor with vector initialization */
-TFEVectFunct3D::TFEVectFunct3D(TFESpace3D *fespace3D, std::string name,
-                               std::string description, double *values,
+TFEVectFunct3D::TFEVectFunct3D(TFESpace3D *fespace3D, const std::string& name,
+                               const std::string& description, double *values,
                                int length, int n_components)
 : TFEFunction3D(fespace3D, name, description, values, length)
 {
@@ -369,7 +369,7 @@ void TFEVectFunct3D::GetDeformationTensorErrors(
   int N_Derivatives,
   MultiIndex3D *NeededDerivatives,
   int N_Errors, TFEFunction3D::ErrorMethod *ErrorMeth, 
-  CoeffFct3D Coeff, 
+  const CoeffFct3D& Coeff, 
   TAuxParam3D *Aux,
   int n_fespaces, TFESpace3D **fespaces,
   double *errors)
@@ -637,8 +637,8 @@ void TFEVectFunct3D::FindValueLocal(const TBaseCell* cell, int cell_no,
 
 
 /** write the solution into a data file - written by Sashi **/
-void TFEVectFunct3D::WriteSol(double t,
-				   std::string directory, std::string basename)
+void TFEVectFunct3D::WriteSol(double t, const std::string& directory,
+                              const std::string& basename)
 {
   int i, N_Joints, N_Cells;
   char Dquot;
@@ -700,7 +700,7 @@ void TFEVectFunct3D::WriteSol(double t,
 
 
 /** Read the solution from a given data file - written by Sashi **/
-void TFEVectFunct3D::ReadSol(std::string BaseName)
+void TFEVectFunct3D::ReadSol(const std::string& BaseName)
 {
  int i, j, rank, N_Joints, N_Cells, N_cells, N_joints, N_components, length;
  char line[100];

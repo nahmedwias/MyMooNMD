@@ -29,7 +29,7 @@ class TBdLine : public TBoundComp2D
 
   public:
     // Constructor
-    TBdLine(int id);
+    explicit TBdLine(int id);
 
     // Methods
     /** set all parameters to the given values */

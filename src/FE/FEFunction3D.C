@@ -44,8 +44,9 @@ TFEFunction3D::TFEFunction3D() :
 }
 
 /** constructor with vector initialization */
-TFEFunction3D::TFEFunction3D(const TFESpace3D *fespace3D, std::string name,
-                             std::string description, double *values, int length)
+TFEFunction3D::TFEFunction3D(const TFESpace3D *fespace3D,
+                             const std::string& name,
+                             const std::string& description, double *values, int length)
 : Name(name), Description(description)
 {
   FESpace3D=fespace3D;
@@ -1073,7 +1074,7 @@ void TFEFunction3D::Interpolate(DoubleFunct3D *Exact)
 }
 
 void TFEFunction3D::Interpolate_vector_valued_function(
-    std::vector<DoubleFunct3D*> Exact)
+    const std::vector<DoubleFunct3D*>& Exact)
 {
   if(Exact.size() != 3)
   {
@@ -1935,7 +1936,7 @@ void TFEFunction3D::MinMax(double & min, double & max) const
   }
 }
 
-void TFEFunction3D::PrintMinMax(std::string name) const
+void TFEFunction3D::PrintMinMax(const std::string& name) const
 {
 #ifdef _MPI
   int my_rank;

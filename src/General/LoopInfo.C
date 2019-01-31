@@ -7,7 +7,7 @@
 #include <mpi.h>
 #endif
 
-LoopInfo::LoopInfo(std::string name)
+LoopInfo::LoopInfo(const std::string& name)
  : name(name), initial_residual(std::numeric_limits<double>::max()),
    old_residual(std::numeric_limits<double>::max()), timer(),
    n_previous_iterations(0)
@@ -21,7 +21,7 @@ LoopInfo::LoopInfo(const char* name)
   
 }
 
-LoopInfo::LoopInfo(std::string name,
+LoopInfo::LoopInfo(const std::string& name,
                    bool print_time_every_step_in,
                    bool print_reduction_rates_in,
                    size_t verbosity_threshold_in)
@@ -32,7 +32,7 @@ LoopInfo::LoopInfo(std::string name,
   verbosity_threshold   = verbosity_threshold_in;
 }
 
-void LoopInfo::restart(std::string name, double initial_residual)
+void LoopInfo::restart(const std::string& name, double initial_residual)
 {
   this->name = name;
   this->initial_residual = initial_residual;

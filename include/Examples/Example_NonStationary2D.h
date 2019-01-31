@@ -20,7 +20,7 @@ class Example_NonStationary2D : public Example2D
      * @brief default constructor
      * 
      */
-    Example_NonStationary2D(const ParameterDatabase &);
+    explicit Example_NonStationary2D(const ParameterDatabase &);
     
     /** @brief right hand side vector depends on time or not
      * default is true
@@ -56,12 +56,12 @@ class Example_NonStationary2D : public Example2D
     /**
      * @brief constructor
      */
-    Example_NonStationary2D(std::vector <DoubleFunct2D*> exact,
-              std::vector <BoundCondFunct2D*> bc,
-              std::vector <BoundValueFunct2D*> bd, 
-              CoeffFct2D coeffs,
-              bool timedependentrhs = true, bool timedependentcoeffs=true,
-              std::vector <DoubleFunct2D*> init_cond=std::vector<DoubleFunct2D*>());
+    Example_NonStationary2D(
+      const std::vector<DoubleFunct2D*>& exact,
+      const std::vector<BoundCondFunct2D*>& bc,
+      const std::vector<BoundValueFunct2D*>& bd, const CoeffFct2D& coeffs,
+      bool timedependentrhs = true, bool timedependentcoeffs = true,
+      std::vector<DoubleFunct2D*> init_cond = std::vector<DoubleFunct2D*>());
     
     
     // getters

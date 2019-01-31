@@ -33,7 +33,8 @@
 //
 /******************************************************************************/
 #ifdef __2D__
-void Assemble2D_edge_Oseen(CoeffFct2D Coeff,int n_fespaces, TFESpace2D **fespaces,
+void Assemble2D_edge_Oseen(const CoeffFct2D& Coeff, int n_fespaces,
+                           TFESpace2D **fespaces,
 			   int n_sqmatrices, TSquareMatrix2D **sqmatrices,
 			   int n_matrices, TMatrix2D **matrices,
 			   int, double **, TFESpace2D **,

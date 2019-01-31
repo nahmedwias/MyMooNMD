@@ -44,7 +44,7 @@ class TMapper
 
   public:
     //Constructor
-    TMapper(Mapper which);
+    explicit TMapper(Mapper which);
 
     //Methods
     /** return type of mapper */

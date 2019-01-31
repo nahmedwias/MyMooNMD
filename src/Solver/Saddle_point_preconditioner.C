@@ -96,7 +96,6 @@ Saddle_point_preconditioner::Saddle_point_preconditioner(
 		}
 		else if(db.has_nested_database(db_name))
 		{//...the input database has a nested database of the required name
-			cout<< "!!!!!!!!!!!!!  JAAAAAAAAAAAA"<<endl;
 			vs_db.merge(db.get_nested_database(db_name), false);
 		}
 
@@ -107,7 +106,7 @@ Saddle_point_preconditioner::Saddle_point_preconditioner(
 					"iterative routine requires a flexible solver.");
 		}
 
-#ifdef _SEQ
+#ifndef _MPI
 
 		/* vs_db["iterative_solver_type"] = "fgmres"; //NEW
 vs_db.info(true);
@@ -180,7 +179,7 @@ cout<<"JAAAA"<<endl;    */
 	// construct an approximation to the Schur complement matrix
 	this->Poisson_solver_matrix = this->compute_Poisson_solver_matrix();
 
-#ifdef _SEQ
+#ifndef _MPI
 	this->Poisson_solver.reset(new DirectSolver(*Poisson_solver_matrix,
 			DirectSolver::DirectSolverTypes::umfpack));
 #endif
@@ -243,7 +242,7 @@ void Saddle_point_preconditioner::update()
   // take all blocks except from last row and last column
   this->velocity_block = M->get_sub_blockfematrix(0, n_rows-2);
   
-#ifdef _SEQ
+#ifndef _MPI
   this->velocity_solver->update_matrix(this->velocity_block);
 #endif
 #ifdef _MPI
@@ -288,7 +287,7 @@ void Saddle_point_preconditioner::update()
     this->Poisson_solver_matrix = this->compute_Poisson_solver_matrix();
 
 
-#ifdef _SEQ
+#ifndef _MPI
     this->Poisson_solver.reset(
       new DirectSolver(*this->Poisson_solver_matrix,
                        DirectSolver::DirectSolverTypes::umfpack));
@@ -322,7 +321,7 @@ void Saddle_point_preconditioner::solve_velocity(
   unsigned int verbosity = Output::getVerbosity();
   //Output::suppressAll();
   Output::setVerbosity(1);
-#ifdef _SEQ
+#ifndef _MPI
 /// velocity_solver->get_db().info(true); //NEW
 if ( (this->spp_type == Saddle_point_preconditioner::type::AL) || (this->spp_type == Saddle_point_preconditioner::type::mod_AL) )
 {
@@ -621,7 +620,7 @@ Saddle_point_preconditioner::compute_Poisson_solver_matrix() const
       break;
     case Saddle_point_preconditioner::type::lsc: // original LSC
     case Saddle_point_preconditioner::type::bd_lsc: // bdry corrected LSC
-#ifdef _SEQ
+#ifndef _MPI
 
       ret.reset(
         divergence_block->multiply_with_transpose_from_right(inverse_diagonal));
@@ -1396,7 +1395,7 @@ void Saddle_point_preconditioner::fill_augmented_matrix_and_rhs()
 }
 
 /* **************************************************************************************************** */
-BlockVector Saddle_point_preconditioner::get_augmented_blockvector(const BlockVector right_hand_side)
+BlockVector Saddle_point_preconditioner::get_augmented_blockvector(const BlockVector& right_hand_side)
 {
 	BlockVector aug_right_hand_side(right_hand_side);//BlockVector(this->M);
 	const double* g = right_hand_side.block(2);

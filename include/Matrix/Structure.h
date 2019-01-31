@@ -119,9 +119,9 @@ class TStructure
     /// @name construct square structures using one finite element space
     /// @brief ansatz and test space is the same 
     //@{
-    TStructure(const TFESpace1D * space);
-    TStructure(const TFESpace2D * Space);
-    TStructure(const TFESpace3D * space);
+    explicit TStructure(const TFESpace1D * space);
+    explicit TStructure(const TFESpace2D * Space);
+    explicit TStructure(const TFESpace3D * space);
     //@}
     
     /// @name construct rectangular structures using two finite element spaces
@@ -357,7 +357,7 @@ class TStructure
      * 
      * @param filename a file with this name will be created (overwritten)s
      */
-    void draw(std::string filename) const;
+    void draw(const std::string& filename) const;
     
     /**
      * @brief return a structure for the matrix-matrix-product A*B

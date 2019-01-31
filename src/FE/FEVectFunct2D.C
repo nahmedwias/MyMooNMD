@@ -53,9 +53,10 @@ TFEVectFunct2D::TFEVectFunct2D()
 
 
 /** constructor with vector initialization */
-TFEVectFunct2D::TFEVectFunct2D(const TFESpace2D *fespace2D, std::string name,
-                               std::string description, double *values,
-                             int length, int n_components)
+TFEVectFunct2D::TFEVectFunct2D(const TFESpace2D *fespace2D,
+                               const std::string& name,
+                               const std::string& description, double *values,
+                               int length, int n_components)
   : TFEFunction2D(fespace2D, name, description, values, length)
 {
   N_Components = n_components;
@@ -249,7 +250,7 @@ void TFEVectFunct2D::GetDeformationTensorErrors(
   int N_Derivatives,
   MultiIndex2D *NeededDerivatives,
   int N_Errors, TFEFunction2D::ErrorMethod *ErrorMeth, 
-  CoeffFct2D Coeff, 
+  const CoeffFct2D& Coeff, 
   TAuxParam2D *Aux,
   int n_fespaces, TFESpace2D **fespaces,
   double *errors)
@@ -437,7 +438,8 @@ std::pair<double, double> TFEVectFunct2D::get_L2_norm_divergence_curl() const
 
 //================================================================
 void TFEVectFunct2D::get_functional_value(std::vector<double>& values,
-  std::function<void(std::vector<double>&, std::array<double, 8>)> functional)
+  const std::function<void(std::vector<double>&, std::array<double, 8>)>&
+    functional)
 const
 {
   BaseFunct2D *BaseFuncts;
@@ -827,8 +829,8 @@ double TFEVectFunct2D::GetL2NormDivergenceError(DoubleFunct2D *Exact_u1,DoubleFu
 
 //==========================================================================
 /** write the solution into a data file - written by Sashi **/
-void TFEVectFunct2D::WriteSol(double t, std::string directory,
-		   	   	   	   	   	   std::string basename)
+void TFEVectFunct2D::WriteSol(double t, const std::string& directory,
+                              const std::string& basename)
 {
   int i, N_Joints, N_Cells;
 
@@ -889,7 +891,7 @@ void TFEVectFunct2D::WriteSol(double t, std::string directory,
 
 
 /** Read the solution from a given data file - written by Sashi **/
-void TFEVectFunct2D::ReadSol(std::string BaseName)
+void TFEVectFunct2D::ReadSol(const std::string& BaseName)
 {
  int i, j, N_Joints, N_Cells, N_cells, N_joints, N_components, length;
  char line[100];

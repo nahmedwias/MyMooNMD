@@ -8,7 +8,7 @@ class Iteration_cgs : public IterativeMethod<LinearOperator, Vector>
 {
   public:
     /** constructor */
-    Iteration_cgs(std::shared_ptr<Preconditioner<Vector>> p);
+    explicit Iteration_cgs(std::shared_ptr<Preconditioner<Vector>> p);
     
     /** destructor */
     virtual ~Iteration_cgs() = default;

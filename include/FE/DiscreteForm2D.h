@@ -82,7 +82,7 @@ class TDiscreteForm2D
         MultiIndex2D *derivatives, int *fespacenumber,
         int n_matrices, int n_rhs,
         int *rowspace, int *columnspace, int *rhsspace,
-        AssembleFct2D *assemble, CoeffFct2D coeffs,
+        AssembleFct2D *assemble, const CoeffFct2D& coeffs,
         ManipulateFct2D *manipulate);
 
     /** constructor with assembling using parameters */
@@ -90,7 +90,7 @@ class TDiscreteForm2D
         MultiIndex2D *derivatives, int *fespacenumber,
         int n_matrices, int n_rhs,
         int *rowspace, int *columnspace, int *rhsspace,
-        AssembleFctParam assembleparam, CoeffFct2D coeffs,
+        const AssembleFctParam& assembleparam, const CoeffFct2D& coeffs,
         ManipulateFct2D *manipulate);
 
     /** destructor */

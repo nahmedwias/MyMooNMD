@@ -82,7 +82,7 @@ namespace BoundaryAssembling2D
           const TFESpace2D *U_Space,
           BoundValueFunct2D *given_boundary_data1,
           BoundValueFunct2D *given_boundary_data2,
-          std::vector<size_t> nitsche_id,
+          const std::vector<size_t>& nitsche_id,
           double mult
   );
   void matrix_and_rhs_corner_stabilization(BlockFEMatrix &M,
@@ -90,11 +90,13 @@ namespace BoundaryAssembling2D
           const TFESpace2D *U_Space,
           BoundValueFunct2D *given_boundary_data1,
           BoundValueFunct2D *given_boundary_data2,
-          std::vector<TBoundEdge*> &edge,std::vector<size_t> nitsche_id,
+          std::vector<TBoundEdge*> &edge,
+          const std::vector<size_t>& nitsche_id,
           double mult);
 
 
-  void find_cornerDofs_in_boundarycells(std::vector<double> xc, std::vector<double> yc,
+  void find_cornerDofs_in_boundarycells(
+      const std::vector<double>& xc, const std::vector<double>& yc,
       const TFESpace2D *USpace,
       TBoundEdge *boundedge_1, TBoundEdge *boundedge_2,
       int &locdof_corner_1, int &locdof_corner_2);
@@ -285,7 +287,7 @@ namespace BoundaryAssembling2D
   /** @brief access to the coordinates and first order partial derivatives of the solution (e.g. $\boldsymbol{u}$ or $p$) on joint with joint_id in reference element and transformation to the actual element with output of the coordinates [u00] and partial first order derivatives [u10],[u01] of the actual solution (e.g. u or p)
    */
   void get_original_values(FE2D FEId, int joint_id, TBaseCell *cell,
-      std::vector<double> quadPoints, int BaseVectDim,
+      const std::vector<double>& quadPoints, int BaseVectDim,
       std::vector< std::vector<double> > &u00,
       std::vector< std::vector<double> > &u10,
       std::vector< std::vector<double> > &u01,

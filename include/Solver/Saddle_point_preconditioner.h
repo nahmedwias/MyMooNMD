@@ -79,7 +79,7 @@ class Saddle_point_preconditioner : public Preconditioner<BlockVector>
 
     /* @brief get the augmentated rhs in case of augmented Lagrangian preconditioner:
      * (f_1,f_2,f_3,g) -> (f_1 + gamma * B_1^T * W^{-1} g, f_2 + gamma * B_2^T * W^{-1} g, g) */
-    BlockVector get_augmented_blockvector(BlockVector right_hand_side);
+    BlockVector get_augmented_blockvector(const BlockVector& right_hand_side);
   
   protected:
     // saddle point preconditioner (spp) type
@@ -166,7 +166,7 @@ class Saddle_point_preconditioner : public Preconditioner<BlockVector>
      */
     std::shared_ptr<BlockMatrix> Poisson_solver_matrix;
     
-#ifdef _SEQ
+#ifndef _MPI
     /** @brief storing a factorization for the 'Poisson_solver_matrix' */
     std::shared_ptr<DirectSolver> Poisson_solver;
 #endif

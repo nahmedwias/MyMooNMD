@@ -17,7 +17,7 @@
 void BoundaryAssembling3D::rhs_g_v_n(BlockVector &rhs,
     const TFESpace3D *U_Space,
     BoundValueFunct3D *given_boundary_data,
-    std::vector<TBoundFace*> boundaryFaceList,
+    std::vector<TBoundFace*>& boundaryFaceList,
     int componentID,
     double mult)
 {
@@ -186,7 +186,7 @@ void BoundaryAssembling3D::rhs_g_v_n(BlockVector &rhs,
 // int_{Gamma} mult * < u, v >
 void BoundaryAssembling3D::matrix_u_v(BlockFEMatrix &M,
 				      const TFESpace3D *U_Space,
-				      std::vector<TBoundFace*> boundaryFaceList,
+				      std::vector<TBoundFace*>& boundaryFaceList,
 				      int componentID,
 				      double mult,
 				      bool rescale_by_h)
@@ -271,7 +271,7 @@ void BoundaryAssembling3D::matrix_u_v(BlockFEMatrix &M,
 void BoundaryAssembling3D::matrix_p_v_n(BlockFEMatrix &M,
 					const TFESpace3D *U_Space,
 					const TFESpace3D *P_Space,
-					std::vector<TBoundFace*> boundaryFaceList,
+					std::vector<TBoundFace*>& boundaryFaceList,
 					int componentID,
 					double mult)
 {
@@ -364,7 +364,7 @@ void BoundaryAssembling3D::matrix_p_v_n(BlockFEMatrix &M,
 void BoundaryAssembling3D::matrix_q_u_n(BlockFEMatrix &M,
     const TFESpace3D *U_Space,
     const TFESpace3D *P_Space,
-    std::vector<TBoundFace*> boundaryFaceList,
+    std::vector<TBoundFace*>& boundaryFaceList,
     int componentID,
     double mult)
 {
@@ -484,7 +484,7 @@ void BoundaryAssembling3D::rhs_q_uD_n(BlockVector &rhs,
     BoundValueFunct3D *given_boundary_data0,
     BoundValueFunct3D *given_boundary_data1,
     BoundValueFunct3D *given_boundary_data2,
-    std::vector<TBoundFace*> boundaryFaceList,
+    std::vector<TBoundFace*>& boundaryFaceList,
     int componentID,
     double mult)
 {
@@ -588,7 +588,7 @@ void BoundaryAssembling3D::rhs_q_uD_n(BlockVector &rhs,
 // int_{Gamma} mult * ( (grad u).n, v )
 void BoundaryAssembling3D::matrix_gradu_n_v(BlockFEMatrix &M,
     const TFESpace3D *U_Space,
-    std::vector<TBoundFace*> boundaryFaceList,
+    std::vector<TBoundFace*>& boundaryFaceList,
     int componentID,
     double mult)
 {
@@ -696,7 +696,7 @@ void BoundaryAssembling3D::matrix_gradu_n_v(BlockFEMatrix &M,
 // int_{Gamma} mult * < (grad v).n, u >
 void BoundaryAssembling3D::matrix_gradv_n_u(BlockFEMatrix &M,
     const TFESpace3D *U_Space,
-    std::vector<TBoundFace*> boundaryFaceList,
+    std::vector<TBoundFace*>& boundaryFaceList,
     int componentID,
     double mult)
 
@@ -798,7 +798,7 @@ void BoundaryAssembling3D::rhs_gradv_n_uD(BlockVector &rhs,
     BoundValueFunct3D *given_boundary_data0,
     BoundValueFunct3D *given_boundary_data1,
     BoundValueFunct3D *given_boundary_data2,
-    std::vector<TBoundFace*> boundaryFaceList,
+    std::vector<TBoundFace*>& boundaryFaceList,
     int componentID,
     double mult)
 {
@@ -922,7 +922,7 @@ void BoundaryAssembling3D::rhs_uD_v(BlockVector &rhs,
     BoundValueFunct3D *given_boundary_data0,
     BoundValueFunct3D *given_boundary_data1,
     BoundValueFunct3D *given_boundary_data2,
-    std::vector<TBoundFace*> boundaryFaceList,
+    std::vector<TBoundFace*>& boundaryFaceList,
     int componentID,
     double mult,
     bool rescale_by_h)
@@ -1361,7 +1361,7 @@ void BoundaryAssembling3D::computeNormalAndTransformationData(TBaseCell *cell, i
 void BoundaryAssembling3D::nitsche_bc(BlockFEMatrix &s_matrix, BlockVector &s_rhs,
     const TFESpace3D * v_space, const TFESpace3D *p_space,
     BoundValueFunct3D * U1, BoundValueFunct3D *U2, BoundValueFunct3D *U3,
-    std::vector<TBoundFace*> boundaryFaceList,
+    std::vector<TBoundFace*>& boundaryFaceList,
     int bd_comp, double gamma, double mu,
     int sym_u, int sym_p)
 {

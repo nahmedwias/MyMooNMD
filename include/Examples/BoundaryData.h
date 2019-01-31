@@ -46,7 +46,7 @@ class BoundaryData
    * 
    * The function 'f' returns boundary data for a given boundary component.
    */
-  BoundaryData(std::function<double(unsigned int)> f);
+  explicit BoundaryData(std::function<double(unsigned int)> f);
   
   /** @brief constructor in 2D using the parametrization on the boundary
    *
@@ -56,7 +56,7 @@ class BoundaryData
    * For stationary BoundaryData simply define `f` such that it does not depend
    * on its last argument.
    */
-  BoundaryData(std::function<double(unsigned int, double, double)> f);
+  explicit BoundaryData(std::function<double(unsigned int, double, double)> f);
 
   /** @brief constructor in 3D using the parametrization on the boundary
    *
@@ -67,7 +67,8 @@ class BoundaryData
    * For stationary BoundaryData simply define `f` such that it does not depend
    * on its last argument.
    */
-  BoundaryData(std::function<double(unsigned int, double, double, double)> f);
+  explicit BoundaryData(
+    std::function<double(unsigned int, double, double, double)> f);
 
   /** @brief constructor using the coordinates on the boundary (2D and 3D)
    *
@@ -77,14 +78,14 @@ class BoundaryData
    * For stationary BoundaryData simply define `f` such that it does not depend
    * on its last argument.
    */
-  BoundaryData(std::function<double(const Point&, double)> f);
+  explicit BoundaryData(std::function<double(const Point&, double)> f);
 
   /** @brief constructor for constant boundary data (2D and 3D)
    *
    * Use this if your boundary data is constant on the entire boundary, for
    * example homogeneous.
    */
-  BoundaryData(double);
+  explicit BoundaryData(double);
 
   /** @brief compute the boundary data given boundary conditions and an exact
    * solution.

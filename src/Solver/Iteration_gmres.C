@@ -82,7 +82,7 @@ class TriangularMatrix
     // one vector for each row
     std::vector<std::vector<double>> entries;
     
-    TriangularMatrix(const unsigned int size) : entries(size)
+    explicit TriangularMatrix(const unsigned int size) : entries(size)
     {
       Output::print<5>("TriangularMatrix constructor ", size);
       //unsigned int n_elements = (size*size+size)/2 + size-1;

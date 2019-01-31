@@ -33,7 +33,7 @@ class TBoundPart
   public:
     // Constuctor
     /** initialize the data structure */
-    TBoundPart(int n_comps);
+    explicit TBoundPart(int n_comps);
     
     /// @brief destructor
     ~TBoundPart();
