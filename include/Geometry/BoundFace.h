@@ -29,7 +29,7 @@ class TBoundFace : public TJoint
     // Constructors
     TBoundFace(TBoundComp3D *bdcomp, double *param1, double *param2);
 
-    TBoundFace(TBoundComp3D *bdcomp);
+    explicit TBoundFace(TBoundComp3D *bdcomp);
 
     // Methods
     /** check whether the refinement pattern on both side patch,

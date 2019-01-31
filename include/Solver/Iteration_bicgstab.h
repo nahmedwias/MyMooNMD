@@ -8,7 +8,7 @@ class Iteration_bicgstab : public IterativeMethod<LinearOperator, Vector>
 {
   public:
     /** constructor */
-    Iteration_bicgstab(std::shared_ptr<Preconditioner<Vector>> p);
+    explicit Iteration_bicgstab(std::shared_ptr<Preconditioner<Vector>> p);
     
     /** destructor */
     virtual ~Iteration_bicgstab() = default;

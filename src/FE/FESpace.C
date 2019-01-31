@@ -18,8 +18,8 @@
 #include <MooNMD_Io.h>
 
 TFESpace::TFESpace(TCollection *coll,
-                   std::string name,
-                   std::string description)
+                   const std::string& name,
+                   const std::string& description)
 :  Name(name), Description(description),
    Collection(coll)
 {
@@ -60,7 +60,7 @@ TFESpace::~TFESpace()
 }
 
 /** write info on fespace into file */
-int TFESpace::Write(std::string filename)
+int TFESpace::Write(const std::string& filename)
 {
   int header[4];
   int N_LocalDOF;

@@ -16,7 +16,7 @@
 #include <ParFECommunicator3D.h>
 #endif
 
-SmootherCode string_to_smoother_code(std::string code)
+SmootherCode string_to_smoother_code(const std::string& code)
 {
   if(code == std::string("direct_solve"))
     return SmootherCode::DIRECT_SOLVE;
@@ -50,7 +50,7 @@ SmootherCode string_to_smoother_code(std::string code)
 
 }
 
-MultigridType string_to_multigrid_type(std::string code)
+MultigridType string_to_multigrid_type(const std::string& code)
 {
   if(code == std::string("standard"))
       return MultigridType::STANDARD;
@@ -103,7 +103,7 @@ Multigrid::Multigrid(const ParameterDatabase& param_db)
 
 }
 
-void Multigrid::initialize(std::list<BlockFEMatrix*> matrices)
+void Multigrid::initialize(const std::list<BlockFEMatrix*>& matrices)
 {
   // Create the levels and collect them in a list
   if(matrices.size() != n_algebraic_levels_)

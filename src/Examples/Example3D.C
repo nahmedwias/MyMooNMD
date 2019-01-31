@@ -108,9 +108,10 @@ ParameterDatabase Example3D::default_example_database()
   this->example_database.merge(db, false);
 }
 
-Example3D::Example3D(std::vector <DoubleFunct3D*> exact,
-    std::vector <BoundCondFunct3D*> bc,
-    std::vector <BoundValueFunct3D*> bd, CoeffFct3D coeffs)
+Example3D::Example3D(const std::vector<DoubleFunct3D*>& exact,
+                     const std::vector<BoundCondFunct3D*>& bc,
+                     const std::vector<BoundValueFunct3D*>& bd,
+                     const CoeffFct3D& coeffs)
 : example_database(Example3D::default_example_database()), exact_solution(exact),
   boundary_conditions(bc), boundary_data(bd), problem_coefficients(coeffs)
 { 

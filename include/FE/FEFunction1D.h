@@ -38,8 +38,8 @@ class TFEFunction1D
 
   public:
     /** constructor with vector initialization */
-    TFEFunction1D(TFESpace1D *fespace1D, std::string name, std::string description,
-                  double *values, int length);
+    TFEFunction1D(TFESpace1D *fespace1D, const std::string& name,
+                  const std::string& description, double *values, int length);
 
     /** destructor */
     ~TFEFunction1D();

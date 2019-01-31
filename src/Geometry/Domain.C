@@ -447,7 +447,8 @@ void TDomain::Init(const std::string& PRM, const std::string& GEO)
   }
 }
 
-void TDomain::ReadSandwichGeo(std::string file_name, std::string prm_file_name)
+void TDomain::ReadSandwichGeo(const std::string& file_name,
+                              const std::string& prm_file_name)
 {
 
   // The constructor took care of this nested database being present.
@@ -824,7 +825,7 @@ void TDomain::ReadBdParam(std::istream& dat, bool& sandwich_flag)
 }
 
 // initialize a domain from a mesh and a boundary(PRM) file
-void TDomain::InitFromMesh(std::string PRM, std::string MESHFILE)
+void TDomain::InitFromMesh(const std::string& PRM, const std::string& MESHFILE)
 {
 #ifdef __2D__
   Output::print<3>("TDomain:: InitFromMesh using ", PRM, " and ", MESHFILE);
@@ -3230,7 +3231,7 @@ size_t TDomain::get_max_n_adaptive_steps() const
   return db["refinement_max_n_adaptive_steps"];
 }
 
-void TDomain::print_info(std::string name) const
+void TDomain::print_info(const std::string& name) const
 {
 #ifdef _MPI
   int my_rank, size;

@@ -20,7 +20,7 @@ class TPeriodicJoint : public TJointEqN
   public:
     // Constructors
     /** initialize the joint with one neighbour */
-    TPeriodicJoint(TBaseCell *neighb0);
+    explicit TPeriodicJoint(TBaseCell *neighb0);
 
     /** initialize the joint with two neighbours */
     TPeriodicJoint(TBaseCell *neighb0, TBaseCell *neighb1);

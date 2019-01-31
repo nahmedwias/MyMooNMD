@@ -34,8 +34,8 @@ class TBdPlane : public TBoundComp3D
 
   public:
     // Constructor
-    TBdPlane(int id);
-    TBdPlane(int id,int ref);
+    explicit TBdPlane(int id);
+    TBdPlane(int id, int ref);
     
     virtual ~TBdPlane () {};
 

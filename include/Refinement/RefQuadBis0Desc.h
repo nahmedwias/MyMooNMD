@@ -32,7 +32,7 @@ class TRefQuadBis0Desc : public TRefDesc
   public:
     // Constructor
     /** build a descriptor for bisection of a quadrangle */
-    TRefQuadBis0Desc(TShapeDesc *shape);
+    explicit TRefQuadBis0Desc(TShapeDesc *shape);
 
     // Methods
 };

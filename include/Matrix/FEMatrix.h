@@ -33,10 +33,10 @@ class FEMatrix : public TMatrix
     /// @name construct square matrix using one finite element space
     /// @brief ansatz and test space is the same 
     //@{
-    FEMatrix(const TFESpace1D * space);
-    FEMatrix(const TFESpace2D * space);
+    explicit FEMatrix(const TFESpace1D * space);
+    explicit FEMatrix(const TFESpace2D * space);
     #ifdef __3D__
-    FEMatrix(const TFESpace3D * space);
+    explicit FEMatrix(const TFESpace3D * space);
     #endif // 3D
     //@}
     

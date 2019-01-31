@@ -106,7 +106,7 @@ class TDomain
      * @brief Constructor.
      * @param db A database to be merged into the domain's own.
      */
-     TDomain(const ParameterDatabase& db);
+    explicit TDomain(const ParameterDatabase& db);
      
     /** @brief copy constructor, deleted as a precaution */
     TDomain(const TDomain&) = delete;
@@ -148,8 +148,8 @@ class TDomain
      * @param[in] file_name Input stream which contains the initial mesh information
      * in either MooNMD-native ".GEO"-format or medit style ".mesh"-format.
      */
-    void ReadSandwichGeo(std::string file_name,
-                         std::string prm_file_name = "");
+    void ReadSandwichGeo(const std::string& file_name,
+                         const std::string& prm_file_name = "");
 
     /** @brief make boundary parameter consistent */
     void MakeBdParamsConsistent(TCollection *coll);
@@ -267,7 +267,7 @@ class TDomain
        * @param[in] m filepath to mesh file
        * @attention this function uses only strings (new convention, 05.2016)
        */
-      void InitFromMesh(std::string PRM, std::string m);
+      void InitFromMesh(const std::string& PRM, const std::string& m);
       
 #ifdef __3D__
 
@@ -534,7 +534,7 @@ class TDomain
    * to console and outfile.
    * @param name A name for the domain.
    */
-  void print_info(std::string name) const;
+  void print_info(const std::string& name) const;
 
   /** This is a method which wraps together two things which are awful about
    * MPI ParMooN, especially in connection with multigrid.

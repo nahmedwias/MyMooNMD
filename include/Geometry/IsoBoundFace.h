@@ -38,7 +38,7 @@ class TIsoBoundFace : public TBoundFace
         paramter of starting and end point t\_0, t\_1 */
     TIsoBoundFace(TBoundComp3D *bdcomp, double *param1, double *param2);
 
-    TIsoBoundFace(TBoundComp3D *bdcomp);
+    explicit TIsoBoundFace(TBoundComp3D *bdcomp);
 
     // Methods
     /** check whether the refinement pattern on both side patch,

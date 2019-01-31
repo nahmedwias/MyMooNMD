@@ -25,7 +25,7 @@ class TBdSphere : public TBoundComp3D
 
   public:
     // Constructor
-    TBdSphere(int id);
+    explicit TBdSphere(int id);
 
     // Methods
     /** set all parameters to the given values */

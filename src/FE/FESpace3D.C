@@ -38,8 +38,9 @@
 #endif
 
 /** Constructor */
-TFESpace3D::TFESpace3D(TCollection *coll, std::string name, std::string description) :
-     TFESpace(coll, name, description)
+TFESpace3D::TFESpace3D(TCollection *coll, const std::string& name,
+                       const std::string& description)
+ : TFESpace(coll, name, description)
 {
   N_ActiveDegrees = 0;
   N_SlaveDegrees = 0;
@@ -54,9 +55,10 @@ TFESpace3D::TFESpace3D(TCollection *coll, std::string name, std::string descript
 // =====================================================================
 
 /** constructor for building a space with elements of order k */
-TFESpace3D::TFESpace3D(TCollection *coll, std::string name, std::string description,
-                       BoundCondFunct3D *BoundaryCondition, int ord) :
-     TFESpace(coll, name, description)
+TFESpace3D::TFESpace3D(TCollection *coll, const std::string& name,
+                       const std::string& description,
+                       BoundCondFunct3D *BoundaryCondition, int ord)
+ : TFESpace(coll, name, description)
 {
   N_ActiveDegrees = 0;
   N_SlaveDegrees = 0;
@@ -227,9 +229,10 @@ TFESpace3D::TFESpace3D(TCollection *coll, std::string name, std::string descript
 }
 
 /** constructor for building a space with the given elements */
-TFESpace3D::TFESpace3D(TCollection *coll, std::string name, std::string description,
-               BoundCondFunct3D *BoundaryCondition,
-               FE3D *fes) : TFESpace(coll, name, description)
+TFESpace3D::TFESpace3D(TCollection *coll, const std::string& name,
+                       const std::string& description,
+                       BoundCondFunct3D *BoundaryCondition, FE3D *fes)
+ : TFESpace(coll, name, description)
 {
   N_ActiveDegrees = 0;
   N_SlaveDegrees = 0;
@@ -253,10 +256,11 @@ TFESpace3D::TFESpace3D(TCollection *coll, std::string name, std::string descript
 }
 
 /** constructor for building a space with elements of order k */
-TFESpace3D::TFESpace3D(TCollection *coll, std::string name, std::string description,
+TFESpace3D::TFESpace3D(TCollection *coll, const std::string& name,
+                       const std::string& description,
                        BoundCondFunct3D *BoundaryCondition, SpaceType type,
-                       int ord) :
-     TFESpace(coll, name, description)
+                       int ord)
+ : TFESpace(coll, name, description)
 {
   N_ActiveDegrees = 0;
   N_SlaveDegrees = 0;

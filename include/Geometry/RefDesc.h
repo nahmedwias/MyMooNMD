@@ -295,7 +295,7 @@ class TRefDesc
   public:
     // Constructor
     /** initialize the whole data structure */
-    TRefDesc(TShapeDesc *shape);
+    explicit TRefDesc(TShapeDesc *shape);
 
     virtual ~TRefDesc(){};
     

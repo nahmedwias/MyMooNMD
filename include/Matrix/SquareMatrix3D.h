@@ -8,7 +8,7 @@ class TSquareMatrix3D : public TSquareMatrix
 {
   public:
     /** generate the matrix */
-    TSquareMatrix3D(const TFESpace3D * space);
+    explicit TSquareMatrix3D(const TFESpace3D * space);
     
     TSquareMatrix3D(const TSquareMatrix3D & m) = default;
     

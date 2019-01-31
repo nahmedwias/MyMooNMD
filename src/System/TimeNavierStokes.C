@@ -1,5 +1,10 @@
 #include "TimeNavierStokes.h"
 #include "Database.h"
+
+#include "LocalProjection.h"
+#include "Hotfixglobal_AssembleNSE.h"
+#include "GridTransfer.h"
+#include "Multigrid.h"
 #ifdef __2D__
 #include "Upwind.h"
 #include "Matrix2D.h"
@@ -13,10 +18,6 @@
 #include "Assemble3D.h"
 #include "AuxParam3D.h"
 #endif
-#include "LocalProjection.h"
-#include "Hotfixglobal_AssembleNSE.h"
-#include "GridTransfer.h"
-#include "Multigrid.h"
 #ifdef _MPI
 #include "ParFECommunicator3D.h"
 #endif
@@ -110,6 +111,13 @@ TimeNavierStokes<d>::System_per_grid::System_per_grid(
                      solution_m2.length(0), d);
   p_m2 = FEFunction(pressure_space.get(), "p", "p", this->solution_m2.block(d),
                     solution_m2.length(d));
+
+  time_avg_sol = BlockVector(matrix, false);
+  u_time_avg = FEVectFunct(velocity_space.get(), "u_t_avg", "u time averaged",
+                           time_avg_sol.block(0), time_avg_sol.length(0), d);
+  p_time_avg = FEFunction(pressure_space.get(), "p_t_avg", "p time averaged",
+                          this->time_avg_sol.block(d), time_avg_sol.length(d));
+
   combined_old_sols = BlockVector(matrix, false);
   comb_old_u = FEVectFunct(velocity_space.get(), "u", "u",
                            combined_old_sols.block(0),
@@ -156,6 +164,9 @@ TimeNavierStokes<d>::TimeNavierStokes(const TDomain& domain,
  : db(default_tnse_database()), systems(), outputWriter(param_db), example(ex),
    solver(param_db), defect(), old_residuals(), initial_residual(1e10),
    time_stepping_scheme(param_db), is_rhs_and_mass_matrix_nonlinear(false)
+#ifdef __3D__
+   , Lines()
+#endif
 {
   db.merge(param_db);
   this->check_and_set_parameters();
@@ -223,7 +234,7 @@ TimeNavierStokes<d>::TimeNavierStokes(const TDomain& domain,
   // initial solution on finest grid - read-in or interpolation
   if(db["read_initial_solution"].is(true))
   {
-    if(!this->time_stepping_scheme.get_start_time())
+    if(this->time_stepping_scheme.get_start_time() == 0.)
     {
       Output::warn<1>("Initial Solution",
         "Restarting from existing solution but initial time is 0! This is "
@@ -238,15 +249,40 @@ TimeNavierStokes<d>::TimeNavierStokes(const TDomain& domain,
         "from old simulation).");
     }
     std::string file = db["initial_solution_file"];
-    Output::root_info("Initial Solution", "Reading initial solution from file ", file);
+    Output::root_info("Initial Solution", "Reading initial solution from file ",
+                      file);
 #ifdef _MPI
     int my_rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
     file += ".proc" + std::to_string(my_rank);
     Output::root_info("Initial Solution", "Appending .proc<RANK> to the "
-        "expected initial solution file name.");
+                      "expected initial solution file name.");
 #endif
     systems.front().solution.read_from_file(file);
+    
+    
+    // read time average solution if it exists
+    if(db["output_compute_time_average"])
+    {
+      Output::root_info("Time averaged solution",
+                        "Appending _time_average.proc<RANK> to the expected "
+                        "initial solution file name.");
+      std::string file_average = db["initial_solution_file"];
+      file_average += "_time_average";
+#ifdef _MPI
+      file_average += ".proc" + std::to_string(my_rank);
+#endif
+      try
+      {
+        systems.front().time_avg_sol.read_from_file(file_average);
+      }
+      catch(...)
+      {
+        Output::warn("Reading time averaged solution", " Could not open a "
+                     "file ", file_average, ". Now I start with a zero time "
+                     "average.");
+      }
+    }
   }
   else
   {
@@ -267,10 +303,22 @@ TimeNavierStokes<d>::TimeNavierStokes(const TDomain& domain,
 
   outputWriter.add_fe_vector_function(&this->get_velocity());
   outputWriter.add_fe_function(&this->get_pressure());
+  if(db["output_compute_time_average"])
+  {
+    outputWriter.add_fe_vector_function(&systems.front().u_time_avg);
+    outputWriter.add_fe_function(&systems.front().p_time_avg);
+  }
 
   // print out the information (cells, dofs, etc)
   this->output_problem_size_info();
   this->errors.fill(0.);
+
+#ifdef __3D__  
+  if( db["output_along_line"] )
+  {
+    Lines = LinesEval<d>(domain, param_db);
+  }
+#endif
 }
 
 /* ************************************************************************** */
@@ -1046,7 +1094,7 @@ void TimeNavierStokes<d>::set_matrices_rhs(
           if(db["space_discretization_type"].is("smagorinsky"))
           {
             sqMat.resize(d*d);
-	    rhs_array.resize(0);
+            rhs_array.resize(0);
             for(int i = 0, j = 0; i < d*d; ++i, ++j)
             {
               if(i%d == 0 && i > 0)
@@ -1167,20 +1215,26 @@ bool TimeNavierStokes<d>::stop_it(unsigned int it_counter)
   const double impulse_residual = this->get_impuls_residual();
   const double mass_residual = this->get_mass_residual();
   
-  // some output:
-  if(i_am_root)
-  {
-    Output::print<3>("nonlinear step  : " , setw(3), it_counter);
-    Output::print<3>("impulse_residual: " , setw(12), impulse_residual);
-    Output::print<3>("mass_residual   : " , setw(12), mass_residual);
-    Output::print<3>("full residual   : " , setw(12), norm_of_residual);
-  }
-
   if(it_counter == 0)
+  {
     initial_residual = norm_of_residual;
+    if(i_am_root)
+    {
+      Output::print<2>("nonlinear step  : " , setw(3), it_counter, setw(12),
+                       impulse_residual, setw(12), mass_residual, setw(12),
+                       norm_of_residual);
+    }
+  }
   else
-    Output::print<3>("rate:           : " , setw(12),
-                     norm_of_residual/old_norm_of_residual);
+  {
+    if(i_am_root)
+    {
+      Output::print<2>("nonlinear step  : " , setw(3), it_counter, setw(12),
+                       impulse_residual, setw(12), mass_residual, setw(12),
+                       norm_of_residual, setw(12),
+                       norm_of_residual/old_norm_of_residual);  
+    }
+  }
 
   // check if minimum number of iterations was performed already
   size_t min_it = db["nonlinloop_minit"];
@@ -1210,6 +1264,13 @@ bool TimeNavierStokes<d>::stop_it(unsigned int it_counter)
   }
   if(norm_of_residual <= limit || it_counter == max_it || slow_convergence)
   {
+    if(i_am_root)
+    {
+      Output::print<2>(setw(6), time_stepping_scheme.current_time_,
+                       " last nonlinear step  : " , setw(3), it_counter,
+                       setw(12), impulse_residual, setw(12), mass_residual,
+                       setw(12), norm_of_residual);
+    }
     reset_residuals();
     for(System_per_grid& s: this->systems)
     {
@@ -1477,11 +1538,37 @@ void TimeNavierStokes<d>::output()
     }
   }
 
+  if(db["output_compute_time_average"])
+  {
+    this->time_averaging();
+  }
+#ifdef __3D__
+  if(db["output_along_line"])
+  {
+    // fill a vector with all fe functions to be evaluated using this->Lines
+    std::vector<const FEFunction*> fe_functions(velocity_components.begin(),
+                                                velocity_components.end());
+    fe_functions.push_back(&s.p);
+    if(db["output_compute_time_average"])
+    {
+      for(int i = 0; i < d; ++i)
+        fe_functions.push_back(s.u_time_avg.GetComponent(i));
+      fe_functions.push_back(&s.p_time_avg);
+    }
+    Lines.write_fe_values(fe_functions, t);
+    if(db["output_compute_time_average"])
+    {
+      for(int i = 0; i < d; ++i)
+        delete fe_functions[d+1+i];
+    }
+  }
+#endif
+
   example.do_post_processing(*this);
 
   for(int i = 0; i < d; ++i)
     delete velocity_components[i];
-
+  
   outputWriter.write(t);
 
   if(db["write_solution_binary"].is(true))
@@ -1495,12 +1582,29 @@ void TimeNavierStokes<d>::output()
       {
         file += ".";
         file += std::to_string(t);
-#ifdef _MPI
-        file += ".proc" + std::to_string(my_rank);
-#endif
       }
+#ifdef _MPI
+      file += ".proc" + std::to_string(my_rank);
+#endif
       Output::info("output", "Writing current solution to file ", file);
       systems.front().solution.write_to_file(file);
+      
+      if(db["output_compute_time_average"])
+      {
+        std::string file_average = db["write_solution_binary_file"];
+        if(!db["overwrite_solution_binary"]) // create a new file every time
+        {
+          file_average += ".";
+          file_average += std::to_string(t);
+        }
+        file_average += "_time_average";
+#ifdef _MPI
+        file_average += ".proc" + std::to_string(my_rank);
+#endif
+        Output::info("output", "Writing time averaged solution to file ",
+                     file_average);
+        s.time_avg_sol.write_to_file(file_average);
+      }
     }
   }
 }
@@ -1812,6 +1916,32 @@ void TimeNavierStokes<d>::update_matrices_lps(System_per_grid &s)
            "2D.");
 #endif
 }
+
+/* ************************************************************************** */
+template <int d>
+void TimeNavierStokes<d>::time_averaging()
+{
+#ifdef __3D__
+  double t           = time_stepping_scheme.current_time_;
+  double tau         = TDatabase::TimeDB->TIMESTEPLENGTH;
+  double t0          = db["time_start"];
+  double t0_avg      = db["start_time_averaging_at"];
+  System_per_grid& s = this->systems.front();
+
+  if( t == t0 )
+  {
+    return; // in case of restart (i.e. continue_output_after_restart)
+  }
+  else if( t-tau >= t0_avg )
+  {
+    s.time_avg_sol.scale(t - t0_avg - tau);
+    s.time_avg_sol.add_scaled(s.solution_m2, tau/2.);
+    s.time_avg_sol.add_scaled(s.solution, tau/2.);
+    s.time_avg_sol.scale(1./(t - t0_avg));
+  }
+#endif
+}
+
 
 #ifdef __3D__
 template class TimeNavierStokes<3>;

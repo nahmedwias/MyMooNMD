@@ -67,7 +67,7 @@ namespace Output
   // no output to console, respect verbosity settings
   bool script_mode = false;
   
-  void set_outfile(std::string filename, bool sm)
+  void set_outfile(const std::string& filename, bool sm)
   {
     if(outfile.is_open())
     {
@@ -78,7 +78,7 @@ namespace Output
     script_mode = sm;
   }
   
-  void redirect(std::string filename)
+  void redirect(const std::string& filename)
   {
     if(local_outfile.is_open())
     {

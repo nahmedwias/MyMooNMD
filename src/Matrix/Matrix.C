@@ -45,8 +45,9 @@ TMatrix::TMatrix(int nRows, int nCols)
 }
 /* *********************************************************** */
 
-TMatrix::TMatrix(std::vector<double> diag, std::shared_ptr<TStructure> Structure)
-:TMatrix(std::shared_ptr<TStructure>(Structure))
+TMatrix::TMatrix(const std::vector<double>& diag,
+                 std::shared_ptr<TStructure> Structure)
+ : TMatrix(Structure)
 {
 	this->reset();
 
@@ -63,7 +64,7 @@ void TMatrix::reset()
   memset(this->GetEntries(), 0., this->structure->GetN_Entries()*SizeOfDouble);
 }
 
-void TMatrix::setEntries(std::vector<double> entries)
+void TMatrix::setEntries(const std::vector<double>& entries)
 {
   if(this->entries.size() != entries.size())
   {
@@ -73,7 +74,7 @@ void TMatrix::setEntries(std::vector<double> entries)
   this->entries = entries;
 }
 
-void TMatrix::write(std::string filename) const
+void TMatrix::write(const std::string& filename) const
 {
   std::ofstream matrixfile;
   matrixfile.open(filename.c_str());
@@ -127,7 +128,7 @@ void TMatrix::Print(const char *name) const
   }
 }
 
-void TMatrix::PrintFull(std::string name, int fieldWidth) const
+void TMatrix::PrintFull(const std::string& name, int fieldWidth) const
 {
   const int* rowPtr = structure->GetRowPtr();
   const int* KCol = structure->GetKCol();
@@ -162,7 +163,7 @@ void TMatrix::add(int i,int j, double val)
     this->get(i, j) += val;
 }
 
-void TMatrix::add(int i, std::map<int,double> vals, double factor)
+void TMatrix::add(int i, const std::map<int,double>& vals, double factor)
 {
   if(i < 0 || i > this->GetN_Rows())
   {
@@ -172,7 +173,7 @@ void TMatrix::add(int i, std::map<int,double> vals, double factor)
   }
   const int* RowPtr = structure->GetRowPtr();
   const int* KCol = structure->GetKCol();
-  std::map<int,double>::iterator it = vals.begin();
+  auto it = vals.begin();
   for (int m=RowPtr[i];m < RowPtr[i+1] && it != vals.end(); m++) 
   {
     if (KCol[m] == it->first) 
@@ -189,11 +190,11 @@ void TMatrix::add(int i, std::map<int,double> vals, double factor)
   }
 }
 
-void TMatrix::add(std::map<int, std::map<int,double> > vals, double factor)
+void TMatrix::add(const std::map<int, std::map<int,double>>& vals,
+                  double factor)
 {
   // add every row to the matrix
-  std::map<int,std::map<int,double> >::iterator it;
-  for(it = vals.begin(); it != vals.end(); ++it)
+  for(auto it = vals.begin(); it != vals.end(); ++it)
     add(it->first, it->second, factor);
 }
   
@@ -267,7 +268,7 @@ std::vector<double> TMatrix::get_matrix_row(size_t i) const
   return row;
 }
 
-void TMatrix::set_matrix_column(size_t j, std::vector<double> col)
+void TMatrix::set_matrix_column(size_t j, const std::vector<double>& col)
 {
   if((int) col.size() != GetN_Rows())
     ErrThrow("Wrong number of entries in the given matrix column!");
@@ -522,7 +523,8 @@ TMatrix* TMatrix::multiply(const TMatrix * const B, double a) const
 }
 
 
-TMatrix* TMatrix::multiply(const TMatrix * const B, std::vector< double > d) const
+TMatrix* TMatrix::multiply(const TMatrix* const B,
+                           const std::vector<double>& d) const
 {
   const int n_A_rows = this->GetN_Rows();   // = n_C_rows
   const int n_A_cols = this->GetN_Columns();
@@ -662,7 +664,7 @@ const
   std::shared_ptr<TStructure> productStructure = 
     std::make_shared<TStructure>(knownStructure);
   // create new matrix with this structure
-#ifdef _SEQ
+#ifndef _MPI
   TMatrix* product = new TMatrix(productStructure);
 #endif
 #ifdef _MPI
@@ -1161,7 +1163,7 @@ void TMatrix::reorderMatrix()
 
 /////////////// Routines for periodic boundary conditions /////////////////
 /** ************************************************************************* */
-void TMatrix::changeRows(std::map<int,std::map<int,double> > entries)
+void TMatrix::changeRows(const std::map<int,std::map<int,double>>& entries)
 {
 	if(entries.size() == 0)
 		return; // nothing needs to be done
@@ -1172,8 +1174,7 @@ void TMatrix::changeRows(std::map<int,std::map<int,double> > entries)
 	// find out how many entries there are after all changes are applied, i.e.
 	// how many entries are deleted/created
 	int offset = 0;
-	for(std::map<int,std::map<int,double> >::iterator it=entries.begin();
-			it!=entries.end(); ++it)
+	for(auto it = entries.begin(); it != entries.end(); ++it)
 	{
 		int row = it->first;
 		offset -= oldRows[row+1]-oldRows[row];// number of entries in old structure
@@ -1196,7 +1197,7 @@ void TMatrix::changeRows(std::map<int,std::map<int,double> > entries)
 	// fill the arrays 'rows', 'columns' and 'new_entries'
 	for(int row=0; row<n_rows; row++)
 	{
-		std::map<int,std::map<int,double> >::iterator it = entries.find(row);
+		auto it = entries.find(row);
 		if(it == entries.end())
 		{
 			// this row stays unchanged

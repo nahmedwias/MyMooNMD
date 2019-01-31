@@ -120,7 +120,8 @@ ParameterDatabase Solver<L, V>::default_solver_database()
 // L - LinearOperator, V - Vector
 template <class L, class V>
 std::shared_ptr<Preconditioner<V>> get_preconditioner(
-  std::string preconditioner_name, const L& matrix, const ParameterDatabase& db)
+  const std::string& preconditioner_name, const L& matrix,
+  const ParameterDatabase& db)
 {
   if(preconditioner_name == "no_preconditioner")
   {
@@ -189,8 +190,8 @@ std::shared_ptr<Preconditioner<V>> get_preconditioner(
 // L - LinearOperator, V - Vector
 template <class L, class V>
 std::shared_ptr<IterativeMethod<L, V>> get_iterative_method(
-  std::string iterative_solver_type, const ParameterDatabase& db,
-  const L& matrix, std::shared_ptr<Preconditioner<V>> p)
+  const std::string& iterative_solver_type, const ParameterDatabase& db,
+  const L& matrix, const std::shared_ptr<Preconditioner<V>>& p)
 {
   std::shared_ptr<IterativeMethod<L, V>> ret;
   if(iterative_solver_type == "jacobi")

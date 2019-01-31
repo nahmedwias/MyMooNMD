@@ -8,7 +8,7 @@ class Iteration_richardson : public IterativeMethod<LinearOperator, Vector>
 {
   public:
     /** constructor */
-    Iteration_richardson(std::shared_ptr<Preconditioner<Vector>> p);
+    explicit Iteration_richardson(std::shared_ptr<Preconditioner<Vector>> p);
     
     /** destructor */
     virtual ~Iteration_richardson() = default;

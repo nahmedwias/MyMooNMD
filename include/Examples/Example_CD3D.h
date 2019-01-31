@@ -32,15 +32,16 @@ class Example_CD3D : public Example3D
      * This intializes a convection-diffusion example in 3D.
      * It is chosen according to the given example_code.
      */
-    Example_CD3D(const ParameterDatabase& user_input_parameter_db);
+    explicit Example_CD3D(const ParameterDatabase& user_input_parameter_db);
     
     /** @brief initialize your own example
      * 
      * Create an example with all vectors already defined.
      */
-    Example_CD3D(std::vector <DoubleFunct3D*> exact,
-                 std::vector <BoundCondFunct3D*> bc,
-                 std::vector <BoundValueFunct3D*> bd, CoeffFct3D coeffs)
+    Example_CD3D(const std::vector<DoubleFunct3D*>& exact,
+                 const std::vector<BoundCondFunct3D*>& bc,
+                 const std::vector<BoundValueFunct3D*>& bd,
+                 const CoeffFct3D& coeffs)
     : Example3D(exact, bc, bd, coeffs) {};
 
     /// Apply the function stored as post processing routine.

@@ -54,8 +54,8 @@ class TFEFunction2D
     TFEFunction2D();
 
     /** constructor with vector initialization */
-    TFEFunction2D(const TFESpace2D *fespace2D, std::string name, std::string description,
-        double *values, int length);
+    TFEFunction2D(const TFESpace2D *fespace2D, const std::string& name,
+                  const std::string& description, double *values, int length);
 
     /// Copy assignment operator. Shallow copy, as the
     /// FEFunction does not take any memory responsibility.
@@ -193,8 +193,8 @@ class TFEFunction2D
         BoundValueFunct2D *BoundaryValue);
 
     /** write the solution into a data file - written by Sashi **/
-    void WriteSol(std::string directory=std::string("."),
-        std::string basename=std::string("parmoon_solution"));
+    void WriteSol(const std::string& directory=std::string("."),
+                  const std::string& basename=std::string("parmoon_solution"));
 
     /** Read the solution from a given data file - written by Sashi **/
     void ReadSol(std::string BaseName);
@@ -232,7 +232,7 @@ class TFEFunction2D
      * together with the minimum and maximum value. If the string is empty 
      * (default) the used name will be TFEFunction2D::Name.
      */
-    void PrintMinMax(std::string name = "") const;
+    void PrintMinMax(const std::string& name = "") const;
 
     /** @brief calculate errors to a given function at the boundary (this is of interest, e.g., for the Nitsche method)
      * 

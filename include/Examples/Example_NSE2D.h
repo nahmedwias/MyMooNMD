@@ -30,16 +30,16 @@ class Example_NSE2D : public Example2D
      * This intializes a (Navier-)Stokes example in 2D. It is chosen according
      * to example_code.
      */
-    Example_NSE2D(const ParameterDatabase& user_input_parameter_db);
+    explicit Example_NSE2D(const ParameterDatabase& user_input_parameter_db);
 
     /** @brief initialize your own example
      * 
      * Create an example with all vectors already defined.
      */
-    Example_NSE2D(std::vector <DoubleFunct2D*> exact,
-                  std::vector <BoundCondFunct2D*> bc,
-                  std::vector <BoundValueFunct2D*> bd, CoeffFct2D coeffs,
-                  double nu = 1.);
+    Example_NSE2D(const std::vector<DoubleFunct2D*>& exact,
+                  const std::vector<BoundCondFunct2D*>& bc,
+                  const std::vector<BoundValueFunct2D*>& bd,
+                  const CoeffFct2D& coeffs, double nu = 1.);
   
     /// Apply the function stored as post processing routine.
     void do_post_processing(NavierStokes<2>& nse2d) const;

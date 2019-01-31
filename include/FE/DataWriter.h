@@ -26,7 +26,7 @@ class DataWriter
 {
   public:
   ///@brief default constructor: parameter are copied from Database
-  DataWriter(const ParameterDatabase& param_db);
+  explicit DataWriter(const ParameterDatabase& param_db);
 
   using FEFunction = typename Template_names<d>::FEFunction;
   using FEVectFunct = typename Template_names<d>::FEVectFunct;
@@ -52,7 +52,7 @@ class DataWriter
   /**
    * @brief Write mesh in VTK format
    */
-  void writeMesh(std::string name);
+  void writeMesh(const std::string& name);
 
   // -------------------------------------------------------------------------
   protected:
@@ -135,36 +135,37 @@ class DataWriter
 
   /** @brief writes function values in an suitable output for case */
   void writeVectCase(std::ofstream& dat, unsigned int N_Vertices,
-                     unsigned int N_Comp, std::vector<double> solutionAtNode);
+                     unsigned int N_Comp,
+                     const std::vector<double>& solutionAtNode);
 
   /** @brief writes x-component for all vertices and then y- component for all
    * vertices*/
-  void printVectCompwise(std::ofstream& dat, std::string name,
+  void printVectCompwise(std::ofstream& dat, const std::string& name,
                          unsigned int N_Vertices, unsigned int N_Comp,
-                         std::vector<double> solutionAtNode);
+                         const std::vector<double>& solutionAtNode);
 
   /** @brief writes the vector (x- and y-component) for all vertices*/
-  void printVectPointwise(std::ofstream& dat, std::string name,
+  void printVectPointwise(std::ofstream& dat, const std::string& name,
                           unsigned int N_Vertices, unsigned int N_Comp,
-                          std::vector<double> solutionAtNode);
+                          const std::vector<double>& solutionAtNode);
 
   /** @brief writes the absolute value for all vertices*/
-  void printVectAbsValue(std::ofstream& dat, std::string name,
+  void printVectAbsValue(std::ofstream& dat, const std::string& name,
                          unsigned int N_Vertices, unsigned int N_Comp,
-                         std::vector<double> solutionAtNode);
+                         const std::vector<double>& solutionAtNode);
 
 
   /// @brief VTK output
-  void writeVtk(std::string name);
+  void writeVtk(const std::string& name);
 
   ///@brief writes an extra vtk-file for (scalar) discontinuous functions
-  void writeVtkDiscontinuous(std::string fileName, int N_LocVertices,
-                             std::vector<const TVertex*> Vertices);
+  void writeVtkDiscontinuous(const std::string& fileName, int N_LocVertices,
+                             const std::vector<const TVertex*>& Vertices);
 
   /// @brief write vtu file, ie, unstructured grids in xml format
   /// @note It is possible to write compressed data in xml. This can be
   /// implemented in the future
-  void writeVtu(std::string name) const;
+  void writeVtu(const std::string& name) const;
 
 /** write stored PARALLEL data into a pvtu and vtu files (XML files for
  * paraview) */

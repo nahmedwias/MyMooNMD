@@ -286,8 +286,8 @@ std::vector<int> local_to_global_block(
 
 // *****************************************************************************
 void create_sub_matrix(const BlockFEMatrix& matrix, 
-                       std::pair<size_t, size_t> start, 
-                       std::pair<size_t, size_t> end, Mat& petsc_mat)
+                       const std::pair<size_t, size_t>& start, 
+                       const std::pair<size_t, size_t>& end, Mat& petsc_mat)
 {
   // sanity checks
   if(start.first > end.first || start.second > end.second)

@@ -35,7 +35,7 @@ class Example2D
     * 
     * This is used only by the classes derived from this class.
     */
-    Example2D(const ParameterDatabase &);
+    explicit Example2D(const ParameterDatabase &);
 
     /** @brief a local parameter database which controls this class
      *
@@ -50,10 +50,10 @@ class Example2D
      * 
      * Create an example with all vectors already defined.
      */
-    Example2D(std::vector <DoubleFunct2D*> exact,
-              std::vector <BoundCondFunct2D*> bc,
-              std::vector <BoundValueFunct2D*> bd, 
-              CoeffFct2D coeffs);
+    Example2D(const std::vector<DoubleFunct2D*>& exact,
+              const std::vector<BoundCondFunct2D*>& bc,
+              const std::vector<BoundValueFunct2D*>& bd, 
+              const CoeffFct2D& coeffs);
 
     /* functions representing the exact solution */
     std::vector <DoubleFunct2D*> exact_solution;

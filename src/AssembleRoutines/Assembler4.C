@@ -154,7 +154,7 @@ void Assembler4::Assemble2D(BlockFEMatrix &M,
     std::vector<const TFESpace2D*>& fespaces,
     std::vector<const TFESpace2D*>& ferhs,
     const Example2D& example,
-    std::vector< std::shared_ptr< LocalAssembling2D> > la_list,
+    const std::vector<std::shared_ptr<LocalAssembling2D>>& la_list,
     int AssemblePhaseID)
 {
 #ifdef __3D__

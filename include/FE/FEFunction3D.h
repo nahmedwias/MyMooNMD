@@ -50,7 +50,7 @@ class TFEFunction3D
 
     /** constructor with vector initialization */
     TFEFunction3D(const TFESpace3D *fespace3D,
-                  std::string name, std::string description,
+                  const std::string& name, const std::string& description,
                   double *values, int length);
 
     /// Copy assignment operator. Shallow copy, as the
@@ -159,7 +159,8 @@ class TFEFunction3D
      * @param[in] Exact must be of length 3 (= space dimension)
      * @warning EvalAll must be correctly implemented for the used finite element
      */
-    void Interpolate_vector_valued_function(std::vector<DoubleFunct3D*> Exact);
+    void Interpolate_vector_valued_function(
+      const std::vector<DoubleFunct3D*>& Exact);
     
     typedef std::function<double(const TBaseCell* cell, int cell_index,
                                  std::array<double, 3> xyz)> AnalyticFunction;
@@ -226,7 +227,7 @@ class TFEFunction3D
     * together with the minimum and maximum value. If the string is empty 
     * (default) the used name will be TFEFunction2D::Name.
     */
-   void PrintMinMax(std::string name = "") const;
+   void PrintMinMax(const std::string& name = "") const;
 };
 
 #endif

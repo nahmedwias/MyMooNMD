@@ -37,7 +37,7 @@ class AnalyticalFunction
    *
    * This is implemented only for simplicity.
    */
-  AnalyticalFunction(double a);
+  explicit AnalyticalFunction(double a);
 
   /** @brief create an AnalyticalFunction object with a given (stationary)
    * function
@@ -45,14 +45,15 @@ class AnalyticalFunction
    * @note: if you use this for a time dependent solution it means this
    * AnalyticalFunction is constant in time.
    */
-  AnalyticalFunction(std::function<void(const Point&, FunctionEvaluation&)> f);
+  explicit AnalyticalFunction(
+    std::function<void(const Point&, FunctionEvaluation&)> f);
 
   /** @brief create an AnalyticalFunction object with a given in-stationary
    * function
    *
    * The double in std::function argument is the point in time.
    */
-  AnalyticalFunction(
+  explicit AnalyticalFunction(
       std::function<void(const Point&, double, FunctionEvaluation&)> f);
 
   /** @brief create a AnalyticalFunction which does not depend on time from 

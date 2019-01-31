@@ -206,7 +206,8 @@ class NavierStokes
     std::array<double, 8> get_errors() const;
 
     /// @brief write a file containg the component-wise values of the velocity and its magnitude over the line [x1, x2] x [y1,y2]
-    void velocity_over_line(std::vector<double> start_point, std::vector<double> end_point,
+    void velocity_over_line(const std::vector<double>& start_point,
+                            const std::vector<double>& end_point,
                             size_t number_of_points,
                             std::array<FEFunction*, d> velocity_components,
                             std::string name_of_file);

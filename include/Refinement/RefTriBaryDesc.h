@@ -7,7 +7,7 @@
 class TRefTriBaryDesc : public TRefDesc
 {
   public:
-    TRefTriBaryDesc(TShapeDesc *shape);
+    explicit TRefTriBaryDesc(TShapeDesc *shape);
 };
 
 #endif // __REFTRIBARYDESC__

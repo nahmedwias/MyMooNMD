@@ -82,7 +82,8 @@ void Assemble2D_neigh(int n_fespaces, TFESpace2D **fespaces,
 );
 
 /** assembling for discontinuous Galerkin discretization */
-void Assemble2D_DG(CoeffFct2D Coeff, int n_fespaces, TFESpace2D **fespaces,
+void Assemble2D_DG(const CoeffFct2D& Coeff, int n_fespaces,
+                   TFESpace2D **fespaces,
                    int n_sqmatrices, TSquareMatrix2D **sqmatrices,
                    int n_matrices, TMatrix2D **matrices,
                    int n_rhs, double **rhs, TFESpace2D **ferhs,
@@ -91,7 +92,8 @@ void Assemble2D_DG(CoeffFct2D Coeff, int n_fespaces, TFESpace2D **fespaces,
                    TAuxParam2D *Parameters);
 
 /** assembling for continuous interior penalty discretization */
-void Assemble2D_CIP(CoeffFct2D Coeff,int n_fespaces, TFESpace2D **fespaces,
+void Assemble2D_CIP(const CoeffFct2D& Coeff,int n_fespaces,
+                    TFESpace2D **fespaces,
                     int n_sqmatrices, TSquareMatrix2D **sqmatrices,
                     int n_matrices, TMatrix2D **matrices,
                     int n_rhs, double **rhs, TFESpace2D **ferhs,
