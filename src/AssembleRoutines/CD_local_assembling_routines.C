@@ -40,6 +40,45 @@ void TCDStiff(double Mult, double *coeff, double *, double , double**OrigValues,
   }
 }
 
+template <int d>
+void TCDStiff_TensorialDiffusionTerm(double Mult, double *coeff, double *param,
+                    double hK, double**OrigValues, int *N_BaseFuncts,
+                    double ***LocMatrices, double **LocRhs)
+{
+  double **Matrix = LocMatrices[0];
+  int N_ = N_BaseFuncts[0];
+  double * u  =OrigValues[0];
+  double * u_x=OrigValues[1];
+  double * u_y=OrigValues[2];
+  double * u_z = d == 2 ? nullptr : OrigValues[3];
+
+  double b1 = coeff[1];
+  double b2 = coeff[2];
+  double b3 = d == 2 ? 0. : coeff[3];
+  double a_l = coeff[d+3];
+
+  for (int i = 0; i < N_; i++)
+  {
+    double test = u[i];
+    double test_x = u_x[i];
+    double test_y = u_y[i];
+    double test_z = d == 2 ? 0. : u_z[i];
+
+    for (int j = 0; j < N_; j++)
+    {
+      double ansatz=u[j];
+      double ansatz_x=u_x[j];
+      double ansatz_y=u_y[j];
+      double ansatz_z = d == 2 ? 0. : u_z[j];
+
+      double val = a_l * (  ( (b1*b1*ansatz_x + b1*b2*ansatz_y + b1*b3*ansatz_z) * test_x )
+                          + ( (b2*b1*ansatz_x + b2*b2*ansatz_y + b2*b3*ansatz_z) * test_y )
+                          + ( (b3*b1*ansatz_x + b3*b2*ansatz_y + b3*b3*ansatz_z) * test_z )  );
+      Matrix[i][j] += Mult * val;
+    }
+  }
+}
+
 template<int d>
 void TCDMass(double Mult, double *, double *, double, double**OrigValues, 
              int *N_BaseFuncts, double ***LocMatrices, double **)
@@ -254,6 +293,9 @@ void TCDRhsSUPG(double Mult, double *coeff, double *, double hK,
 template void TCDStiff<2>(
   double Mult, double *coeff, double *param, double hK, double**OrigValues, 
   int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
+template void TCDStiff_TensorialDiffusionTerm<2>(
+        double Mult, double *coeff, double *param, double hK, double**OrigValues,
+        int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
 template void TCDMass<2>(
   double Mult, double *coeff, double *param, double hK, double**OrigValues, 
   int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
@@ -274,6 +316,9 @@ template void TCDRhsSUPG<2>(
 template void TCDStiff<3>(
   double Mult, double *coeff, double *param, double hK, double**OrigValues, 
   int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
+template void TCDStiff_TensorialDiffusionTerm<3>(
+        double Mult, double *coeff, double *param, double hK, double**OrigValues,
+        int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
 template void TCDMass<3>(
   double Mult, double *coeff, double *param, double hK, double**OrigValues, 
   int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
