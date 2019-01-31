@@ -649,8 +649,14 @@ ParameterDatabase LocalAssembling<d>::default_local_assembling_database()
          "is the inverse of the reynolds number, and delta0 is 'lps_delta0'. "
          "Sometimes (in time-dependent problems) it is set to be "
          "delta1 * hK / nu, where delta1 is this parameter.");
+
   db.add("lps_coeff_type", 0u, "Determine the way the local projection "
          "stabilization (lps) parameter is computed.", 0u, 5u);
+
+  db.add("tensorial_diffusion", false, "This parameter enables the use of a tensorial "
+           "diffusion coefficient instead or additional to a scalar (multiple of identity matrix). "
+           "It is used, e.g., in the branch 'optimization' for describing longitudinal dispersion "
+          "based on u*u^T. It can be scaled via coeff[d+3].");
   
   db.merge(ParameterDatabase::parmoon_default_database());
   
@@ -848,12 +854,16 @@ void LocalAssembling<d>::set_parameters_for_tcd(LocalAssembling_type type)
   this->FESpaceNumber = std::vector<int>(d+1, 0);
   this->Manipulate = nullptr;
   
+  Parameter tensorial_diffusion{this->db["tensorial_diffusion"]};
   Parameter disc_type{this->db["space_discretization_type"]};
   switch(type)
   {
     case LocalAssembling_type::TCDStiffMassRhs:
       // stiffness matrix and rhs 
       this->local_assemblings_routines.push_back(TCDStiff<d>);
+      // additional tensorial diffusion in stiffness matrix
+      if(tensorial_diffusion.is(true))
+       this->local_assemblings_routines.push_back(TCDStiff_TensorialDiffusionTerm<d>);
       // mass matrix 
       this->local_assemblings_routines.push_back(TCDMass<d>);
       // rhs 
@@ -871,6 +881,10 @@ void LocalAssembling<d>::set_parameters_for_tcd(LocalAssembling_type type)
         this->local_assemblings_routines.push_back(TCDMassSUPG<d>);
         // rhs 
         this->local_assemblings_routines.push_back(TCDRhsSUPG<d>);
+
+        if(tensorial_diffusion.is(true))
+          ErrThrow("The use of a tensorial diffusion term is not yet "
+                  "implemented in combination with SUPG.");
       }
       else if(!disc_type.is("galerkin"))
       {
@@ -882,6 +896,11 @@ void LocalAssembling<d>::set_parameters_for_tcd(LocalAssembling_type type)
       // stiff matrix, rhs 
       // stiffness matrix and rhs 
       this->local_assemblings_routines.push_back(TCDStiff<d>);
+
+      // additional tensorial diffusion in stiffness matrix
+      if(tensorial_diffusion.is(true))
+       this->local_assemblings_routines.push_back(TCDStiff_TensorialDiffusionTerm<d>);
+
       // rhs 
       this->local_assemblings_routines.push_back(TCDRhs<d>);
       
