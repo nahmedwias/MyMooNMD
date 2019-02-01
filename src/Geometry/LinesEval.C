@@ -414,15 +414,15 @@ void LinesEval<d>::write_fe_values(std::vector<const FEFunction*> fe_functions,
     {
       for( int j=0 ; j < size_li ; j++ )
       {
-        if(values[d][j] == default_val)
-        {
-          ErrThrow("values for line ", l_i, " at point ", j, " is not correct");
+        // only write points inside the geometry (avoid in particular holes)
+        if(values[d][j] != default_val)
+        {    
+          for(unsigned int i = 0u; i < d + n_fe_functions; ++i)
+          {
+            s_out << setprecision(7) << setw(14) << values[i][j] << " ";
+          }
+          s_out << "\n";       
         }
-        for(unsigned int i = 0u; i < d + n_fe_functions; ++i)
-        {
-          s_out << setprecision(7) << setw(14) << values[i][j] << " ";
-        }
-        s_out << "\n";
       }
       s_out << "\n";
     }
