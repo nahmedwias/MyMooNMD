@@ -16,6 +16,7 @@
 #include <ParameterDatabase.h>
 #include <array>
 
+template <int d>
 class LineEval;
 
 /**
@@ -34,7 +35,7 @@ class LinesEval
     ParameterDatabase db;
 
     /** @brief contain all lines used for evaluations */
-    std::vector<LineEval> lines_for_postprocess;
+    std::vector<LineEval<d>> lines_for_postprocess;
 
     /** @brief in case of line defined from extern file, read the direction,
      * base_point and positions to define the lines
@@ -95,16 +96,18 @@ class LinesEval
     /**
      * @brief return the line i
      */
-    LineEval GetLine(int i) const;
+    LineEval<d> GetLine(int i) const;
 };
 
 
 /**
  * @brief define positions on line used for evaluation
  */
+template <int d>
 class LineEval
 {
   protected:
+    using FEFunction = typename Template_names<d>::FEFunction;
     
     /** @brief the needed collection to find the cells */
     TCollection* coll;
@@ -113,7 +116,7 @@ class LineEval
     int direction;
 
     /** @brief point throuh which the line is passing */
-    std::array<double, 3> base_point;
+    std::array<double, d> base_point;
 
     /** @brief number of refinement points:
      *       - between two points of the extern file defining the line
@@ -148,19 +151,33 @@ class LineEval
         this->cell_index = cell_index;
         this->lmin_cell  = lmin_cell;
         this->lmax_cell  = lmax_cell;
-        
       }
+
+      /**
+       * This operator introduces an order on the points. It will
+       * compare the lmin_cell value.
+       */
+      friend bool operator < (const point_on_line& P, const point_on_line& Q)
+      { return P.lmin_cell < Q.lmin_cell; }
+
+      /**
+       * This operator compare if the lmin_cell values are equal.
+       * The lmin_cell are regarded as equal with a tolerance of 1e-16.
+       */
+      friend bool operator == (const point_on_line& P, const point_on_line& Q)
+      { return fabs(P.lmin_cell - Q.lmin_cell) < 1e-16 
+            && fabs(P.lmax_cell - Q.lmax_cell) < 1e-16; }
     };
 
     /** @brief contain position informations used for evaluations along
      * the line */
     std::vector<point_on_line> line_for_postprocess;
-    
+
     /**
      * @brief return the mean value of the function f along a line defined from
      * an extern file
      */
-    double mean_value(const TFEFunction3D& f) const;
+    double mean_value(const FEFunction& f) const;
 
 
   public:
@@ -170,13 +187,13 @@ class LineEval
      * 
      * @param[in] domain    domain providing the collection
      * @param[in] direction direction of the line
-     * @param[in] P[3]      point throuh which the line is passing
+     * @param[in] P[d]      point throuh which the line is passing
      * @param[in] coord     positions on the line where evaluation is to be done
      * @param[in] refine    number of refinement between two positions
      */
     LineEval(const TDomain&      domain,
              const int           direction,
-             const double        P[3],
+             const double        P[d],
              std::vector<double> coord,
              const int           refine);
 
@@ -185,22 +202,22 @@ class LineEval
      *
      * @param[in] domain    domain providing the collection
      * @param[in] direction direction of the line
-     * @param[in] P[3]      point throuh which the line is passing
+     * @param[in] P[d]      point throuh which the line is passing
      * @param[in] refine    number of refinement between two positions
      */
     LineEval(const TDomain& domain,
              const int      direction,
-             const double   P[3],
+             const double   P[d],
              const int      refine);
 
     /** @brief return the base point which defines the line */
-    std::array<double, 3> GetBasePoint() const;
+    std::array<double, d> GetBasePoint() const;
 
     /**
      * @brief return the direction which defines the line
      */
     int GetDirection() const;
-    
+
     /**
      * @brief return the number of points which belongs to the line (after
      * refinement)
@@ -212,7 +229,7 @@ class LineEval
      * refinement, i.e. for i in [0 GetNbPoints()])
      */
     int GetCellIdx(int i) const;
-    
+
     /**
      * @brief return the pointer to the cell with index cell_idx
      */
@@ -233,19 +250,7 @@ class LineEval
     /**
      * @brief return the mean value of the function f along the line
      */
-    double space_average_value(const TFEFunction3D& f) const;
-
-    /**
-     * This operator introduces an order on the points. It will
-     * compare the lmin_cell value.
-     */
-    friend bool operator < (const point_on_line& P, const point_on_line& Q);
-
-    /**
-     * This operator compare if the lmin_cell values are equal.
-     * The lmin_cell are regarded as equal with a tolerance of 1e-16.
-     */
-    friend bool operator == (const point_on_line& P, const point_on_line& Q);
+    double space_average_value(const FEFunction& f) const;
 };
 
 #endif

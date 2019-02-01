@@ -1076,13 +1076,112 @@ bool TGridCell::test_constraint(double  A,
 }
 
 
-#ifdef __3D__
 bool TGridCell::IsLineCutingCell(int                  direction,
-                                 std::array<double,3> P,
+#ifdef __2D__
+                                  std::array<double,2> P,
+#else // __3D__
+                                  std::array<double,3> P,
+#endif
                                  double&              lmin,
                                  double&              lmax) const
 {
   double P0_direction;
+  
+  double range_m = 0.;
+  double range_M = 1.;
+
+#ifdef __2D__
+  double detAB;
+  double detAC;
+  double A[2];
+  double B[2];
+  double C[2];
+  double v0[2];
+  double v1[2];
+  double v2[2];
+  double coeff_a[2];
+  double coeff_b[2];
+  
+  int idx0 = (direction + 1) % 2;
+  this->GetVertex(0)->GetCoords(A[0], A[1]);
+  this->GetVertex(1)->GetCoords(B[0], B[1]);
+  this->GetVertex(2)->GetCoords(C[0], C[1]);
+
+  if( (P[idx0]<std::min(std::min(A[idx0],B[idx0]),C[idx0]))
+   || (P[idx0]>std::max(std::max(A[idx0],B[idx0]),C[idx0])) )
+  {
+    return false;
+  }
+  else
+  {
+    // assign v0 v1 v2 (avoiding division by 0) and P0_direction
+    detAB = B[idx0] - A[idx0];
+    detAC = C[idx0] - A[idx0];
+    
+    if( detAB != 0. )
+    {
+      for( int i=0 ; i<2 ; i++ )
+      {
+        v0[i] = P[i] - A[i];
+        v1[i] = B[i] - A[i];
+        v2[i] = C[i] - A[i];
+      }
+    }
+    if( detAC != 0. && (std::fabs(detAC)>std::fabs(detAB)) )
+    {
+      for( int i=0 ; i<2 ; i++ )
+      {
+        v0[i] = P[i] - A[i];
+        v1[i] = C[i] - A[i];
+        v2[i] = B[i] - A[i];
+      }
+    }
+    P0_direction = A[direction];
+    
+    // solve the convex constrained optimization problem:
+    // min/max P[direction] = P0_direction + a1*v1[direction] + a2*v2[direction]
+    // with 0<= a1 + a2 <=1,
+    // 0<= a2 <=1
+    // 0<= a1 <=1
+    // P[direction] linear function of a2 => P[direction] extrem if a2 extrem
+    // (at the boundary)
+    // a1 linear function of a2 => a1 extrem if a2 extrem
+    // a1 = v0[idx0]/v1[idx0] + a2 * (-v2[idx0])/v1[idx0];
+    // a1 = a2 * coeff_a[1] + coeff_b[1];
+    // a1 + a2 = a2 * coeff_a[0] + coeff_b[0]
+    // use constraints to restrict range of a2 and solve the problem
+
+    coeff_a[1] = -v2[idx0]/v1[idx0];
+    coeff_b[1] = v0[idx0]/v1[idx0];
+
+    coeff_a[0] = coeff_a[1] + 1;
+    coeff_b[0] = coeff_b[1];
+
+    for( int i=0 ; i<2 ; i++ )
+    {
+      if(! TGridCell::test_constraint(coeff_a[i], coeff_b[i], range_m, range_M))
+      {
+        return false;
+      }
+    }
+
+    // P[direction] =  P0_direction
+    //               + v1[direction] * v0[idx0]/v1[idx0]
+    //               + a2 * (v2[direction] - v2[idx0]/v1[idx0])
+    // P[direction] = a2 * coeff_a[0] + coeff_b[0];
+    coeff_a[0] =  v1[direction]*coeff_a[1]
+                + v2[direction];
+    coeff_b[0] =  P0_direction
+                + v1[direction]*coeff_b[1];
+
+    lmin = std::min(range_m*coeff_a[0]+coeff_b[0],
+                    range_M*coeff_a[0]+coeff_b[0]);  
+    lmax = std::max(range_m*coeff_a[0]+coeff_b[0],
+                    range_M*coeff_a[0]+coeff_b[0]);
+    
+    return true;
+  }  
+#else // __3D__
   double detABC;
   double detABD;
   double detBCD;
@@ -1104,9 +1203,6 @@ bool TGridCell::IsLineCutingCell(int                  direction,
 
   int idx1 = (direction + 1) % 3;
   int idx2 = (direction + 2) % 3;
-
-  double range_m = 0.;
-  double range_M = 1.;
 
   this->GetVertex(0)->GetCoords(A[0], A[1], A[2]);
   this->GetVertex(1)->GetCoords(B[0], B[1], B[2]);
@@ -1223,8 +1319,149 @@ bool TGridCell::IsLineCutingCell(int                  direction,
   lmax = std::max(range_m*coeff_a[0]+coeff_b[0], range_M*coeff_a[0]+coeff_b[0]);
 
   return true;
+#endif
+//   double P0_direction;
+//   double detABC;
+//   double detABD;
+//   double detBCD;
+//   double det01;
+//   double det02;
+//   double det12;
+//   double det13;
+//   double det23;
+//   double A[3];
+//   double B[3];
+//   double C[3];
+//   double D[3];
+//   double v0[3];
+//   double v1[3];
+//   double v2[3];
+//   double v3[3];
+//   double coeff_a[3];
+//   double coeff_b[3];
+// 
+//   int idx1 = (direction + 1) % 3;
+//   int idx2 = (direction + 2) % 3;
+// 
+//   double range_m = 0.;
+//   double range_M = 1.;
+// 
+//   this->GetVertex(0)->GetCoords(A[0], A[1], A[2]);
+//   this->GetVertex(1)->GetCoords(B[0], B[1], B[2]);
+//   this->GetVertex(2)->GetCoords(C[0], C[1], C[2]);
+//   this->GetVertex(3)->GetCoords(D[0], D[1], D[2]);
+// 
+//   // choose vectors v1 v2 independent in projection plan O idx1 idx2
+//   // (to ensure det12 != 0)
+//   detABC =  (B[idx1]-A[idx1]) * (C[idx2]-B[idx2])
+//           - (B[idx2]-A[idx2]) * (C[idx1]-B[idx1]);
+//   detABD =  (B[idx1]-A[idx1]) * (D[idx2]-B[idx2])
+//           - (B[idx2]-A[idx2]) * (D[idx1]-B[idx1]);
+//   detBCD =  (C[idx1]-B[idx1]) * (D[idx2]-C[idx2])
+//           - (C[idx2]-B[idx2]) * (D[idx1]-C[idx1]);
+// 
+//   // assign v0 v1 v2 v3 and P0_direction
+//   if( detABC != 0.)
+//   {
+//     for( int i=0 ; i<3 ; i++ )
+//     {
+//       v0[i] = P[i] - A[i];
+//       v1[i] = B[i] - A[i];
+//       v2[i] = C[i] - A[i];
+//       v3[i] = D[i] - A[i];
+//     }
+// 
+//     P0_direction = A[direction];
+//   }
+// 
+//   if( (detABD != 0.) && (fabs(detABD)>fabs(detABC)) )
+//   {
+//     for( int i=0; i<3; i++ )
+//     {
+//       v0[i] = P[i] - A[i];
+//       v1[i] = B[i] - A[i];
+//       v2[i] = D[i] - A[i];
+//       v3[i] = C[i] - A[i];
+//     }
+// 
+//     P0_direction = A[direction];
+//   }
+// 
+//   if( (detBCD != 0.) && (fabs(detBCD)>std::max(fabs(detABC),fabs(detABD))) )
+//   {
+//     for( int i=0 ; i<3 ; i++ )
+//     {
+//       v0[i] = P[i] - B[i];
+//       v1[i] = C[i] - B[i];
+//       v2[i] = D[i] - B[i];
+//       v3[i] = A[i] - B[i];
+//     }
+// 
+//     P0_direction = B[direction];
+//   }
+// 
+//   // solve the convex constrained optimization problem:
+//   // min/max P[direction] =  P0_direction + a1*v1[direction] + a2*v2[direction]
+//   //                       + a3*v3[direction]
+//   // with 0<= a1 + a2 + a3 <=1,
+//   // 0<= a3 <=1
+//   // 0<= a2 <=1
+//   // 0<= a1 <=1
+//   // P[direction] linear function of a3 => P[direction] extrem if a3 extrem
+//   // (at the boundary)
+//   // a1 and a2 linear functions of a3 => a1 and a2 extrem if a3 extrem
+//   // a1 = (v0[idx1] + v2[idx1]*det01/det12)/v1[idx1]
+//   //    + a3 * (det13/det12*v2[idx1] + v3[idx1])/v1[idx1];
+//   // a1 = a3 * coeff_a[1] + coeff_b[1];
+//   // a2 = -det01/det12 - a3 * det13/det12;
+//   // a2 = a3 * coeff_a[2] + coeff_b[2];
+//   // a1 + a2 + a3 = a3 * coeff_a[0] + coeff_b[0]
+//   // use constraints to restrict range of a3 and solve the problem
+// 
+//   det01 = (v0[idx1]*v1[idx2] - v0[idx2]*v1[idx1]);
+//   det02 = (v0[idx1]*v2[idx2] - v0[idx2]*v2[idx1]);
+//   det12 = (v1[idx1]*v2[idx2] - v1[idx2]*v2[idx1]);
+//   det13 = (v1[idx1]*v3[idx2] - v1[idx2]*v3[idx1]);  
+//   det23 = (v2[idx1]*v3[idx2] - v2[idx2]*v3[idx1]);
+// 
+//   coeff_a[2] = -det13/det12;
+//   coeff_b[2] = -det01/det12;
+// 
+//   coeff_a[1] = det23/det12;
+//   coeff_b[1] = det02/det12;
+// 
+//   coeff_a[0] = coeff_a[1] + coeff_a[2] + 1;
+//   coeff_b[0] = coeff_b[1] + coeff_b[2];
+// 
+//   for( int i=0 ; i<3 ; i++ )
+//   {
+//     if( ! TGridCell::test_constraint(coeff_a[i], coeff_b[i], range_m, range_M) )
+//     {
+//       return false;
+//     }
+//   }
+// 
+//   // P[direction] =  P0_direction
+//   //               + v1[direction]/v1[idx1] * (v0[idx1]+det01/det12*v2[idx1])
+//   //               - v2[direction] * det01/det12
+//   //               + a3 * v3[direction]
+//   //                    * ( 1 - v2[direction]*det13/det12
+//   //                      + v1[direction]/v1[idx1] * ( det13/det12*v2[idx1]
+//   //                                                 + v3[idx1]));
+//   // P[direction] = a3 * coeff_a[0] + coeff_b[0];
+// 
+//   coeff_a[0] =  v1[direction]*coeff_a[1]
+//               + v2[direction]*coeff_a[2]
+//               + v3[direction];
+//   coeff_b[0] =  P0_direction
+//               + v1[direction]*coeff_b[1]
+//               + v2[direction]*coeff_b[2];
+// 
+//   lmin = std::min(range_m*coeff_a[0]+coeff_b[0], range_M*coeff_a[0]+coeff_b[0]);  
+//   lmax = std::max(range_m*coeff_a[0]+coeff_b[0], range_M*coeff_a[0]+coeff_b[0]);
+// 
+//   return true;
 }
-#endif /** #ifdef __3D__ */
 
 
 int TGridCell::GetGeoLevel()
