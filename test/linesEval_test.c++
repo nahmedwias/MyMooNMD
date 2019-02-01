@@ -76,7 +76,7 @@ bool additional_tests(TDomain & domain)
 
 
 /* ************************************************************************** */
-int main()
+int main(int argc, char* argv[])
 {
   // declaration of databases
   TDatabase Database;
@@ -84,7 +84,7 @@ int main()
   db.merge(TDomain::default_domain_parameters());
 
 #ifdef _MPI
-  MPI::Init();
+  MPI_Init(&argc, &argv);
   db["refinement_n_initial_steps"] = 4;
 #else
   db["refinement_n_initial_steps"] = 0;
@@ -201,6 +201,6 @@ int main()
   }
   
 #ifdef _MPI
-  MPI::Finalize();
+  MPI_Finalize();
 #endif
 }
