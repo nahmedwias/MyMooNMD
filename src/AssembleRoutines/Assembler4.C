@@ -488,6 +488,7 @@ void Assembler4::add_local_to_global_matrix(int i,
 
     // add local matrix to global matrix
     for (int m = 0; m < N_BaseFunct[CurrentElement]; m++)
+    for (int m = 0; m < N_BaseFunct[CurrentElement]; m++)
     {
       // active DOF
       if (DOF[m] < ActiveBound)
