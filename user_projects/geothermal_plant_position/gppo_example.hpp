@@ -1,9 +1,11 @@
 #include "ParameterDatabase.h"
-#include "Example_NSE2D.h"
+
 #ifdef __2D__
 #include "Example_TimeCD2D.h"
+#include "Example_NSE2D.h"
 #else
 #include "Example_TimeCD3D.h"
+#include "Example_NSE3D.h"
 #endif
 
 constexpr double surrounding_temperature = 348.15; //=75 + 273.15; //150.;
@@ -321,11 +323,13 @@ Example_NSE2D get_gppo_flow_example(const ParameterDatabase & db)
 	  all_Neumann_boundary_condition, all_Neumann_boundary_condition}};
     std::vector<BoundValueFunct2D *> bd(3, zero_boundary_value); 
     double reynolds_number = db["reynolds_number"];
+    double effective_viscosity = db["effective_viscosity"]; //this->example_database["effective_viscosity"];
     double sigma = db["inverse_permeability"];
     using namespace std::placeholders;
     bool use_coeff_fct = false; // db["variable_sigma_fct_type"];
     CoeffFct2D coeffs = std::bind(pde_coefficients_flow, _1, _2, _3, _4, _5,
-				  1./reynolds_number, sigma, use_coeff_fct);
+				  effective_viscosity, //1./reynolds_number,
+				  sigma, use_coeff_fct);
     return Example_NSE2D(exact, bc, bd, coeffs, 1./reynolds_number);
     break;
   }
@@ -359,18 +363,24 @@ Example_TimeCD2D get_gppo_temperature_example(const ParameterDatabase & db)
 {
   //int example = db["example"];
   std::vector<DoubleFunct3D *> exact(4, unknown_solution);
-  std::vector<BoundCondFunct3D *> bc{{all_Dirichlet_boundary_condition, all_Dirichlet_boundary_condition, 
+ /*  std::vector<BoundCondFunct3D *> bc{{all_Dirichlet_boundary_condition, all_Dirichlet_boundary_condition,
                                       all_Dirichlet_boundary_condition, all_Neumann_boundary_condition}};
-  std::vector<BoundValueFunct3D *> bd_3D(4, zero_boundary_value);
+  */
+  std::vector<BoundCondFunct3D *> bc{{all_Neumann_boundary_condition, all_Neumann_boundary_condition,
+                                      all_Neumann_boundary_condition, all_Neumann_boundary_condition}};
+
+  std::vector<BoundValueFunct3D *> bd(4, zero_boundary_value);
   
   double reynolds_number = db["reynolds_number"];
+  double effective_viscosity = db["effective_viscosity"]; //this->example_database["effective_viscosity"];
   double sigma = db["inverse_permeability"];
   using namespace std::placeholders;
   bool use_coeff_fct = false; // db["variable_sigma_fct_type"];
-  CoeffFct3D coeffs = std::bind(pde_coefficients_flow, _1, _2, _3, _4, _5, _6, 1./reynolds_number, sigma, use_coeff_fct);
+  CoeffFct3D coeffs = std::bind(pde_coefficients_flow, _1, _2, _3, _4, _5, _6, effective_viscosity, //1./reynolds_number,
+          sigma, use_coeff_fct);
   
   //cout << " **********INSIDE 3D_gppo_flow_example************"<< endl;
-  return Example_NSE3D(exact, bc, bd_3D, coeffs, 1./reynolds_number);
+  return Example_NSE3D(exact, bc, bd, coeffs, 1./reynolds_number);
 }
 
 
@@ -381,13 +391,12 @@ Example_TimeCD3D get_gppo_temperature_example(const ParameterDatabase & db)
   std::vector<BoundCondFunct3D *> bc(1, all_Dirichlet_boundary_condition);
   std::vector<BoundValueFunct3D *> bd(1, temperature_boundary_value);
   std::vector <DoubleFunct3D*> ic(1, initial_condition_temperature);
-  
   double nu = db["diffusion_coefficient"];
   double transversal_dispersion_factor = db["transversal_dispersion_factor"];
   using namespace std::placeholders;
   CoeffFct3D coeffs = std::bind(pde_coefficients_temperature, _1, _2, _3, _4, _5, _6, nu, transversal_dispersion_factor,
-          (double) db["longitudinal_dispersion_factor"], (double) db["fluid_density"], (double) db["fluid_heat_capacity)"]);
-  //cout << " **********INSIDE 3D_gppo_temperature_example************"<< endl;
+          (double) db["longitudinal_dispersion_factor"], (double) db["fluid_density"], (double) db["fluid_heat_capacity"]);
+//cout << " **********INSIDE 3D_gppo_temperature_example************"<< endl;
   return Example_TimeCD3D(exact, bc, bd, coeffs, false, false, ic);
 }
 #endif
