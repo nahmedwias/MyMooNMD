@@ -28,7 +28,7 @@ ParameterDatabase Example3D::default_example_database()
       "viscosity (sometimes misleadingly named as nu) "
       "which sometimes appears in the dimensionless Navier-Stokes equations"
       "instead of 1/Re.",
-      0., 1000.);
+      0., 1000000.);
 
   /** TDatabase::ParamDB->PE_NR */
   db.add("diffusion_coefficient", 1.,
