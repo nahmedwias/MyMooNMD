@@ -264,6 +264,7 @@ double GeothermalPlantsPositionOptimization<d>::compute_functional_and_derivativ
   std::copy(x, x+n, control_old.begin());
 
   apply_control_and_solve(x);
+
   current_J_hat = compute_functional(x);
 
   if(grad != nullptr)
@@ -432,14 +433,14 @@ void GeothermalPlantsPositionOptimization<d>::apply_control_and_solve(const doub
   LocalAssembling<d> la(2, {D00, D00},
 			{0, 1}, {}, {},
 			{0, 0, 1},
-			coeff,std::bind(NSRightHandSide<d>, _1, _2, _3, _4, _5, _6, _7, _8,
+			coeff, std::bind(NSRightHandSide<d>, _1, _2, _3, _4, _5, _6, _7, _8,
 					rhs_div_sign),nullptr,
 			0, d+1, 0, {}, {}, 0, nullptr, 0, {}, {});
 #else
   LocalAssembling<d> la(2, {D000, D000},
 			{0, 1},  {},  {},
 			{0, 0, 0, 1},
-			coeff,std::bind(NSRightHandSide<d>, _1, _2, _3, _4, _5, _6, _7, _8,
+			coeff, std::bind(NSRightHandSide<d>, _1, _2, _3, _4, _5, _6, _7, _8,
 					rhs_div_sign),nullptr,
 			0, d+1, 0,  {},  {},   0,   nullptr,  0,  {}, {});
 #endif
@@ -473,16 +474,15 @@ void GeothermalPlantsPositionOptimization<d>::apply_control_and_solve(const doub
   non_const_bound_values[2] = example.get_bd()[2];
   non_const_bound_values[3] = example.get_bd()[3];
 #endif
-  
+
 #ifdef __2D__
   Assemble2D(
 #else
   Assemble3D(
 #endif
-	     2, fespaces.data()+1, 0, nullptr, 0, nullptr, 3, rhs_pointers,
+	     2, fespaces.data()+1, 0, nullptr, 0, nullptr, d+1, rhs_pointers,
 	     fespaces.data(), boundary_conditions,
 	     non_const_bound_values.data(), la);
-
 
   double mat_norm 
   = brinkman_mixed.get_matrix().get_combined_matrix()->GetNorm();
