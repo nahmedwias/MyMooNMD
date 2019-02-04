@@ -11,6 +11,7 @@
 #ifndef __EVALTOOLS__
 #define __EVALTOOLS__
 
+#include <array>
 #include <Collection.h>
 #include "templateNames.h"
 #include <ParameterDatabase.h>

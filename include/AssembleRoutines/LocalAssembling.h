@@ -48,6 +48,7 @@ enum class LocalAssembling_type
     ConvDiff, /// Stationary convection diffusion reaction in 3D
     Darcy, // stationary Darcy problem (mixed form)
     TCDStiffMassRhs,
+    TCDMassOnly,
     TCDStiffRhs,
     NSE3D_Linear,    /// Linear part of stationary Navier--Stokes in 3D
     NSE3D_NonLinear, /// Non-linear part of stationary Navier--Stokes in 3D
