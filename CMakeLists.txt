@@ -54,6 +54,15 @@ endif()
 # include all external libraries
 include(cmake/external_libraries.cmake)
 
+# include BOOST - needed for ROM/POD
+find_package(Boost 1.47.0 REQUIRED COMPONENTS regex filesystem system program_options)
+IF(Boost_FOUND)
+    MESSAGE("Boost includes located in: ${Boost_INCLUDE_DIRS}")
+    MESSAGE("Boost libraries located in: ${Boost_LIBRARIES}")
+    include_directories(${Boost_INCLUDE_DIRS})
+    list(APPEND _EXTERN_LIBRARIES ${Boost_LIBRARIES})
+ENDIF(Boost_FOUND)
+
 # turn on all warnings
 add_compile_options(
   # clang/GCC warnings
@@ -73,6 +82,7 @@ endif()
 
 # If we want global compile flags to reach the subdirectories, we have to 
 # run the following includes AFTER setting global flags.
+include(cmake/sources_rom.cmake)
 include(cmake/sources_assembleroutines.cmake)
 include(cmake/sources_assembleroutinessaddle.cmake)
 include(cmake/sources_examples.cmake)
