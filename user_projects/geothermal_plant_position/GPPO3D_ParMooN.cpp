@@ -8,10 +8,10 @@
 
 
 // this should be done inside the Domain class, but it is not yet.
+/** ************************************************************************ */
 void refine_domain(TDomain& domain, bool write_ps_file)
 {
   size_t n_ref = domain.get_n_initial_refinement_steps();
-  
   for (size_t i = 0; i < n_ref; i++)
   {
     domain.RegRefineAll();
@@ -24,13 +24,14 @@ void refine_domain(TDomain& domain, bool write_ps_file)
   }
 }
 
+/** ************************************************************************ */
 int main(int argc, char* argv[])
 {
   // start a stopwatch which measures time spent in program parts
   Chrono timer;
   
   //  declaration of database, you need this in every program
-  TDatabase Database;
+  TDatabase Database(argv[1]);
   TFEDatabase3D FEDatabase; 
   ParameterDatabase db
     = GeothermalPlantsPositionOptimization<3>::default_GPPO_database();
@@ -74,4 +75,5 @@ int main(int argc, char* argv[])
   parmoon_opt::optimize(gppo, db);
   timer.stop_and_print("Finished optimization loop");
   timer.print_total_time("Finished entire boundary controlled optimization");
+  Output::close_file();
 }

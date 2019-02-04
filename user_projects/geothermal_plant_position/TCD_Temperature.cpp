@@ -94,7 +94,7 @@ void temperature_coefficients(int n_points, double *x, double *y,
         double **parameters, double **coeffs,
         double distance, double nu, double transversal_dispersion_factor, double longitudinal_dispersion_factor,
         double well_radius, double temperature_injection_well, double delta_fct_eps_factor,
-        double fluid_density, double fluid_heat_capacity )
+        double fluid_density, double fluid_heat_capacity)
 {
   for(int i = 0; i < n_points; ++i)
   {
@@ -183,9 +183,17 @@ double norm_u = sqrt(parameters[i][0]*parameters[i][0] + parameters[i][1]*parame
         //magnitude /= 4.*epsDelta*epsDelta;
         //coeffs[i][3] += magnitude; // reaction
         //coeffs[i][4] -= magnitude * T_in; // source
-        double penalty_factor = 1000.;
+      /*  double penalty_factor = 1000.;
         coeffs[i][4] = 1 * penalty_factor; // reaction
         coeffs[i][5] = temperature_injection_well * penalty_factor; // right-hand side
+        */
+        double magnitude = cos(Pi*(x[i] - center_source[0])/epsDelta) + 1;
+        magnitude *= cos(Pi*(y[i] - center_source[1])/epsDelta) + 1;
+        magnitude *= cos(Pi*(z[i] - center_source[2])/epsDelta) + 1;
+        magnitude /= 4.*epsDelta*epsDelta;
+
+        coeffs[i][4] = magnitude; // reaction
+        coeffs[i][5] = magnitude * temperature_injection_well; // right-hand side
 #endif
 
     }
