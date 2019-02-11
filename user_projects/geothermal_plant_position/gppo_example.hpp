@@ -198,7 +198,7 @@ void pde_coefficients_flow(int n_points, double *x, double *y,
 			   double **coeffs, double nu, double sigma,
 			   bool use_parameters = false)
 {
-  for(int i = 0; i < n_points; i++)
+  for (int i = 0; i < n_points; i++)
   {
     int dimension;
 #ifdef __2D__
@@ -210,10 +210,10 @@ void pde_coefficients_flow(int n_points, double *x, double *y,
     coeffs[i][0] = nu;
     coeffs[i][dimension+2] = sigma;
     // momentum source
-    for (int k=1; k<=dimension; k++)
+    for (int k = 1; k <= dimension; k++)
       coeffs[i][k] = 0.; // f_k
 
-    //divergence soucr
+    //divergence source
     coeffs[i][dimension+1] = 0.; // divergence
 
     /*
@@ -235,13 +235,9 @@ void pde_coefficients_flow(int n_points, double *x, double *y,
     else
     {
       coeffs[i][4] = parameters[i][0];
-      
     }
     */
-    
   }
-
-  
 }
 
 
@@ -264,15 +260,20 @@ void pde_coefficients_temperature(int n_points, double *, double *,
   {
     // physical parameters
     coeffs[i][0] = nu;
-    if(parameters[i] == nullptr) // initial assembling
+   // cout << "!!!!!!!!!!!!!!!!!nu: "<< nu << endl;
+    for (size_t k = 1; k <= dim+3; k++)
     {
-      coeffs[i][1] = 0.; // convection, x-direction
-      coeffs[i][2] = 0.; // convection, y-direction
-#ifdef __3D__
-      coeffs[i][3] = 0.; // convection, z-direction
-#endif
+      coeffs[i][k] = 0.;
+      /*
+    coeffs[i][1] = convection, x-direction
+    coeffs[i][2] = convection, y-direction
+    coeffs[i][dim+1] = reaction
+    coeffs[i][dim+2] =  f
+    coeffs[i][dim+3] = dispersion
+       */
     }
-    else
+
+    if(parameters[i] != nullptr) // initial assembling
     {
       coeffs[i][1] = parameters[i][0]; // convection, x-direction
       coeffs[i][2] = parameters[i][1]; // convection, y-direction
@@ -281,27 +282,17 @@ void pde_coefficients_temperature(int n_points, double *, double *,
 #endif
 
       double norm_u = sqrt(parameters[i][0]*parameters[i][0] + parameters[i][1]*parameters[i][1]
-      #ifdef __3D__
-                    + parameters[i][2]*parameters[i][2]
-      #endif
+#ifdef __3D__
+                         + parameters[i][2]*parameters[i][2]
+#endif
       );
 
       coeffs[i][0] += transversal_dispersion_factor * norm_u;
 
       if(norm_u)
-      coeffs[i][dim+3] = //fluid_density * fluid_heat_capacity *
-              (longitudinal_dispersion_factor - transversal_dispersion_factor) * 1/norm_u;
-      else
-      coeffs[i][dim+3] = 0.;
-
-
-
-     // cout << "!! ! !! !! !! !! parameters[i][0]: "<< parameters[i][0] << ", parameters[i][0]: "  << parameters[i][1] << endl;
-
+        coeffs[i][dim+3] = //fluid_density * fluid_heat_capacity *
+                (longitudinal_dispersion_factor - transversal_dispersion_factor) * 1/norm_u;
     }
-    coeffs[i][dim+1] = 0.; // reaction
-    coeffs[i][dim+2] = 0.; // f
-    coeffs[i][dim+3] = 0.; //
   }
 }
 
@@ -394,8 +385,9 @@ Example_TimeCD3D get_gppo_temperature_example(const ParameterDatabase & db)
   double nu = db["diffusion_coefficient"];
   double transversal_dispersion_factor = db["transversal_dispersion_factor"];
   using namespace std::placeholders;
-  CoeffFct3D coeffs = std::bind(pde_coefficients_temperature, _1, _2, _3, _4, _5, _6, nu, transversal_dispersion_factor,
-          (double) db["longitudinal_dispersion_factor"], (double) db["fluid_density"], (double) db["fluid_heat_capacity"]);
+  CoeffFct3D coeffs = std::bind(pde_coefficients_temperature, _1, _2, _3, _4, _5, _6, nu,
+          transversal_dispersion_factor, (double) db["longitudinal_dispersion_factor"],
+          (double) db["fluid_density"], (double) db["fluid_heat_capacity"]);
 //cout << " **********INSIDE 3D_gppo_temperature_example************"<< endl;
   return Example_TimeCD3D(exact, bc, bd, coeffs, false, false, ic);
 }
