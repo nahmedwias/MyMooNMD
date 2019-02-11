@@ -125,7 +125,7 @@ void temperature_coefficients(int n_points, double *x, double *y,
 
       bool at_source = (x_distance_to_source < epsDelta*epsDelta) * (y_distance_to_source < epsDelta*epsDelta)
     #ifdef __3D__
-                  * (z_distance_to_source < epsDelta*epsDelta)
+     // OLD 05.02.19             * (z_distance_to_source < epsDelta*epsDelta)
     #endif
      ;
 
@@ -189,7 +189,8 @@ double norm_u = sqrt(parameters[i][0]*parameters[i][0] + parameters[i][1]*parame
         */
         double magnitude = cos(Pi*(x[i] - center_source[0])/epsDelta) + 1;
         magnitude *= cos(Pi*(y[i] - center_source[1])/epsDelta) + 1;
-        magnitude *= cos(Pi*(z[i] - center_source[2])/epsDelta) + 1;
+       //Old 05.02.19  magnitude *= cos(Pi*(z[i] - center_source[2])/epsDelta) + 1;
+        ////magnitude *= 1 + 1;
         magnitude /= 4.*epsDelta*epsDelta;
 
         coeffs[i][4] = magnitude; // reaction
