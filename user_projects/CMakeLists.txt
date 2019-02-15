@@ -21,4 +21,23 @@
 # will compile your project. The executable will be called parMooN_project_X
 # where 'X' is the build type, e.g. SEQUENTIAL.
 
-set(parmoon_tests ${parmoon_tests} PARENT_SCOPE)
+set(non_newt "${PROJECT_SOURCE_DIR}/user_projects")
+
+include_directories(${non_newt})
+#source files
+list(APPEND NON_NEWT2D "${non_newt}/CoupledNavierStokesStress.cpp")
+list(APPEND NON_NEWT2D "${non_newt}/Coupled_NS_Stress_Local_routines.cpp")
+list(APPEND NON_NEWT2D "${non_newt}/LocalAssembleCoupledStressNS.cpp")
+list(APPEND NON_NEWT2D "${non_newt}/Example_CoupledNS_Stress.cpp")
+
+add_library(NON_NEWT_LIB_2D STATIC ${NON_NEWT2D})
+target_compile_definitions(NON_NEWT_LIB_2D PUBLIC -D__2D__)
+
+### TNSE2D ###
+# Standard executable target.
+add_executable(tnse2d_coupled ${non_newt}/CoupledNSE2D_Stress_ParMooN.cpp)
+set_target_properties(tnse2d_coupled PROPERTIES OUTPUT_NAME parMooN_tnse2d_coupled_${PARMOON_PARALLEL_TYPE})
+# Add the correct geometry flag to the target.
+target_compile_definitions(tnse2d_coupled PUBLIC -D__2D__)
+# Link in the required libraries.
+target_link_libraries(tnse2d_coupled NON_NEWT_LIB_2D parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
