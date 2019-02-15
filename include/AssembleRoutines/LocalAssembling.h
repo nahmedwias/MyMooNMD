@@ -54,6 +54,7 @@ enum class LocalAssembling_type
     TNSE3D_LinGAL,   /// Linear part of time-dependent NS in 3D
     TNSE3D_NLGAL,    /// Non-linear part of time-dependant NS in 3D
     TNSE3D_Rhs,      /// Rhs part of time-dependent NS in 3D
+    CoupledStressNS,
     Custom /// Assembling object created with a custom constructor, probably for a non-standard proble
 };
 // this function allows you to write these (strongly typed) enums to stdout
@@ -182,6 +183,8 @@ class LocalAssembling
     void set_parameters_for_tnse( LocalAssembling_type type);
     /// SMAGORINSKY model
     void set_parameters_for_tnse_smagorinsky( LocalAssembling_type type);
+    /// set parameters for assembly of the stress matrices
+    void set_parameters_for_stress_simple(LocalAssembling_type type);
   public:
     /** Constructs a Local Assembling object of a certain type from an array
      *  of fe functions and coefficient functions.
