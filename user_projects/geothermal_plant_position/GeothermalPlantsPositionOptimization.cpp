@@ -106,6 +106,16 @@ ParameterDatabase GeothermalPlantsPositionOptimization<d>::default_GPPO_database
           "The scaling of the delta-distribution, given by epsDelta = delta_fct_eps_factor * db[well_radius].",
           0., 10000000.);
 
+  //2 Doublets
+  db.add("well_distance", 1000., // epsDelta
+          "Determines the distance between the injection and production well for both doublets",
+          0., 10000000.);
+
+  db.add("scenario", "1doublet_optimize_distance",
+           "Determine the scenario to be optimized.",
+           {"1doublet_optimize_distance", "scenario_2doublets_fixed_well_distance"});
+
+
   return db;
 }
 
@@ -150,21 +160,17 @@ get_primal_temperature_database(ParameterDatabase param_db)
   basename += std::string("_temperature");
   param_db["output_basename"].set(basename, false);
 
-  
   ParameterDatabase tcd_GPPO_db = TimeConvectionDiffusion<d>::default_tcd_database();
 
-  //param_db.add("space_discretization_type_tcd", "galerkin",
-  //	       " Discretization type for TCD problem");
-  // velocity solver database
-  //ParameterDatabase tcd_GPPO_db = param_db;
+  // temperature solver database
+  // ParameterDatabase tcd_GPPO_db = param_db;
   auto db_name = std::string(GeothermalPlantsPositionOptimization<d>::
 			     required_database_name_TCD_GPPO);
   // use the given database or one of its nested databases, depending on which
   // one has the correct name. Otherwise the default solver database is used.
   cout << "Nested database, name: " << db_name << endl;
 
-  //OLD 15.01.19:tcd_GPPO_db.merge(param_db,false);
-  tcd_GPPO_db.merge(param_db, true);
+  tcd_GPPO_db.merge(param_db, true); //OLD 15.01.19:tcd_GPPO_db.merge(param_db,false);
 
   // replace parameter values if some parameter is specific for tcd problem
   if(param_db.has_nested_database(db_name))
@@ -297,31 +303,26 @@ void approximate_delta_functions(int n_points, double *x, double *y,
         double **parameters, double **coeffs,
         double distance, double well_radius, double delta_fct_eps_factor)
 {
-  /**
-     @todo this function should be adapted to make delta-fct depending on input parameter 
-     (e.g. distance or position of sources) in 3D
-  */
+int dim = 2;
+#ifdef __3D__
+  dim = 3;
+#endif
 
   for (int i = 0; i < n_points; ++i)
   {
-    coeffs[i][0] = 0.;
-    coeffs[i][1] = 0.;
-    coeffs[i][2] = 0.;
-    coeffs[i][3] = 0.;
-#ifdef __3D__
-    coeffs[i][4] = 0.;
-#endif
-    
-    // Note: this function should be consistent with the used domain/mesh
-    double u_in = 1.e-6;
-    //double r_well = 0.1; // 10cm
-    double epsDelta = delta_fct_eps_factor * well_radius;  //25*r_well;  // ~h
+    for (size_t k = 0; k <= dim+1; k++)
+    {
+      coeffs[i][k] = 0.;
+    }
+
+    double u_in = 1.e-3;  //1.e-6;
+    double epsDelta = delta_fct_eps_factor * well_radius;  // ~h
     /*double H = 75.;
-    double Volume = epsDelta*epsDelta*Pi*H;  //r_well*r_well*Pi*H; //
+    double Volume = epsDelta*epsDelta*Pi*H;  //well_radius*well_radius*Pi*H;
     double Qin =  150./3600./Volume; // m^3/h thickness = 1000m
-    */
-    double Qin = u_in * (2/well_radius);
-    
+     */
+    double Qin = u_in * (2/well_radius);//(dim/well_radius);
+
     std::vector<double> singular_x, singular_y,
 #ifdef __3D__
     singular_z,
@@ -333,7 +334,8 @@ void approximate_delta_functions(int n_points, double *x, double *y,
     singular_y.push_back(3000.);
     singular_sign.push_back(1.);
 #ifdef __3D__
-    singular_z.push_back(3000.);
+    //singular_z.push_back(3000.); //0-500
+    singular_z.push_back(250.);
 #endif
 
     // sink in (xe,ye)    
@@ -341,7 +343,8 @@ void approximate_delta_functions(int n_points, double *x, double *y,
     singular_y.push_back(3000.);
     singular_sign.push_back(-1.);
 #ifdef __3D__
-    singular_z.push_back(3000.);
+    // singular_z.push_back(3000.); //0-500
+    singular_z.push_back(250.);
 #endif
 
     for (unsigned int m = 0; m < singular_x.size(); m++)
@@ -349,45 +352,192 @@ void approximate_delta_functions(int n_points, double *x, double *y,
       double x_center_source = singular_x[m];
       double y_center_source = singular_y[m];
 #ifdef __3D__
-      double z_center_source = singular_z[m];
+      double z_center_source = singular_z[m];//0-500
 #endif
       double x_distance_to_source = std::pow(std::abs(x[i] - x_center_source), 2);
       double y_distance_to_source = std::pow(std::abs(y[i] - y_center_source), 2);
+      /*
 #ifdef __3D__
       double z_distance_to_source = std::pow(std::abs(z[i] - z_center_source), 2);
 #endif
+       */
 
       bool at_source = (x_distance_to_source < epsDelta*epsDelta) *
               (y_distance_to_source < epsDelta*epsDelta)
+              /*
 #ifdef __3D__
-      * (z_distance_to_source < epsDelta*epsDelta)
+               * (z_distance_to_source < epsDelta*epsDelta)
 #endif
+               */
               ;
 
-
-      if(at_source)
+      if (at_source
+#ifdef __3D__
+              && z[i] < 490 && z[i] > 10
+#endif
+      )
       {
+    /*    cout << "Quad Points for mass source: "<< i <<endl;
+        cout << "Quad Points for mass source: "<< x[i] << ", "<< y[i] <<", "<<
+#ifdef __3D__
+                z[i] <<
+#endif
+                endl;
+                */
         double magnitude = cos(Pi*(x[i] - x_center_source)/epsDelta) + 1;
         magnitude *= cos(Pi*(y[i] - y_center_source)/epsDelta) + 1;
-#ifdef __3D__
-        magnitude *= cos(Pi*(z[i] - z_center_source)/epsDelta) + 1;
-#endif
-        magnitude /= 4.*epsDelta*epsDelta;
 
-#ifdef __2D__
-        coeffs[i][3] += singular_sign[m] * magnitude * Qin;
-        Output::print<4>(" adding a singular source/sink - point ", m,
-                " coeff[3] = ", coeffs[i][3]);
-#else
-        coeffs[i][4] += singular_sign[m] * magnitude * Qin;
-        Output::print<4>(" adding a singular source/sink - point ", m,
-                " coeff[4] = ", coeffs[i][4]);
+#ifdef __3D__
+        //// magnitude *= 1 + 1;
+        /*
+        magnitude *= cos(Pi*(z[i] - z_center_source)/epsDelta) + 1;
+         */
 #endif
+
+        magnitude /= 4.*epsDelta*epsDelta;
+#ifdef __3D__
+        magnitude /= 480.;
+#endif
+
+        coeffs[i][dim+1] += singular_sign[m] * magnitude * Qin;
+        Output::print<4>(" adding a singular source/sink - point ", m,
+                " coeff[", dim+1, "] = ", coeffs[i][dim+1]);
       }
     }
   }
 }
 
+
+/** ************************************************************************ */
+void approximate_delta_functions_2doublets(int n_points, double *x, double *y,
+#ifdef __3D__
+        double *z,
+#endif
+        double **parameters, double **coeffs,
+        double center_x_moving_doublet, double well_radius, double delta_fct_eps_factor, double well_distance)
+{
+int dim = 2;
+#ifdef __3D__
+  dim = 3;
+#endif
+
+  for (int i = 0; i < n_points; ++i)
+  {
+    for (size_t k = 0; k <= dim+1; k++)
+    {
+      coeffs[i][k] = 0.;
+    }
+
+    double u_in = 1.e-3;  //1.e-6;
+    double epsDelta = delta_fct_eps_factor * well_radius;  // ~h
+    /*double H = 75.;
+    double Volume = epsDelta*epsDelta*Pi*H;  //well_radius*well_radius*Pi*H;
+    double Qin =  150./3600./Volume; // m^3/h thickness = 1000m
+     */
+    double Qin = u_in * (2/well_radius);//(dim/well_radius);
+
+    std::vector<double> singular_x, singular_y,
+#ifdef __3D__
+    singular_z,
+#endif
+    singular_sign;
+
+    // source in (xi,yi) for fixed doublet
+    singular_x.push_back(5000. - (well_distance)/2.);
+    singular_y.push_back(2500.);
+    singular_sign.push_back(1.);
+#ifdef __3D__
+    //singular_z.push_back(3000.); //0-500
+    singular_z.push_back(250.);
+#endif
+
+    // sink in (xe,ye) for fixed doublet
+    singular_x.push_back(5000.+ (well_distance)/2.);
+    singular_y.push_back(2500.);
+    singular_sign.push_back(-1.);
+#ifdef __3D__
+    // singular_z.push_back(3000.); //0-500
+    singular_z.push_back(250.);
+#endif
+
+    // source in (xi,yi) for moving doublet
+    singular_x.push_back(center_x_moving_doublet - (well_distance)/2.);
+    singular_y.push_back(3500.);
+    singular_sign.push_back(1.);
+#ifdef __3D__
+    //singular_z.push_back(3000.); //0-500
+    singular_z.push_back(250.);
+#endif
+
+    // sink in (xe,ye) for moving doublet
+    singular_x.push_back(center_x_moving_doublet + (well_distance)/2.);
+    singular_y.push_back(3500.);
+    singular_sign.push_back(-1.);
+#ifdef __3D__
+    // singular_z.push_back(3000.); //0-500
+    singular_z.push_back(250.);
+#endif
+
+    for (unsigned int m = 0; m < singular_x.size(); m++)
+    {
+      double x_center_source = singular_x[m];
+      double y_center_source = singular_y[m];
+#ifdef __3D__
+      double z_center_source = singular_z[m];//0-500
+#endif
+      double x_distance_to_source = std::pow(std::abs(x[i] - x_center_source), 2);
+      double y_distance_to_source = std::pow(std::abs(y[i] - y_center_source), 2);
+      /*
+#ifdef __3D__
+      double z_distance_to_source = std::pow(std::abs(z[i] - z_center_source), 2);
+#endif
+       */
+
+      bool at_source = (x_distance_to_source < epsDelta*epsDelta) *
+              (y_distance_to_source < epsDelta*epsDelta)
+              /*
+#ifdef __3D__
+               * (z_distance_to_source < epsDelta*epsDelta)
+#endif
+               */
+              ;
+
+      if (at_source
+#ifdef __3D__
+              && z[i] < 490 && z[i] > 10
+#endif
+      )
+      {
+    /*    cout << "Quad Points for mass source: "<< i <<endl;
+        cout << "Quad Points for mass source: "<< x[i] << ", "<< y[i] <<", "<<
+#ifdef __3D__
+                z[i] <<
+#endif
+                endl;
+                */
+        cout << "Quad Points for mass source/sink: "<< x[i] << ", "<< y[i] <<endl;
+        double magnitude = cos(Pi*(x[i] - x_center_source)/epsDelta) + 1;
+        magnitude *= cos(Pi*(y[i] - y_center_source)/epsDelta) + 1;
+
+#ifdef __3D__
+        //// magnitude *= 1 + 1;
+        /*
+        magnitude *= cos(Pi*(z[i] - z_center_source)/epsDelta) + 1;
+         */
+#endif
+
+        magnitude /= 4.*epsDelta*epsDelta;
+#ifdef __3D__
+        magnitude /= 480.;
+#endif
+
+        coeffs[i][dim+1] += singular_sign[m] * magnitude * Qin;
+        Output::print<4>(" adding a singular source/sink - point ", m,
+                " coeff[", dim+1, "] = ", coeffs[i][dim+1]);
+      }
+    }
+  }
+}
 
 
 /** ************************************************************************ */
@@ -398,6 +548,8 @@ void GeothermalPlantsPositionOptimization<d>::apply_control_and_solve(const doub
   double t_start = GetTime();
   // apply control x
   double distance = x[0];
+  double center_x_moving_doublet = x[0]; // for 2 doublets (1 is moving)
+
   Output::print<1>("CURRENT well distance: ", distance);
   Output::print("current control: ", std::setprecision(14), distance);
   using namespace std::placeholders;
@@ -415,11 +567,26 @@ void GeothermalPlantsPositionOptimization<d>::apply_control_and_solve(const doub
 #endif
   */
   
-  CoeffFct coeff = std::bind(approximate_delta_functions, _1, _2, _3, _4, _5,
+  // Set coeffs according to scenario
+  CoeffFct coeff;
+  if (this->db["scenario"].is("scenario_2doublets_fixed_well_distance") )
+  {
+    cout << "!!!!! RIGHT CHOICE"<<endl;
+    coeff = std::bind(approximate_delta_functions_2doublets, _1, _2, _3, _4, _5,
 #ifdef __3D__
-          _6,
+            _6,
 #endif
-          distance, (double) this->db["well_radius"], (double) this->db["delta_fct_eps_factor"]);
+            center_x_moving_doublet, (double) this->db["well_radius"], (double) this->db["delta_fct_eps_factor"], (double) this->db["well_distance"]);
+  }
+  else if (this->db["scenario"].is("1doublet_optimize_distance"))
+  {
+    cout << "!!!!! WRONG CHOICE"<<endl;
+    coeff = std::bind(approximate_delta_functions, _1, _2, _3, _4, _5,
+#ifdef __3D__
+            _6,
+#endif
+            distance, (double) this->db["well_radius"], (double) this->db["delta_fct_eps_factor"]);
+  }
   
   std::string disc_type = this->db["space_discretization_type"];
   bool nonsymm_gls = (disc_type == std::string("nonsymm_gls"));
@@ -530,7 +697,7 @@ void GeothermalPlantsPositionOptimization<d>::apply_control_and_solve(const doub
 
     cout << "db[scaling_time_derivative]: " <<  db["scaling_time_derivative"] <<endl;
     tss.set_time_disc_parameters();
-    
+
     double tau = db["time_step_length"];
 
     TDatabase::TimeDB->CURRENTTIME += tau;
@@ -547,36 +714,92 @@ void GeothermalPlantsPositionOptimization<d>::apply_control_and_solve(const doub
 
     // Temperature at production well
     auto temperature = tcd_primal.get_function();
-    double x_production_well = 5000. + (distance)/2.;
-    double y_production_well = 3000.;
+
+
+    if (this->db["scenario"].is("scenario_2doublets_fixed_well_distance") )
+    {
+      std::vector<double> x_production_well(2,0.), y_production_well(2,0.);
+      x_production_well[0] = 5000. + ((double)  db["well_distance"])/2.;
+      x_production_well[1] = center_x_moving_doublet + ((double)  db["well_distance"])/2.;
+      y_production_well[0] = 2500.;
+      y_production_well[1] = 3500.;
 #ifdef __3D__
-    double z_production_well = 3000.;
+      std::vector<double> z_production_well(2,0.);//3000.;
+      z_production_well[0] = 250.;
+      z_production_well[1] = 250.;
 #endif
 
 #ifdef __2D__
-    double temperature_values[d+1];
+      double temperature_values_fixed_production_well[d+1], temperature_values_moving_production_well[d+1];
 #else
-    std::vector<double> temperature_values(d+1);
+      std::vector<double> temperature_values_fixed_production_well(d+1), temperature_values_moving_production_well(d+1);
 #endif
 
-    temperature.FindGradient(x_production_well - (double) db["x_distance_from_well_center"], y_production_well,
+      cout << "1)      x_production_well[0], (double) db[x_distance_from_well_center]: "<< x_production_well[0] << ", " << (double) db["x_distance_from_well_center"] << endl;
+      temperature.FindGradient(x_production_well[0]- (double) db["x_distance_from_well_center"], y_production_well[0],
 #ifdef __3D__
-            z_production_well,
+              z_production_well[0],
+              //todo: get the minimum along well line
 #endif
-    temperature_values);
+              temperature_values_fixed_production_well);
+      cout << "2)      x_production_well[0], (double) db[x_distance_from_well_center]"<< x_production_well[0] << ", " << (double) db["x_distance_from_well_center"] << endl;
 
-    Output::print(" *** T(well) = ", temperature_values[0]);
- 
-    if (temperature_values[0] >= (double) db["minimum_temperature_production_well"])
-     {
-      this->temperature_production_well_at_time_steps.push_back(temperature_values[0]);
-     }
-    else
-    {
-      Output::print("Minimum production temperature obtained at time step ", (double) tss.current_step_, " .");
-      break;
+      temperature.FindGradient(x_production_well[1]- (double) db["x_distance_from_well_center"], y_production_well[1],
+#ifdef __3D__
+              z_production_well[1],
+              //todo: get the minimum along well line
+#endif
+              temperature_values_moving_production_well);
+
+      Output::print(" *** T(fixed_well) = ", temperature_values_fixed_production_well[0]);
+      Output::print(" *** T(moving_well) = ", temperature_values_moving_production_well[0]);
+
+      if (temperature_values_fixed_production_well[0] >= (double) db["minimum_temperature_production_well"]
+                                                                     && temperature_values_moving_production_well[0] >= (double) db["minimum_temperature_production_well"])
+      {
+        this->temperature_production_well_at_time_steps.push_back(temperature_values_fixed_production_well[0]+temperature_values_moving_production_well[0]);
+      }
+      else
+      {
+        Output::print("Minimum production temperature obtained in one of the production wells at time step ", (double) tss.current_step_, " .");
+        break;
+      }
     }
+    else if (this->db["scenario"].is("1doublet_optimize_distance") )
+    {
+      double x_production_well = 5000. + (distance)/2.;
+      double y_production_well = 3000.;
+#ifdef __3D__
+      double z_production_well = 250.;//3000.;
+#endif
 
+#ifdef __2D__
+      double temperature_values[d+1];
+#else
+      std::vector<double> temperature_values(d+1);
+#endif
+
+
+      temperature.FindGradient(x_production_well- (double) db["x_distance_from_well_center"], y_production_well,
+#ifdef __3D__
+              z_production_well,
+              //todo: get the minimum along well line
+#endif
+              temperature_values);
+
+      Output::print(" *** T(well) = ", temperature_values[0]);
+
+      if (temperature_values[0] >= (double) db["minimum_temperature_production_well"])
+      {
+        this->temperature_production_well_at_time_steps.push_back(temperature_values[0]);
+      }
+      else
+      {
+        Output::print("Minimum production temperature obtained at time step ", (double) tss.current_step_, " .");
+        break;
+      }
+
+    }
   }
   // ======================================================================
   Output::print("MEMORY: ", setw(10), GetMemory()/(1048576.0), " MB");
@@ -593,6 +816,8 @@ const
 {
   Output::print("computing current value of functional");
   double distance = x[0];
+  double center_x_moving_doublet = x[0]; // for 2 doublets (1 is moving)
+
   auto u = brinkman_mixed.get_velocity();
   auto u1 = u.GetComponent(0);
   auto u2 = u.GetComponent(1);
@@ -601,15 +826,141 @@ const
 #endif
   auto pressure = brinkman_mixed.get_pressure();
 
+  double functional_value;
 
 
+  if (this->db["scenario"].is("scenario_2doublets_fixed_well_distance") )
+  {
+    std::vector<double> x_production_wells(2, 0.), x_injection_wells(2, 0.), y_production_wells(2, 0.), y_injection_wells(2, 0.)
+#ifdef __3D__
+   , z_production_wells(2, 0.), z_injection_wells(2, 0.)
+#endif
+    ;
+
+    x_production_wells[0] = 5000. + (double) this->db["well_distance"]/2.; //5.5;
+    y_production_wells[0] = 2500.; //3.;
+    x_production_wells[1] = center_x_moving_doublet + (double) this->db["well_distance"]/2.; //5.5;
+    y_production_wells[1] = 3500.; //3.;
+    x_injection_wells[0] = 5000. - (double) this->db["well_distance"]/2.; //4.5;
+    y_injection_wells[0] = 2500.; //3.;
+    x_injection_wells[1] = center_x_moving_doublet - (double) this->db["well_distance"]/2.; //4.5;
+    y_injection_wells[1] = 3500.; //3.;
+#ifdef __3D__
+    z_production_wells[0] = 250.; //3000.;
+    z_injection_wells[0] = 250.; //3000.;
+    z_production_wells[1] = 250.; //3000.;
+    z_injection_wells[1] = 250.; //3000.;
+#endif
+
+#ifdef __2D__
+    double pressure_values_fixed_production_well[d+1], pressure_values_fixed_injection_well[d+1],
+    pressure_values_moving_production_well[d+1], pressure_values_moving_injection_well[d+1];
+#else
+    std::vector<double> pressure_values_fixed_production_well(d+1), pressure_values_fixed_injection_well(d+1),
+            pressure_values_moving_production_well(d+1), pressure_values_moving_injection_well(d+1);
+#endif
+
+    pressure.FindGradient(x_production_wells[0] - (double) db["x_distance_from_well_center"], y_production_wells[0],
+#ifdef __3D__
+            z_production_wells[0],
+#endif
+            pressure_values_fixed_production_well);
+
+    pressure.FindGradient(x_production_wells[1] - (double) db["x_distance_from_well_center"], y_production_wells[1],
+#ifdef __3D__
+            z_production_wells[1],
+#endif
+            pressure_values_moving_production_well);
+
+    pressure.FindGradient(x_injection_wells[0] + (double) db["x_distance_from_well_center"], y_injection_wells[0],
+#ifdef __3D__
+            z_injection_wells[0],
+#endif
+            pressure_values_fixed_injection_well);
+
+    pressure.FindGradient(x_injection_wells[1] + (double) db["x_distance_from_well_center"], y_injection_wells[1],
+#ifdef __3D__
+            z_injection_wells[1],
+#endif
+            pressure_values_moving_injection_well);
+
+    //todo: compute Q from u_in
+    /// double Q = 150/360;//24 * 50; // 50 - 300
+
+    int number_of_time_steps_for_production = 0;
+    double Delta_Temp = 0;
+
+
+    cout <<"!!!!!!!!!!!!!!! After find gradient" <<endl;
+
+    for (int i = 0; i < this->temperature_production_well_at_time_steps.size(); i++)
+    {
+      if (this->temperature_production_well_at_time_steps.at(i) >= ((double) db["minimum_temperature_production_well"])/2.)
+      {
+        Delta_Temp += this->temperature_production_well_at_time_steps.at(i) -  2.*(double) db["temperature_injection_well"];
+        cout <<" temperature_production_well_at_time_steps: "<<  this->temperature_production_well_at_time_steps.at(i) << ", step: "<< i <<endl;
+      }
+      else
+        break;
+
+      number_of_time_steps_for_production = i+1;
+    }
+
+    double alpha = db["alpha_cost"];
+    /*
+     * double functional_value_new // = Q/(0.6)* Delta t * (pressure_prod[1] - pressure_inj[1])  -  Q * Delta t * fluid_density * fluid_heat_capacity * (temperature_prod[1] - temperature_inj); // Net energy AFTER 50 years
+                                   //= Q * Delta t * (   1/(0.6) * (pressure_prod[1] - pressure_inj[1])  - fluid_density * fluid_heat_capacity * (temperature_prod[1] - temperature_inj)   );
+   //since Q_i=const, Delta t = const we can minimize
+     */
+    cout <<"!!!!!!!!!!!!!!! Before functional_value=..." <<endl;
+    functional_value =  (number_of_time_steps_for_production * 1/(double)db["pump_efficiency"] *
+            ( (pressure_values_fixed_injection_well[0] + pressure_values_moving_injection_well[0]) - (pressure_values_fixed_production_well[0] + pressure_values_moving_production_well[0]))
+            - (double) db["fluid_density"] * (double) db["fluid_heat_capacity"] * Delta_Temp)
+                            +  alpha * abs(center_x_moving_doublet - 2000.);
+
+    Output::print("functional_value: ", functional_value);
+
+    //write to stream
+    std::ofstream outputFile("temperature_values_at_production_well_and_net_energy_for_disctance" + std::to_string(distance) +  ".txt");
+    std::copy(this->temperature_production_well_at_time_steps.begin(), this->temperature_production_well_at_time_steps.end(), std::ostream_iterator<int>(outputFile, "\n"));
+    //std::copy(functional_value, std::ostream_iterator<int>(outputFile, "\n"));
+    outputFile << functional_value;
+
+
+    std::vector<double> cost_functional = db["cost_functional"];
+
+    auto temperature = tcd_primal.get_function();
+    auto temperature_at_sink =
+            [&](){
+      double mean = temperature.compute_mean();
+      return mean;
+    };
+
+    /*auto temperature_at_sink1 =
+            [&](){
+      double mean = temperature.compute_mean();
+      return mean;
+    };
+    auto temperature_at_sink2 =
+            [&](){
+      double mean = temperature.compute_mean();
+      return mean;
+    };
+     */
+
+
+    //  double functional_value = 1.;
+  }
+
+  else if (this->db["scenario"].is("1doublet_optimize_distance") )
+  {
   double x_production_well = 5000. + (distance)/2.; //5.5;
   double y_production_well = 3000.; //3.;
   double x_injection_well = 5000. - (distance)/2.; //4.5;
   double y_injection_well = 3000.; //3.;
 #ifdef __3D__
-  double z_production_well = 3000.;
-  double z_injection_well = 3000.; 
+  double z_production_well = 250.; //3000.;
+  double z_injection_well = 250.; //3000.;
 #endif
   
  #ifdef __2D__
@@ -636,9 +987,6 @@ pressure.FindGradient(x_injection_well + (double) db["x_distance_from_well_cente
   int number_of_time_steps_for_production = 0;
   double Delta_Temp = 0;
   
- /* cout <<"!!!!!!!!!!!!!! this->temperature_production_well_at_time_steps.size(): "<<  this->temperature_production_well_at_time_steps.size() <<endl;
-  cout <<"!!!!!!!!!!!!!! minimum_temperature_production_well: "<<  (double) db["minimum_temperature_production_well"] <<endl;
-  */
   for (int i = 0; i < this->temperature_production_well_at_time_steps.size(); i++)
   {
     if (this->temperature_production_well_at_time_steps.at(i) >= (double) db["minimum_temperature_production_well"])
@@ -658,32 +1006,18 @@ pressure.FindGradient(x_injection_well + (double) db["x_distance_from_well_cente
                                  //= Q * Delta t * (   1/(0.6) * (pressure_prod[1] - pressure_inj[1])  - fluid_density * fluid_heat_capacity * (temperature_prod[1] - temperature_inj)   );
  //since Q_i=const, Delta t = const we can minimize
     */
-  double functional_value =  (number_of_time_steps_for_production * 1/(double)db["pump_efficiency"] * 
+functional_value =  (number_of_time_steps_for_production * 1/(double)db["pump_efficiency"] *
           (pressure_values_injection_well[0] - pressure_values_production_well[0])  
           - (double) db["fluid_density"] * (double) db["fluid_heat_capacity"] * Delta_Temp) 
                   +  alpha * abs(distance - 2000.);
-  /*cout << "!!!!!!!!!!!!!!  alpha:  " <<  alpha  << endl;
-  cout << "!!!!!!!!!!!!!!  distance:: " <<  distance << endl;
-  cout << "!!!!!!!!!!!!!!  alpha * abs(distance - 2000.): " <<  alpha * abs(distance - 2000.) << endl;
-  cout << "!!!!!!!!!!!!!! (pressure_values_injection_well[0] - pressure_values_production_well[0]): " << (pressure_values_injection_well[0] - pressure_values_production_well[0]) << endl;
-  cout << "!!!!!!!!!!!!!! Delta_Temp: " << Delta_Temp << endl;
-  cout << "!!!!!!!!!!!!!! fluid_density* fluid_heat_capacity* Delta_Temp: " << (double) db["fluid_density"] * (double) db["fluid_heat_capacity"] * Delta_Temp << endl;
-  */
+
 Output::print("functional_value: ", functional_value);
-  /*cout << "!!!!!!!!!!!!!! number_of_time_steps_for_production: " << number_of_time_steps_for_production << endl;
-  cout << "!!!!!!!!!!!!!! pump_efficiency " << (double)db["pump_efficiency"] << endl;
-  cout << "!!!!!!!!!!!!!! pressure_values_injection_well[0]: " << pressure_values_injection_well[0] << endl;
-  cout << "!!!!!!!!!!!!!! pressure_values_production_well[0]: " << pressure_values_production_well[0] << endl;
-  cout << "!!!!!!!!!!!!!! fluid_density: " << (double) db["fluid_density"] << endl;
-  cout << "!!!!!!!!!!!!!! fluid_heat_capacity: " << (double) db["fluid_heat_capacity"] << endl;
-  */
+
   //write to stream
   std::ofstream outputFile("temperature_values_at_production_well_and_net_energy_for_disctance" + std::to_string(distance) +  ".txt");
   std::copy(this->temperature_production_well_at_time_steps.begin(), this->temperature_production_well_at_time_steps.end(), std::ostream_iterator<int>(outputFile, "\n"));
   //std::copy(functional_value, std::ostream_iterator<int>(outputFile, "\n"));
   outputFile << functional_value;
-  
- //New LB 22.03.19 END
   
   
   std::vector<double> cost_functional = db["cost_functional"];
@@ -709,11 +1043,14 @@ Output::print("functional_value: ", functional_value);
 
   
 //  double functional_value = 1.;
+  }
+
   delete u1;
   delete u2;
 #ifdef __3D__
   delete u3;
 #endif  
+
   return functional_value; //functional_value_new;
 }
 
