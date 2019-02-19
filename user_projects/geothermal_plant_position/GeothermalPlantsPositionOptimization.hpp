@@ -7,7 +7,7 @@
 #include "LoopInfo.h"
 
 #include "NSE_GPPO.hpp"
-
+#include "templateNames.h"
 
 class ParameterDatabase;
 
@@ -17,6 +17,11 @@ class GeothermalPlantsPositionOptimization
 {
 
 public:
+  
+  using CoeffFct = typename Template_names<d>::CoeffFct;
+  using FESpace = typename Template_names<d>::FESpace;
+  using BoundaryConditionFunction = typename Template_names<d>::BoundaryConditionFunction;
+  using BoundaryValuesFunction = typename Template_names<d>::BoundaryValuesFunction;
 
   constexpr static char required_database_name_TCD_GPPO[] = "TCD parameter database";
 
@@ -33,6 +38,9 @@ public:
   unsigned get_n_control() const { return n_control; }
 
   static ParameterDatabase default_GPPO_database();
+  
+  //@brief save the temperature values at each times step at the production well
+  std::vector<double> temperature_production_well_at_time_steps;
 
   ParameterDatabase get_primal_flow_database(ParameterDatabase param_db);
   ParameterDatabase get_primal_temperature_database(ParameterDatabase param_db);
