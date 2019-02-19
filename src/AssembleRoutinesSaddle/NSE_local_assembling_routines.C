@@ -186,7 +186,7 @@ void NSDivergenceBlocks(double Mult, double *, double *, double,
       MatrixB1[i][j] -= sign * Mult * test * ansatz_x;
       MatrixB2[i][j] -= sign * Mult * test * ansatz_y;
       if(d == 3)
-        MatrixB3[i][j] -= sign * Mult * test * ansatz_z;
+        MatrixB3[i][j] -=  Mult * sign * test * ansatz_z;
     }
   }
 }
@@ -519,12 +519,21 @@ void NSCoriolis(double Mult, double *coeff, double *, double,
   } // endfor i
 }
 
+
+// general version (for Navier-Stokes and Brinkman problems)
+double compute_GradDiv_delta(double stab, double nu,
+                             double sigma, double characteristic_length)
+{
+  return stab *  (nu + sigma * characteristic_length * characteristic_length);
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // stabilizations
 template <int d>
 void NSGradDiv(double Mult, double *coeff, double *, double,
             double **OrigValues, int *N_BaseFuncts,
-            double ***LocMatrices, double **, double stab)
+            double ***LocMatrices, double **, double stab,
+            double characteristic_length)
 {
   double ** MatrixA11 = LocMatrices[0];
   double ** MatrixA12 = LocMatrices[1];
@@ -549,9 +558,9 @@ void NSGradDiv(double Mult, double *coeff, double *, double,
   double sigma = d == 2 ? coeff[4] : coeff[5]; 
   ///@todo generalize characteristic lenght. One could also give the option of
   // using L_0 = h
-  double L_0 = 0.1; // characteristic length
 
-  double delta = (nu + sigma*L_0*L_0) * stab;
+  double delta = compute_GradDiv_delta(stab, nu, sigma, characteristic_length);
+  //(nu + sigma*characteristic_length*characteristic_length) * stab;
   
   for(int i = 0; i < N_U; i++)
   {
@@ -583,7 +592,8 @@ void NSGradDiv(double Mult, double *coeff, double *, double,
 template <int d>
 void NSGradDiv_RightHandSide(double Mult, double *coeff, double *, double,
                           double **OrigValues, int *N_BaseFuncts,
-                          double ***, double **LocRhs, double stab)
+                          double ***, double **LocRhs, double stab,
+                          double characteristic_length)
 {
   double * Rhs_u1 = LocRhs[0];
   double * Rhs_u2 = LocRhs[1];
@@ -596,9 +606,8 @@ void NSGradDiv_RightHandSide(double Mult, double *coeff, double *, double,
   
   double nu = coeff[0]; // = 1/reynolds_number
   double sigma = d == 2 ? coeff[4] : coeff[5]; // = 1/permeability
-  double L_0 = .1;
   double g = d == 2 ? coeff[3] : coeff[4];
-  double delta = (nu + sigma*L_0*L_0) * stab;
+  double delta = compute_GradDiv_delta(stab, nu, sigma, characteristic_length);
 
   for (int i = 0; i < N_U; i++)
   {
@@ -685,23 +694,20 @@ void NSPSPG_RightHandSide(double Mult, double *coeff, double *, double hK,
   }
 }
 
-/*double compute_GLS_delta(double hK, double nu)
-{
-  return 0.1 * hK * hK / nu;
-  }*/
 
 // general version (for Navier-Stokes and Brinkman problems)
-double compute_GLS_delta(double delta0, double hK, double nu, double sigma)
+double compute_GLS_delta(double delta0, double hK, double nu,
+                         double sigma, double characteristic_length)
 {
-  double L_0 = .1;
-  return delta0 * hK * hK / (nu + sigma * L_0 * L_0);
+  return delta0 * hK * hK / (nu + sigma * characteristic_length * characteristic_length);
 }
 
 // common implementation for symmetric and non-symmetric GLS:
 template<int d>
 void NS_GLS(double Mult, double *coeff, double *, double hK,
             double **OrigValues, int *N_BaseFuncts,
-            double ***LocMatrices, double **, int sign, double delta0)
+            double ***LocMatrices, double **, int sign, double delta0,
+            double characteristic_length = 0.1)
 {
   double **MatrixA11 = LocMatrices[0];
   double **MatrixA22 = LocMatrices[d+1];
@@ -727,8 +733,11 @@ void NS_GLS(double Mult, double *coeff, double *, double hK,
   double nu = coeff[0]; // = 1/reynolds_number
   double sigma = d == 2 ? coeff[4] : coeff[5]; // =1/permeability
   
-  double delta = compute_GLS_delta(delta0, hK, nu, sigma);
+  double delta = compute_GLS_delta(delta0, hK, nu, sigma, characteristic_length);
   
+  //cout << "NS_GLS():   delta0: " << delta0 << ", sigma: " << sigma << ", nu: " << nu << ", delta: "<< delta  << endl;
+
+
   for (int i = 0; i < N_U; i++)
   {
     double laplace_v = u_xx[i] + u_yy[i] + (d == 2 ? 0. : u_zz[i]);
@@ -738,17 +747,13 @@ void NS_GLS(double Mult, double *coeff, double *, double hK,
     // multiply by -1 for non-sym GLS
     //laplace_v *= delta * sign *
     double residue_v = nu * laplace_v - sigma * resistance_v;
-    
+
     for (int j = 0; j < N_U; j++)
     {
       double laplace_u = u_xx[j] + u_yy[j] + (d == 2 ? 0. : u_zz[j]);
       double resistance_u =  u[j];
       double residue_u = - nu * laplace_u + sigma * resistance_u;
-      //MatrixA11[i][j] -= Mult*laplace_v*laplace_u;
-      //MatrixA22[i][j] -= Mult*laplace_v*laplace_u;
-      /*if(d == 3)
-	MatrixA33[i][j] -= Mult*laplace_v*laplace_u;
-      */
+
       MatrixA11[i][j] += Mult * delta * sign * residue_v * residue_u;
       MatrixA22[i][j] += Mult * delta * sign * residue_v * residue_u;
       if (d == 3)
@@ -779,8 +784,8 @@ void NS_GLS(double Mult, double *coeff, double *, double hK,
       double resistance_u = u[j];
       double residue_u = - nu * laplace_u + sigma * resistance_u;
       
-      MatrixB1[i][j] += sign * Mult * delta * (-q_x) * residue_u;
-      MatrixB2[i][j] += sign * Mult * delta * (-q_y) * residue_u;
+      MatrixB1[i][j] +=  Mult * delta * sign * (-q_x) * residue_u;
+      MatrixB2[i][j] +=  Mult * delta * sign * (-q_y) * residue_u;
       if(d == 3)
         MatrixB3[i][j] += sign * Mult * delta * (-q_z) * residue_u;
     }
@@ -790,7 +795,7 @@ void NS_GLS(double Mult, double *coeff, double *, double hK,
       double ansatz_y = p_y[j];
       double ansatz_z = d == 2 ? 0. : p_z[j];
       // positive if sign=-1 (non-sym GLS)
-      MatrixC[i][j] -= sign * Mult * delta * (q_x * ansatz_x + q_y * ansatz_y
+      MatrixC[i][j] -=  Mult * delta * sign * (q_x * ansatz_x + q_y * ansatz_y
                               + q_z * ansatz_z);
     }
   }
@@ -800,7 +805,7 @@ template<int d>
 void NS_GLS_RightHandSide(double Mult, double *coeff, double *, double hK,
                           double **OrigValues, int *N_BaseFuncts,
                           double ***, double **LocRhs, int sign,
-                          double delta0)
+                          double delta0, double characteristic_length = 0.1)
 {
   double * Rhs1 = LocRhs[0];
   double * Rhs2 = LocRhs[1];
@@ -823,7 +828,9 @@ void NS_GLS_RightHandSide(double Mult, double *coeff, double *, double hK,
   double f3 = d == 2 ? 0. : coeff[3];
   double sigma = d == 2 ? coeff[4] : coeff[5]; // = 1/permeability
   
-  double delta = compute_GLS_delta(delta0, hK, nu, sigma);
+  double delta = compute_GLS_delta(delta0, hK, nu, sigma, characteristic_length);
+
+  //cout << "NS_GLS_RightHandSide():    delta0: " << delta0 << ", sigma: " << sigma << ", nu: " << nu << ", delta: "<< delta << endl;
 
   for (int i = 0; i < N_U; i++)
   {
@@ -831,10 +838,10 @@ void NS_GLS_RightHandSide(double Mult, double *coeff, double *, double hK,
     double resistance_v = u[i];
     
     double residue_v = nu * laplace_v - sigma * resistance_v;
-    Rhs1[i] += Mult * sign * delta * residue_v * f1;
-    Rhs2[i] += Mult * sign * delta * residue_v * f2;
+    Rhs1[i] += Mult * delta * sign * residue_v * f1;
+    Rhs2[i] += Mult * delta * sign * residue_v * f2;
     if(d == 3)
-      Rhs3[i] += Mult * sign * delta * residue_v * f3;
+      Rhs3[i] += Mult * delta * sign * residue_v * f3;
   }
   for(int i = 0; i < N_P; i++)
   {
@@ -844,6 +851,7 @@ void NS_GLS_RightHandSide(double Mult, double *coeff, double *, double hK,
     Rhs_div[i] -= Mult * delta * sign * (q_x * f1 + q_y * f2 + q_z * f3);
   }
 }
+
 
 
 template <int d>
@@ -868,20 +876,21 @@ void NSsymmGLS_RightHandSide(double Mult, double *coeff, double *param,
 template <int d>
 void NSnonsymmGLS(double Mult, double *coeff, double *param, double hK,
                   double **OrigValues, int *N_BaseFuncts,
-                  double ***LocMatrices, double **LocRhs, double delta0)
+                  double ***LocMatrices, double **LocRhs, double delta0,
+                  double characteristic_length)
 {
   NS_GLS<d>(Mult, coeff, param, hK, OrigValues, N_BaseFuncts, LocMatrices,
-            LocRhs, -1, delta0);
+            LocRhs, -1, delta0, characteristic_length);
 }
 
 template <int d>
 void NSnonsymmGLS_RightHandSide(double Mult, double *coeff, double *param,
                                 double hK, double **OrigValues,
                                 int *N_BaseFuncts, double ***LocMatrices,
-                                double **LocRhs, double delta0)
+                                double **LocRhs, double delta0, double characteristic_length)
 {
   NS_GLS_RightHandSide<d>(Mult, coeff, param, hK, OrigValues, N_BaseFuncts,
-                          LocMatrices, LocRhs, -1, delta0);
+                          LocMatrices, LocRhs, -1, delta0, characteristic_length);
 }
 
 template <int d>
@@ -969,10 +978,12 @@ template void NSNonlinearTerm_emac<2>(
   int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
 template void NSGradDiv<2>(
   double Mult, double *coeff, double *param, double hK, double **OrigValues,
-  int *N_BaseFuncts, double ***LocMatrices, double **LocRhs, double delta0);
+  int *N_BaseFuncts, double ***LocMatrices, double **LocRhs, double delta0,
+  double characteristic_length);
 template void NSGradDiv_RightHandSide<2>(
   double Mult, double *coeff, double *param, double hK, double **OrigValues,
-  int *N_BaseFuncts, double ***LocMatrices, double **LocRhs, double delta0);
+  int *N_BaseFuncts, double ***LocMatrices, double **LocRhs, double delta0,
+  double characteristic_length);
 template void NSPSPG<2>(
   double Mult, double *coeff, double *param, double hK, double **OrigValues,
   int *N_BaseFuncts, double ***LocMatrices, double **LocRhs, double delta0);
@@ -987,10 +998,12 @@ template void NSsymmGLS_RightHandSide<2>(
   int *N_BaseFuncts, double ***LocMatrices, double **LocRhs, double delta0);
 template void NSnonsymmGLS<2>(
   double Mult, double *coeff, double *param, double hK, double **OrigValues,
-  int *N_BaseFuncts, double ***LocMatrices, double **LocRhs, double delta0);
+  int *N_BaseFuncts, double ***LocMatrices, double **LocRhs, double delta0,
+  double characteristic_length = 0.1);
 template void NSnonsymmGLS_RightHandSide<2>(
   double Mult, double *coeff, double *param, double hK, double **OrigValues,
-  int *N_BaseFuncts, double ***LocMatrices, double **LocRhs, double delta0);
+  int *N_BaseFuncts, double ***LocMatrices, double **LocRhs, double delta0,
+  double characteristic_length = 0.1);
 template void NS_BrezziPitkaeranta<2>(
   double Mult, double *coeff, double *param, double hK, double **OrigValues,
   int *N_BaseFuncts, double ***LocMatrices, double **LocRhs, double delta0);
@@ -1051,10 +1064,12 @@ template void NSCoriolis<3>(
 template void NSParamsVelocity<3>(const double *in, double *out);
 template void NSGradDiv<3>(
   double Mult, double *coeff, double *param, double hK, double **OrigValues,
-  int *N_BaseFuncts, double ***LocMatrices, double **LocRhs, double delta0);
+  int *N_BaseFuncts, double ***LocMatrices, double **LocRhs, double delta0,
+  double characteristic_length);
 template void NSGradDiv_RightHandSide<3>(
   double Mult, double *coeff, double *param, double hK, double **OrigValues,
-  int *N_BaseFuncts, double ***LocMatrices, double **LocRhs, double delta0);
+  int *N_BaseFuncts, double ***LocMatrices, double **LocRhs, double delta0,
+  double characteristic_length);
 template void NSPSPG<3>(
   double Mult, double *coeff, double *param, double hK, double **OrigValues,
   int *N_BaseFuncts, double ***LocMatrices, double **LocRhs, double delta0);
@@ -1069,10 +1084,12 @@ template void NSsymmGLS_RightHandSide<3>(
   int *N_BaseFuncts, double ***LocMatrices, double **LocRhs, double delta0);
 template void NSnonsymmGLS<3>(
   double Mult, double *coeff, double *param, double hK, double **OrigValues,
-  int *N_BaseFuncts, double ***LocMatrices, double **LocRhs, double delta0);
+  int *N_BaseFuncts, double ***LocMatrices, double **LocRhs, double delta0,
+  double characteristic_length = 0.1);
 template void NSnonsymmGLS_RightHandSide<3>(
   double Mult, double *coeff, double *param, double hK, double **OrigValues,
-  int *N_BaseFuncts, double ***LocMatrices, double **LocRhs, double delta0);
+  int *N_BaseFuncts, double ***LocMatrices, double **LocRhs, double delta0,
+  double characteristic_length = 0.1);
 template void NS_BrezziPitkaeranta<3>(
   double Mult, double *coeff, double *param, double hK, double **OrigValues,
   int *N_BaseFuncts, double ***LocMatrices, double **LocRhs, double delta0);

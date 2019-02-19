@@ -32,6 +32,11 @@ namespace Geothermal_Energy_TCD2D
   #include "TCD_2D/Geothermal_Energy_TCD2D.h"
 }
 
+namespace Tube2D
+{
+  #include "TCD_2D/Tube2D.h"
+}
+
 
 //=======================================================
 
@@ -152,14 +157,37 @@ Example_TimeCD2D::Example_TimeCD2D(
 
       /** Initial condition*/
       initialCondition.push_back(Geothermal_Energy_TCD2D::InitialCondition);
-
+ 
       // Print some example specific information.
       Geothermal_Energy_TCD2D::ExampleFile();
+      break;
+      
+  case 5:
+      /**Exact solution"**/
+      exact_solution.push_back(Tube2D::Exact);
+
+      /** boundary condition */
+      boundary_conditions.push_back( Tube2D::BoundCondition );
+
+      /** boundary values */
+      boundary_data.push_back( Tube2D::BoundValue );
+
+      /** coefficients */
+      problem_coefficients = Tube2D::BilinearCoeffs;
+
+      /** Initial condition*/
+      initialCondition.push_back(Tube2D::InitialCondition);
+
+      Tube2D::diffusion_coefficient = get_nu();
+      
+      // Print some example specific information.
+      Tube2D::ExampleFile();
       break;
 
     default:
       ErrThrow("Unknown name of the transient-convection-diffusion (Time_CD2D) example!", 
                example_code);
+      
   }
 }
 

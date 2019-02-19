@@ -651,7 +651,7 @@ int main(int, char* argv[])
     db["gls_stab"] = 0.1;
     db["graddiv_stab"] = 0.1;
     db["corner_stab"] = 1.;
-    db["L_0"] = 0.01;
+    db["L_0"] = 0.1;
     db["pspg_delta0"] = 0.;
 
     // boundary conditions
@@ -697,7 +697,7 @@ int main(int, char* argv[])
     db["gls_stab"] = 0.1;
     db["graddiv_stab"] = 0.1;
     db["corner_stab"] = 0.1;
-    db["L_0"] = 0.01;
+    db["L_0"] = 0.1;
     db["pspg_delta0"] = 0.;
 
     // boundary conditions
@@ -747,7 +747,7 @@ int main(int, char* argv[])
     db["gls_stab"] = 0.1;
     db["graddiv_stab"] = 0.1;
     db["corner_stab"] = 1.;
-    db["L_0"] = 0.01;
+    db["L_0"] = 0.1;
     db["pspg_delta0"] = 0.;
 
     // boundary conditions
@@ -783,8 +783,10 @@ int main(int, char* argv[])
     db["symmetric_nitsche_p"] = -1;
 
     Output::print<1>("\n Example: Radial_Flow_with_Hole: Testing P1/P1 (with gls_stab and Nitsche method) for Brinkman2D via NSE2D on a coarse grid");
-    all_errors = {{ 0.016225314579003, 0.82719427928477, 1.4126638922216, 0.37733100372616,
-            10.340173765646, 0.042494423301893, 0.041126932409716 }};
+    all_errors = {{ 0.016276641784288, 0.83486933554338, 1.4033528326104, 0.37760190850872,
+            10.43407941586, 0.0440220129648, 0.04238025006573 }};
+
+
 
     check_one_element_including_boundary<0>(domain3, db, velocity_space, pressure_space, all_errors);
 
@@ -792,8 +794,8 @@ int main(int, char* argv[])
     db["refinement_n_initial_steps"].set<size_t>(2);
 
     Output::print<1>("\n Example: Radial_Flow_with_Hole: Testing P1/P1 (with gls_stab and Nitsche method) for Brinkman2D via NSE2D on a fine grid");
-    all_errors = {{  0.016225314579003, 0.82719427928477, 1.4126638922216, 0.37733100372616,
-            10.340173765646, 0.042494423301893, 0.041126932409716 }};
+    all_errors = {{  0.016276641784288, 0.83486933554338, 1.4033528326104,
+            0.37760190850872, 10.43407941586, 0.0440220129648, 0.04238025006573 }};
 
     check_one_element_including_boundary<0>(domain3, db, velocity_space, pressure_space, all_errors);
 
@@ -817,7 +819,7 @@ int main(int, char* argv[])
     db["gls_stab"] = 0.1;
     db["graddiv_stab"] = 0.1;
     db["corner_stab"] = 0.;
-    db["L_0"] = 0.01;
+    db["L_0"] = 0.1;
     db["pspg_delta0"] = 0.;
 
     // boundary conditions
@@ -861,7 +863,7 @@ int main(int, char* argv[])
     db["gls_stab"] = 0.1;
     db["graddiv_stab"] = 0.1;
     db["corner_stab"] = 1.;
-    db["L_0"] = 0.01;
+    db["L_0"] = 0.1;
     db["pspg_delta0"] = 0.;
 
     // boundary conditions
@@ -886,7 +888,7 @@ int main(int, char* argv[])
     domain6.refine_and_get_hierarchy_of_collections(db);
 
     Output::print<1>("\n Example: Exponential_Poiseuille_Flow: Testing P1/P1 (with gls_stab and Nitsche method) for Brinkman2D via NSE2D");
-    all_errors = {{ 0.002262597973565, 0.0033740583845405, 0.038585873042087,
+    all_errors = {{  0.002262597973565, 0.0033740583845405,  0.038585873042087,
             0.00051923122268645, 0.034194588222972, 0.0059477846442968, 0.00011506854321844 }};
 
     check_one_element_including_boundary<0>(domain6, db, velocity_space, pressure_space, all_errors);
