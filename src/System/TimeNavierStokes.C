@@ -163,10 +163,8 @@ TimeNavierStokes<d>::TimeNavierStokes(const TDomain& domain,
                                       const Example_TimeNSE& ex)
  : db(default_tnse_database()), systems(), outputWriter(param_db), example(ex),
    solver(param_db), defect(), old_residuals(), initial_residual(1e10),
-   time_stepping_scheme(param_db), is_rhs_and_mass_matrix_nonlinear(false)
-#ifdef __3D__
-   , Lines()
-#endif
+   time_stepping_scheme(param_db), is_rhs_and_mass_matrix_nonlinear(false),
+   Lines()
 {
   db.merge(param_db);
   this->check_and_set_parameters();
@@ -313,12 +311,10 @@ TimeNavierStokes<d>::TimeNavierStokes(const TDomain& domain,
   this->output_problem_size_info();
   this->errors.fill(0.);
 
-#ifdef __3D__  
   if( db["output_along_line"] )
   {
     Lines = LinesEval<d>(domain, param_db);
   }
-#endif
 }
 
 /* ************************************************************************** */
@@ -1542,7 +1538,7 @@ void TimeNavierStokes<d>::output()
   {
     this->time_averaging();
   }
-#ifdef __3D__
+
   if(db["output_along_line"])
   {
     // fill a vector with all fe functions to be evaluated using this->Lines
@@ -1562,7 +1558,6 @@ void TimeNavierStokes<d>::output()
         delete fe_functions[d+1+i];
     }
   }
-#endif
 
   example.do_post_processing(*this);
 
@@ -1921,7 +1916,7 @@ void TimeNavierStokes<d>::update_matrices_lps(System_per_grid &s)
 template <int d>
 void TimeNavierStokes<d>::time_averaging()
 {
-#ifdef __3D__
+
   double t           = time_stepping_scheme.current_time_;
   double tau         = TDatabase::TimeDB->TIMESTEPLENGTH;
   double t0          = db["time_start"];
@@ -1939,7 +1934,6 @@ void TimeNavierStokes<d>::time_averaging()
     s.time_avg_sol.add_scaled(s.solution, tau/2.);
     s.time_avg_sol.scale(1./(t - t0_avg));
   }
-#endif
 }
 
 

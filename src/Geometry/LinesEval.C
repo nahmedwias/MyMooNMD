@@ -13,11 +13,12 @@
 #include <algorithm>
 #include <Domain.h>
 #include <BaseCell.h>
-#include <FEDatabase3D.h>
 #ifdef __2D__
-#include "FEFunction2D.h"
+  #include <FEDatabase2D.h>
+  #include "FEFunction2D.h"
 #else
-#include "FEFunction3D.h"
+  #include <FEDatabase3D.h>
+  #include "FEFunction3D.h"
 #endif
 #ifdef _MPI
   #include <numeric> // std::accumulate
@@ -30,35 +31,6 @@ template <int d>
 constexpr char LinesEval<d>::required_database_name[];
 
 /* ************************************************************************** */
-bool operator < (const LineEval::point_on_line& P,
-                 const LineEval::point_on_line& Q)
-{
-  if( P.lmin_cell < Q.lmin_cell)
-  {
-    return true;
-  }
-  else
-  {
-    return false;
-  }
-}
-
-/* ************************************************************************** */
-bool operator == (const LineEval::point_on_line& P,
-                  const LineEval::point_on_line& Q)
-{
-  if( fabs(P.lmin_cell - Q.lmin_cell) < 1e-16
-  &&  fabs(P.lmax_cell - Q.lmax_cell) < 1e-16 )
-  {
-    return true;
-  }
-  else
-  {
-    return false;
-  }
-}
-
-/* ************************************************************************** */
 template <int d>
 ParameterDatabase LinesEval<d>::default_lineseval_parameters()
 {
@@ -69,8 +41,12 @@ ParameterDatabase LinesEval<d>::default_lineseval_parameters()
          " In 3D the number of coordinates must be divisible by three.");
 
   db.add("line_direction", 0, "Line direction, only one direction possible for "
-         "all lines (possible direction are paralell to axis x=0 y=1 z=2).",
-         {0, 1, 2});
+         "all lines (possible direction are paralell to axis "
+#ifdef __2D__
+         "x=0 y=1).", {0, 1});
+#else // __3D__
+         "x=0 y=1 z=2).", {0, 1, 2});
+#endif
 
   db.add("line_refinement", 0, "Line refinement.\n0 no refinement\n"
          "i additional point: between two points for line defined by file or\n"
@@ -99,8 +75,8 @@ LinesEval<d>::LinesEval():db(default_lineseval_parameters())
 /* ************************************************************************** */
 template <int d>
 LinesEval<d>::LinesEval(const TDomain&           domain,
-                     const ParameterDatabase& param_db):
-                     db(default_lineseval_parameters())
+                        const ParameterDatabase& param_db):
+                        db(default_lineseval_parameters())
 {
   // Try to find a nested database with the correct name
   try
@@ -157,9 +133,9 @@ LinesEval<d>::LinesEval(const TDomain&           domain,
     // loop over all lines to be defined
     for( unsigned int i=0 ; i< n_coord.size() ; i++ )
     {
-      double P[3];
-      std::copy(position.begin()+3*i,
-                position.begin()+(3*i+3),
+      double P[d];
+      std::copy(position.begin()+d*i,
+                position.begin()+(d*i+d),
                 P);
 
       std::vector<double> coordinates;
@@ -167,7 +143,7 @@ LinesEval<d>::LinesEval(const TDomain&           domain,
                 coord.begin()+(offset+n_coord[i]),
                 back_inserter(coordinates));
 
-      LineEval line(domain, direction[i], P, coordinates, refi);    
+      LineEval<d> line(domain, direction[i], P, coordinates, refi);    
       lines_for_postprocess.emplace_back(line);
 
       offset += n_coord[i];
@@ -183,23 +159,23 @@ LinesEval<d>::LinesEval(const TDomain&           domain,
     return;
   }
   // Check parameters compatibility and define N_line
-  if( (line_position.size())%3 != 0 )
+  if( (line_position.size())%d != 0 )
   {
     ErrThrow("LineEval: ", "Some coordinates in parameter: line_position "
-                  "are missing.");
+                           "are missing.");
   }
 
-  double P[3];
-  int N_line = line_position.size()/3;
+  double P[d];
+  int N_line = line_position.size()/d;
 
   // Loop over all lines to be defined
   for( int i=0 ; i<N_line ; i++ )
   {
-    std::copy(line_position.begin()+3*i,
-              line_position.begin()+(3*i+3),
+    std::copy(line_position.begin()+d*i,
+              line_position.begin()+(d*i+d),
               P);
 
-    LineEval line(domain, LinesEval::db["line_direction"], P, refi);
+    LineEval<d> line(domain, LinesEval::db["line_direction"], P, refi);
 
     lines_for_postprocess.emplace_back(line);
   }
@@ -208,10 +184,10 @@ LinesEval<d>::LinesEval(const TDomain&           domain,
 /* ************************************************************************** */
 template <int d>
 void LinesEval<d>::read_position(const std::string    filename,
-                              std::vector<int>&    direction,
-                              std::vector<double>& position,
-                              std::vector<double>& coord,
-                              std::vector<int>&    n_coord)
+                                 std::vector<int>&    direction,
+                                 std::vector<double>& position,
+                                 std::vector<double>& coord,
+                                 std::vector<int>&    n_coord)
 {
   Output::info<3>("LineEval:",
                   "Reading points coordinates from file ", filename);
@@ -268,21 +244,19 @@ void LinesEval<d>::read_position(const std::string    filename,
 /* ************************************************************************** */
 template <int d>
 void LinesEval<d>::check_position(const std::string         filename,
-                               const std::vector<int>    direction,
-                               const std::vector<double> position,
-                               std::vector<int>&         n_coord)
+                                  const std::vector<int>    direction,
+                                  const std::vector<double> position,
+                                  std::vector<int>&         n_coord)
 {
   unsigned int N_dir = direction.size();
-  unsigned int N_pos = position.size()/3;
+  unsigned int N_pos = position.size()/d;
   unsigned int N_coo = n_coord.size();
   
-#ifdef __3D__  
-  if( (position.size())%3 != 0 )
+  if( (position.size())%d != 0 )
   {
     ErrThrow("LineEval :", "Some position coordinates in file: ", filename,
              " are missing.");
   }
-#endif
 
   if( N_dir != N_pos )
   {
@@ -334,10 +308,17 @@ void LinesEval<d>::write_fe_values(std::vector<const FEFunction*> fe_functions,
                           + std::to_string(time_step) + ".txt";
   // header:
 #ifdef _MPI
-  s_out << "#" << setw(10) << "x0" << setw(15) << "x1" << setw(15) << "x2";
+      s_out << "#" << setw(10) << "x0" << setw(15) << "x1"
+        << setw(15) << "x2";
 #else
-  s_out << "#" << setw(13) << "x0" << setw(15) << "x1" << setw(15) << "x2";
+      s_out << "#" << setw(13) << "x0" << setw(15) << "x1"
+  #ifdef __2D__
+        ;
+  #else
+        << setw(15) << "x2";
+  #endif
 #endif
+
   for(unsigned int i = 0; i < n_fe_functions; ++i)
   {
     s_out << setw(15) << fe_functions[i]->GetName();
@@ -356,7 +337,7 @@ void LinesEval<d>::write_fe_values(std::vector<const FEFunction*> fe_functions,
     std::vector<std::vector<double>> values(
       n_fe_functions+d, std::vector<double>(size_li, default_val));
 
-    std::array<double, 3> P = line.GetBasePoint();
+    std::array<double, d> P = line.GetBasePoint();
 
     // loop over all points of line l_i to get the values
     for( int j=0 ; j<size_li ; j++ )
@@ -378,11 +359,11 @@ void LinesEval<d>::write_fe_values(std::vector<const FEFunction*> fe_functions,
 
       for(unsigned int i = 0; i < n_fe_functions; ++i)
       {
-#ifdef __3D__
-        fe_functions[i]->FindValueLocal(cell, j_cell, P[0], P[1], P[2],
+#ifdef __2D__
+        fe_functions[i]->FindValueLocal(cell, j_cell, P[0], P[1],
                                         &values[i+d][j]);
-#else
-        fe_functions[i]->FindValueLocal(cell, j_cell, P[0], P[1], 
+#else // __3D__
+        fe_functions[i]->FindValueLocal(cell, j_cell, P[0], P[1], P[2],
                                         &values[i+d][j]);
 #endif
       }
@@ -414,15 +395,15 @@ void LinesEval<d>::write_fe_values(std::vector<const FEFunction*> fe_functions,
     {
       for( int j=0 ; j < size_li ; j++ )
       {
-        if(values[d][j] == default_val)
-        {
-          ErrThrow("values for line ", l_i, " at point ", j, " is not correct");
+        // only write points inside the geometry (avoid in particular holes)
+        if(values[d][j] != default_val)
+        {    
+          for(unsigned int i = 0u; i < d + n_fe_functions; ++i)
+          {
+            s_out << setprecision(7) << setw(14) << values[i][j] << " ";
+          }
+          s_out << "\n";       
         }
-        for(unsigned int i = 0u; i < d + n_fe_functions; ++i)
-        {
-          s_out << setprecision(7) << setw(14) << values[i][j] << " ";
-        }
-        s_out << "\n";
       }
       s_out << "\n";
     }
@@ -436,16 +417,21 @@ void LinesEval<d>::write_fe_values(std::vector<const FEFunction*> fe_functions,
 }
 
 /* ************************************************************************** */
-LineEval::LineEval(const TDomain&      domain,
-                   const int           direction,
-                   const double        P[3],
-                   std::vector<double> coord,
-                   const int           refi) :
-                   coll(domain.get_grid_collections().front()),
-                   direction(direction),
-                   base_point{P[0], P[1],P[2]},
-                   n_refine(refi),
-                   fromDB(false)
+template <int d>
+LineEval<d>::LineEval(const TDomain&      domain,
+                      const int           direction,
+                      const double        P[d],
+                      std::vector<double> coord,
+                      const int           refi) :
+                      coll(domain.get_grid_collections().front()),
+                      direction(direction),
+#ifdef __2D__
+                      base_point{P[0], P[1]},
+#else // __3D__
+                      base_point{P[0], P[1], P[2]},
+#endif
+                      n_refine(refi),
+                      fromDB(false)
 {  
   int        my_rank;
   TBaseCell* cell;
@@ -495,10 +481,9 @@ LineEval::LineEval(const TDomain&      domain,
   for( int i_pnt=0 ; i_pnt<n_coord ; i_pnt++ )
   {
     int j_cell = -1;
-    std::array<double,3> pnt_eval = this->base_point;
+    std::array<double,d> pnt_eval = this->base_point;
     pnt_eval[direction] = coord[i_pnt];
 
-    // loop to get the extremities of the line
     for( int i_cell=0 ; i_cell<N_Cells ; i_cell++ )
     {
       cell = coll->GetCell(i_cell);
@@ -511,7 +496,11 @@ LineEval::LineEval(const TDomain&      domain,
       }
 #endif
 
+#ifdef __2D__
+      if( cell->PointInCell(pnt_eval[0],pnt_eval[1]) )
+#else // __3D__
       if( cell->PointInCell(pnt_eval[0],pnt_eval[1],pnt_eval[2]) )
+#endif
       {
         j_cell = i_cell;
         break;
@@ -523,15 +512,20 @@ LineEval::LineEval(const TDomain&      domain,
 }
 
 /* ************************************************************************** */
-LineEval::LineEval(const TDomain& domain,
-                   const int      direc,
-                   const double   P[3],
-                   const int      refi) :
-                   coll(domain.get_grid_collections().front()),
-                   direction(direc),
-                   base_point{P[0], P[1],P[2]},
-                   n_refine(refi),
-                   fromDB(true)
+template <int d>
+LineEval<d>::LineEval(const TDomain& domain,
+                      const int      direc,
+                      const double   P[d],
+                      const int      refi) :
+                      coll(domain.get_grid_collections().front()),
+                      direction(direc),
+#ifdef __2D__
+                      base_point{P[0], P[1]},
+#else // __3D__
+                      base_point{P[0], P[1], P[2]},
+#endif
+                      n_refine(refi),
+                      fromDB(true)
 {  
   int        my_rank;
   double     lmin_cell;
@@ -542,6 +536,7 @@ LineEval::LineEval(const TDomain& domain,
 
 #ifdef _MPI
   MPI_Comm_rank( MPI_COMM_WORLD, &my_rank );
+  std::vector<point_on_line> line_tmp;
 #else
   my_rank = 0;
 #endif
@@ -556,12 +551,19 @@ LineEval::LineEval(const TDomain& domain,
   for( int i_cell=0 ; i_cell<N_Cells ; i_cell++ )
   {
     cell = coll->GetCell(i_cell);
-
+#ifdef __2D__
+    // Error message if the cell is not a triangle
+    if( cell->GetType() != Triangle )
+    {
+      ErrThrow("LineEval:", "2D version only implemented for triangle.");
+    }
+#else // __3D__
     // Error message if the cell is not a thetrahedron
     if( cell->GetType() != Tetrahedron )
     {
-      ErrThrow("LineEval:", "Only for tetrahedron.");
+      ErrThrow("LineEval:", "3D version only implemented for tetrahedron.");
     }
+#endif
 
 #ifdef _MPI
     //only perform the following calculations on OwnCells
@@ -569,8 +571,15 @@ LineEval::LineEval(const TDomain& domain,
     {
       continue;
     }
-#endif
-
+    if( cell->IsLineCutingCell(direction, base_point, lmin_cell, lmax_cell) )
+    {
+      // only keep cells with more than one intersection point
+      if( (lmax_cell - lmin_cell) > 1e-16)
+      {
+        line_tmp.emplace_back(i_cell, lmin_cell, lmax_cell);
+      }
+    }
+#else
     if( cell->IsLineCutingCell(direction, base_point, lmin_cell, lmax_cell) )
     {
       // only keep cells with more than one intersection point
@@ -579,6 +588,7 @@ LineEval::LineEval(const TDomain& domain,
         line_for_postprocess.emplace_back(i_cell, lmin_cell, lmax_cell);
       }
     }
+#endif
   }
 
 #ifdef _MPI
@@ -586,15 +596,17 @@ LineEval::LineEval(const TDomain& domain,
   int mpi_size;
   
   int totlength = 0;
-  int size_l    = line_for_postprocess.size();
-
+  int size_l    = line_tmp.size();
+  
+  std::vector<double> c_idx(size_l,0.);
   std::vector<double> slmin(size_l,0.);
   std::vector<double> slmax(size_l,0.);
 
   for( int i=0 ; i<size_l ; i++ )
   {
-    slmin[i] = line_for_postprocess.at(i).lmin_cell;
-    slmax[i] = line_for_postprocess.at(i).lmax_cell;
+    c_idx[i] = line_tmp.at(i).cell_index;
+    slmin[i] = line_tmp.at(i).lmin_cell;
+    slmax[i] = line_tmp.at(i).lmax_cell;
   }
   
   MPI_Comm_size( MPI_COMM_WORLD, &mpi_size );
@@ -620,8 +632,9 @@ LineEval::LineEval(const TDomain& domain,
                  &rlmax[0], &rlengths[0], &displs[0], MPI_DOUBLE,
                  MPI_COMM_WORLD);
 
-  // only add new points by skipping points already in process according to
-  // ordering from MPI_Allgatherv (i.e. according to rank order)
+  // constuct temporary line with the same order for every process according to
+  // ordering from MPI_Allgatherv (i.e. according to rank order), and add
+  // flag -1 in cell_index for halocell
   int start_pos = std::accumulate(rlengths.begin(),
                                   rlengths.begin()+my_rank,
                                   0);
@@ -630,35 +643,44 @@ LineEval::LineEval(const TDomain& domain,
   {
     if( (i>=start_pos) && (i<start_pos+rlengths[my_rank]) )
     {
-      continue;
+      line_for_postprocess.emplace_back(c_idx[i-start_pos], rlmin[i], rlmax[i]);
     }
-    line_for_postprocess.emplace_back(-1, rlmin[i], rlmax[i]);
+    else
+    {
+      line_for_postprocess.emplace_back(-1, rlmin[i], rlmax[i]);
+    }
   }
-#endif /** #ifdef _MPI */
+#endif
 
-  // sort points by lmin_cell in ascending order.
-  std::sort(line_for_postprocess.begin(),line_for_postprocess.end());
-  
-  // and keep only one cell if line on joint of many cells
+  // sort points by lmin_cell in ascending order keeping order in case of
+  // equality
+  std::stable_sort(line_for_postprocess.begin(),line_for_postprocess.end());
+
+  // and keep only the first cell if line on joint of many cells, thanks to the
+  // preserving order of std::stable_sort, each point will be active (flag
+  // cell_index different from -1) in only one process
   auto it = std::unique(line_for_postprocess.begin(),
                         line_for_postprocess.end());
   line_for_postprocess.erase(it, line_for_postprocess.end());
 }
 
 /* ************************************************************************** */
-std::array<double, 3> LineEval::GetBasePoint() const
+template <int d>
+std::array<double, d> LineEval<d>::GetBasePoint() const
 {
   return base_point;
 }
 
 /* ************************************************************************** */
-int LineEval::GetDirection() const
+template <int d>
+int LineEval<d>::GetDirection() const
 {
   return direction;
 }
 
 /* ************************************************************************** */
-int LineEval::GetNbPoints() const
+template <int d>
+int LineEval<d>::GetNbPoints() const
 {
   int size = this->line_for_postprocess.size();
 
@@ -673,7 +695,8 @@ int LineEval::GetNbPoints() const
 }
 
 /* ************************************************************************** */
-int LineEval::GetCellIdx(int i) const
+template <int d>
+int LineEval<d>::GetCellIdx(int i) const
 {
   if( this->fromDB )
   {
@@ -688,7 +711,8 @@ int LineEval::GetCellIdx(int i) const
 }
 
 /* ************************************************************************** */
-const TBaseCell* LineEval::GetCell(int cell_idx) const
+template <int d>
+const TBaseCell* LineEval<d>::GetCell(int cell_idx) const
 {
   if( cell_idx>=0 )
   {
@@ -701,7 +725,8 @@ const TBaseCell* LineEval::GetCell(int cell_idx) const
 }
 
 /* ************************************************************************** */
-double LineEval::GetPosition(int i) const
+template <int d>
+double LineEval<d>::GetPosition(int i) const
 {
   if( this->fromDB )
   {
@@ -734,7 +759,7 @@ int LinesEval<d>::GetLength() const
 
 /* ************************************************************************** */
 template <int d>
-LineEval LinesEval<d>::GetLine(int i) const
+LineEval<d> LinesEval<d>::GetLine(int i) const
 {
   if(i >= (int)this->lines_for_postprocess.size() || i < 0)
   {
@@ -745,19 +770,21 @@ LineEval LinesEval<d>::GetLine(int i) const
 }
 
 /* ************************************************************************** */
-bool LineEval::IsFromDB() const
+template <int d>
+bool LineEval<d>::IsFromDB() const
 {
   return this->fromDB;
 }
 
 /* ************************************************************************** */
-double LineEval::mean_value(const TFEFunction3D& f) const
+template <int d>
+double LineEval<d>::mean_value(const FEFunction& f) const
 {
   double val_p0;
   double val_p1;
   double dlength;
-  std::array<double,3> p0;
-  std::array<double,3> p1;
+  std::array<double,d> p0;
+  std::array<double,d> p1;
 
   double val    = 0.;
   double length = 0.;
@@ -788,9 +815,14 @@ double LineEval::mean_value(const TFEFunction3D& f) const
     p1[direction] = GetPosition(i+1);
 
     dlength = p1[direction] - p0[direction];
-
+    
+#ifdef __2D__
+    f.FindValueLocal(GetCell(i_cell0), i_cell0, p0[0], p0[1], &val_p0);
+    f.FindValueLocal(GetCell(i_cell1), i_cell1, p1[0], p1[1], &val_p1);
+#else // __3D__
     f.FindValueLocal(GetCell(i_cell0), i_cell0, p0[0], p0[1], p0[2], &val_p0);
     f.FindValueLocal(GetCell(i_cell1), i_cell1, p1[0], p1[1], p1[2], &val_p1);
+#endif
 
     val += (val_p0 + val_p1)/2. * dlength;
     length += dlength;
@@ -802,7 +834,8 @@ double LineEval::mean_value(const TFEFunction3D& f) const
 }
 
 /* ************************************************************************** */
-double LineEval::space_average_value(const TFEFunction3D& f) const
+template <int d>
+double LineEval<d>::space_average_value(const FEFunction& f) const
 {
   double val = 0.;
 
@@ -819,16 +852,18 @@ double LineEval::space_average_value(const TFEFunction3D& f) const
     double               p1;
     double               val_tmp;
     double               hE;
-    std::array<double,3> pnt_eval;
+    std::array<double,d> pnt_eval;
     const double*        zeta;
     const double*        LineWeights;
-    const TFESpace3D*    FSpace;
     TBaseCell*           cell;
-    FE3D                 CurrentElement;
     QuadFormula1D        LineQuadFormula;
     TQuadFormula1D*      qf1;
 
-    FSpace = f.GetFESpace3D();
+#ifdef __2D__
+    const TFESpace2D*    FSpace = f.GetFESpace2D();
+#else // __3D__
+    const TFESpace3D*    FSpace = f.GetFESpace3D();
+#endif
 
     pnt_eval = base_point;
 
@@ -850,15 +885,23 @@ double LineEval::space_average_value(const TFEFunction3D& f) const
       p0 = line_for_postprocess.at(i).lmin_cell;
       p1 = line_for_postprocess.at(i).lmax_cell;
 
+#ifdef __2D__
       // get polynomial degree of finite element in current cell
-      CurrentElement = FSpace->GetFE3D(i_cell, cell);
+      FE2D CurrentElement = FSpace->GetFE2D(i_cell, cell);
+      l = TFEDatabase2D::GetPolynomialDegreeFromFE2D(CurrentElement);
+      // define quadrature formula for triangular face
+      LineQuadFormula = TFEDatabase2D::GetQFLineFromDegree(l);
+      // get quadrature formula for 1D (line)
+      qf1 = TFEDatabase2D::GetQuadFormula1D(LineQuadFormula);
+#else // __3D__
+      // get polynomial degree of finite element in current cell
+      FE3D CurrentElement = FSpace->GetFE3D(i_cell, cell);
       l = TFEDatabase3D::GetPolynomialDegreeFromFE3D(CurrentElement);
-
       // define quadrature formula for triangular face
       LineQuadFormula = TFEDatabase3D::GetQFLineFromDegree(l);
-
       // get quadrature formula for 1D (line)
       qf1 = TFEDatabase3D::GetQuadFormula1D(LineQuadFormula);
+#endif
 
       // get number of quad points, weights and positions
       qf1->GetFormulaData(N_LinePoints, LineWeights, zeta);
@@ -874,8 +917,12 @@ double LineEval::space_average_value(const TFEFunction3D& f) const
 
         // get value at this quadrature point (in s)
         f.FindValueLocal(cell, i_cell,
-                        pnt_eval[0], pnt_eval[1], pnt_eval[2],
-                        &val_tmp);
+#ifdef __2D__
+                         pnt_eval[0], pnt_eval[1],
+#else // __3D__
+                         pnt_eval[0], pnt_eval[1], pnt_eval[2],
+#endif
+                         &val_tmp);
 
         // multiply value with weight from quadrature formula and determinant
         // from integral transformation to the unit edge (-1,1)
@@ -891,8 +938,12 @@ double LineEval::space_average_value(const TFEFunction3D& f) const
   return val;
 }
 
-#ifdef __3D__
-template class LinesEval<3>;
-#else
+#ifdef __2D__
 template class LinesEval<2>;
+template class LineEval<2>;
+#else // __3D__
+template class LinesEval<3>;
+template class LineEval<3>;
 #endif
+
+

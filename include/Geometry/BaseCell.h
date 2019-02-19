@@ -298,15 +298,17 @@ class TBaseCell
      */
     double Get_hK(int cell_measure) const;
 
-#ifdef __3D__
     /**  @brief check if the line define by the position P and the direction is
      * intersecting this cell.
-     * If so, lmin and lmax are the intersecting points */     
+     * If so, lmin and lmax are the intersecting points */
     virtual bool IsLineCutingCell(int                  direction,
+#ifdef __2D__
+                                  std::array<double,2> P,
+#else // __3D__
                                   std::array<double,3> P,
+#endif
                                   double&              lmin,
                                   double&              lmax) const = 0;
-#endif /** #ifdef __3D__ */
 
     /**  @brief return whether a point is inside a cell */
     virtual bool PointInCell(double X, double Y) const = 0;

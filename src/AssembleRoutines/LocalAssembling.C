@@ -1101,13 +1101,15 @@ void LocalAssembling<d>::set_parameters_for_nse( LocalAssembling_type type)
           std::bind(NSDivergenceBlocks<d>,
               _1, _2, _3, _4, _5, _6,
               _7, _8, -1));
-      this->local_assemblings_routines.push_back(std::bind(NSRightHandSide<d>, _1, _2, _3, _4, _5, _6, _7, _8, -1));
+      this->local_assemblings_routines.push_back(std::bind(NSRightHandSide<d>, _1, _2, _3, _4, _5, _6,
+							   _7, _8, -1));
     }
     else
     {
       this->local_assemblings_routines.push_back(
           std::bind(NSDivergenceBlocks<d>, _1, _2, _3, _4, _5, _6, _7, _8, 1));
-      this->local_assemblings_routines.push_back(std::bind(NSRightHandSide<d>, _1, _2, _3, _4, _5, _6, _7, _8, 1));
+      this->local_assemblings_routines.push_back(std::bind(NSRightHandSide<d>, _1, _2, _3, _4, _5, _6,
+							   _7, _8, 1));
     }
     
     if(nstype == 2 || nstype == 4 || nstype == 14)
