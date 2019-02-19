@@ -1040,7 +1040,7 @@ void LocalAssembling<d>::set_parameters_for_nse( LocalAssembling_type type)
   using namespace std::placeholders;
   double pspg_delta0 = db["pspg_delta0"];
   double gls_stab = db["gls_stab"];
- 
+  double characteristic_length = db["L_0"];
   
   if(pspg || symm_gls || nonsymm_gls) // need second derivatives
   {
@@ -1065,7 +1065,7 @@ void LocalAssembling<d>::set_parameters_for_nse( LocalAssembling_type type)
         std::bind(NSsymmGLS<d>, _1, _2, _3, _4, _5, _6, _7, _8, gls_stab));
     else if(nonsymm_gls)
       this->local_assemblings_routines.push_back(
-        std::bind(NSnonsymmGLS<d>, _1, _2, _3, _4, _5, _6, _7, _8, gls_stab));
+        std::bind(NSnonsymmGLS<d>, _1, _2, _3, _4, _5, _6, _7, _8, gls_stab, characteristic_length));
   }
   else if(brezzi_pitkaeranta)
   {
@@ -1083,12 +1083,12 @@ void LocalAssembling<d>::set_parameters_for_nse( LocalAssembling_type type)
   if(std::abs(graddiv_stab) > 1e-10) 
   {
     this->local_assemblings_routines.push_back(
-      std::bind(NSGradDiv<d>, _1, _2, _3, _4, _5, _6, _7, _8, graddiv_stab));
+      std::bind(NSGradDiv<d>, _1, _2, _3, _4, _5, _6, _7, _8, graddiv_stab, characteristic_length));
 
     this->local_assemblings_routines.push_back(
         std::bind(NSGradDiv_RightHandSide<d>,
             _1, _2, _3, _4, _5, _6, _7, _8,
-            graddiv_stab));
+            graddiv_stab, characteristic_length));
   }
 
   switch(type)
@@ -1124,7 +1124,7 @@ void LocalAssembling<d>::set_parameters_for_nse( LocalAssembling_type type)
     else if(nonsymm_gls)
       this->local_assemblings_routines.push_back(
           std::bind(NSnonsymmGLS_RightHandSide<d>, _1, _2, _3, _4, _5, _6, _7,
-              _8, gls_stab));
+              _8, gls_stab, characteristic_length));
     break;
   case LocalAssembling_type::NSE3D_NonLinear:
     {
