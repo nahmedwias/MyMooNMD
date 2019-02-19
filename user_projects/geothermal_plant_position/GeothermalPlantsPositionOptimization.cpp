@@ -33,14 +33,10 @@ template <int d>
 constexpr char GeothermalPlantsPositionOptimization<d>::required_database_name_TCD_GPPO[];
 
 
-
 /** ************************************************************************ */
 template <int d>
 ParameterDatabase GeothermalPlantsPositionOptimization<d>::default_GPPO_database()
 {
-  // is only needed for the adjoint problem, but there is only one global 
-  // parameter for this.
-  //TDatabase::ParamDB->NSTYPE = 4;
   auto db = ParameterDatabase::parmoon_default_database();
   db.merge(TDomain::default_domain_parameters());
 
@@ -91,34 +87,45 @@ ParameterDatabase GeothermalPlantsPositionOptimization<d>::default_GPPO_database
           0., 1.);
   
   db.add("minimum_temperature_production_well",  343.15, // = 70 °C + 273.15;
-          "The temperature of the fluid at the production well necessery to continue with production",
+          "The temperature of the fluid at the production well necessery to "
+          "continue with production",
           0., 500.);
   
+  //todo: this should be rather the minimum temperature on a circle with
+  //      certain distance to the center, since the cold water fronts might
+  //      be non-symmetric
   db.add("x_distance_from_well_center",  20., // meters
-          "The distance from the center of the injection (+) and production (-) well, used to compute temperatures and pressures.",
+          "The distance from the center of the injection (+) and "
+          "production (-) well, used to compute temperatures and pressures.",
           0., 500.);
   
   db.add("well_radius",  0.1, // meters
           "The radius of the bore holes.",
           0., 100.);
   
-  db.add("delta_fct_eps_factor", 1., // epsDelta
-          "The scaling of the delta-distribution, given by epsDelta = delta_fct_eps_factor * db[well_radius].",
+  db.add("delta_fct_eps_factor", 1., // epsDelta = delta_fct_eps_factor * well_radius
+          "The scaling of the delta-distribution, given by "
+          "epsDelta = delta_fct_eps_factor * db[well_radius].",
           0., 10000000.);
 
-  //2 Doublets
-  db.add("well_distance", 1000., // epsDelta
-          "Determines the distance between the injection and production well for both doublets",
+  //2 Doublets & 3 Double Doublets
+  db.add("well_distance", 1000.,
+          "Determines the distance between the injection and production well "
+          "for both doublets",
+          0., 10000000.);
+
+  db.add("u_in", 1e-5,
+          "Sets the normal velocity (outflow) w.r.t. a circular source (2D)"
+          " representing the injection well",
           0., 10000000.);
 
   db.add("scenario", "1doublet_optimize_distance",
            "Determine the scenario to be optimized.",
-           {"1doublet_optimize_distance", "scenario_2doublets_fixed_well_distance"});
-
+           {"1doublet_optimize_distance", "2doublets_fixed_well_distance",
+                   "3_rows_of_double_doublets_fixed_well_distance"});
 
   return db;
 }
-
 
 /** ************************************************************************ */
 template <int d>
@@ -148,8 +155,6 @@ get_primal_flow_database(ParameterDatabase param_db)
 
   return  NSE_GPPO_db;
 }
-
-
 
 /** ************************************************************************ */
 template <int d>
@@ -212,9 +217,9 @@ GeothermalPlantsPositionOptimization(const TDomain& domain,
   Output::print<5>("Creating the GeothermalPlantsPositionOptimization object");
   db.merge(param_db, false);
   
-
 #ifdef __2D__
-  bool variable_sigma = false; //get_primal_flow_database(param_db)["variable_sigma_fct_type"];
+  bool variable_sigma = false;
+  //get_primal_flow_database(param_db)["variable_sigma_fct_type"];
   brinkman_mixed.assemble_with_coefficient_fct(variable_sigma);
 #else
   brinkman_mixed.assemble_linear_terms();
@@ -281,10 +286,6 @@ double GeothermalPlantsPositionOptimization<d>::compute_functional_and_derivativ
     double norm_of_grad = std::sqrt(std::accumulate(
             grad, grad+n, 0., [](double a, double b){ return a + b*b; }));
     Output::print("norm of gradient: ", norm_of_grad);
-    //     for(auto i = 0u; i < n_control; ++i)
-    //     {
-    //       Output::print("computed_gradient[", i, "] = ", grad[i]);
-    //     }
   }
 
   if(n_calls == 1)
@@ -300,7 +301,7 @@ void approximate_delta_functions(int n_points, double *x, double *y,
 #ifdef __3D__
         double *z,
 #endif
-        double **parameters, double **coeffs,
+        double **parameters, double **coeffs, double u_in,
         double distance, double well_radius, double delta_fct_eps_factor)
 {
 int dim = 2;
@@ -315,13 +316,12 @@ int dim = 2;
       coeffs[i][k] = 0.;
     }
 
-    double u_in = 1.e-3;  //1.e-6;
     double epsDelta = delta_fct_eps_factor * well_radius;  // ~h
     /*double H = 75.;
     double Volume = epsDelta*epsDelta*Pi*H;  //well_radius*well_radius*Pi*H;
     double Qin =  150./3600./Volume; // m^3/h thickness = 1000m
      */
-    double Qin = u_in * (2/well_radius);//(dim/well_radius);
+    double Qin = u_in * (2/well_radius); //(dim/well_radius);
 
     std::vector<double> singular_x, singular_y,
 #ifdef __3D__
@@ -377,13 +377,7 @@ int dim = 2;
 #endif
       )
       {
-    /*    cout << "Quad Points for mass source: "<< i <<endl;
-        cout << "Quad Points for mass source: "<< x[i] << ", "<< y[i] <<", "<<
-#ifdef __3D__
-                z[i] <<
-#endif
-                endl;
-                */
+
         double magnitude = cos(Pi*(x[i] - x_center_source)/epsDelta) + 1;
         magnitude *= cos(Pi*(y[i] - y_center_source)/epsDelta) + 1;
 
@@ -413,8 +407,9 @@ void approximate_delta_functions_2doublets(int n_points, double *x, double *y,
 #ifdef __3D__
         double *z,
 #endif
-        double **parameters, double **coeffs,
-        double center_x_moving_doublet, double well_radius, double delta_fct_eps_factor, double well_distance)
+        double **parameters, double **coeffs, double u_in,
+        double center_x_moving_doublet, double well_radius,
+        double delta_fct_eps_factor, double well_distance)
 {
 int dim = 2;
 #ifdef __3D__
@@ -428,13 +423,12 @@ int dim = 2;
       coeffs[i][k] = 0.;
     }
 
-    double u_in = 1.e-3;  //1.e-6;
     double epsDelta = delta_fct_eps_factor * well_radius;  // ~h
     /*double H = 75.;
     double Volume = epsDelta*epsDelta*Pi*H;  //well_radius*well_radius*Pi*H;
     double Qin =  150./3600./Volume; // m^3/h thickness = 1000m
      */
-    double Qin = u_in * (2/well_radius);//(dim/well_radius);
+    double Qin = u_in * (2/well_radius); //(dim/well_radius);
 
     std::vector<double> singular_x, singular_y,
 #ifdef __3D__
@@ -508,14 +502,6 @@ int dim = 2;
 #endif
       )
       {
-    /*    cout << "Quad Points for mass source: "<< i <<endl;
-        cout << "Quad Points for mass source: "<< x[i] << ", "<< y[i] <<", "<<
-#ifdef __3D__
-                z[i] <<
-#endif
-                endl;
-                */
-        cout << "Quad Points for mass source/sink: "<< x[i] << ", "<< y[i] <<endl;
         double magnitude = cos(Pi*(x[i] - x_center_source)/epsDelta) + 1;
         magnitude *= cos(Pi*(y[i] - y_center_source)/epsDelta) + 1;
 
@@ -539,7 +525,190 @@ int dim = 2;
   }
 }
 
+/** ************************************************************************ */
+void approximate_delta_functions_3doubledoublets(int n_points, double *x, double *y,
+#ifdef __3D__
+        double *z,
+#endif
+        double **parameters, double **coeffs, double u_in,
+        double center_x_moving_doublet_bottom_row, double center_x_moving_doublet_top_row, double well_radius,
+        double delta_fct_eps_factor, double well_distance)
+{
+int dim = 2;
+#ifdef __3D__
+  dim = 3;
+#endif
 
+  for (int i = 0; i < n_points; ++i)
+  {
+    for (size_t k = 0; k <= dim+1; k++)
+    {
+      coeffs[i][k] = 0.;
+    }
+
+    double epsDelta = delta_fct_eps_factor * well_radius;  // ~h
+    /*double H = 75.;
+    double Volume = epsDelta*epsDelta*Pi*H;  //well_radius*well_radius*Pi*H;
+    double Qin =  150./3600./Volume; // m^3/h thickness = 1000m
+     */
+    double Qin = u_in * (2/well_radius);//(dim/well_radius);
+
+    std::vector<double> singular_x, singular_y,
+#ifdef __3D__
+    singular_z,
+#endif
+    singular_sign;
+
+    //%%%%%%%%%%%%%%%%%% FIXED DOUBLE DOUBLET (center) %%%%%%%%%%%%%%%%%%%%%%%
+    // source1 in (xi,yi) for fixed doublet
+    singular_x.push_back(5000. - (well_distance)*3/2.);
+    singular_y.push_back(3000.);
+    singular_sign.push_back(1.);
+#ifdef __3D__
+    //singular_z.push_back(3000.); //0-500
+    singular_z.push_back(250.);
+#endif
+    // sink1 in (xe,ye) for fixed doublet
+    singular_x.push_back(5000.- (well_distance)/2.);
+    singular_y.push_back(3000.);
+    singular_sign.push_back(-1.);
+#ifdef __3D__
+    // singular_z.push_back(3000.); //0-500
+    singular_z.push_back(250.);
+#endif
+    // source2 in (xi,yi) for fixed doublet
+    singular_x.push_back(5000. + (well_distance)/2.);
+    singular_y.push_back(3000.);
+    singular_sign.push_back(1.);
+#ifdef __3D__
+    //singular_z.push_back(3000.); //0-500
+    singular_z.push_back(250.);
+#endif
+    // sink2 in (xe,ye) for fixed doublet
+    singular_x.push_back(5000.+ (well_distance)*3/2.);
+    singular_y.push_back(3000.);
+    singular_sign.push_back(-1.);
+#ifdef __3D__
+    // singular_z.push_back(3000.); //0-500
+    singular_z.push_back(250.);
+#endif
+
+    //%%%%%%%%%%%%%%%%%% MOVING DOUBLE DOUBLET 1 (lower) %%%%%%%%%%%%%%%%%%%%%%%
+    // source1 in (xi,yi) for moving doublet
+    singular_x.push_back(center_x_moving_doublet_bottom_row - (well_distance)*3/2.);
+    singular_y.push_back(2000.);
+    singular_sign.push_back(1.);
+#ifdef __3D__
+    //singular_z.push_back(3000.); //0-500
+    singular_z.push_back(250.);
+#endif
+    // sink1 in (xe,ye) for moving doublet
+    singular_x.push_back(center_x_moving_doublet_bottom_row - (well_distance)/2.);
+    singular_y.push_back(2000.);
+    singular_sign.push_back(-1.);
+#ifdef __3D__
+    // singular_z.push_back(3000.); //0-500
+    singular_z.push_back(250.);
+#endif
+    // source2 in (xi,yi) for moving doublet
+    singular_x.push_back(center_x_moving_doublet_bottom_row + (well_distance)/2.);
+    singular_y.push_back(2000.);
+    singular_sign.push_back(1.);
+#ifdef __3D__
+    //singular_z.push_back(3000.); //0-500
+    singular_z.push_back(250.);
+#endif
+    // sink2 in (xe,ye) for moving doublet
+    singular_x.push_back(center_x_moving_doublet_bottom_row + (well_distance)*3/2.);
+    singular_y.push_back(2000.);
+    singular_sign.push_back(-1.);
+#ifdef __3D__
+    // singular_z.push_back(3000.); //0-500
+    singular_z.push_back(250.);
+#endif
+
+    //%%%%%%%%%%%%%% MOVING DOUBLE DOUBLET 2 (upper) %%%%%%%%%%%%%%%%%%%%%%%%%%%
+    // source1 in (xi,yi) for moving doublet
+    singular_x.push_back(center_x_moving_doublet_top_row - (well_distance)*3/2.);
+    singular_y.push_back(4000.);
+    singular_sign.push_back(1.);
+#ifdef __3D__
+    //singular_z.push_back(3000.); //0-500
+    singular_z.push_back(250.);
+#endif
+    // sink1 in (xe,ye) for moving doublet
+    singular_x.push_back(center_x_moving_doublet_top_row - (well_distance)/2.);
+    singular_y.push_back(4000.);
+    singular_sign.push_back(-1.);
+#ifdef __3D__
+    // singular_z.push_back(3000.); //0-500
+    singular_z.push_back(250.);
+#endif
+    // source2 in (xi,yi) for moving doublet
+    singular_x.push_back(center_x_moving_doublet_top_row + (well_distance)/2.);
+    singular_y.push_back(4000.);
+    singular_sign.push_back(1.);
+#ifdef __3D__
+    //singular_z.push_back(3000.); //0-500
+    singular_z.push_back(250.);
+#endif
+    // sink2 in (xe,ye) for moving doublet
+    singular_x.push_back(center_x_moving_doublet_top_row + (well_distance)*3/2.);
+    singular_y.push_back(4000.);
+    singular_sign.push_back(-1.);
+#ifdef __3D__
+    // singular_z.push_back(3000.); //0-500
+    singular_z.push_back(250.);
+#endif
+
+    for (unsigned int m = 0; m < singular_x.size(); m++)
+    {
+      double x_center_source = singular_x[m];
+      double y_center_source = singular_y[m];
+#ifdef __3D__
+      double z_center_source = singular_z[m];//0-500
+#endif
+      double x_distance_to_source = std::pow(std::abs(x[i] - x_center_source), 2);
+      double y_distance_to_source = std::pow(std::abs(y[i] - y_center_source), 2);
+      /*
+#ifdef __3D__
+      double z_distance_to_source = std::pow(std::abs(z[i] - z_center_source), 2);
+#endif
+       */
+
+      bool at_source = (x_distance_to_source < epsDelta*epsDelta) *
+              (y_distance_to_source < epsDelta*epsDelta)
+              /*
+#ifdef __3D__
+               * (z_distance_to_source < epsDelta*epsDelta)
+#endif
+               */
+              ;
+
+      if (at_source)
+      {
+     double magnitude = cos(Pi*(x[i] - x_center_source)/epsDelta) + 1;
+        magnitude *= cos(Pi*(y[i] - y_center_source)/epsDelta) + 1;
+
+#ifdef __3D__
+        //// magnitude *= 1 + 1;
+        /*
+        magnitude *= cos(Pi*(z[i] - z_center_source)/epsDelta) + 1;
+         */
+#endif
+
+        magnitude /= 4.*epsDelta*epsDelta;
+#ifdef __3D__
+        magnitude /= 480.;
+#endif
+
+        coeffs[i][dim+1] += singular_sign[m] * magnitude * Qin;
+        Output::print<4>(" adding a singular source/sink - point ", m,
+                " coeff[", dim+1, "] = ", coeffs[i][dim+1]);
+      }
+    }
+  }
+}
 /** ************************************************************************ */
 template <int d>
 void GeothermalPlantsPositionOptimization<d>::apply_control_and_solve(const double* x)
@@ -547,11 +716,17 @@ void GeothermalPlantsPositionOptimization<d>::apply_control_and_solve(const doub
   Chrono time;
   double t_start = GetTime();
   // apply control x
-  double distance = x[0];
-  double center_x_moving_doublet = x[0]; // for 2 doublets (1 is moving)
 
-  Output::print<1>("CURRENT well distance: ", distance);
-  Output::print("current control: ", std::setprecision(14), distance);
+  // for 1 doublet (varying distance between source and sink)
+  double distance = x[0];
+
+  // for 2 doublets (1 is moving to the left and to the right)
+  double center_x_moving_doublet = x[0];
+
+  // for 3 double doublets (2 rows are moving to the left and to the right)
+  double center_x_moving_doublet_bottom_row = x[0];
+  double center_x_moving_doublet_top_row = x[1];
+
   using namespace std::placeholders;
   
 /*
@@ -566,28 +741,61 @@ void GeothermalPlantsPositionOptimization<d>::apply_control_and_solve(const doub
 			       _1, _2, _3, _4, _5, _6, distance, (double) this->db["well_radius"], (double) this->db["delta_fct_eps_factor"]);
 #endif
   */
-  
+
   // Set coeffs according to scenario
   CoeffFct coeff;
-  if (this->db["scenario"].is("scenario_2doublets_fixed_well_distance") )
+  if (this->db["scenario"].is("3_rows_of_double_doublets_fixed_well_distance") )
   {
-    cout << "!!!!! RIGHT CHOICE"<<endl;
+    if(n_control != 2)
+      ErrThrow("The chosen 'scenario' and the chosen 'n_control' do not fit. "
+              "This scenario necessitates n_control=2.");
+
+    Output::print<1>("CURRENT CONTROL center_x_moving_doublet_bottom_row: ",
+            std::setprecision(14), center_x_moving_doublet_bottom_row);
+    Output::print<1>("CURRENT CONTROL center_x_moving_doublet_top_row: ",
+            std::setprecision(14), center_x_moving_doublet_top_row);
+    coeff = std::bind(approximate_delta_functions_3doubledoublets, _1, _2, _3, _4, _5,
+#ifdef __3D__
+            _6,
+#endif
+            this->db["u_in"], center_x_moving_doublet_bottom_row,
+            center_x_moving_doublet_top_row, (double) this->db["well_radius"],
+            (double) this->db["delta_fct_eps_factor"],
+            (double) this->db["well_distance"]);
+  }
+  else if (this->db["scenario"].is("2doublets_fixed_well_distance") )
+  {
+    if(n_control != 1)
+      ErrThrow("The chosen 'scenario' and the chosen 'n_control' do not fit. "
+              "This scenario necessitates n_control=1.");
+
+    Output::print<1>("CURRENT CONTROL center_x_moving_doublet: ",
+            std::setprecision(14), center_x_moving_doublet);
     coeff = std::bind(approximate_delta_functions_2doublets, _1, _2, _3, _4, _5,
 #ifdef __3D__
             _6,
 #endif
-            center_x_moving_doublet, (double) this->db["well_radius"], (double) this->db["delta_fct_eps_factor"], (double) this->db["well_distance"]);
+            this->db["u_in"], center_x_moving_doublet,
+            (double) this->db["well_radius"],
+            (double) this->db["delta_fct_eps_factor"],
+            (double) this->db["well_distance"]);
   }
   else if (this->db["scenario"].is("1doublet_optimize_distance"))
   {
-    cout << "!!!!! WRONG CHOICE"<<endl;
+    if(n_control != 1)
+      ErrThrow("The chosen 'scenario' and the chosen 'n_control' do not fit. "
+              "This scenario necessitates n_control=1.");
+
+    Output::print<1>("CURRENT CONTROL well distance: ",
+            std::setprecision(14), distance);
     coeff = std::bind(approximate_delta_functions, _1, _2, _3, _4, _5,
 #ifdef __3D__
             _6,
 #endif
-            distance, (double) this->db["well_radius"], (double) this->db["delta_fct_eps_factor"]);
+            this->db["u_in"], distance, (double) this->db["well_radius"],
+            (double) this->db["delta_fct_eps_factor"]);
   }
-  
+
   std::string disc_type = this->db["space_discretization_type"];
   bool nonsymm_gls = (disc_type == std::string("nonsymm_gls"));
   int rhs_div_sign = 1;
@@ -597,16 +805,12 @@ void GeothermalPlantsPositionOptimization<d>::apply_control_and_solve(const doub
   }
 
 #ifdef __2D__
-  LocalAssembling<d> la(2, {D00, D00},
-			{0, 1}, {}, {},
-			{0, 0, 1},
+  LocalAssembling<d> la(2, {D00, D00}, {0, 1}, {}, {},	{0, 0, 1},
 			coeff, std::bind(NSRightHandSide<d>, _1, _2, _3, _4, _5, _6, _7, _8,
 					rhs_div_sign),nullptr,
 			0, d+1, 0, {}, {}, 0, nullptr, 0, {}, {});
 #else
-  LocalAssembling<d> la(2, {D000, D000},
-			{0, 1},  {},  {},
-			{0, 0, 0, 1},
+  LocalAssembling<d> la(2, {D000, D000},{0, 1}, {}, {},	{0, 0, 0, 1},
 			coeff, std::bind(NSRightHandSide<d>, _1, _2, _3, _4, _5, _6, _7, _8,
 					rhs_div_sign),nullptr,
 			0, d+1, 0,  {},  {},   0,   nullptr,  0,  {}, {});
@@ -667,7 +871,6 @@ void GeothermalPlantsPositionOptimization<d>::apply_control_and_solve(const doub
   Output::print<2>(" ******   temperature   *******");
   
   TDatabase::TimeDB->TIME_DISC = 2; // Crank-Nicolson
-  //double end_time = TDatabase::TimeDB->ENDTIME;
   tcd_primal.reset_for_output();
   
   TimeDiscretization& tss = tcd_primal.get_time_stepping_scheme();
@@ -682,7 +885,7 @@ void GeothermalPlantsPositionOptimization<d>::apply_control_and_solve(const doub
   double start_time = db["time_start"];
   double end_time   = db["time_end"];
   Output::print<2>("  --> solve temperature, t0 = ", start_time, ", tEnd = ", end_time);
-  TDatabase::TimeDB->CURRENTTIME = start_time; //TDatabase::TimeDB->STARTTIME;
+  TDatabase::TimeDB->CURRENTTIME = start_time;
 
   // output initial condition
   tcd_primal.output();
@@ -715,8 +918,105 @@ void GeothermalPlantsPositionOptimization<d>::apply_control_and_solve(const doub
     // Temperature at production well
     auto temperature = tcd_primal.get_function();
 
+if (this->db["scenario"].is("3_rows_of_double_doublets_fixed_well_distance"))
+{
 
-    if (this->db["scenario"].is("scenario_2doublets_fixed_well_distance") )
+  std::vector<double> x_production_well(6,0.), y_production_well(6,0.);
+  x_production_well[0] = center_x_moving_doublet_top_row - ((double)  db["well_distance"])/2.;
+  x_production_well[1] = center_x_moving_doublet_top_row + ((double)  db["well_distance"])*3/2.;
+  x_production_well[2] = 5000. - ((double)  db["well_distance"])/2.;
+  x_production_well[3] = 5000. + ((double)  db["well_distance"])*3/2.;
+  x_production_well[4] = center_x_moving_doublet_bottom_row - ((double)  db["well_distance"])/2.;
+  x_production_well[5] = center_x_moving_doublet_bottom_row + ((double)  db["well_distance"])*3/2.;
+  y_production_well[0] = 4000.;
+  y_production_well[1] = 4000.;
+  y_production_well[2] = 3000.;
+  y_production_well[3] = 3000.;
+  y_production_well[4] = 2000.;
+  y_production_well[5] = 2000.;
+#ifdef __3D__
+  std::vector<double> z_production_well(6,0.);//3000.;
+  z_production_well[0] = 250.;
+  z_production_well[1] = 250.;
+  z_production_well[2] = 250.;
+  z_production_well[3] = 250.;
+  z_production_well[4] = 250.;
+  z_production_well[5] = 250.;
+#endif
+
+#ifdef __2D__
+  double temperature_values_fixed_row_production_well_1[d+1], temperature_values_fixed_row_production_well_2[d+1],
+  temperature_values_upper_moving_row_production_well_1[d+1], temperature_values_upper_moving_row_production_well_2[d+1],
+  temperature_values_lower_moving_row_production_well_1[d+1], temperature_values_lower_moving_row_production_well_2[d+1];
+#else
+  std::vector<double> temperature_values_fixed_row_production_well_1(d+1), temperature_values_fixed_row_production_well_2(d+1),
+          temperature_values_upper_moving_row_production_well_1(d+1), temperature_values_upper_moving_row_production_well_2(d+1),
+          temperature_values_lower_moving_row_production_well_1(d+1), temperature_values_lower_moving_row_production_well_2(d+1);
+#endif
+
+  temperature.FindGradient(x_production_well[0]- (double) db["x_distance_from_well_center"], y_production_well[0],
+#ifdef __3D__
+          z_production_well[0],
+          //todo: get the minimum along well line
+#endif
+          temperature_values_upper_moving_row_production_well_1);
+  temperature.FindGradient(x_production_well[1]- (double) db["x_distance_from_well_center"], y_production_well[1],
+#ifdef __3D__
+          z_production_well[1],
+          //todo: get the minimum along well line
+#endif
+          temperature_values_upper_moving_row_production_well_2);
+
+  temperature.FindGradient(x_production_well[2]- (double) db["x_distance_from_well_center"], y_production_well[2],
+#ifdef __3D__
+          z_production_well[2],
+          //todo: get the minimum along well line
+#endif
+          temperature_values_fixed_row_production_well_1);
+  temperature.FindGradient(x_production_well[3]- (double) db["x_distance_from_well_center"], y_production_well[3],
+#ifdef __3D__
+          z_production_well[3],
+          //todo: get the minimum along well line
+#endif
+          temperature_values_fixed_row_production_well_2);
+  temperature.FindGradient(x_production_well[4]- (double) db["x_distance_from_well_center"], y_production_well[4],
+#ifdef __3D__
+          z_production_well[4],
+          //todo: get the minimum along well line
+#endif
+          temperature_values_lower_moving_row_production_well_1);
+  temperature.FindGradient(x_production_well[5]- (double) db["x_distance_from_well_center"], y_production_well[5],
+#ifdef __3D__
+          z_production_well[5],
+          //todo: get the minimum along well line
+#endif
+          temperature_values_lower_moving_row_production_well_2);
+
+
+  Output::print(" *** T(fixed_well, average) = ",  ( temperature_values_fixed_row_production_well_1[0] + temperature_values_fixed_row_production_well_2[0])/2.);
+  Output::print(" *** T(moving_well_upper_row, average) = ",  ( temperature_values_upper_moving_row_production_well_1[0] + temperature_values_upper_moving_row_production_well_2[0])/2.);
+  Output::print(" *** T(moving_well_lower_row, average) = ", ( temperature_values_lower_moving_row_production_well_1[0] + temperature_values_lower_moving_row_production_well_2[0])/2.);
+
+  if ( (temperature_values_fixed_row_production_well_1[0] >= (double) db["minimum_temperature_production_well"]) &&
+     (temperature_values_fixed_row_production_well_2[0] >= (double) db["minimum_temperature_production_well"]) &&
+     (temperature_values_upper_moving_row_production_well_1[0] >= (double) db["minimum_temperature_production_well"]) &&
+     (temperature_values_upper_moving_row_production_well_2[0] >= (double) db["minimum_temperature_production_well"]) &&
+     (temperature_values_lower_moving_row_production_well_1[0] >= (double) db["minimum_temperature_production_well"]) &&
+     (temperature_values_lower_moving_row_production_well_2[0] >= (double) db["minimum_temperature_production_well"]) )
+  {
+    this->temperature_production_well_at_time_steps.push_back(
+            temperature_values_fixed_row_production_well_1[0] + temperature_values_fixed_row_production_well_2[0]
+            + temperature_values_upper_moving_row_production_well_1[0] + temperature_values_upper_moving_row_production_well_2[0]
+            + temperature_values_lower_moving_row_production_well_1[0] + temperature_values_lower_moving_row_production_well_2[0]
+             );
+  }
+  else
+  {
+    Output::print("Minimum production temperature obtained in one of the production wells at time step ", (double) tss.current_step_, " .");
+    break;
+  }
+}
+    else if (this->db["scenario"].is("2doublets_fixed_well_distance") )
     {
       std::vector<double> x_production_well(2,0.), y_production_well(2,0.);
       x_production_well[0] = 5000. + ((double)  db["well_distance"])/2.;
@@ -818,6 +1118,9 @@ const
   double distance = x[0];
   double center_x_moving_doublet = x[0]; // for 2 doublets (1 is moving)
 
+  double center_x_moving_doublet_bottom_row = x[0]; // for 3 double doublets (2 are moving)
+  double center_x_moving_doublet_top_row = x[1];
+
   auto u = brinkman_mixed.get_velocity();
   auto u1 = u.GetComponent(0);
   auto u2 = u.GetComponent(1);
@@ -828,8 +1131,214 @@ const
 
   double functional_value;
 
+if (this->db["scenario"].is("3_rows_of_double_doublets_fixed_well_distance") )
+{
 
-  if (this->db["scenario"].is("scenario_2doublets_fixed_well_distance") )
+  std::vector<double> x_production_wells(6, 0.), x_injection_wells(6, 0.), y_production_wells(6, 0.), y_injection_wells(6, 0.)
+#ifdef __3D__
+ , z_production_wells(6, 0.), z_injection_wells(6, 0.)
+#endif
+  ;
+//%%%%%%%%%%%%% UPPER ROW (moving) %%%%%%%%%%%%%%%%%%
+  x_production_wells[0] = center_x_moving_doublet_bottom_row - (double) this->db["well_distance"]/2.; //5.5;
+  y_production_wells[0] = 4000.; //3.;
+  x_production_wells[1] = center_x_moving_doublet_bottom_row + (double) this->db["well_distance"]*3/2.; //5.5;
+  y_production_wells[1] = 4000.; //3.;
+  x_injection_wells[0] = center_x_moving_doublet_bottom_row - (double) this->db["well_distance"]*3/2.; //4.5;
+  y_injection_wells[0] = 4000.; //3.;
+  x_injection_wells[1] = center_x_moving_doublet_bottom_row + (double) this->db["well_distance"]/2.; //4.5;
+  y_injection_wells[1] = 4000.; //3.;
+  //%%%%%%%%%%%%% CENTER ROW (fixed) %%%%%%%%%%%%%%%%%%
+  x_production_wells[2] = 5000. - (double) this->db["well_distance"]/2.; //5.5;
+  y_production_wells[2] = 3000.; //3.;
+  x_production_wells[3] =  5000. + (double) this->db["well_distance"]*3/2.; //5.5;
+  y_production_wells[3] = 3000.; //3.;
+  x_injection_wells[2] = 5000. - (double) this->db["well_distance"]*3/2.; //4.5;
+  y_injection_wells[2] = 3000.; //3.;
+  x_injection_wells[3] =  5000. + (double) this->db["well_distance"]/2.; //4.5;
+  y_injection_wells[3] = 3000.; //3.;
+  //%%%%%%%%%%%%% LOWER ROW (moving) %%%%%%%%%%%%%%%%%%
+  x_production_wells[4] = center_x_moving_doublet_top_row - (double) this->db["well_distance"]/2.; //5.5;
+  y_production_wells[4] = 2000.; //3.;
+  x_production_wells[5] = center_x_moving_doublet_top_row + (double) this->db["well_distance"]*3/2.; //5.5;
+  y_production_wells[5] = 2000.; //3.;
+  x_injection_wells[4] = center_x_moving_doublet_top_row - (double) this->db["well_distance"]*3/2.; //4.5;
+  y_injection_wells[4] = 2000.; //3.;
+  x_injection_wells[5] = center_x_moving_doublet_top_row + (double) this->db["well_distance"]/2.; //4.5;
+  y_injection_wells[5] = 2000.; //3.;
+#ifdef __3D__
+  z_production_wells[0] = 250.; //3000.;
+  z_injection_wells[0] = 250.; //3000.;
+  z_production_wells[1] = 250.; //3000.;
+  z_injection_wells[1] = 250.; //3000.;
+  z_production_wells[2] = 250.; //3000.;
+  z_injection_wells[2] = 250.; //3000.;
+  z_production_wells[3] = 250.; //3000.;
+  z_injection_wells[3] = 250.; //3000.;
+  z_production_wells[4] = 250.; //3000.;
+  z_injection_wells[4] = 250.; //3000.;
+  z_production_wells[5] = 250.; //3000.;
+  z_injection_wells[5] = 250.; //3000.;
+#endif
+
+#ifdef __2D__
+  double pressure_values_fixed_production_well_1[d+1], pressure_values_fixed_injection_well_1[d+1],
+  pressure_values_fixed_production_well_2[d+1], pressure_values_fixed_injection_well_2[d+1],
+  pressure_values_moving_upper_row_production_well_1[d+1], pressure_values_moving_upper_row_injection_well_1[d+1],
+  pressure_values_moving_upper_row_production_well_2[d+1], pressure_values_moving_upper_row_injection_well_2[d+1],
+  pressure_values_moving_lower_row_production_well_1[d+1], pressure_values_moving_lower_row_injection_well_1[d+1],
+    pressure_values_moving_lower_row_production_well_2[d+1], pressure_values_moving_lower_row_injection_well_2[d+1];
+#else
+  std::vector<double> pressure_values_fixed_production_well_1(d+1), pressure_values_fixed_injection_well_1(d+1),
+  pressure_values_fixed_production_well_2(d+1), pressure_values_fixed_injection_well_2(d+1),
+  pressure_values_moving_upper_row_production_well_1(d+1), pressure_values_moving_upper_row_injection_well_1(d+1),
+  pressure_values_moving_upper_row_production_well_2(d+1), pressure_values_moving_upper_row_injection_well_2(d+1),
+  pressure_values_moving_lower_row_production_well_1(d+1), pressure_values_moving_lower_row_injection_well_1(d+1),
+    pressure_values_moving_lower_row_production_well_2(d+1), pressure_values_moving_lower_row_injection_well_2(d+1);
+#endif
+ //%%%%%%%%%%%%%%% PRODUCTION WELLs %%%%%%%%%%%%%%%%%%%%%%%
+  pressure.FindGradient(x_production_wells[0] - (double) db["x_distance_from_well_center"], y_production_wells[0],
+#ifdef __3D__
+          z_production_wells[0],
+#endif
+          pressure_values_moving_upper_row_production_well_1);
+
+  pressure.FindGradient(x_production_wells[1] - (double) db["x_distance_from_well_center"], y_production_wells[1],
+#ifdef __3D__
+          z_production_wells[1],
+#endif
+          pressure_values_moving_upper_row_production_well_2);
+  pressure.FindGradient(x_production_wells[2] - (double) db["x_distance_from_well_center"], y_production_wells[2],
+#ifdef __3D__
+          z_production_wells[2],
+#endif
+          pressure_values_fixed_production_well_1);
+
+  pressure.FindGradient(x_production_wells[3] - (double) db["x_distance_from_well_center"], y_production_wells[3],
+#ifdef __3D__
+          z_production_wells[3],
+#endif
+          pressure_values_fixed_production_well_2);
+  pressure.FindGradient(x_production_wells[4] - (double) db["x_distance_from_well_center"], y_production_wells[4],
+#ifdef __3D__
+          z_production_wells[4],
+#endif
+          pressure_values_moving_lower_row_production_well_1);
+
+  pressure.FindGradient(x_production_wells[5] - (double) db["x_distance_from_well_center"], y_production_wells[5],
+#ifdef __3D__
+          z_production_wells[5],
+#endif
+          pressure_values_moving_lower_row_production_well_2);
+
+  //%%%%%%%%%%%%%%% INJECTION WELLs %%%%%%%%%%%%%%%%%%%%%%%
+  pressure.FindGradient(x_injection_wells[0] + (double) db["x_distance_from_well_center"], y_injection_wells[0],
+#ifdef __3D__
+          z_injection_wells[0],
+#endif
+          pressure_values_moving_upper_row_injection_well_1);
+
+  pressure.FindGradient(x_injection_wells[1] + (double) db["x_distance_from_well_center"], y_injection_wells[1],
+#ifdef __3D__
+          z_injection_wells[1],
+#endif
+          pressure_values_moving_upper_row_injection_well_2);
+
+  pressure.FindGradient(x_production_wells[2] - (double) db["x_distance_from_well_center"], y_production_wells[2],
+#ifdef __3D__
+          z_production_wells[2],
+#endif
+          pressure_values_fixed_injection_well_1);
+
+  pressure.FindGradient(x_production_wells[3] - (double) db["x_distance_from_well_center"], y_production_wells[3],
+#ifdef __3D__
+          z_production_wells[3],
+#endif
+          pressure_values_fixed_injection_well_2);
+
+  pressure.FindGradient(x_injection_wells[4] + (double) db["x_distance_from_well_center"], y_injection_wells[4],
+#ifdef __3D__
+          z_injection_wells[4],
+#endif
+          pressure_values_moving_lower_row_injection_well_1);
+
+  pressure.FindGradient(x_injection_wells[5] + (double) db["x_distance_from_well_center"], y_injection_wells[5],
+#ifdef __3D__
+          z_injection_wells[5],
+#endif
+          pressure_values_moving_lower_row_injection_well_2);
+
+  //todo: compute Q from u_in
+  /// double Q = 150/360;//24 * 50; // 50 - 300
+
+  int number_of_time_steps_for_production = 0;
+  double Delta_Temp = 0;
+
+  for (int i = 0; i < this->temperature_production_well_at_time_steps.size(); i++)
+  {
+    if (this->temperature_production_well_at_time_steps.at(i) >= ((double) db["minimum_temperature_production_well"])/6.)
+    {
+      Delta_Temp += this->temperature_production_well_at_time_steps.at(i) -  6.*(double) db["temperature_injection_well"];
+      cout <<" temperature_production_well_at_time_steps: "<<  this->temperature_production_well_at_time_steps.at(i) << ", step: "<< i <<endl;
+    }
+    else
+      break;
+
+    number_of_time_steps_for_production = i+1;
+  }
+
+  double alpha = db["alpha_cost"];
+  /*
+   * double functional_value_new // = Q/(0.6)* Delta t * (pressure_prod[1] - pressure_inj[1])  -  Q * Delta t * fluid_density * fluid_heat_capacity * (temperature_prod[1] - temperature_inj); // Net energy AFTER 50 years
+                                 //= Q * Delta t * (   1/(0.6) * (pressure_prod[1] - pressure_inj[1])  - fluid_density * fluid_heat_capacity * (temperature_prod[1] - temperature_inj)   );
+ //since Q_i=const, Delta t = const we can minimize
+   */
+  functional_value =  (number_of_time_steps_for_production * 1/(double)db["pump_efficiency"] *
+          ( (pressure_values_moving_upper_row_production_well_1[0]+pressure_values_fixed_production_well_1[0]
+             + pressure_values_moving_lower_row_production_well_1[0]+ pressure_values_moving_upper_row_production_well_2[0]
+            + pressure_values_fixed_production_well_2[0] +pressure_values_moving_lower_row_production_well_2[0])
+          -  (pressure_values_moving_upper_row_injection_well_1[0]+pressure_values_fixed_injection_well_1[0]
+               +pressure_values_moving_lower_row_injection_well_1[0]+ pressure_values_moving_upper_row_injection_well_2[0]
+               +pressure_values_fixed_injection_well_2[0] +pressure_values_moving_lower_row_injection_well_2[0]) )
+          - (double) db["fluid_density"] * (double) db["fluid_heat_capacity"] * Delta_Temp)
+                          +  alpha * abs(center_x_moving_doublet_bottom_row - 2000.);
+
+  Output::print("functional_value: ", functional_value);
+
+  //write to stream
+  std::ofstream outputFile("temperature_values_at_production_well_and_net_energy_for_disctance" + std::to_string(distance) +  ".txt");
+  std::copy(this->temperature_production_well_at_time_steps.begin(), this->temperature_production_well_at_time_steps.end(), std::ostream_iterator<int>(outputFile, "\n"));
+  //std::copy(functional_value, std::ostream_iterator<int>(outputFile, "\n"));
+  outputFile << functional_value;
+
+
+  std::vector<double> cost_functional = db["cost_functional"];
+
+  auto temperature = tcd_primal.get_function();
+  auto temperature_at_sink =
+          [&](){
+    double mean = temperature.compute_mean();
+    return mean;
+  };
+
+  /*auto temperature_at_sink1 =
+          [&](){
+    double mean = temperature.compute_mean();
+    return mean;
+  };
+  auto temperature_at_sink2 =
+          [&](){
+    double mean = temperature.compute_mean();
+    return mean;
+  };
+   */
+
+
+  //  double functional_value = 1.;
+
+}
+
+else if (this->db["scenario"].is("2doublets_fixed_well_distance") )
   {
     std::vector<double> x_production_wells(2, 0.), x_injection_wells(2, 0.), y_production_wells(2, 0.), y_injection_wells(2, 0.)
 #ifdef __3D__
@@ -890,9 +1399,6 @@ const
     int number_of_time_steps_for_production = 0;
     double Delta_Temp = 0;
 
-
-    cout <<"!!!!!!!!!!!!!!! After find gradient" <<endl;
-
     for (int i = 0; i < this->temperature_production_well_at_time_steps.size(); i++)
     {
       if (this->temperature_production_well_at_time_steps.at(i) >= ((double) db["minimum_temperature_production_well"])/2.)
@@ -912,7 +1418,6 @@ const
                                    //= Q * Delta t * (   1/(0.6) * (pressure_prod[1] - pressure_inj[1])  - fluid_density * fluid_heat_capacity * (temperature_prod[1] - temperature_inj)   );
    //since Q_i=const, Delta t = const we can minimize
      */
-    cout <<"!!!!!!!!!!!!!!! Before functional_value=..." <<endl;
     functional_value =  (number_of_time_steps_for_production * 1/(double)db["pump_efficiency"] *
             ( (pressure_values_fixed_injection_well[0] + pressure_values_moving_injection_well[0]) - (pressure_values_fixed_production_well[0] + pressure_values_moving_production_well[0]))
             - (double) db["fluid_density"] * (double) db["fluid_heat_capacity"] * Delta_Temp)
@@ -925,7 +1430,6 @@ const
     std::copy(this->temperature_production_well_at_time_steps.begin(), this->temperature_production_well_at_time_steps.end(), std::ostream_iterator<int>(outputFile, "\n"));
     //std::copy(functional_value, std::ostream_iterator<int>(outputFile, "\n"));
     outputFile << functional_value;
-
 
     std::vector<double> cost_functional = db["cost_functional"];
 
@@ -1090,7 +1594,6 @@ void GeothermalPlantsPositionOptimization<d>::compute_derivative(const double* x
   //                   adjoint_residual[i]);
   //   }
 }
-
 
 
 
