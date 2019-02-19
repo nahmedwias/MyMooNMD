@@ -381,11 +381,9 @@ class TimeNavierStokes
     
     void prepare_postprocessing(TCollection *coll);
 
-#ifdef __3D__
     /** @brief LineEval object to store the lines where evalation has to be done
      */
     LinesEval<d> Lines;
-#endif
 
     /** @brief calculate the time averaging of the solution in time_avg_sol */
     void time_averaging();

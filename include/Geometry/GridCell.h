@@ -104,15 +104,17 @@ class TGridCell : public TBaseCell
     virtual int ExistChildren() const override
     { return Children == nullptr ? false : true; }
 
-#ifdef __3D__
     /**  @brief check if the line define by the position P and the direction is
      * intersecting this cell.
-     * If so, lmin and lmax are the intersecting points */     
+     * If so, lmin and lmax are the intersecting points */
     virtual bool IsLineCutingCell(int                  direction,
+#ifdef __2D__
+                                  std::array<double,2> P,
+#else // __3D__
                                   std::array<double,3> P,
+#endif
                                   double&              lmin,
                                   double&              lmax) const override;
-#endif /** #ifdef __3D__ */
 
 #ifdef __2D__
     /**  @brief return coordinates of mid point P\_j on edge J\_i */

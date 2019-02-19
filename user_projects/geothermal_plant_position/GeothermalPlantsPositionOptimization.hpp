@@ -7,7 +7,6 @@
 #include "LoopInfo.h"
 
 #include "NSE_GPPO.hpp"
-
 #include "templateNames.h"
 
 class ParameterDatabase;
@@ -23,16 +22,11 @@ public:
   using FESpace = typename Template_names<d>::FESpace;
   using BoundaryConditionFunction = typename Template_names<d>::BoundaryConditionFunction;
   using BoundaryValuesFunction = typename Template_names<d>::BoundaryValuesFunction;
-  
+
   constexpr static char required_database_name_TCD_GPPO[] = "TCD parameter database";
 
-#ifdef __2D__
-  GeothermalPlantsPositionOptimization(const TDomain& domain,
-          const ParameterDatabase& param_db);
-#else
   GeothermalPlantsPositionOptimization(const TDomain& domain,
                                        const ParameterDatabase& param_db);
-#endif
 
   /// @brief compute the functional \f$ \hat J \f$ and, if necessary, its
   /// gradient.
