@@ -20,13 +20,8 @@ public:
 
   constexpr static char required_database_name_TCD_GPPO[] = "TCD parameter database";
 
-#ifdef __2D__
   GeothermalPlantsPositionOptimization(const TDomain& domain,
-          const ParameterDatabase& param_db);
-#else
-  GeothermalPlantsPositionOptimization( TDomain& domain,
                                        const ParameterDatabase& param_db);
-#endif
 
   /// @brief compute the functional \f$ \hat J \f$ and, if necessary, its
   /// gradient.

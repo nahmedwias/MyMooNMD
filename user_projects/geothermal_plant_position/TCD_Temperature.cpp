@@ -254,7 +254,7 @@ void TCD_Temperature<d>::reset_for_output()
 
 
 template <int d>
-TCD_Temperature<d>::TCD_Temperature(TDomain& domain,
+TCD_Temperature<d>::TCD_Temperature(const TDomain& domain,
                                    const ParameterDatabase& param_db,
                                     Example_TimeCD example
 //#ifdef _MPI
@@ -281,7 +281,7 @@ TCD_Temperature<d>::TCD_Temperature(TDomain& domain,
 
 /*
 #ifdef _MPI
-CD3D_Temperature::CD3D_Temperature(TDomain& domain,
+CD3D_Temperature::CD3D_Temperature(const TDomain& domain,
                                    const ParameterDatabase& param_db,
                                     Example_TimeCD3D example,
                                    int maxSubDomainPerDof)
@@ -294,7 +294,7 @@ CD3D_Temperature::CD3D_Temperature(TDomain& domain,
   }
 }
 #else
-CD3D_Temperature::CD3D_Temperature( TDomain& domain,
+CD3D_Temperature::CD3D_Temperature(const TDomain& domain,
                                    const ParameterDatabase& param_db,
                                     Example_TimeCD3D example)
 :Time_CD3D(domain.refine_and_get_hierarchy_of_collections(param_db), param_db, Example_TimeCD3D(param_db))
@@ -310,11 +310,11 @@ CD3D_Temperature::CD3D_Temperature( TDomain& domain,
 
 /*
 #ifdef _MPI
-CD3D_Temperature::CD3D_Temperature( TDomain &domain, const ParameterDatabase& param_db, int maxSubDomainPerDof)
+CD3D_Temperature::CD3D_Temperature(const TDomain &domain, const ParameterDatabase& param_db, int maxSubDomainPerDof)
 :Time_CD3D(domain.refine_and_get_hierarchy_of_collections(param_db, maxSubDomainPerDof), param_db, Example_TimeCD3D(param_db), maxSubDomainPerDof)
 }
 #else
-CD3D_Temperature::CD3D_Temperature(TDomain &domain, const ParameterDatabase& param_db)
+CD3D_Temperature::CD3D_Temperature(const TDomain &domain, const ParameterDatabase& param_db)
 :Time_CD3D(domain.refine_and_get_hierarchy_of_collections(param_db), param_db, Example_TimeCD3D(param_db))
 {
 }

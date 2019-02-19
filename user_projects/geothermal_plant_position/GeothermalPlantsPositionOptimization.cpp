@@ -153,9 +153,17 @@ GeothermalPlantsPositionOptimization(const TDomain& domain,
 				     const ParameterDatabase& param_db)
   : db(default_GPPO_database()), n_control(0),
     brinkman_mixed(domain, get_primal_flow_database(param_db),
+#ifdef __2D__
 		   get_gppo_flow_example(param_db)),
+#else
+       get_3D_gppo_flow_example(param_db)),
+#endif
     tcd_primal(domain, get_primal_temperature_database(param_db),
+#ifdef __2D__
 	       get_gppo_temperature_example(param_db)),
+#else
+         get_3D_gppo_temperature_example(param_db)),
+#endif
     optimization_info("optimization", true, true, 1), // 1 -> full verbosity
     current_J_hat(std::numeric_limits<double>::infinity()),
     control_old(), n_calls(0),
@@ -248,6 +256,9 @@ double GeothermalPlantsPositionOptimization<d>::compute_functional_and_derivativ
 
 /** ************************************************************************ */
 void approximate_delta_functions(int n_points, double *x, double *y,
+#ifdef __3D__
+                                 double *z,
+#endif
         double **parameters, double **coeffs,
         double distance)
 {
@@ -456,8 +467,12 @@ void GeothermalPlantsPositionOptimization<d>::apply_control_and_solve(const doub
     double x_production_well = 5500;
     double delta_x = 300;
     double y_production_well = 3000;
-    double temperature_values[3];
+    double temperature_values[d+1];
+#ifdef __2D__
     temperature.FindGradient(x_production_well - delta_x,y_production_well,temperature_values);
+#else
+    ErrThrow("not yet implemented in 3D");
+#endif
     Output::print(" *** T(well) = ",temperature_values[0]);
     
     
