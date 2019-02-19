@@ -6,23 +6,6 @@
 #include "FEDatabase2D.h"
 #include "LoopInfo.h"
 
-
-// this should be done inside the Domain class, but it is not yet.
-void refine_domain(TDomain& domain, ParameterDatabase& db, bool write_ps_file)
-{ 
-  size_t n_ref = domain.get_n_initial_refinement_steps();
-  for(size_t i = 0; i < n_ref; i++)
-  {
-    domain.refine_and_get_hierarchy_of_collections(db);
-  }
-  
-  // write grid into an Postscript file
-  if(write_ps_file)
-  {
-    domain.PS("Domain.ps", It_Finest, 0);
-  }
-}
-
 int main(int argc, char* argv[])
 {
   if(argc < 2)
@@ -51,7 +34,11 @@ int main(int argc, char* argv[])
   
    // set variables' value in TDatabase using argv[1] (*.dat file)
   TDomain domain(parmoon_db);
-  refine_domain(domain, parmoon_db, parmoon_db["output_write_ps"]);
+  domain.refine_and_get_hierarchy_of_collections(parmoon_db);
+  if(parmoon_db["output_write_ps"])
+  {
+    domain.PS("Domain.ps", It_Finest, 0);
+  }
 
   BoundaryControlledOptimization<2> bco(domain, parmoon_db);
   

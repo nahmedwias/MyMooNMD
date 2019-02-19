@@ -7,22 +7,6 @@
 #include <LoopInfo.h>
 
 
-// this should be done inside the Domain class, but it is not yet.
-void refine_domain(TDomain& domain, ParameterDatabase& db, bool write_ps_file)
-{
-  size_t n_ref = domain.get_n_initial_refinement_steps();
-  for(size_t i = 0; i < n_ref; i++)
-  {
-    domain.refine_and_get_hierarchy_of_collections(db);
-  }
-  
-  // write grid into an Postscript file
-  if(write_ps_file)
-  {
-    domain.PS("Domain.ps", It_Finest, 0);
-  }
-}
-
 int main(int argc, char* argv[])
 {
   if(argc < 2)
@@ -51,13 +35,17 @@ int main(int argc, char* argv[])
 
    // set variables' value in TDatabase using argv[1] (*.dat file)
   TDomain domain(parmoon_db);
-  refine_domain(domain, parmoon_db, parmoon_db["output_write_ps"]);
+  domain.refine_and_get_hierarchy_of_collections(parmoon_db);
+  if(parmoon_db["output_write_ps"])
+  {
+    domain.PS("Domain.ps", It_Finest, 0);
+  }
 
   Time_BoundaryControlledOptimization<2> tbco(domain, parmoon_db);
   
   timer.restart_and_print("all preparations before optimization loop");
   parmoon_opt::print_nlopt_version();
   parmoon_opt::optimize(tbco, parmoon_db);
-//  timer.stop_and_print("optimization loop");
-//  timer.print_total_time("entire boundary controlled optimization");
+  timer.stop_and_print("optimization loop");
+  timer.print_total_time("entire boundary controlled optimization");
 }
