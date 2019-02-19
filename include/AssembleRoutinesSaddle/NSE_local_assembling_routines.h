@@ -86,11 +86,13 @@ void NSCoriolis(double Mult, double *coeff, double *param, double hK,
 template <int d>
 void NSGradDiv(double Mult, double *coeff, double *param, double hK,
             double **OrigValues, int *N_BaseFuncts,
-            double ***LocMatrices, double **LocRhs, double delta0);
+            double ***LocMatrices, double **LocRhs, double delta0,
+            double characteristic_length);
 template <int d>
 void NSGradDiv_RightHandSide(double Mult, double *coeff, double *param, double hK,
                           double **OrigValues, int *N_BaseFuncts,
-                          double ***LocMatrices, double **LocRhs, double delta0);
+                          double ***LocMatrices, double **LocRhs, double delta0,
+                          double characteristic_length);
 
 // PSPG (Pressure stabilization Petrov-Galerkin)
 double compute_PSPG_delta(double delta0, double hK, double nu);
@@ -120,12 +122,14 @@ void NSsymmGLS_RightHandSide(double Mult, double *coeff, double *param,
 template <int d>
 void NSnonsymmGLS(double Mult, double *coeff, double *param, double hK,
                   double **OrigValues, int *N_BaseFuncts,
-                  double ***LocMatrices, double **LocRhs, double delta0);
+                  double ***LocMatrices, double **LocRhs, double delta0,
+                  double characteristic_length);
 template <int d>
 void NSnonsymmGLS_RightHandSide(double Mult, double *coeff, double *param,
                                 double hK, double **OrigValues,
                                 int *N_BaseFuncts, double ***LocMatrices,
-                                double **LocRhs, double delta0);
+                                double **LocRhs, double delta0,
+                                double characteristic_length);
 
 template <int d>
 void NS_BrezziPitkaeranta(double Mult, double *coeff, double *param, double hK,
