@@ -56,9 +56,9 @@ public:
 
   NSE_GPPO(const TDomain &domain, const ParameterDatabase& param_db, const Example_NSE& example);
 
-#ifdef __2D__
-  void assemble_with_coefficient_fct(bool variable_fct=false);
 
+  void assemble_with_coefficient_fct(bool variable_fct=false);
+#ifdef __2D__
   FEFunction & get_coefficient_function()
   {
     return this->coefficient_function;

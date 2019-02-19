@@ -440,9 +440,9 @@ Example_NSE3D::Example_NSE3D(const ParameterDatabase& user_input_parameter_db)
 }
 
 
-Example_NSE3D::Example_NSE3D(const std::vector<DoubleFunct3D*>& exact,
-                             const std::vector<BoundCondFunct3D*>& bc,
-                             const std::vector<BoundValueFunct3D*>& bd,
+Example_NSE3D::Example_NSE3D(const std::vector<DoubleFunct3D *>& exact,
+                             const std::vector<BoundCondFunct3D *>& bc,
+                             const std::vector<BoundValueFunct3D *>& bd,
                              const CoeffFct3D& coeffs, double nu)
  : Example3D(exact, bc, bd, coeffs)
 {

@@ -21,7 +21,7 @@ Field[1].XMax = x_I + h_max/2;
 Field[1].YMax = y_W + h_max/2;
 Field[1].ZMin = -1;
 Field[1].ZMax = 1;
-Field[1].VIn = h_fine;
+Field[1].VIn = 0.5 * h_fine;
 Field[1].VOut = h_max;
 
 Field[2] = Box;
@@ -32,15 +32,15 @@ Field[2].XMax = x_E +h_max/2;
 Field[2].YMax = y_W + h_max/2;
 Field[2].ZMin = -1;
 Field[2].ZMax = 1;
-Field[2].VIn = h_fine;
+Field[2].VIn = 0.5 * h_fine;
 Field[2].VOut = h_max;
 
 Field[3] = Box;
 //Set the option string of the expression-th field.
-Field[3].XMin = x_I - d*3/4;
-Field[3].YMin = y_W - d*3/4;
-Field[3].XMax = x_E + d*3/4;
-Field[3].YMax = y_W + d*3/4;
+Field[3].XMin = x_I - 2*d;
+Field[3].YMin = y_W - d;
+Field[3].XMax = x_E + 2*d;
+Field[3].YMax = y_W + d;
 Field[3].ZMin = -1;
 Field[3].ZMax = 1;
 Field[3].VIn = 4*h_fine;

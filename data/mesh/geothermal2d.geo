@@ -58,7 +58,7 @@ Field[4].ZMax = 1;
 Field[4].VIn = 12*h_fine;
 Field[4].VOut = h_max;
 
-Field[5] = Min;
+//Field[5] = Min;
 //+
 Field[5].FieldsList = {1, 2, 3, 4};
 
