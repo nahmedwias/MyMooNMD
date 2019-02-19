@@ -1,0 +1,61 @@
+/** ************************************************************************ 
+*
+* @name       SnapshotsCollector
+* @brief      write/read snapshot data into/from a file
+*
+* @author     Swetlana Giere & Alfonso Caiazzo
+* @date       08.05.2012 (start of implementaion). Restarted on 15.1.2019
+*
+****************************************************************************/
+
+#include <SnapshotsCollector.h>
+
+/** ***********************************************************************/
+SnapshotsCollector::SnapshotsCollector( const ParameterDatabase& param_db ) :
+  db(ParameterDatabase::get_default_snapshots_database()),snap_count(0)
+{
+  this->db.merge(param_db, true);
+  snapshot_filename =  this->db["snaps_directory"].get<std::string>() + "/";
+  snapshot_filename += this->db["snaps_filename"].get<std::string>();
+  
+  if (db["write_snaps"])
+  {
+
+    Output::print<1>( "Filename for storing snapshots: ", snapshot_filename);
+
+    this->datastream.open( snapshot_filename.c_str(), ios::out | ios::trunc | ios::in);
+  
+    if( ! this->datastream.good() )
+    {
+      ErrThrow("Error: File ", snapshot_filename,
+	       " could not be opened in SnapshotsCollector.\n"
+	       "(No read access to file or file already open)");
+    }
+  
+    this->datastream << setprecision( 12 );
+  }
+}
+
+/** ***********************************************************************/
+SnapshotsCollector::~SnapshotsCollector(){
+  if( this->datastream.is_open() ) this->datastream.close();
+}
+
+/** ***********************************************************************/
+void SnapshotsCollector::write_data(const BlockVector &solution, size_t time_step )
+{
+  if((time_step % (int)db["steps_per_snap"] == 0))
+  {
+    Output::print<1>("Time step ", time_step, ", writing snapshot n. ",
+		     snap_count+1, " on ", snapshot_filename);
+    snap_count++;
+    
+    if( ! this->datastream.is_open() )
+      ErrThrow( "Error: Snapfile is not open." );
+  
+    for(size_t i = 0; i < solution.length(); ++i)
+      this->datastream << solution.get_entries()[ i ] << " ";
+    this->datastream << endl;
+    this->datastream.flush();
+  }
+}

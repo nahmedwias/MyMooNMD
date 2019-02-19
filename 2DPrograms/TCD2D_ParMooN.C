@@ -12,12 +12,13 @@
 #include <Database.h>
 #include <FEDatabase2D.h>
 #include "TimeConvectionDiffusion.h"
+#include <TimeConvectionDiffusionROM.h>
 
 #include <sys/stat.h>
 #include <sys/types.h>
 
 #include <TimeDiscRout.h>
-
+#include <SnapshotsCollector.h>
 
 using namespace std;
 
@@ -44,6 +45,10 @@ int main(int, char* argv[])
   
   // refine grid
   Domain.refine_and_get_hierarchy_of_collections(parmoon_db);
+
+  // initialize snapshot writer
+  SnapshotsCollector snaps( parmoon_db );
+  
   // write grid into an Postscript file
   if(parmoon_db["output_write_ps"])
     Domain.PS("Domain.ps", It_Finest, 0);
@@ -53,6 +58,7 @@ int main(int, char* argv[])
   TimeDiscretization& tss = tcd.get_time_stepping_scheme();
   tss.current_step_ = 0;
   tss.set_time_disc_parameters();
+
   // ======================================================================
   // assemble matrices and right hand side at start time  
   tcd.assemble_initial_time();
@@ -61,6 +67,11 @@ int main(int, char* argv[])
   double start_time = parmoon_db["time_start"];
   TDatabase::TimeDB->CURRENTTIME = start_time;
   tcd.output();
+
+  // store initial condition as snapshot
+  if (parmoon_db["write_snaps"])
+    snaps.write_data(tcd.get_solution());
+  
   // ======================================================================
   // time iteration
   // ======================================================================
@@ -78,8 +89,14 @@ int main(int, char* argv[])
     
     tcd.assemble();    
     tcd.solve();
+
     if((tss.current_step_-1) % TDatabase::TimeDB->STEPS_PER_IMAGE == 0)
       tcd.output();
+
+    // write the snap shots
+    if (parmoon_db["write_snaps"])
+      snaps.write_data(tcd.get_solution(), tss.current_step_);
+    
   }
   // ======================================================================
   Output::print("MEMORY: ", setw(10), GetMemory()/(1048576.0), " MB");

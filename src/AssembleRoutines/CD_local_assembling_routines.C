@@ -92,6 +92,21 @@ void TCDMass(double Mult, double *, double *, double, double**OrigValues,
       Matrix[i][j] += Mult * u[i] * u[j];
 }
 
+// this function is the same as "TCDMass", but assemble the mass matrix in LocMatrices[0]
+// needed for POD
+template<int d>
+void TCDMassPOD(double Mult, double *, double *, double, double**OrigValues, 
+             int *N_BaseFuncts, double ***LocMatrices, double **)
+{
+  double **Matrix = LocMatrices[0];
+  int N_ = N_BaseFuncts[0];
+  double * u  =OrigValues[0];
+  
+  for(int i=0; i<N_; i++)
+    for(int j=0; j<N_; j++)
+      Matrix[i][j] += Mult * u[i] * u[j];
+}
+
 template<int d>
 void TCDRhs(double Mult, double* coeff, double*, double, double ** OrigValues, 
             int* N_BaseFuncts, double ***, double ** LocRhs)
@@ -299,6 +314,9 @@ template void TCDStiff_TensorialDiffusionTerm<2>(
 template void TCDMass<2>(
   double Mult, double *coeff, double *param, double hK, double**OrigValues, 
   int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
+template void TCDMassPOD<2>(
+  double Mult, double *coeff, double *param, double hK, double**OrigValues, 
+  int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
 template void TCDRhs<2>(
   double Mult, double *coeff, double *param, double hK, double**OrigValues, 
   int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
@@ -320,6 +338,9 @@ template void TCDStiff_TensorialDiffusionTerm<3>(
         double Mult, double *coeff, double *param, double hK, double**OrigValues,
         int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
 template void TCDMass<3>(
+  double Mult, double *coeff, double *param, double hK, double**OrigValues, 
+  int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
+template void TCDMassPOD<3>(
   double Mult, double *coeff, double *param, double hK, double**OrigValues, 
   int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
 template void TCDRhs<3>(
