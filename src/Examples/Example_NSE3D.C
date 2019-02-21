@@ -446,7 +446,10 @@ Example_NSE3D::Example_NSE3D(const std::vector<DoubleFunct3D *>& exact,
                              const CoeffFct3D& coeffs, double nu)
  : Example3D(exact, bc, bd, coeffs)
 {
-  this->example_database["reynolds_number"] = 1./nu;
+  if (nu != 0.)
+    this->example_database["reynolds_number"] = 1./nu;
+  else
+    this->example_database["reynolds_number"] = 0.;
 }
 
 
