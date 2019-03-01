@@ -454,7 +454,10 @@ Example_NSE2D::Example_NSE2D(const std::vector<DoubleFunct2D*>& exact,
                              const CoeffFct2D& coeffs, double nu) 
  : Example2D(exact, bc, bd, coeffs)
 {
-  this->example_database["reynolds_number"] = 1./nu;
+  if (nu != 0.)
+    this->example_database["reynolds_number"] = 1./nu;
+  else
+    this->example_database["reynolds_number"] = 0.;
 }
 
 
