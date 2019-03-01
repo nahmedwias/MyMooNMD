@@ -1157,12 +1157,8 @@ void GeothermalPlantsPositionOptimization<d>::apply_control_and_solve(const doub
       y_production_well[5] = height_of_bottom_row;
 #ifdef __3D__
       std::vector<double> z_production_well(6,0.);//3000.;
-      z_production_well[0] = 250.;
-      z_production_well[1] = 250.;
-      z_production_well[2] = 250.;
-      z_production_well[3] = 250.;
-      z_production_well[4] = 250.;
-      z_production_well[5] = 250.;
+      for (int i = 0; i < 6; i++)
+      z_production_well[i] = 250.;
 #endif
 
 #ifdef __2D__
@@ -1175,6 +1171,57 @@ void GeothermalPlantsPositionOptimization<d>::apply_control_and_solve(const doub
               temperature_values_lower_moving_row_production_well_1(d+1), temperature_values_lower_moving_row_production_well_2(d+1);
 #endif
 
+/*
+  //New28.02.19
+      std::vector<double> average(6), min(6);
+      ////std::vector<GeothermalPlantsPositionOptimization<d>::sinks> sink_wells(x_production_well.size());
+      std::vector<GeothermalPlantsPositionOptimization<d>::sinks> sink_wells;
+
+      for (int i = 0; i < x_production_well.size(); i++)
+      {
+        size_t Num_circle_points = 10;
+
+#ifdef __2D__
+        TCollection* Coll = temperature.GetFESpace2D()->GetCollection();
+#else
+        TCollection* Coll = temperature.GetFESpace3D()->GetCollection();
+#endif
+        std::array<double, d> centers = {x_production_well[i], y_production_well[i]
+#ifdef __3D__
+                                      , z_production_well[i]
+#endif
+                               };
+       //// sink_wells[i] = sinks((double) db["eps_delta_fct"], (double) db["well_radius"], centers, Num_circle_points, Coll);
+        sink_wells.push_back(sinks((double) db["eps_delta_fct"], (double) db["well_radius"], centers, Num_circle_points, Coll));
+
+        sink_wells[i].find_average_and_min_along_circle(&temperature, average[i], min[i]);
+      }
+
+
+      Output::print(" *** T(moving_well_upper_row, average) = ", (average[0] + average[1])/2.);
+      Output::print(" *** T(fixed_row, average) = ", (average[2] + average[3])/2.);
+      Output::print(" *** T(moving_well_lower_row, average) = ", (average[4] + average[5])/2.);
+
+      bool minimum_temperature_reached = false;
+      for (int i = 0; i < sink_wells.size(); i++)
+      {
+        if (min[i] < (double) db["minimum_temperature_production_well"])
+          minimum_temperature_reached = true;
+        break;
+      }
+      if ( !minimum_temperature_reached )
+      {
+        this->temperature_production_well_at_time_steps.push_back(
+                average[0] + average[1] + average[2] + average[3] + average[4] + average[5]);
+      }
+      else
+      {
+        Output::print("Minimum production temperature obtained in one of the production wells at time step ", (double) tss.current_step_, " .");
+        break;
+      }
+      */
+
+ ///*
       temperature.FindGradient(x_production_well[0]- (double) db["x_distance_from_well_center"], y_production_well[0],
 #ifdef __3D__
               z_production_well[0],
@@ -1236,6 +1283,7 @@ void GeothermalPlantsPositionOptimization<d>::apply_control_and_solve(const doub
         Output::print("Minimum production temperature obtained in one of the production wells at time step ", (double) tss.current_step_, " .");
         break;
       }
+      //*/
     }
     else if (this->db["scenario"].is("3_rows_of_double_doublets_fixed_well_distance"))
     {
@@ -1254,12 +1302,8 @@ void GeothermalPlantsPositionOptimization<d>::apply_control_and_solve(const doub
       y_production_well[5] = 2000.;
 #ifdef __3D__
       std::vector<double> z_production_well(6,0.);//3000.;
-      z_production_well[0] = 250.;
-      z_production_well[1] = 250.;
-      z_production_well[2] = 250.;
-      z_production_well[3] = 250.;
-      z_production_well[4] = 250.;
-      z_production_well[5] = 250.;
+      for (int i = 0; i < 6; i++)
+      z_production_well[i] = 250.;
 #endif
 
 #ifdef __2D__
@@ -1343,8 +1387,8 @@ void GeothermalPlantsPositionOptimization<d>::apply_control_and_solve(const doub
       y_production_well[1] = 3500.;
 #ifdef __3D__
       std::vector<double> z_production_well(2,0.);//3000.;
-      z_production_well[0] = 250.;
-      z_production_well[1] = 250.;
+      for (int i = 0; i < 2; i++)
+      z_production_well[i] = 250.;
 #endif
 
 #ifdef __2D__
@@ -1493,18 +1537,11 @@ if (this->db["scenario"].is("3_rows_of_double_doublets_fixed_well_distance")
   x_injection_wells[5] = center_x_moving_doublet_top_row + (double) this->db["well_distance"]/2.; //4.5;
   y_injection_wells[5] = height_of_bottom_row; //3.;
 #ifdef __3D__
-  z_production_wells[0] = 250.; //3000.;
-  z_injection_wells[0] = 250.; //3000.;
-  z_production_wells[1] = 250.; //3000.;
-  z_injection_wells[1] = 250.; //3000.;
-  z_production_wells[2] = 250.; //3000.;
-  z_injection_wells[2] = 250.; //3000.;
-  z_production_wells[3] = 250.; //3000.;
-  z_injection_wells[3] = 250.; //3000.;
-  z_production_wells[4] = 250.; //3000.;
-  z_injection_wells[4] = 250.; //3000.;
-  z_production_wells[5] = 250.; //3000.;
-  z_injection_wells[5] = 250.; //3000.;
+  for (int i = 0; i < 6; i++)
+  {
+    z_production_wells[i] = 250.;
+    z_injection_wells[i] = 250.;
+  }
 #endif
 
 #ifdef __2D__
