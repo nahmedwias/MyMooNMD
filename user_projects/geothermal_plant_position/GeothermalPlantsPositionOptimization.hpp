@@ -89,7 +89,6 @@ protected:
     std::array<double, d> coordinates;
     int cell_index;
     TBaseCell * cell;
-
   };
   std::vector<point_on_circle> punkte_zellen_usw;
 
@@ -97,8 +96,8 @@ protected:
   /// @brief
   struct sinks
   {
-    sinks(double eps_delta_fct, double well_radius,
-                std::array<double, d> center, size_t Num_circle_points, TCollection* Coll);
+    sinks(double eps_delta_fct, double well_radius, std::array<double, d> center,
+            size_t Num_circle_points, TCollection* Coll);
 
     std::vector<point_on_circle> meine_punkte;
     std::array<double, d> center;
