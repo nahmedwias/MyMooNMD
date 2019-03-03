@@ -327,74 +327,83 @@ int dim = 2;
      */
     double Qin = u_in * (2/well_radius); //(dim/well_radius);
 
-    std::vector<double> singular_x, singular_y,
 #ifdef __3D__
-    singular_z,
+    Qin = u_in * (2/well_radius/well_radius);
 #endif
-    singular_sign;
+    
+    std::vector<double> singular_x, singular_y, singular_z,singular_sign;
 
+    double z0 = 50;
+    double dz = 50;
     // source in (xi,yi)
+#ifdef __3D__
+    //note: this should match the depth of the actual mesh
+    // [0,500]
+    for (unsigned int k=0; k<9; k++) {
+      singular_x.push_back(5000. - (distance)/2.);
+      singular_y.push_back(3000.);
+      singular_sign.push_back(1.);singular_z.push_back(z0);
+      z0 = z0 + dz;
+    }
+
+
+#else
+    // in 2D, we only need a (dummy) point along z for each well
     singular_x.push_back(5000. - (distance)/2.);
     singular_y.push_back(3000.);
     singular_sign.push_back(1.);
-#ifdef __3D__
-    //singular_z.push_back(3000.); //0-500
-    singular_z.push_back(250.);
+    singular_z.push_back(0.);
 #endif
 
+
     // sink in (xe,ye)    
+#ifdef __3D__
+    // note: this should match the depth of the actual mesh
+    // [0,500]
+    z0 = 50.;
+    for (unsigned int k=0; k<9; k++) {
+      singular_x.push_back(5000.+ (distance)/2.);
+      singular_y.push_back(3000.);
+      singular_sign.push_back(-1.);
+      singular_z.push_back(z0);
+      z0 = z0 + dz;
+    }
+    
+#else
     singular_x.push_back(5000.+ (distance)/2.);
     singular_y.push_back(3000.);
     singular_sign.push_back(-1.);
-#ifdef __3D__
-    // singular_z.push_back(3000.); //0-500
-    singular_z.push_back(250.);
+    // in 2D, we only need a (dummy) point along z for each well
+    singular_z.push_back(0.);
 #endif
 
     for (unsigned int m = 0; m < singular_x.size(); m++)
     {
       double x_center_source = singular_x[m];
       double y_center_source = singular_y[m];
-#ifdef __3D__
       double z_center_source = singular_z[m];//0-500
-#endif
+
       double x_distance_to_source = std::pow(std::abs(x[i] - x_center_source), 2);
       double y_distance_to_source = std::pow(std::abs(y[i] - y_center_source), 2);
-      /*
+      
+      double z_distance_to_source = 1.;
 #ifdef __3D__
-      double z_distance_to_source = std::pow(std::abs(z[i] - z_center_source), 2);
+      z_distance_to_source = std::pow(std::abs(z[i] - z_center_source), 2);
 #endif
-       */
 
       bool at_source = (x_distance_to_source < epsDelta*epsDelta) *
-              (y_distance_to_source < epsDelta*epsDelta)
-              /*
-#ifdef __3D__
-               * (z_distance_to_source < epsDelta*epsDelta)
-#endif
-               */
-              ;
+	(y_distance_to_source < epsDelta*epsDelta)*
+	(z_distance_to_source < epsDelta*epsDelta);
 
-      if (at_source
-#ifdef __3D__
-              && z[i] < 490 && z[i] > 10
-#endif
-      )
+      if (at_source)
       {
-
         double magnitude = cos(Pi*(x[i] - x_center_source)/epsDelta) + 1;
         magnitude *= cos(Pi*(y[i] - y_center_source)/epsDelta) + 1;
-
+	magnitude /= 4.*epsDelta*epsDelta;
+	
 #ifdef __3D__
-        //// magnitude *= 1 + 1;
-        /*
-        magnitude *= cos(Pi*(z[i] - z_center_source)/epsDelta) + 1;
-         */
-#endif
-
-        magnitude /= 4.*epsDelta*epsDelta;
-#ifdef __3D__
-        magnitude /= 480.;
+	magnitude *= cos(Pi*(z[i] - z_center_source)/epsDelta) + 1;
+	magnitude /= epsDelta;
 #endif
 
         coeffs[i][dim+1] += singular_sign[m] * magnitude * Qin;
@@ -1520,7 +1529,7 @@ if (this->db["scenario"].is("3_rows_of_double_doublets_fixed_well_distance")
   functional_value =  (number_of_time_steps_for_production * 1/(double)db["pump_efficiency"] *
              ( pressure_values_injection_wells - pressure_values_production_wells)
             - (double) db["fluid_density"] * (double) db["fluid_heat_capacity"] * Delta_Temp)
-            +  alpha * abs(center_x_moving_doublet_bottom_row - 2000.);
+    +  alpha * std::abs(center_x_moving_doublet_bottom_row - 2000.);
 
   Output::print("functional_value: ", functional_value);
 
@@ -1636,7 +1645,7 @@ else if (this->db["scenario"].is("2doublets_fixed_well_distance") )
     functional_value =  (number_of_time_steps_for_production * 1/(double)db["pump_efficiency"] *
             (pressure_values_injection_wells - pressure_values_production_wells)
             - (double) db["fluid_density"] * (double) db["fluid_heat_capacity"] * Delta_Temp)
-                            +  alpha * abs(center_x_moving_doublet - 2000.);
+      +  alpha * std::abs(center_x_moving_doublet - 2000.);
 
     Output::print("functional_value: ", functional_value);
 
@@ -1744,7 +1753,7 @@ else if (this->db["scenario"].is("1doublet_optimize_distance") )
   functional_value =  (number_of_time_steps_for_production * 1/(double)db["pump_efficiency"] *
           (pressure_values_injection_wells - pressure_values_production_wells)
           - (double) db["fluid_density"] * (double) db["fluid_heat_capacity"] * Delta_Temp) 
-                          +  alpha * abs(distance - 2000.);
+  +  alpha * std::abs(distance - 2000.);
 
   Output::print("functional_value: ", functional_value);
 
