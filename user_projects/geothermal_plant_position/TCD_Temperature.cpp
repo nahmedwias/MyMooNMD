@@ -692,6 +692,340 @@ void temperature_coefficients_3doubledoublets(int n_points, double *x, double *y
 
 
 /** ************************************************************************ */
+void temperature_coefficients_3doubledoublets_4controls(int n_points, double *x, double *y,
+#ifdef __3D__
+           double *z,
+#endif
+        double **parameters, double **coeffs,
+        double center_x_moving_doublet_bottom_row, double center_x_moving_doublet_top_row, double nu,
+        double transversal_dispersion_factor, double longitudinal_dispersion_factor,
+        double well_radius, double temperature_injection_well, double delta_fct_eps_factor,
+        double fluid_density, double fluid_heat_capacity, double well_distance,
+        double height_of_bottom_row, double height_of_top_row)
+{
+for(int i = 0; i < n_points; ++i)
+  {
+    //another approx. for domain [0, 10] x [0, 6]
+    // bubble diameter = epsDelta
+    // bubble height = 1/(epsDelta*epsDelta)
+    //double r_well = 0.2; // 20cm
+    double epsDelta = delta_fct_eps_factor * well_radius; //10*r_well; // 25*r_well; //50*r_well;
+    //double T_in = 303.15; //injection temperature  = 30 + 273.15;
+
+
+#ifdef __2D__
+    std::array<double, 2> center_fixed_source_1 = {{5000. - (well_distance)*3/2., 3000.}};
+    std::array<double, 2> center_fixed_source_2 = {{5000. + (well_distance)/2., 3000.}};
+    std::array<double, 2> center_moving_upper_source_1 = {{center_x_moving_doublet_top_row - (well_distance)*3/2., height_of_top_row}};
+    std::array<double, 2> center_moving_upper_source_2 = {{center_x_moving_doublet_top_row + (well_distance)/2., height_of_top_row}};
+    std::array<double, 2> center_moving_lower_source_1 = {{center_x_moving_doublet_bottom_row - (well_distance)*3/2., height_of_bottom_row}};
+    std::array<double, 2> center_moving_lower_source_2 = {{center_x_moving_doublet_bottom_row + (well_distance)/2., height_of_bottom_row}};
+#else
+    std::array<double, 3> center_fixed_source_1 = {{5000. - (well_distance)*3/2., 3000., 250.}};
+    std::array<double, 3> center_fixed_source_2 = {{5000. + (well_distance)/2., 3000., 250.}};
+    std::array<double, 3> center_moving_upper_source_1 = {{center_x_moving_doublet_top_row - (well_distance)*3/2., height_of_top_row, 250.}};
+    std::array<double, 3> center_moving_upper_source_2 = {{center_x_moving_doublet_top_row + (well_distance)/2., height_of_top_row, 250.}};
+    std::array<double, 3> center_moving_lower_source_1 = {{center_x_moving_doublet_bottom_row - (well_distance)*3/2., height_of_bottom_row, 250.}};
+    std::array<double, 3> center_moving_lower_source_2 = {{center_x_moving_doublet_bottom_row + (well_distance)/2., height_of_bottom_row, 250.}};
+    double z_distance_to_fixed_source_1 = std::pow(std::abs(z[i]-center_fixed_source_1[2]), 2);
+    double z_distance_to_fixed_source_2 = std::pow(std::abs(z[i]-center_fixed_source_2[2]), 2);
+    double z_distance_to_moving_upper_source_1 = std::pow(std::abs(z[i]-center_moving_upper_source_1[2]), 2);
+    double z_distance_to_moving_upper_source_2 = std::pow(std::abs(z[i]-center_moving_upper_source_2[2]), 2);
+    double z_distance_to_moving_lower_source_1 = std::pow(std::abs(z[i]-center_moving_lower_source_1[2]), 2);
+    double z_distance_to_moving_lower_source_2 = std::pow(std::abs(z[i]-center_moving_lower_source_2[2]), 2);
+#endif
+    double x_distance_to_fixed_source_1 = std::pow(std::abs(x[i]-center_fixed_source_1[0]), 2);
+    double y_distance_to_fixed_source_1 = std::pow(std::abs(y[i]-center_fixed_source_1[1]), 2);
+    double x_distance_to_fixed_source_2 = std::pow(std::abs(x[i]-center_fixed_source_2[0]), 2);
+    double y_distance_to_fixed_source_2 = std::pow(std::abs(y[i]-center_fixed_source_2[1]), 2);
+    double x_distance_to_moving_upper_source_1 = std::pow(std::abs(x[i]-center_moving_upper_source_1[0]), 2);
+    double y_distance_to_moving_upper_source_1 = std::pow(std::abs(y[i]-center_moving_upper_source_1[1]), 2);
+    double x_distance_to_moving_upper_source_2 = std::pow(std::abs(x[i]-center_moving_upper_source_2[0]), 2);
+    double y_distance_to_moving_upper_source_2 = std::pow(std::abs(y[i]-center_moving_upper_source_2[1]), 2);
+    double x_distance_to_moving_lower_source_1 = std::pow(std::abs(x[i]-center_moving_lower_source_1[0]), 2);
+    double y_distance_to_moving_lower_source_1 = std::pow(std::abs(y[i]-center_moving_lower_source_1[1]), 2);
+    double x_distance_to_moving_lower_source_2 = std::pow(std::abs(x[i]-center_moving_lower_source_2[0]), 2);
+    double y_distance_to_moving_lower_source_2 = std::pow(std::abs(y[i]-center_moving_lower_source_2[1]), 2);
+
+
+    /*     bool at_source = x_distance_to_source + y_distance_to_source
+     #ifdef __3D__
+                   + z_distance_to_source
+     #endif
+                   < epsDelta*epsDelta;
+     */
+
+    bool at_fixed_source_1 = (x_distance_to_fixed_source_1 < epsDelta*epsDelta) * (y_distance_to_fixed_source_1 < epsDelta*epsDelta)
+#ifdef __3D__
+             // OLD 05.02.19             * (z_distance_to_fixed_source < epsDelta*epsDelta)
+#endif
+             ;
+    bool at_fixed_source_2 = (x_distance_to_fixed_source_2 < epsDelta*epsDelta) * (y_distance_to_fixed_source_2 < epsDelta*epsDelta)
+  #ifdef __3D__
+               // OLD 05.02.19             * (z_distance_to_fixed_source < epsDelta*epsDelta)
+  #endif
+               ;
+
+    bool at_moving_source_upper_1 = (x_distance_to_moving_upper_source_1 < epsDelta*epsDelta) * (y_distance_to_moving_upper_source_1 < epsDelta*epsDelta)
+#ifdef __3D__
+             // OLD 05.02.19             * (z_distance_to_moving_source < epsDelta*epsDelta)
+#endif
+             ;
+
+    bool at_moving_source_upper_2 = (x_distance_to_moving_upper_source_2 < epsDelta*epsDelta) * (y_distance_to_moving_upper_source_2 < epsDelta*epsDelta)
+#ifdef __3D__
+             // OLD 05.02.19             * (z_distance_to_moving_source < epsDelta*epsDelta)
+#endif
+             ;
+
+    bool at_moving_source_lower_1 = (x_distance_to_moving_lower_source_1 < epsDelta*epsDelta) * (y_distance_to_moving_lower_source_1 < epsDelta*epsDelta)
+#ifdef __3D__
+             // OLD 05.02.19             * (z_distance_to_moving_source < epsDelta*epsDelta)
+#endif
+             ;
+
+    bool at_moving_source_lower_2 = (x_distance_to_moving_lower_source_2 < epsDelta*epsDelta) * (y_distance_to_moving_lower_source_2 < epsDelta*epsDelta)
+#ifdef __3D__
+             // OLD 05.02.19             * (z_distance_to_moving_source < epsDelta*epsDelta)
+#endif
+             ;
+
+    double norm_u = sqrt(parameters[i][0]*parameters[i][0] + parameters[i][1]*parameters[i][1]
+#ifdef __3D__
+                                                                                            + parameters[i][2]*parameters[i][2]
+#endif
+    );
+    coeffs[i][0] = nu + transversal_dispersion_factor * norm_u;  // diffusion
+    coeffs[i][1] = parameters[i][0]; // convection, x-direction
+    coeffs[i][2] = parameters[i][1]; // convection, y-direction
+
+#ifdef __2D__
+    coeffs[i][3] = 0.; // reaction
+    coeffs[i][4] = 0.; // right-hand side
+    if(norm_u)
+      coeffs[i][5] = //fluid_density * fluid_heat_capacity *
+              (longitudinal_dispersion_factor - transversal_dispersion_factor) * 1/norm_u;
+    else
+      coeffs[i][5] = 0.;
+
+    /* cout << "!!!!      !!!!     !!!! parameters[i][0]: " << parameters[i][0] <<", parameters[i][1]: "<< parameters[i][1] <<endl;
+     */
+#else
+    coeffs[i][3] = parameters[i][2]; // convection, z-direction
+    coeffs[i][4] = 0.; // reaction
+    coeffs[i][5] = 0.; // right-hand side
+
+    if(norm_u)
+      coeffs[i][6] = //fluid_density * fluid_heat_capacity *
+              (longitudinal_dispersion_factor - transversal_dispersion_factor) * 1/norm_u;
+    else
+      coeffs[i][6] = 0.;
+#endif
+
+    if(at_fixed_source_1)
+    {
+#ifdef __2D__
+      double magnitude = cos(Pi*(x[i] - center_fixed_source_1[0])/epsDelta) + 1;
+      magnitude *= cos(Pi*(y[i] - center_fixed_source_1[1])/epsDelta) + 1;
+      magnitude /= 4.*epsDelta*epsDelta;
+
+      coeffs[i][3] = magnitude; // reaction
+      coeffs[i][4] = magnitude * temperature_injection_well; // right-hand side
+
+      //double penalty_factor = 1000.;
+      //coeffs[i][3] = 1 * penalty_factor; // reaction
+      //coeffs[i][4] = T_in * penalty_factor; // right-hand side*/
+#else
+      //double magnitude = cos(Pi*x_distance_to_source/epsDelta) + 1;
+      //magnitude *= cos(Pi*y_distance_to_source/epsDelta) + 1;
+      //magnitude /= 4.*epsDelta*epsDelta;
+      //coeffs[i][3] += magnitude; // reaction
+      //coeffs[i][4] -= magnitude * T_in; // source
+      /*  double penalty_factor = 1000.;
+        coeffs[i][4] = 1 * penalty_factor; // reaction
+        coeffs[i][5] = temperature_injection_well * penalty_factor; // right-hand side
+       */
+      double magnitude = cos(Pi*(x[i] - center_fixed_source_1[0])/epsDelta) + 1;
+      magnitude *= cos(Pi*(y[i] - center_fixed_source_1[1])/epsDelta) + 1;
+      //Old 05.02.19  magnitude *= cos(Pi*(z[i] - center_source[2])/epsDelta) + 1;
+      ////magnitude *= 1 + 1;
+      magnitude /= 4.*epsDelta*epsDelta;
+
+      coeffs[i][4] = magnitude; // reaction
+      coeffs[i][5] = magnitude * temperature_injection_well; // right-hand side
+#endif
+    }
+    if(at_fixed_source_2)
+       {
+   #ifdef __2D__
+         double magnitude = cos(Pi*(x[i] - center_fixed_source_2[0])/epsDelta) + 1;
+         magnitude *= cos(Pi*(y[i] - center_fixed_source_2[1])/epsDelta) + 1;
+         magnitude /= 4.*epsDelta*epsDelta;
+
+         coeffs[i][3] = magnitude; // reaction
+         coeffs[i][4] = magnitude * temperature_injection_well; // right-hand side
+
+         //double penalty_factor = 1000.;
+         //coeffs[i][3] = 1 * penalty_factor; // reaction
+         //coeffs[i][4] = T_in * penalty_factor; // right-hand side*/
+   #else
+         //double magnitude = cos(Pi*x_distance_to_source/epsDelta) + 1;
+         //magnitude *= cos(Pi*y_distance_to_source/epsDelta) + 1;
+         //magnitude /= 4.*epsDelta*epsDelta;
+         //coeffs[i][3] += magnitude; // reaction
+         //coeffs[i][4] -= magnitude * T_in; // source
+         /*  double penalty_factor = 1000.;
+           coeffs[i][4] = 1 * penalty_factor; // reaction
+           coeffs[i][5] = temperature_injection_well * penalty_factor; // right-hand side
+          */
+         double magnitude = cos(Pi*(x[i] - center_fixed_source_2[0])/epsDelta) + 1;
+         magnitude *= cos(Pi*(y[i] - center_fixed_source_2[1])/epsDelta) + 1;
+         //Old 05.02.19  magnitude *= cos(Pi*(z[i] - center_source[2])/epsDelta) + 1;
+         ////magnitude *= 1 + 1;
+         magnitude /= 4.*epsDelta*epsDelta;
+
+         coeffs[i][4] = magnitude; // reaction
+         coeffs[i][5] = magnitude * temperature_injection_well; // right-hand side
+   #endif
+       }
+    if(at_moving_source_upper_1)
+    {
+#ifdef __2D__
+      double magnitude = cos(Pi*(x[i] - center_moving_upper_source_1[0])/epsDelta) + 1;
+      magnitude *= cos(Pi*(y[i] - center_moving_upper_source_1[1])/epsDelta) + 1;
+      magnitude /= 4.*epsDelta*epsDelta;
+
+      coeffs[i][3] = magnitude; // reaction
+      coeffs[i][4] = magnitude * temperature_injection_well; // right-hand side
+
+      //double penalty_factor = 1000.;
+      //coeffs[i][3] = 1 * penalty_factor; // reaction
+      //coeffs[i][4] = T_in * penalty_factor; // right-hand side*/
+#else
+      //double magnitude = cos(Pi*x_distance_to_source/epsDelta) + 1;
+      //magnitude *= cos(Pi*y_distance_to_source/epsDelta) + 1;
+      //magnitude /= 4.*epsDelta*epsDelta;
+      //coeffs[i][3] += magnitude; // reaction
+      //coeffs[i][4] -= magnitude * T_in; // source
+      /*  double penalty_factor = 1000.;
+        coeffs[i][4] = 1 * penalty_factor; // reaction
+        coeffs[i][5] = temperature_injection_well * penalty_factor; // right-hand side
+       */
+      double magnitude = cos(Pi*(x[i] - center_moving_upper_source_1[0])/epsDelta) + 1;
+      magnitude *= cos(Pi*(y[i] - center_moving_upper_source_1[1])/epsDelta) + 1;
+      //Old 05.02.19  magnitude *= cos(Pi*(z[i] - center_source[2])/epsDelta) + 1;
+      ////magnitude *= 1 + 1;
+      magnitude /= 4.*epsDelta*epsDelta;
+
+      coeffs[i][4] = magnitude; // reaction
+      coeffs[i][5] = magnitude * temperature_injection_well; // right-hand side
+#endif
+    } if(at_moving_source_upper_2)
+    {
+#ifdef __2D__
+      double magnitude = cos(Pi*(x[i] - center_moving_upper_source_2[0])/epsDelta) + 1;
+      magnitude *= cos(Pi*(y[i] - center_moving_upper_source_2[1])/epsDelta) + 1;
+      magnitude /= 4.*epsDelta*epsDelta;
+
+      coeffs[i][3] = magnitude; // reaction
+      coeffs[i][4] = magnitude * temperature_injection_well; // right-hand side
+
+      //double penalty_factor = 1000.;
+      //coeffs[i][3] = 1 * penalty_factor; // reaction
+      //coeffs[i][4] = T_in * penalty_factor; // right-hand side*/
+#else
+      //double magnitude = cos(Pi*x_distance_to_source/epsDelta) + 1;
+      //magnitude *= cos(Pi*y_distance_to_source/epsDelta) + 1;
+      //magnitude /= 4.*epsDelta*epsDelta;
+      //coeffs[i][3] += magnitude; // reaction
+      //coeffs[i][4] -= magnitude * T_in; // source
+      /*  double penalty_factor = 1000.;
+        coeffs[i][4] = 1 * penalty_factor; // reaction
+        coeffs[i][5] = temperature_injection_well * penalty_factor; // right-hand side
+       */
+      double magnitude = cos(Pi*(x[i] - center_moving_upper_source_2[0])/epsDelta) + 1;
+      magnitude *= cos(Pi*(y[i] - center_moving_upper_source_2[1])/epsDelta) + 1;
+      //Old 05.02.19  magnitude *= cos(Pi*(z[i] - center_source[2])/epsDelta) + 1;
+      ////magnitude *= 1 + 1;
+      magnitude /= 4.*epsDelta*epsDelta;
+
+      coeffs[i][4] = magnitude; // reaction
+      coeffs[i][5] = magnitude * temperature_injection_well; // right-hand side
+#endif
+    }
+    if(at_moving_source_lower_1)
+       {
+   #ifdef __2D__
+         double magnitude = cos(Pi*(x[i] - center_moving_lower_source_1[0])/epsDelta) + 1;
+         magnitude *= cos(Pi*(y[i] - center_moving_lower_source_1[1])/epsDelta) + 1;
+         magnitude /= 4.*epsDelta*epsDelta;
+
+         coeffs[i][3] = magnitude; // reaction
+         coeffs[i][4] = magnitude * temperature_injection_well; // right-hand side
+
+         //double penalty_factor = 1000.;
+         //coeffs[i][3] = 1 * penalty_factor; // reaction
+         //coeffs[i][4] = T_in * penalty_factor; // right-hand side*/
+   #else
+         //double magnitude = cos(Pi*x_distance_to_source/epsDelta) + 1;
+         //magnitude *= cos(Pi*y_distance_to_source/epsDelta) + 1;
+         //magnitude /= 4.*epsDelta*epsDelta;
+         //coeffs[i][3] += magnitude; // reaction
+         //coeffs[i][4] -= magnitude * T_in; // source
+         /*  double penalty_factor = 1000.;
+           coeffs[i][4] = 1 * penalty_factor; // reaction
+           coeffs[i][5] = temperature_injection_well * penalty_factor; // right-hand side
+          */
+         double magnitude = cos(Pi*(x[i] - center_moving_lower_source_1[0])/epsDelta) + 1;
+         magnitude *= cos(Pi*(y[i] - center_moving_lower_source_1[1])/epsDelta) + 1;
+         //Old 05.02.19  magnitude *= cos(Pi*(z[i] - center_source[2])/epsDelta) + 1;
+         ////magnitude *= 1 + 1;
+         magnitude /= 4.*epsDelta*epsDelta;
+
+         coeffs[i][4] = magnitude; // reaction
+         coeffs[i][5] = magnitude * temperature_injection_well; // right-hand side
+   #endif
+       }
+    if(at_moving_source_lower_2)
+          {
+      #ifdef __2D__
+            double magnitude = cos(Pi*(x[i] - center_moving_lower_source_2[0])/epsDelta) + 1;
+            magnitude *= cos(Pi*(y[i] - center_moving_lower_source_2[1])/epsDelta) + 1;
+            magnitude /= 4.*epsDelta*epsDelta;
+
+            coeffs[i][3] = magnitude; // reaction
+            coeffs[i][4] = magnitude * temperature_injection_well; // right-hand side
+
+            //double penalty_factor = 1000.;
+            //coeffs[i][3] = 1 * penalty_factor; // reaction
+            //coeffs[i][4] = T_in * penalty_factor; // right-hand side*/
+      #else
+            //double magnitude = cos(Pi*x_distance_to_source/epsDelta) + 1;
+            //magnitude *= cos(Pi*y_distance_to_source/epsDelta) + 1;
+            //magnitude /= 4.*epsDelta*epsDelta;
+            //coeffs[i][3] += magnitude; // reaction
+            //coeffs[i][4] -= magnitude * T_in; // source
+            /*  double penalty_factor = 1000.;
+              coeffs[i][4] = 1 * penalty_factor; // reaction
+              coeffs[i][5] = temperature_injection_well * penalty_factor; // right-hand side
+             */
+            double magnitude = cos(Pi*(x[i] - center_moving_lower_source_2[0])/epsDelta) + 1;
+            magnitude *= cos(Pi*(y[i] - center_moving_lower_source_2[1])/epsDelta) + 1;
+            //Old 05.02.19  magnitude *= cos(Pi*(z[i] - center_source[2])/epsDelta) + 1;
+            ////magnitude *= 1 + 1;
+            magnitude /= 4.*epsDelta*epsDelta;
+
+            coeffs[i][4] = magnitude; // reaction
+            coeffs[i][5] = magnitude * temperature_injection_well; // right-hand side
+      #endif
+          }
+  }
+
+}
+
+
+
+/** ************************************************************************ */
 template <int d>
 void TCD_Temperature<d>::assemble(const FEVectFunct& convection,
         const double * x, double nu)
@@ -706,6 +1040,9 @@ void TCD_Temperature<d>::assemble(const FEVectFunct& convection,
 
   double center_x_moving_doublet_bottom_row = x[0];
   double center_x_moving_doublet_top_row = x[1];
+
+  double height_of_bottom_row = 2000.;
+  double height_of_top_row = 4000.;
 
   auto u1 = convection.GetComponent(0);
   auto u2 = convection.GetComponent(1);
@@ -745,7 +1082,23 @@ void TCD_Temperature<d>::assemble(const FEVectFunct& convection,
 
     using namespace std::placeholders;
 
-    if (this->db["scenario"].is("3_rows_of_double_doublets_fixed_well_distance") )
+    if (this->db["scenario"].is("3_rows_of_double_doublets_varying_row_distance") )
+    {
+      height_of_bottom_row = x[2];
+      height_of_top_row = x[3];
+
+      la.ResetCoeffFct(std::bind(temperature_coefficients_3doubledoublets_4controls,_1, _2, _3, _4, _5,
+  #ifdef __3D__
+              _6,
+  #endif
+              center_x_moving_doublet_bottom_row, center_x_moving_doublet_top_row, nu,
+              (double) this->db["transversal_dispersion_factor"], (double) this->db["longitudinal_dispersion_factor"],
+              (double) this->db["well_radius"], (double) this->db["temperature_injection_well"],
+              (double) this->db["delta_fct_eps_factor"], (double) this->db["fluid_density"],
+              (double) this->db["fluid_heat_capacity"], (double) this->db["well_distance"],
+              height_of_bottom_row, height_of_top_row));
+    }
+    else if (this->db["scenario"].is("3_rows_of_double_doublets_fixed_well_distance") )
     {
       la.ResetCoeffFct(std::bind(temperature_coefficients_3doubledoublets,_1, _2, _3, _4, _5,
   #ifdef __3D__

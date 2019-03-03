@@ -29,6 +29,7 @@ int main(int argc, char* argv[])
 {
   // start a stopwatch which measures time spent in program parts
   Chrono timer;
+  timer.start();
 
   //  declaration of database, you need this in every program
   TDatabase Database(argv[1]);
@@ -79,9 +80,9 @@ int main(int argc, char* argv[])
 
   parmoon_opt::print_nlopt_version();
 
-  timer.stop_and_print("Started optimization loop.");
+  timer.restart_and_print("Started optimization loop.");
   parmoon_opt::optimize(gppo, db);
-  timer.stop_and_print("Finished optimization loop.");
+  timer.restart_and_print("Finished optimization loop.");
   timer.print_total_time("Finished entire boundary controlled optimization.");
   Output::close_file();
 }
