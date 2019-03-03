@@ -76,14 +76,14 @@ namespace parmoon_opt
                "Do or don't set the upper and lower bounds as a constant for "
                "each component of the control vector. The actual bounds are "
                "set using the parameters 'lower_bound' and 'upper_bound'");
-    opt_db.add("lower_bound", 0.0, 
+    opt_db.add("lower_bound", 0.0,
                "The lower bound which shall be fulfilled by each component of "
                "the control vector. To activate this number, set the parameter "
-               "'set_lower_and_upper_bounds' to true.");
-    opt_db.add("upper_bound", 0.0, 
+               "'set_lower_and_upper_bounds' to true.", 0.0, 10000.);
+    opt_db.add("upper_bound", 0.0,
                "The upper bound which shall be fulfilled by each component of "
                "the control vector. To activate this number, set the parameter "
-               "'set_lower_and_upper_bounds' to true.");
+               "'set_lower_and_upper_bounds' to true.", 0.0, 10000.);
     opt_db.add("ftol_rel", 0.0, 
                "Set the relative difference of the functional evaluation as a "
                "stopping criterion, i.e., something like "
@@ -116,20 +116,36 @@ namespace parmoon_opt
     opt_db.add("print_final_solution", false, 
                "Print out all components of the solution vector after the "
                "optimization algorithm finished.");
-    
+    opt_db.add("set_lower_and_upper_vector_bounds", false,
+               "Do or don't set the upper and lower bounds as a constant for "
+               "each component of the control vector. The actual bounds are "
+               "set using the parameters 'lower_bound' and 'upper_bound'");
+    opt_db.add("lower_vector_bound", {0., 0., 0., 0., 0.}, //0.0,
+               "The lower bound which shall be fulfilled by each component of "
+               "the control vector. To activate this number, set the parameter "
+               "'set_lower_and_upper_bounds' to true.", 0.0, 10000.);
+    opt_db.add("upper_vector_bound", {0., 0., 0., 0., 0.}, //0.0,
+               "The upper bound which shall be fulfilled by each component of "
+               "the control vector. To activate this number, set the parameter "
+               "'set_lower_and_upper_bounds' to true.", 0.0, 10000.);
     return opt_db;
   }
   
   void set_values_nlopt(nlopt::opt& opt, const ParameterDatabase& opt_db)
   {
-    if(opt_db["set_lower_and_upper_bounds"])
-    {
-      opt.set_upper_bounds(opt_db["upper_bound"].get<double>());
-      opt.set_lower_bounds(opt_db["lower_bound"].get<double>());
-      
+      if (opt_db["set_lower_and_upper_vector_bounds"])
+      {
+        opt.set_upper_bounds(opt_db["upper_vector_bound"].get<std::vector<double>>());
+        opt.set_lower_bounds(opt_db["lower_vector_bound"].get<std::vector<double>>());
+      }
+      else if (opt_db["set_lower_and_upper_bounds"])
+      {
+        opt.set_upper_bounds(opt_db["upper_bound"].get<double>());
+        opt.set_lower_bounds(opt_db["lower_bound"].get<double>());
+      }
       //opt.set_upper_bounds({10.,10.,10.,10.,10., 1.,1.,1.,1.,1.});
       //opt.set_lower_bounds({0.,0.,0.,0.,0.,-1.,-1.,-1.,-1.,-1.});
-    }
+
     opt.set_ftol_rel(opt_db["ftol_rel"]);
     opt.set_ftol_abs(opt_db["ftol_abs"]);
     opt.set_xtol_rel(opt_db["xtol_rel"]);

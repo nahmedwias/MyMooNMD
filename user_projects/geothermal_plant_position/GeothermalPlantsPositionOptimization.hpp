@@ -22,6 +22,7 @@ public:
   using FESpace = typename Template_names<d>::FESpace;
   using BoundaryConditionFunction = typename Template_names<d>::BoundaryConditionFunction;
   using BoundaryValuesFunction = typename Template_names<d>::BoundaryValuesFunction;
+  using FEFunction = typename Template_names<d>::FEFunction;
 
   constexpr static char required_database_name_TCD_GPPO[] = "TCD parameter database";
 
@@ -81,6 +82,30 @@ protected:
 
   /// @brief compute \f$ \hat J' \f$ using the adjoint solution and control
   void compute_derivative(const double * x, double* grad) const;
+
+  /// @brief
+  struct point_on_circle
+  {
+    std::array<double, d> coordinates;
+    int cell_index;
+    TBaseCell * cell;
+
+  };
+  std::vector<point_on_circle> punkte_zellen_usw;
+
+  /////////////////////////////////////////////////
+  /// @brief
+  struct sinks
+  {
+    sinks(double eps_delta_fct, double well_radius,
+                std::array<double, d> center, size_t Num_circle_points, TCollection* Coll);
+
+    std::vector<point_on_circle> meine_punkte;
+    std::array<double, d> center;
+
+    void find_average_and_min_along_circle(const FEFunction* function, double & average, double & min);
+  };
+
 
 };
 
