@@ -1,12 +1,13 @@
-/** ************************************************************************ 
+/** **************************************************************************** 
 *
 * @name       SnapshotsCollector
-* @brief      write snapshots (finite elements coefficients of the solution) into a file
+* @brief      write snapshots (finite elements coefficients of the solution)
+*             into a file
 *
 * @author     Swetlana Giere & Alfonso Caiazzo
 * @date       08.03.2017. Restarted on 15.1.2019
 *
-****************************************************************************/
+*******************************************************************************/
 
 
 #ifndef __SNAPSHOTSCOLLECTOR__
@@ -26,15 +27,15 @@
 
 using namespace std;
 
-class SnapshotsCollector{
-  
+class SnapshotsCollector
+{
   public:
     
     /** 
     * @brief constructor
     * 
     * The filename for storing snapshots is constructed as
-    * filename = db["snaps_directory"] + "/" + db["snaps_basename"] + "snap".
+    * filename = db["snaps_directory"] + "/" + db["snaps_basename"] + ".snap".
     * Then, the stream is created and stored as a member of the class.
     *
     */
@@ -62,7 +63,7 @@ class SnapshotsCollector{
     *
     */
     void write_data( const BlockVector &solution, size_t time_step=0);
-    
+
   private:
 
     /* stream for writing snapshots */

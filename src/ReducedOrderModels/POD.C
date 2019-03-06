@@ -49,7 +49,7 @@ void POD::read_snapshots() {
   // read snapshots from file
   string snap_filename = this->db["snaps_directory"].get<std::string>();
   snap_filename += "/";
-  snap_filename += this->db["snaps_filename"].get<std::string>();
+  snap_filename += this->db["snaps_basename"].get<std::string>();
 
   Output::print<1>("Reading snapshots from file: ", snap_filename, " ...");
 
