@@ -1,5 +1,6 @@
 #include "TimeConvectionDiffusionPOD.h"
 #include "Database.h"
+#include <sys/stat.h>
 
 
 #ifdef __2D__
@@ -14,6 +15,7 @@
 #include "ParFECommunicator3D.h"
 #endif
 
+/* ************************************************************************** */
 template <int d>
 ParameterDatabase TimeConvectionDiffusionPOD<d>::default_tcd_pod_database()
 {
@@ -28,27 +30,34 @@ ParameterDatabase TimeConvectionDiffusionPOD<d>::default_tcd_pod_database()
   return db;
 }
 
-
-/* ************************************************************************* */
+/* ************************************************************************** */
 template <int d>
-TimeConvectionDiffusionPOD<d>::TimeConvectionDiffusionPOD(
-    TCollection& coll, const ParameterDatabase& param_db)
- : TimeConvectionDiffusionPOD<d>(coll,
-                                 param_db, Example_TimeCD(param_db))
+TimeConvectionDiffusionPOD<d>::TimeConvectionDiffusionPOD(TCollection& coll,
+                                              const ParameterDatabase& param_db)
+  : TimeConvectionDiffusionPOD<d>(coll, param_db, Example_TimeCD(param_db))
 {
 }
-/* ************************************************************************* */
+
+/* ************************************************************************** */
 template <int d>
-TimeConvectionDiffusionPOD<d>::TimeConvectionDiffusionPOD(
-  TCollection& coll, const ParameterDatabase& param_db, 
-  const Example_TimeCD& ex)
- : POD(param_db), 
- fe_space(&coll, "space", "time_cd_pod space", ex.get_bc(0),
-          TDatabase::ParamDB->ANSATZ_ORDER),
- db(param_db), time_stepping_scheme(param_db), example(ex),
- outputWriter(param_db)
+TimeConvectionDiffusionPOD<d>::TimeConvectionDiffusionPOD(TCollection& coll,
+                                              const ParameterDatabase& param_db, 
+                                              const Example_TimeCD&    ex)
+  : POD(param_db), 
+    fe_space(&coll, "space", "time_cd_pod space", ex.get_bc(0),
+             TDatabase::ParamDB->ANSATZ_ORDER),
+    db(ParameterDatabase::get_default_pod_database()),
+    time_stepping_scheme(param_db),
+    example(ex),
+    outputWriter(param_db)
 {
+  db.merge(param_db, true);
   db.info();
+
+  // create directory db["pod_directory"]
+  std::string directory_name = this->db["pod_directory"].get<std::string>();
+  mkdir(directory_name.c_str(), 0777);
+  
 #ifdef __3D__
   this->gramian_matrix = BlockFEMatrix::CD3D(fe_space);
 #else
@@ -65,7 +74,7 @@ TimeConvectionDiffusionPOD<d>::TimeConvectionDiffusionPOD(
   this->outputWriter.add_fe_function(&this->fe_function);
 }
 
-/* ************************************************************************* */
+/* ************************************************************************** */
 template <int d>
 void TimeConvectionDiffusionPOD<d>::set_parameters()
 {
@@ -78,8 +87,9 @@ void TimeConvectionDiffusionPOD<d>::set_parameters()
     }
     else
     {
-      Output::warn<2>("The parameter problem_type doesn't correspond to Time_CD."
-          "It is now reset to the correct value for Time_CD (=2).");
+      Output::warn<2>("The parameter problem_type doesn't correspond to "
+                      "Time_CD. It is now reset to the correct value for "
+                      "Time_CD (=2).");
       db["problem_type"] = 2;
     }
   }
@@ -97,11 +107,13 @@ void TimeConvectionDiffusionPOD<d>::set_parameters()
   if(!db["space_discretization_type"].is("galerkin"))
     db["space_discretization_type"] = "galerkin";
 }
-/* ************************************************************************* */
+
+/* ************************************************************************** */
 template <int d>
 void TimeConvectionDiffusionPOD<d>::assemble_gramian()
 {
-  Output::print<1>("[pod_inner_product = l2]: Assembling the gramian matrix for POD computation...");
+  Output::print<1>("[pod_inner_product = l2]: "
+                   "Assembling the gramian matrix for POD computation...");
   //LocalAssembling_type type;
   //type = LocalAssembling_type::TCDMassOnly;
   
@@ -141,7 +153,8 @@ void TimeConvectionDiffusionPOD<d>::assemble_gramian()
   sqMat[0]->write("test.m");
 
 }
-/* ************************************************************************* */
+
+/* ************************************************************************** */
 template <int d> 
 void TimeConvectionDiffusionPOD<d>::output_problem_size_info() const
 {
@@ -183,7 +196,8 @@ void TimeConvectionDiffusionPOD<d>::output_problem_size_info() const
 #endif
   }
 }
-/* ************************************************************************* */
+
+/* ************************************************************************** */
 template <int d>
 void TimeConvectionDiffusionPOD<d>::compute_pod_basis()
 {
@@ -208,10 +222,12 @@ void TimeConvectionDiffusionPOD<d>::compute_pod_basis()
   }
   else
   {
-    ErrThrow("Unknown value of parameter 'pod_inner_product'. Choose euclidean or l2.");
+    ErrThrow("Unknown value of parameter 'pod_inner_product'. "
+             "Choose euclidean or l2.");
   }
 }
-/* ************************************************************************* */
+
+/* ************************************************************************** */
 template <int d>
 void TimeConvectionDiffusionPOD<d>::output()
 {

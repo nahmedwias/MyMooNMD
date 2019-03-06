@@ -19,7 +19,7 @@ SnapshotsCollector::SnapshotsCollector(const ParameterDatabase& param_db):
   this->db.merge(param_db, true);
   snapshot_filename =  this->db["snaps_directory"].get<std::string>() + "/";
   snapshot_filename += this->db["snaps_basename"].get<std::string>();
-  snapshot_filename += ".snap";
+//  snapshot_filename += ".snap";
   
   if (db["write_snaps"])
   {

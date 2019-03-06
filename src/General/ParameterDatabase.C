@@ -1455,46 +1455,49 @@ ParameterDatabase ParameterDatabase::get_default_snapshots_database()
 
 ParameterDatabase ParameterDatabase::get_default_pod_database()
 {
-  Output::print<5>("Creating a default POD-ROM parameter database...");
-  ParameterDatabase db("Default ParMooN parameter database for POD-based ROM problems");
+  ParameterDatabase db("Default ParMooN parameter database for "
+                       "POD-based ROM problems");
 
   db.add("pod_directory", ".",
-      	         "This directory is where the POD basis and Co. are written. This "
-      	         "directory will be created, if it does not exist already. Files in "
-      	         "this directory will be overwritten without any warning.");
+         "This directory is where the POD basis and Co. are written. This "
+         "directory will be created, if it does not exist already. Files in "
+         "this directory will be overwritten without any warning.");
   
   db.add("pod_basename", "parmoon_pod",
-	 "Basename for pod basis and related files."
-	 " When writing the POD basis, the basis elements will be written into pod_basename.pod, "
-	 " the average (if needed) into pod_basename.mean"
-	 " When reading the basis, the program expect to find files ending with .pod and .mean");
+         "Basename for pod basis and related files. When writing the POD "
+         "basis, the basis elements will be written into pod_basename.pod, "
+         "the average (if needed) into pod_basename.mean. When reading the "
+         "basis, the program expect to find files ending with .pod and .mean");
 
   db.add("pod_rank", (size_t) 0,
-      	         "This integer specifies the dimension of the POD space to be computed. "
-      		 "If pod_rank <= 0, then all possible POD modes will be computed. ");
+         "This integer specifies the dimension of the POD space to be computed."
+         " If pod_rank <= 0, then all possible POD modes will be computed.");
 
   db.add("pod_fluctuations_only", true,
-	 "This is the flag whether the POD basis should be computed only "
-	 " fluctuation part (without average) of the snapshots "
-	 " (also central trajectory method).",
-	 {true,false});
+         "This is the flag whether the POD basis should be computed only "
+         "fluctuation part (without average) of the snapshots "
+         "(also central trajectory method).",
+         {true,false});
 
   db.add("pod_inner_product", "euclidean",
-               "Specification of the inner product which is used to compute POD basis."
-  		  "Besides default value, only 'l2' is possible at the moment.",
-  		  {"euclidean", "L2"});
+         "Specification of the inner product which is used to compute POD "
+         "basis. Besides default value, only 'l2' is possible at the moment.",
+         {"euclidean", "L2"});
 
   db.add("rom_init_regularized", false,
-	 "This is the flag whether the the ROM initial condition should be regularized.",
-	 {true,false});
+         "This is the flag whether the the ROM initial condition should be "
+         "regularized.",
+         {true,false});
 
   db.add("differential_filter_width", 1.0,
-           "Filter width for the differential filter (Helmoltz equation) for the computation "
-           "of of the regularized ROM initial condition.",
-             0., 10.);
+         "Filter width for the differential filter (Helmoltz equation) for the "
+         "computation of of the regularized ROM initial condition.",
+         0., 10.);
 
   // Merge with other databases
-  db.merge(ParameterDatabase::default_output_database(), true);
+ //???/// db.merge(ParameterDatabase::default_output_database(), true);
+  // Merge with snapshots database
+  db.merge(ParameterDatabase::get_default_snapshots_database(), true);
 
   return db;
 }
