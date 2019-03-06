@@ -39,7 +39,7 @@ class SnapshotsCollector
     * Then, the stream is created and stored as a member of the class.
     *
     */
-    SnapshotsCollector( const ParameterDatabase& param_db );
+    SnapshotsCollector(const ParameterDatabase& param_db);
     
     /** 
     * @brief destructor closes the datafile
@@ -62,7 +62,7 @@ class SnapshotsCollector
     * @param time_step  count of the time step from the time loop (main program)
     *
     */
-    void write_data( const BlockVector &solution, size_t time_step=0);
+    void write_data(const BlockVector &solution, size_t time_step=0);
 
   private:
 
