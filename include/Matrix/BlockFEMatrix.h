@@ -103,6 +103,8 @@ class BlockFEMatrix : public BlockMatrix
      */
 #ifdef __2D__
     explicit BlockFEMatrix(const std::vector<const TFESpace2D*>& spaces);
+    BlockFEMatrix(std::vector< const TFESpace2D* > spaces_rows, 
+                    std::vector< const TFESpace2D* > spaces_cols);
 #elif __3D__
     explicit BlockFEMatrix(const std::vector<const TFESpace3D*>& spaces);
 #endif // 3D
@@ -284,6 +286,17 @@ class BlockFEMatrix : public BlockMatrix
     static BlockFEMatrix Mass_NSE2D_Type3( const TFESpace2D& velocity, const TFESpace2D& pressure);
     static BlockFEMatrix Mass_NSE2D_Type4( const TFESpace2D& velocity, const TFESpace2D& pressure);
 
+    /**
+     * Named constructor for the Projection matrix:
+     * 
+     * @param velocity the velocity finite element space
+     * @param projection the pvelocity projection space
+     * @param pressure the pressure finite element space
+     * @return A newly constructed block fe matrix
+     */
+    static BlockFEMatrix Projection_NSE2D(const TFESpace2D& velocity, 
+                                          const TFESpace2D& projection,
+                                          const TFESpace2D& pressure);
 #elif __3D__
     /**
      * @brief Named constructor for a block Matrix used in 3D convection-
