@@ -1269,6 +1269,19 @@ ParameterDatabase ParameterDatabase::parmoon_default_database()
          "will be written into a file.",
          {true,false});
 
+  db.add("compute_POD_basis", false,
+         "Compute the POD basis from snapshots. Snapshots have to be already "
+         "available in 'db[snaps_directory]/db[snaps_basename]', or can be "
+         "acquire by activating the parameter 'db[write_snaps]'.",
+         {true,false});
+
+  db.add("ROM_method", false,
+         "Solve the PDE using Reduced Order Modelling. The POD basis has "
+         "to be already available in 'db[pod_directory]/db[pod_basename].pod' "
+         "or can be computed by activating the parameter "
+         "'db[compute_POD_basis]'.",
+         {true,false});
+
   return db;
 }
 
