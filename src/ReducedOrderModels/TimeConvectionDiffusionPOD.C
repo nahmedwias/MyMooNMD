@@ -112,7 +112,7 @@ void TimeConvectionDiffusionPOD<d>::set_parameters()
 template <int d>
 void TimeConvectionDiffusionPOD<d>::assemble_gramian()
 {
-  Output::print<1>("[pod_inner_product = l2]: "
+  Output::print<1>("[pod_inner_product = L2]: "
                    "Assembling the gramian matrix for POD computation...");
   //LocalAssembling_type type;
   //type = LocalAssembling_type::TCDMassOnly;
@@ -130,7 +130,6 @@ void TimeConvectionDiffusionPOD<d>::assemble_gramian()
      assembles Mass as block[1] (block[0] is reserved for stiffness)
   **/
   auto block = this->gramian_matrix.get_blocks_uniquely()[0].get();
-  
   
   int nsqMat = 1;
   SquareMatrixD *sqMat[nsqMat];
@@ -201,7 +200,7 @@ void TimeConvectionDiffusionPOD<d>::output_problem_size_info() const
 template <int d>
 void TimeConvectionDiffusionPOD<d>::compute_pod_basis()
 {
-  if(this->db["pod_inner_product"].is("l2"))
+  if(this->db["pod_inner_product"].is("L2"))
   {
     this->assemble_gramian();
     //cout<<"norm: "<< gramian_matrix.get_blocks().at(0)->GetNorm()<<endl;exit(0);
@@ -215,15 +214,15 @@ void TimeConvectionDiffusionPOD<d>::compute_pod_basis()
     Output::print<1>("POD w.r.t euclidean inner product.");
     POD::write_pod(basename + ".euclidean.");
   }
-  else if(this->db["pod_inner_product"].is("l2"))
+  else if(this->db["pod_inner_product"].is("L2"))
   {
     Output::print<1>("POD w.r.t L2 inner product.");
-    POD::write_pod(basename +".l2.");
+    POD::write_pod(basename +".L2.");
   }
   else
   {
     ErrThrow("Unknown value of parameter 'pod_inner_product'. "
-             "Choose euclidean or l2.");
+             "Choose euclidean or L2.");
   }
 }
 
