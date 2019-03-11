@@ -21,4 +21,26 @@
 # will compile your project. The executable will be called parMooN_project_X
 # where 'X' is the build type, e.g. SEQUENTIAL.
 
-set(parmoon_tests ${parmoon_tests} PARENT_SCOPE)
+set(pres_robust "${PROJECT_SOURCE_DIR}/user_projects")
+
+include_directories(${pres_robust})
+
+#source files
+list(APPEND PR_ROBST_2D "${pres_robust}/PresRobustNavierStokes.cpp")
+list(APPEND PR_ROBST_2D "${pres_robust}/Example_NSPR_NSE2D.cpp")
+list(APPEND PR_ROBST_2D "${pres_robust}/BlockFEMatrixPr.cpp")
+list(APPEND PR_ROBST_2D "${pres_robust}/LocalAssemblingPR.cpp")
+list(APPEND PR_ROBST_2D "${pres_robust}/Extra_Routines_PR.cpp")
+# list(APPEND PR_ROBST_2D "${pres_robust}/Example_CoupledNS_Stress.cpp")
+
+
+add_library(PR_ROBST_LIB_2D STATIC ${PR_ROBST_2D})
+target_compile_definitions(PR_ROBST_LIB_2D PUBLIC -D__2D__)
+
+# Standard executable target.
+add_executable(nse2d_pr_rbst ${pres_robust}/NSE2D_PR_Rbst_ParMooN.cpp)
+set_target_properties(nse2d_pr_rbst PROPERTIES OUTPUT_NAME parMooN_nse2d_pr_rbst_${PARMOON_PARALLEL_TYPE})
+# Add the correct geometry flag to the target.
+target_compile_definitions(nse2d_pr_rbst PUBLIC -D__2D__)
+# Link in the required libraries.
+target_link_libraries(nse2d_pr_rbst PR_ROBST_LIB_2D parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
