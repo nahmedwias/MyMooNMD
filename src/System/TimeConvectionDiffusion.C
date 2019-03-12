@@ -306,6 +306,7 @@ void TimeConvectionDiffusion<d>::assemble()
     if(db["space_discretization_type"].is("supg"))
     {
       la_type = LocalAssembling_type::TCDStiffMassRhs;
+      assemble_both = true;
     }
     FEFunction *feFunction = &s.fe_function;
     LocalAssembling<d> la(this->db, la_type, &feFunction, example.get_coeffs());
