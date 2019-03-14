@@ -39,8 +39,8 @@ TimeConvectionDiffusionROM<d>::System_per_grid::System_per_grid(const Example_Ti
 }
 
 template<int d>
-TimeConvectionDiffusionROM<d>::TimeConvectionDiffusionROM(const TDomain& domain, 
-   const ParameterDatabase& param_db, const Example_TimeCD& ex)
+TimeConvectionDiffusionROM<d>::TimeConvectionDiffusionROM(const ParameterDatabase& param_db,
+							  const Example_TimeCD& ex)
 : ROM(param_db),
   db(default_tcd_rom_database()), solver(param_db),systems(), 
   example(ex), time_stepping_scheme(param_db), errors(5, 0.), outputWriter(param_db)
@@ -194,13 +194,13 @@ void TimeConvectionDiffusionROM<d>::assemble_and_reduce(LocalAssembling_type typ
       sqMatrices[0] = {reinterpret_cast<SquareMatrixD*>(block.at(0).get())};
       break;
     case LocalAssembling_type::TCDGradGradOnly:
-      if (db["pod_inner_product"].get<std::string>() == "l2")
+      if (db["pod_inner_product"].is("l2"))
       {
         sqMatrices.resize(1);
         block = temp_matrix.get_blocks_uniquely();
         sqMatrices[0] = {reinterpret_cast<SquareMatrixD*>(block.at(0).get())};
       }
-      else if (db["pod_inner_product"].get<std::string>() == "eucl")
+      else if (db["pod_inner_product"].is("euclidean"))
       {
         Output::print<1>("For given parameter 'pod_inner_product' no assembling needed.");
         return;
@@ -313,7 +313,8 @@ void TimeConvectionDiffusionROM<d>::output(int time_step)
     
     double min, max;
     s.fe_function.MinMax(min,max);
-    std::string error_file = db["outfile"].get<std::string>() + ".errors";
+    std::string outfile = db["outfile"];
+    std::string error_file = outfile + ".errors";
     /** @todo Add additional functionality in namespace Output to write information
      * into seond (or generally several) output file (like here Output::redirect(error_file)) */
     
