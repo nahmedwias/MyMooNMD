@@ -223,8 +223,8 @@ void TimeConvectionDiffusionROM<d>::assemble_and_reduce(LocalAssembling_type typ
   for(auto sm : sqMatrices)
     sm->reset();
   // local assembling 
-  TFEFunction2D * pointer_to_function = &systems.front().fe_function;
-  LocalAssembling2D la(db, type, &pointer_to_function, example.get_coeffs());
+  FEFunction *pointer_to_function = &systems.front().fe_function;
+  LocalAssembling<d> la(db, type, &pointer_to_function, example.get_coeffs());
   // boundary conditions and boundary values
   auto * bc = _fe_space_->get_boundary_condition();
   auto * bv =example.get_bd(0);
@@ -291,10 +291,15 @@ void TimeConvectionDiffusionROM<d>::output(int time_step)
     TAuxParam2D aux;
     MultiIndex2D all_derivatives[3] = { D00, D10, D01 };
 #endif
-    const FESpace * _fe_space_ = &s.space;  
+    const FESpace * _fe_space_ = &s.space;
+#ifdef __2D__
     s.fe_function.GetErrors(this->example.get_exact(0), 3, all_derivatives, 4,
-                           SDFEMErrors, this->example.get_coeffs(), &aux, 1,
-                           &_fe_space_, loc_e);
+			    SDFEMErrors, this->example.get_coeffs(), &aux, 1,
+			    &_fe_space_, loc_e);
+#else
+    Output::print(" ** WARNING: I cannot compute errors. ");
+    Output::print("THe function SDFEMErrors is not implemented in 3D **");
+#endif
     
     Output::print<1>("time: ", time_stepping_scheme.current_time_);
     Output::print<1>("  L2: ", loc_e[0]);
@@ -337,3 +342,4 @@ template class TimeConvectionDiffusionROM<3>;
 template class TimeConvectionDiffusionROM<2>;
 #endif
 /**************************************************************************** */
+ 
