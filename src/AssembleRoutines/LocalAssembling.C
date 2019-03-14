@@ -49,6 +49,8 @@ std::ostream& operator<<(std::ostream& out, const LocalAssembling_type value)
     PROCESS_VAL( Darcy );
     PROCESS_VAL(TCDStiffMassRhs);
     PROCESS_VAL(TCDMassOnly);
+    PROCESS_VAL(TCDGradGradOnly);
+    PROCESS_VAL(TCDRhsOnly);
     PROCESS_VAL(NSE3D_Linear);
     PROCESS_VAL(NSE3D_NonLinear);
     PROCESS_VAL(TNSE3D_LinGAL);
@@ -399,6 +401,8 @@ LocalAssembling<d>::LocalAssembling(ParameterDatabase param_db,
     case LocalAssembling_type::TCDStiffMassRhs:
     case LocalAssembling_type::TCDStiffRhs:
     case LocalAssembling_type::TCDMassOnly:
+    case LocalAssembling_type::TCDGradGradOnly:
+    case LocalAssembling_type::TCDRhsOnly:
       this->set_parameters_for_tcd(type);
      break;    
     ///////////////////////////////////////////////////////////////////////////
@@ -913,6 +917,14 @@ void LocalAssembling<d>::set_parameters_for_tcd(LocalAssembling_type type)
     case LocalAssembling_type::TCDMassOnly:
       N_Rhs = 0;
       this->local_assemblings_routines.push_back(TCDMassPOD<d>);
+      break;
+    case LocalAssembling_type::TCDGradGradOnly:
+      N_Rhs = 0;
+      this->local_assemblings_routines.push_back(GradGrad<d>);
+      break;
+    case LocalAssembling_type::TCDRhsOnly:
+      N_Matrices = 0;
+      this->local_assemblings_routines.push_back(TCDRhs<d>);
       break;
       
     default:
