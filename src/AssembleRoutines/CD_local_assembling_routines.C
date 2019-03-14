@@ -108,6 +108,19 @@ void TCDMassPOD(double Mult, double *, double *, double, double**OrigValues,
 }
 
 template<int d>
+void GradGrad(double Mult, double *, double *, double, double**OrigValues, 
+             int *N_BaseFuncts, double ***LocMatrices, double **)
+{
+  double **Matrix = LocMatrices[0];
+  int N_ = N_BaseFuncts[0];
+  double * u  =OrigValues[0];
+  
+  for(int i=0; i<N_; i++)
+    for(int j=0; j<N_; j++)
+      Matrix[i][j] += Mult * u[i] * u[j];
+}
+
+template<int d>
 void TCDRhs(double Mult, double* coeff, double*, double, double ** OrigValues, 
             int* N_BaseFuncts, double ***, double ** LocRhs)
 {
@@ -317,6 +330,9 @@ template void TCDMass<2>(
 template void TCDMassPOD<2>(
   double Mult, double *coeff, double *param, double hK, double**OrigValues, 
   int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
+template void GradGrad<2>(
+  double Mult, double *coeff, double *param, double hK, double**OrigValues, 
+  int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
 template void TCDRhs<2>(
   double Mult, double *coeff, double *param, double hK, double**OrigValues, 
   int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
@@ -341,6 +357,9 @@ template void TCDMass<3>(
   double Mult, double *coeff, double *param, double hK, double**OrigValues, 
   int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
 template void TCDMassPOD<3>(
+  double Mult, double *coeff, double *param, double hK, double**OrigValues, 
+  int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
+template void GradGrad<3>(
   double Mult, double *coeff, double *param, double hK, double**OrigValues, 
   int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
 template void TCDRhs<3>(
