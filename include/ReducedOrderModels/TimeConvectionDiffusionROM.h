@@ -42,8 +42,8 @@ public:
    *                     assemble,...)
    * @param[in] example The example which is to be calculated.
    */
-  TimeConvectionDiffusionROM(const TDomain& domain, const ParameterDatabase& param_db,
-                   const Example_TimeCD& ex);
+  TimeConvectionDiffusionROM(const ParameterDatabase& param_db,
+			     const Example_TimeCD& ex);
   
   /** @brief return a database with all parameters necessary for 
    * time-dependent convection-diffusion (tcd) probems
