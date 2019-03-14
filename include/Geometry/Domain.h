@@ -162,11 +162,6 @@ class TDomain
 
 #endif
 
-#ifdef __2D__
-    /** @brief set boundary parameters and cell shape according to
-        possibly moving vertices */
-    void CorrectParametersAndShapes();
-#endif
 
     /** @brief Reads in boundary parameterization in ".PRM" file format
      *
@@ -294,10 +289,6 @@ class TDomain
     int Refine();
     /** @brief refine all cells regular */
     int RegRefineAll();
-    /** @brief refine all cells in subgrid ID regular */
-    int RegRefineSub(int ID);
-    /** @brief refine only in one direction */
-    int RefineallxDirection();
     /** @brief generate a 1-regular grid */
     int Gen1RegGrid();
     /** @brief refine the finest grid according the given indicator function */
@@ -306,11 +297,7 @@ class TDomain
         grid with conforming closures */
     int MakeConfClosure();
 
-    /** @brief refine the finest grid according a given error estimate */
-    int RefineByErrorEstimator(TCollection *Collection,double *eta_K,
-                               double eta_max,double tolerance,
-                               bool ConfClosure);
-
+    
     /** @brief refine/derefine algorithm for a 1-regular grid, geolevel of all
         cells on the finest grid is between MinLevel and MaxLevel */
     void Refine1Reg(int MinLevel, int MaxLevel);
