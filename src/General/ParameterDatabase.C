@@ -1228,10 +1228,10 @@ void ParameterDatabase::info(bool only_names) const
 ParameterDatabase ParameterDatabase::parmoon_default_database()
 {
   ParameterDatabase db("default ParMooN parameter database");
-  
+
   // add parameters which are needed by all ParMooN programs and don't belong
   // anywhere else.
-  
+
   db.add("outfile", "default_parmoon_outfile.out",
          "This is the file where all output of ParMooN is (usually) written "
          "to. In general ParMooN produces text output on the console as well "
@@ -1252,15 +1252,15 @@ ParameterDatabase ParameterDatabase::parmoon_default_database()
          0u, 7u);
 
   db.add("output_write_ps", false,
-	 "Draw a postscript file of the domain. This only works in two space "
-	 "dimensions. Usually this is used in the main program.",
-	 {true,false});
+         "Draw a postscript file of the domain. This only works in two space "
+         "dimensions. Usually this is used in the main program.",
+         {true,false});
 
   db.add("verbosity", 1u,
          "Set the verbosity of ParMooN. The higher the number, the more will "
          "output you will get. Such output will be written to console and the "
          "'outfile'.", 1u, 5u);
-  
+
   db.add("script_mode", false, "Set ParMooN into script mode. This means all "
          "output is written to the outfile and not to console.");
 
@@ -1338,69 +1338,70 @@ ParameterDatabase ParameterDatabase::default_output_database()
   ParameterDatabase db("default ParMooN output control parameters database");
 
   db.add("output_write_vtk", false,
-	 "This parameter can control, whether an output method"
-	 "of a system class will produce VTK output or not.",
-	 {true,false});
-    
+         "This parameter can control, whether an output method"
+         "of a system class will produce VTK output or not.",
+         {true,false});
+
   db.add("output_write_vtu", false,
-			  "This parameter can control, whether an output method"
-	 "of a system class will produce VTU output or not.",
-			  {true,false});
+         "This parameter can control, whether an output method"
+         "of a system class will produce VTU output or not.",
+         {true,false});
 
-	  db.add("output_write_case", false,
-			  "This parameter can control, whether an output method"
-			  "of a system class will produce CASE output or not.",
-			  {true,false});
+  db.add("output_write_case", false,
+         "This parameter can control, whether an output method"
+         "of a system class will produce CASE output or not.",
+         {true,false});
 
-	  db.add("output_compute_errors", true,
-	         "Do or do not compute errors after computing a solution. This makes "
-	         "much sense if an analytical solution is known. If not then it is "
-	         "often simply set to zero and computing errors then means computing "
-	         "norms, e.g. the L^2-norm of the solution.",
-			 {true,false});
-	  ///@todo change this to output_directory
-	  db.add("output_vtk_directory", ".",
-	         "This directory is where the output is written. This "
-	         "directory will be created, if it does not exist already. Files in "
-	         "this directory will be overwritten without any warning.");
+  db.add("output_compute_errors", true,
+         "Do or do not compute errors after computing a solution. This makes "
+         "much sense if an analytical solution is known. If not then it is "
+         "often simply set to zero and computing errors then means computing "
+         "norms, e.g. the L^2-norm of the solution.",
+         {true,false});
 
-	  db.add("output_basename", "parmoon",
-	         "This string is prepended to most files written by ParMooN. "
-	         "This includes also vtk- and case-files");
+  ///@todo change this to output_directory
+  db.add("output_vtk_directory", ".",
+         "This directory is where the output is written. This "
+         "directory will be created, if it does not exist already. Files in "
+         "this directory will be overwritten without any warning.");
 
-	  db.add("steps_per_output", (size_t)1,
-	         "This integer specifies how many (time) steps are performed "
-		 "before writing the results ");
-	  
-	  db.add("continue_output_after_restart", false,
-		"This parameter, when true, allows the output numbering "
-		"to continue after a simulation restart, which is often a "
-		"desirable behavior. Otherwise, it behaves as if the "
-		"initial time was 0, and starts the numbering at 0, leading "
-		"sometimes to overwritting existing files.", 
-		 {true,false});
-	 
-          db.add("output_compute_time_average", false,
-                 "Do or do not compute time average of the solution.",
-                 {true,false});
+  db.add("output_basename", "parmoon",
+         "This string is prepended to most files written by ParMooN. "
+         "This includes also vtk- and case-files");
 
-          db.add("output_along_line", false,
-                 "Do or do not write the solution along lines, "
-                 "according to the lines defined in the nested database used "
-                 "by the class LinesEval, see EvalTools.h",
-                 {true,false});
+  db.add("steps_per_output", (size_t)1,
+         "This integer specifies how many (time) steps are performed "
+         "before writing the results ");
 
-          db.add("start_time_averaging_at", 0.,
-                 "Time at which the time averaging will start.",
-                 0., std::numeric_limits<double>::max());
+  db.add("continue_output_after_restart", false,
+         "This parameter, when true, allows the output numbering "
+         "to continue after a simulation restart, which is often a "
+         "desirable behavior. Otherwise, it behaves as if the "
+         "initial time was 0, and starts the numbering at 0, leading "
+         "sometimes to overwritting existing files.", 
+         {true,false});
 
-	  db.add("output_write_exact_solution", false,
-		 " If set to true, this parameter allows to write the exact solution "
-		 " into the vtk or case output file. "
-		 " Note: the exact solution must be specified in the example file",
-		 {true,false});
-	  
-	  return db;
+  db.add("output_compute_time_average", false,
+         "Do or do not compute time average of the solution.",
+         {true,false});
+
+  db.add("output_along_line", false,
+         "Do or do not write the solution along lines, "
+         "according to the lines defined in the nested database used "
+         "by the class LinesEval, see EvalTools.h",
+         {true,false});
+
+  db.add("start_time_averaging_at", 0.,
+         "Time at which the time averaging will start.",
+         0., std::numeric_limits<double>::max());
+
+  db.add("output_write_exact_solution", false,
+         "If set to true, this parameter allows to write the exact solution "
+         "into the vtk or case output file. "
+         "Note: the exact solution must be specified in the example file",
+         {true,false});
+
+  return db;
 }
 
 ParameterDatabase ParameterDatabase::default_solution_in_out_database()
@@ -1409,108 +1410,42 @@ ParameterDatabase ParameterDatabase::default_solution_in_out_database()
 
   // to read or not to read
   db.add("read_initial_solution", false, "Choose true if the initial "
-      "solution is given in a binary file. Do not forget to specify "
-      "'initial_solution_file' in that case, too.", {true, false});
+         "solution is given in a binary file. Do not forget to specify "
+         "'initial_solution_file' in that case, too.", {true, false});
 
   // from which file to read
-  db.add("initial_solution_file", "my_solution_in.txt", "If 'read_initial_solution' is "
-      "set to 'true', this parameter determines from which binary file to read "
-      "the initial solution. That file should be prodcued by a former run of the"
-      "same program, using the same finite element space.");
+  db.add("initial_solution_file", "my_solution_in.txt",
+         "If 'read_initial_solution' is set to 'true', this parameter "
+         "determines from which binary file to read the initial solution. That "
+         "file should be prodcued by a former run of the same program, using "
+         "the same finite element space.");
 
   // to write or not to write
   db.add("write_solution_binary", false, "Choose true if the computed solution "
-      " should be written out to a file in a binary format. This is helpful if"
-      " you plan to read it in as initial solution later. Do not forget to specify"
-      " 'write_solution_binary_all_n_steps' for the output interval "
-      " and 'write_solution_binary_file', the file path and name.", {true,false});
+         "should be written out to a file in a binary format. This is helpful "
+         "if you plan to read it in as initial solution later. Do not forget "
+         "to specify 'write_solution_binary_all_n_steps' for the output "
+         "interval and 'write_solution_binary_file', the file path and name.",
+         {true,false});
 
   // write all n steps
-  db.add("write_solution_binary_all_n_steps", 1u, "Determine at which interval a "
-      "backup solution should be written to the file 'write_solution_binary_file'. "
-      "The number refers to the number of timesteps, i.e., at a constant time "
-      "step length of 0.01s and this paramter set to 10, the current solution "
-      "will be written into the file each 0.1s.", 1u, 1000000u);
+  db.add("write_solution_binary_all_n_steps", 1u, "Determine at which interval "
+         "a backup solution should be written to the file "
+         "'write_solution_binary_file'. The number refers to the number of "
+         "timesteps, i.e., at a constant time step length of 0.01s and this "
+         "paramter set to 10, the current solution will be written into the "
+         "file each 0.1s.", 1u, 1000000u);
 
   // into which file to write
-  db.add("write_solution_binary_file", "parmoon_solution_binary", "If "
-      "'write_solution_binary' is set to 'true', this parameter sets the name"
-      " (and path) of the file to write the solution into.");
+  db.add("write_solution_binary_file", "parmoon_solution_binary",
+         "If 'write_solution_binary' is set to 'true', this parameter sets the "
+         "name (and path) of the file to write the solution into.");
 
   // whether the file should be overwritten every time
-  db.add("overwrite_solution_binary", false, " Choose true, if the solution binary "
-		 "should be overwritten every time. If it stays false, a new file will be written"
-		  "every time, with the current time added to the filename.", {true, false} );
-
-  return db;
-}
-
-ParameterDatabase ParameterDatabase::get_default_snapshots_database()
-{
-  ParameterDatabase db("Default ParMooN parameter database for storing "
-                       "snapshots");
-
-  db.add("snaps_directory", ".",
-         "This directory is where the snapshots will be written. This "
-         "directory will be created, if it does not exist already. Files in "
-         "this directory will be overwritten without any warning.");
-
-  db.add("snaps_basename", "parmoon_snapshots",
-         "Basename for file where the snapshots are stored.");
-
-  db.add("steps_per_snap", (size_t) 5,
-         "This integer specifies how many time steps are performed "
-         "before a snapshot has to be written into file.");
-  return db;
-}
-
-
-
-ParameterDatabase ParameterDatabase::get_default_pod_database()
-{
-  ParameterDatabase db("Default ParMooN parameter database for "
-                       "POD-based ROM problems");
-
-  db.add("pod_directory", ".",
-         "This directory is where the POD basis and Co. are written. This "
-         "directory will be created, if it does not exist already. Files in "
-         "this directory will be overwritten without any warning.");
-  
-  db.add("pod_basename", "parmoon_pod",
-         "Basename for pod basis and related files. When writing the POD "
-         "basis, the basis elements will be written into pod_basename.pod, "
-         "the average (if needed) into pod_basename.mean. When reading the "
-         "basis, the program expect to find files ending with .pod and .mean");
-
-  db.add("pod_rank", (size_t) 0,
-         "This integer specifies the dimension of the POD space to be computed."
-         " If pod_rank <= 0, then all possible POD modes will be computed.");
-
-  db.add("pod_fluctuations_only", true,
-         "This is the flag whether the POD basis should be computed only "
-         "fluctuation part (without average) of the snapshots "
-         "(also central trajectory method).",
-         {true,false});
-
-  db.add("pod_inner_product", "euclidean",
-         "Specification of the inner product which is used to compute POD "
-         "basis. Besides default value, only 'l2' is possible at the moment.",
-         {"euclidean", "L2"});
-
-  db.add("rom_init_regularized", false,
-         "This is the flag whether the the ROM initial condition should be "
-         "regularized.",
-         {true,false});
-
-  db.add("differential_filter_width", 1.0,
-         "Filter width for the differential filter (Helmoltz equation) for the "
-         "computation of of the regularized ROM initial condition.",
-         0., 10.);
-
-  // Merge with other databases
- //???/// db.merge(ParameterDatabase::default_output_database(), true);
-  // Merge with snapshots database
-  db.merge(ParameterDatabase::get_default_snapshots_database(), true);
+  db.add("overwrite_solution_binary", false, " Choose true, if the solution "
+         "binary should be overwritten every time. If it stays false, a new "
+         "file will be written every time, with the current time added to the "
+         "filename.", {true, false} );
 
   return db;
 }

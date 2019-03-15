@@ -67,10 +67,12 @@ class TimeConvectionDiffusionPOD : public POD
                                const ParameterDatabase& param_db, 
                                const Example_TimeCD&    ex);
 
-    /** @brief return a database with all parameters necessary for 
+    /** TODO: adapt comment (if more than tcd)
+    * @brief return a database with all parameters necessary for
     * time-dependent convection-diffusion (tcd) probems
     */
-    static ParameterDatabase default_tcd_pod_database();
+    static ParameterDatabase set_pod_basis_database(
+                                             const ParameterDatabase& param_db);
 
     /**
     * @brief Compute POD basis

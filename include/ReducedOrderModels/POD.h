@@ -47,6 +47,12 @@ class POD
     */
     ~POD();
 
+    /**
+     * Creates a database filled with default parameters. This database will
+     * contain all necessary parameters for the POD.
+     */
+    static ParameterDatabase default_pod_database();
+
     /** 
     * @brief set gramian matrix (matrix describing inner product for POD)
     * 

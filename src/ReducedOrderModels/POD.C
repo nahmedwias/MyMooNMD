@@ -10,6 +10,7 @@
 *******************************************************************************/
 
 #include <POD.h>
+#include <SnapshotsCollector.h>
 
 extern "C"
 {
@@ -18,11 +19,46 @@ extern "C"
 }
 
 /** ***************************************************************************/
+ParameterDatabase POD::default_pod_database()
+{
+  ParameterDatabase db("Default ParMooN parameter database for "
+                       "POD-based ROM problems");
 
+  db.add("pod_directory", ".",
+         "This directory is where the POD basis and Co. are written. This "
+         "directory will be created, if it does not exist already. Files in "
+         "this directory will be overwritten without any warning.");
+  
+  db.add("pod_basename", "parmoon_pod",
+         "Basename for pod basis and related files. When writing the POD "
+         "basis, the basis elements will be written into pod_basename.pod, "
+         "the average (if needed) into pod_basename.mean. When reading the "
+         "basis, the program expect to find files ending with .pod and .mean");
+
+  db.add("pod_rank", (size_t) 0,
+         "This integer specifies the dimension of the POD space to be computed."
+         " If pod_rank <= 0, then all possible POD modes will be computed.");
+
+  db.add("pod_fluctuations_only", true,
+         "This is the flag whether the POD basis should be computed only "
+         "fluctuation part (without average) of the snapshots "
+         "(also central trajectory method).",
+         {true,false});
+
+  db.add("pod_inner_product", "euclidean",
+         "Specification of the inner product which is used to compute POD "
+         "basis. Besides default value, only 'l2' is possible at the moment.",
+         {"euclidean", "L2"});
+
+  // Merge with snapshots database needed to get the path of the snapshots
+  db.merge(SnapshotsCollector::default_snapshots_database(), true);
+
+  return db;
+}
 
 /** ***************************************************************************/
 POD::POD(const ParameterDatabase& param_db) :
-  db(ParameterDatabase::get_default_pod_database()),
+  db(POD::default_pod_database()),
   length(0),
   rank(0),
   length_snaps(0),
@@ -32,7 +68,7 @@ POD::POD(const ParameterDatabase& param_db) :
   eigs(NULL)
 {
   this->db.merge(param_db, true);
-  rank = db["pod_rank"];
+  rank = this->get_rank();
   //TODO set gramian_mat, snaps_mat, pod_basis, snaps_mean to zero
 }
 
@@ -57,12 +93,12 @@ void POD::read_snapshots()
 //Add check warning
   std::vector < std::vector<double> > tmp_snaps;
   read_data( snap_filename, tmp_snaps);
-  
+
   this->length_snaps = tmp_snaps[0].size(); //total dof
   this->number_snaps = tmp_snaps.size();
-  
+
   this->snaps_mat.resize(this->length_snaps,this->number_snaps);
-  
+
   // store snapshots into member matrix snaps_mat 
   for(int i=0; i<this->number_snaps;i++)
   {
@@ -71,7 +107,7 @@ void POD::read_snapshots()
       this->snaps_mat(j,i)=tmp_snaps[i][j];
     }
   }
-  
+
   Output::print<1>("... done");
   Output::print<1>("  * Length of snapshots : ", this->length_snaps);
   Output::print<1>("  * Number of snapshots : ", this->number_snaps);
@@ -86,7 +122,7 @@ void POD::compute_basis()
 
   this->snaps_mean.resize(this->length_snaps);
   this->snaps_mean.clear();
-  
+
   if( this->db["pod_fluctuations_only"] )
   {
     Output::print<1>("POD will be computed from fluctuating part of "
@@ -103,7 +139,7 @@ void POD::compute_basis()
 
   ublas::vector<double> vec_eig, vec_Seig;
   int max_rank;
-  
+
   /* parameters for LAPACK dsyev */
   double** snaps;
   double* work;
@@ -120,7 +156,7 @@ void POD::compute_basis()
 
   /* array for eigenvalues */
   this->eigs = new double[ this->number_snaps ];
-  
+
   snaps = new double*[ this->number_snaps ];
   snaps[ 0 ] = new double[ this->number_snaps*number_snaps ];
 
@@ -135,8 +171,8 @@ void POD::compute_basis()
     {
       snaps[ j ][ i ] = autocorr_mat( i, j );
     }
-  } 
-  
+  }
+
   Output::print<1>("Calling lapack... ");
   lwork = -1;
   dsyev_( &arg1, &arg2, &n, *snaps, &n, this->eigs, &wkopt, &lwork, &info );
@@ -149,7 +185,7 @@ void POD::compute_basis()
   {
     ErrThrow("The algorithm failed to compute eigenvalues.");
   }
-  
+
   for( int i=this->number_snaps-1; i >=0 ; i-- )
   {
     if( this->eigs[ i ] > this->eigen_threshold )
@@ -157,7 +193,7 @@ void POD::compute_basis()
       this->valid_eigs ++;
     }
   }
-  
+
   /* check the rank of the pod basis */
   if(this->rank<=0)
   {
@@ -179,7 +215,7 @@ void POD::compute_basis()
 
   for( int i = this->number_snaps-1; (i >= this->number_snaps - this->rank)
                                      && (i >= 0) ; i-- )
-  { 
+  {
     int count = this->number_snaps - 1 - i;
     for( int j = 0; j < this->number_snaps ; j++ )
     {
@@ -190,14 +226,14 @@ void POD::compute_basis()
     {
       this->pod_basis( j, count ) = vec_Seig( j );
     }
-  } 
+  }
   for( int i= 0 ; i < this->number_snaps/2 ; i++ )
   {
     double help = this->eigs[ i ];
     this->eigs[ i ] = this->eigs[ this->number_snaps-1-i ] ;
     this->eigs[ this->number_snaps-1-i ] = help;
   }
-  
+
   this->length = this->length_snaps;
   delete [] *snaps;
   delete [] snaps;
@@ -319,7 +355,7 @@ void POD::read_basis() {
     double value;
     istringstream iss(line);
     while (iss >> value)
-    {  
+    {
       data.push_back(value);
     }
     tmp_basis.push_back(data);
@@ -375,7 +411,7 @@ void POD::write_data( ublas::matrix<double> &mat, std::string filename)
   ofile.close();
 }
 
-/* used only internally by the class */
+/** ***************************************************************************/
 void POD::write_averages( string basename )
 {
   std::string avr_filename = this->db["pod_directory"].get<std::string>();
@@ -390,7 +426,7 @@ void POD::write_averages( string basename )
              " could not be created.");
   }
   ofile << setprecision( 12 );
-  
+
   if(this->snaps_mean.size()!=this->length)
   {
     ErrThrow( "Error: Vector for averages of snapshots has the wrong length!" );
@@ -404,7 +440,8 @@ void POD::write_averages( string basename )
 }
 
 /** ***************************************************************************/
-void POD::write_eigenvalues( string basename ) {
+void POD::write_eigenvalues( string basename )
+{
   std::string eig_filename = this->db["pod_directory"].get<std::string>();
   eig_filename += "/";
   eig_filename += basename;
@@ -433,7 +470,7 @@ void POD::write_eigenvalues( string basename ) {
   for( int i = 0 ; i < min(no_eigen,valid_eigen); i++ )
   {
     cumulative += this->eigs[ i ] / sum_eigen;
-    ofile << i+1 << " "<< this->eigs[ i ] << " \t" << cumulative << endl;
+    ofile << i+1 << " " << this->eigs[ i ] << " " << cumulative << endl;
   }
   ofile.close();
 }
@@ -484,7 +521,7 @@ void POD::decompose_snaps()
   {
     ublas::matrix_column<ublas::matrix<double>> snap_column(this->snaps_mat,j);
     snap_column -= this->snaps_mean;
-  }     
+  }
 }
 
 /** ***************************************************************************/
@@ -559,7 +596,7 @@ void POD::read_data( string _filename, vector<double> &data)
     double value;
     istringstream iss(line);
     while (iss >> value)
-    {  
+    {
       data.push_back(value);
     }
   }

@@ -35,17 +35,21 @@ class SnapshotsCollector
     * @brief constructor
     * 
     * The filename for storing snapshots is constructed as
-    * filename = db["snaps_directory"] + "/" + db["snaps_basename"] + ".snap".
+    * filename = db["snaps_directory"] + "/" + db["snaps_basename"].
     * Then, the stream is created and stored as a member of the class.
-    *
     */
     SnapshotsCollector(const ParameterDatabase& param_db);
     
     /** 
     * @brief destructor closes the datafile
-    * 
     */
     ~SnapshotsCollector();
+
+    /**
+     * Creates a database filled with default parameters. This database will
+     * contain all necessary parameters for the SnapshotsCollector.
+     */
+    static ParameterDatabase default_snapshots_database();
 
     /** 
     * @brief Write s snapshot into file
@@ -58,9 +62,9 @@ class SnapshotsCollector
     * Note: For 3D problems a binary format could be more appropriate to avoid
     * huge storage volume requirements (to be implemented!)
     * 
-    * @param solution   vector containing the FE coeffs of the solution (snapshot)
-    * @param time_step  count of the time step from the time loop (main program)
-    *
+    * @param solution  vector containing the finite elemenent coefficients of
+    *                  the solution (snapshot)
+    * @param time_step count of the time step from the time loop (main program)
     */
     void write_data(const BlockVector &solution, size_t time_step=0);
 

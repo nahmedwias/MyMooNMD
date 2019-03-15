@@ -17,16 +17,27 @@
 
 /* ************************************************************************** */
 template <int d>
-ParameterDatabase TimeConvectionDiffusionPOD<d>::default_tcd_pod_database()
+ParameterDatabase TimeConvectionDiffusionPOD<d>::set_pod_basis_database(
+                                              const ParameterDatabase& param_db)
 {
   ParameterDatabase db = ParameterDatabase::parmoon_default_database();
-  db.set_name("TimeConvectionDiffusionPOD parameter database");
-  
-  db.merge(ParameterDatabase::default_nonlinit_database());
-  db.merge(ParameterDatabase::default_output_database());
-  db.merge(AlgebraicFluxCorrection::default_afc_database());
+  db.set_name("Parameter database for POD basis computation");
+
   db.merge(LocalAssembling<d>::default_local_assembling_database(), true);
-  db.merge(TimeDiscretization::default_TimeDiscretization_database(), true);
+
+  db.merge(ParameterDatabase::default_output_database(), true);
+  db.merge(POD::default_pod_database(), true);
+  db.merge(param_db, false);
+
+  // change name to avoid overwritting standard FEM output
+  // TODO: unification between naming system (outfile, output_basename,
+  //       snaps_basename, pod_basename)
+  if(param_db["write_snaps"])
+  {
+    std::string output_pod_basename = db["output_basename"].get<std::string>()
+                                      + "_pod";
+    db["output_basename"].set(output_pod_basename, false);
+  }
   return db;
 }
 
@@ -46,18 +57,15 @@ TimeConvectionDiffusionPOD<d>::TimeConvectionDiffusionPOD(TCollection& coll,
   : POD(param_db), 
     fe_space(&coll, "space", "time_cd_pod space", ex.get_bc(0),
              TDatabase::ParamDB->ANSATZ_ORDER),
-    db(ParameterDatabase::get_default_pod_database()),
+    db(TimeConvectionDiffusionPOD<d>::set_pod_basis_database(param_db)),
     time_stepping_scheme(param_db),
     example(ex),
-    outputWriter(param_db)
+    outputWriter(db)
 {
-  db.merge(param_db, true);
-  db.info();
-
   // create directory db["pod_directory"]
   std::string directory_name = this->db["pod_directory"].get<std::string>();
   mkdir(directory_name.c_str(), 0777);
-  
+
 #ifdef __3D__
   this->gramian_matrix = BlockFEMatrix::CD3D(fe_space);
 #else
@@ -66,11 +74,11 @@ TimeConvectionDiffusionPOD<d>::TimeConvectionDiffusionPOD(TCollection& coll,
   this->pod_mode = BlockVector(this->gramian_matrix, false);
   this->fe_function = FEFunction(&this->fe_space, (char*)"c", (char*)"c",
                      this->pod_mode.get_entries(), this->pod_mode.length());
-  
+
   this->set_parameters();
-  
+
   this->output_problem_size_info();
-  
+
   this->outputWriter.add_fe_function(&this->fe_function);
 }
 
@@ -116,11 +124,11 @@ void TimeConvectionDiffusionPOD<d>::assemble_gramian()
                    "Assembling the gramian matrix for POD computation...");
   //LocalAssembling_type type;
   //type = LocalAssembling_type::TCDMassOnly;
-  
+
   FEFunction *feFunction = &this->fe_function;
   LocalAssembling<d> la(this->db, LocalAssembling_type::TCDMassOnly,
-			&feFunction, example.get_coeffs());
-  
+                        &feFunction, example.get_coeffs());
+
   using SquareMatrixD = typename Template_names<d>::SquareMatrixD;
   int nFESpaces = 1;
   const FESpace *fe_space = &this->fe_space;
@@ -130,7 +138,7 @@ void TimeConvectionDiffusionPOD<d>::assemble_gramian()
      assembles Mass as block[1] (block[0] is reserved for stiffness)
   **/
   auto block = this->gramian_matrix.get_blocks_uniquely()[0].get();
-  
+
   int nsqMat = 1;
   SquareMatrixD *sqMat[nsqMat];
   sqMat[0] = reinterpret_cast<SquareMatrixD*>(block);
@@ -138,7 +146,7 @@ void TimeConvectionDiffusionPOD<d>::assemble_gramian()
   sqMat[0]->reset();
   Output::print("HERE");
   int nRhs = 0;
-  
+
   auto * bound_cond = this->fe_space.get_boundary_condition();
   auto * bound_val = this->example.get_bd(0);
   Output::print("HERE");
@@ -147,7 +155,7 @@ void TimeConvectionDiffusionPOD<d>::assemble_gramian()
 #else
   Assemble3D(
 #endif
-    nFESpaces, &fe_space, nsqMat, sqMat, 0, nullptr, nRhs, nullptr, 
+    nFESpaces, &fe_space, nsqMat, sqMat, 0, nullptr, nRhs, nullptr,
     &fe_space, &bound_cond, &bound_val, la);
   sqMat[0]->write("test.m");
 
@@ -168,18 +176,18 @@ void TimeConvectionDiffusionPOD<d>::output_problem_size_info() const
   int root = 0; // root process number
   int my_rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-  
+
   int n_local_master_cells = coll->GetN_OwnCells();
   int n_cells;
   MPI_Reduce(&n_local_master_cells, &n_cells, 1, MPI_DOUBLE, MPI_SUM, root,
              MPI_COMM_WORLD);
-  
+
   double local_hmin, local_hmax;
   coll->GetHminHmax(&local_hmin, &local_hmax);
   double hMin, hMax;
   MPI_Reduce(&local_hmin, &hMin, 1, MPI_DOUBLE, MPI_MIN, root, MPI_COMM_WORLD);
   MPI_Reduce(&local_hmax, &hMax, 1, MPI_DOUBLE, MPI_MAX, root, MPI_COMM_WORLD);
-  
+
   auto par_comm = space->get_communicator();
   int n_dof  = par_comm.get_n_global_dof();
   if(my_rank == root)

@@ -12,8 +12,29 @@
 #include <sys/stat.h>
 
 /** ***************************************************************************/
+ParameterDatabase SnapshotsCollector::default_snapshots_database()
+{
+  ParameterDatabase db("Default ParMooN parameter database for storing "
+                       "snapshots");
+
+  db.add("snaps_directory", ".",
+         "This directory is where the snapshots will be written. This "
+         "directory will be created, if it does not exist already. Files in "
+         "this directory will be overwritten without any warning.");
+
+  db.add("snaps_basename", "parmoon_snapshots",
+         "Basename for file where the snapshots are stored.");
+
+  db.add("steps_per_snap", (size_t) 5,
+         "This integer specifies how many time steps are performed "
+         "before a snapshot has to be written into file.");
+
+  return db;
+}
+
+/** ***************************************************************************/
 SnapshotsCollector::SnapshotsCollector(const ParameterDatabase& param_db):
-                      db(ParameterDatabase::get_default_snapshots_database()),
+                      db(SnapshotsCollector::default_snapshots_database()),
                       snap_count(0)
 {
   this->db.merge(param_db, true);
