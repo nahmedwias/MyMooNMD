@@ -9,7 +9,11 @@
 
 namespace tnse_adjoint
 {
-void zero_solution(double x, double y, double *values);
+void zero_solution(double x, double y, 
+#ifdef __3D__     
+                   double z,
+#endif
+                   double *values);
 void adjoint_assembling(double, double*, double*, double, double**, int*,
                         double***, double**);
 void params_function(double *in, double *out);
@@ -21,12 +25,19 @@ bool restricted_curl_functional;
 
 
 constexpr double diagonal_scaling = 1.e30;
-void tnse_adjoint::zero_solution(double x, double y, double *values)
+void tnse_adjoint::zero_solution(double x, double y, 
+#ifdef __3D__     
+                   double z,
+#endif
+                   double *values)
 {
   values[0] = 0;
   values[1] = 0;
   values[2] = 0;
   values[3] = 0;
+#ifdef __3D__
+  values[4] = 0;
+#endif
 }
 
 template<int d>
@@ -42,10 +53,10 @@ TimeNavierStokes_Adjoint<d>::TimeNavierStokes_Adjoint(const TimeNavierStokes<d>&
     ErrThrow("Time_NSE2D_Adjoint::assemble_additional_terms not yet implemented for "
              "multigrid");
   }
-  std::vector<DoubleFunction*> adjoint_solutions(3, tnse_adjoint::zero_solution);
-  std::vector<DoubleFunction*> initial_conditions(3, tnse_adjoint::zero_solution);
-  std::vector<BoundaryValuesFunction*> adjoint_bd(3, BoundaryValueHomogenous);
-  this->TimeNavierStokes<d>::example = Example_TimeNSE2D(adjoint_solutions,
+  std::vector<DoubleFunction*> adjoint_solutions(d+1, tnse_adjoint::zero_solution);
+  std::vector<DoubleFunction*> initial_conditions(d+1, tnse_adjoint::zero_solution);
+  std::vector<BoundaryValuesFunction*> adjoint_bd(d+1, BoundaryValueHomogenous);
+  this->TimeNavierStokes<d>::example = Example_TimeNSE(adjoint_solutions,
                                        this->TimeNavierStokes<d>::example.boundary_conditions,
                                        adjoint_bd,
                                        this->TimeNavierStokes<d>::example.get_coeffs(),

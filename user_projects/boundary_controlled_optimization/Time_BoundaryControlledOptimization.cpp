@@ -132,12 +132,21 @@ Time_BoundaryControlledOptimization<d>::tnse_primal_solution::tnse_primal_soluti
   {
   // the fe functions must be newly created, because copying would mean
   // referencing the BlockVectors in 'other'.
+#ifdef __2D__
   u_at_timestep_t_ = TFEVectFunct2D(u_sol.GetFESpace2D(), "u", "u",
                                     vector_at_timestep_t_.block(0),
                                     vector_at_timestep_t_.length(0), 2);
   p_at_timestep_t_ = TFEFunction2D(p_sol.GetFESpace2D(), "p", "p",
                                    vector_at_timestep_t_.block(2),
                                    vector_at_timestep_t_ .length(2));
+#else
+  u_at_timestep_t_ = TFEVectFunct3D(u_sol.GetFESpace3D(), "u", "u",
+                                    vector_at_timestep_t_.block(0),
+                                    vector_at_timestep_t_.length(0), 3);
+  p_at_timestep_t_ = TFEFunction3D(p_sol.GetFESpace3D(), "p", "p",
+                                   vector_at_timestep_t_.block(3),
+                                   vector_at_timestep_t_ .length(3)); 
+#endif
   }
 
 template<int d>
@@ -148,7 +157,7 @@ Time_BoundaryControlledOptimization<d>::Time_BoundaryControlledOptimization(
    tnse_adjoint( tnse_primal, get_adjoint_database(param_db)),
    stokes_fe_vector(new BlockVector(tnse_primal.get_solution())),
    stokes_sol(
-     new TFEVectFunct2D(&tnse_primal.get_velocity_space(), "stokes_sol",
+     new FEVectFunct(&tnse_primal.get_velocity_space(), "stokes_sol",
                         "", stokes_fe_vector->get_entries(), 
                         tnse_primal.get_velocity_space().GetN_DegreesOfFreedom(),
                         2)),
@@ -207,7 +216,11 @@ Time_BoundaryControlledOptimization<d>::Time_BoundaryControlledOptimization(
         if(boundary_id == controlled_boundary_component)
         {
           // found a joint which has is on the boundary where the control is at
+#ifdef __2D__
           auto fe_descriptor = fe_space.get_fe(i_cell).GetFEDesc2D();
+#else
+          auto fe_descriptor = fe_space.get_fe(i_cell).GetFEDesc3D();
+#endif
           int n_joint_dof = fe_descriptor->GetN_JointDOF();
           auto local_joint_dofs = fe_descriptor->GetJointDOF(i_joint);
           auto local_to_global_dof = fe_space.GetGlobalDOF(i_cell);
@@ -235,7 +248,11 @@ Time_BoundaryControlledOptimization<d>::Time_BoundaryControlledOptimization(
         if(boundary_id != controlled_boundary_component)
         {
           // found a joint which has is on an other boundary
+#ifdef __2D__
           auto fe_descriptor = fe_space.get_fe(i_cell).GetFEDesc2D();
+#else
+          auto fe_descriptor = fe_space.get_fe(i_cell).GetFEDesc3D();
+#endif
           int n_joint_dof = fe_descriptor->GetN_JointDOF();
           auto local_joint_dofs = fe_descriptor->GetJointDOF(i_joint);
           auto local_to_global_dof = fe_space.GetGlobalDOF(i_cell);
@@ -375,12 +392,12 @@ void Time_BoundaryControlledOptimization<d>::apply_control_and_solve(const doubl
   else
   {///interpolate initial condition from the example
     Output::info<5>("Initial Solution", "Interpolating initial solution from example.");
-    TFEFunction2D * u1 = tnse_primal.get_velocity_component(0);
-    TFEFunction2D * u2 = tnse_primal.get_velocity_component(1);
-    TFEFunction2D&  p = tnse_primal.get_pressure();
-    u1->Interpolate(tnse_primal.get_example().get_initial_cond(0));
-    u2->Interpolate(tnse_primal.get_example().get_initial_cond(1));
-    p.Interpolate(tnse_primal.get_example().get_initial_cond(2));
+    for(int i = 0; i < d; ++i)
+    {
+      FEFunction * ui = tnse_primal.get_velocity_component(i);
+      ui->Interpolate(tnse_primal.get_example().get_initial_cond(i));
+      delete ui;
+    }
   }
 
   // apply control x
@@ -523,17 +540,21 @@ double Time_BoundaryControlledOptimization<d>::compute_functional_at_t(int time_
   auto u = tnse_primal_solutions_.at(time_step).u_at_timestep_t_;
   auto u1 = u.GetComponent(0);
   auto u2 = u.GetComponent(1);
+#ifdef __3D__
+  auto u3 = u.GetComponent(2);
+#endif
   //auto p = tnse_primal_solutions_.at(time_step).p_at_timestep_t_();
 
   // the id of the component on which the control is to be applied
   int comp = db["controlled_boundary_component"];
   double alpha = db["alpha_cost"];
   std::vector<double> cost_functional = db["cost_functional"];
+  double functional_value = 0;
+#ifdef __2D__
   auto l2_norm_on_boundary1 = u1->get_L2_norm_on_boundary(comp);
   auto l2_norm_on_boundary2 = u2->get_L2_norm_on_boundary(comp);
   auto l2_norm_on_boundary = l2_norm_on_boundary1*l2_norm_on_boundary1
    + l2_norm_on_boundary2*l2_norm_on_boundary2;
-
 
   auto compute_L2_norm_of_curl =
   [&](){
@@ -587,7 +608,7 @@ double Time_BoundaryControlledOptimization<d>::compute_functional_at_t(int time_
   auto curl = compute_L2_norm_of_curl();
   auto min_max_bfs = compute_backward_facing_step();
   auto l2_norm_diff = compute_L2_norm_diff_stokes();
-  double functional_value = 0.5 * alpha * l2_norm_on_boundary;
+  functional_value = 0.5 * alpha * l2_norm_on_boundary;
   functional_value += 0.5 * curl * cost_functional[0];
   functional_value += 0.5 * min_max_bfs * cost_functional[1];
   functional_value += 0.5 * l2_norm_diff * cost_functional[2];
@@ -597,6 +618,9 @@ double Time_BoundaryControlledOptimization<d>::compute_functional_at_t(int time_
   
   delete u1;
   delete u2;
+#else
+  ErrThrow("No 3D yet!");
+#endif
   return functional_value;
 }
 
