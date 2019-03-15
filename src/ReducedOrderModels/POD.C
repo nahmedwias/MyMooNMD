@@ -59,16 +59,16 @@ ParameterDatabase POD::default_pod_database()
 /** ***************************************************************************/
 POD::POD(const ParameterDatabase& param_db) :
   db(POD::default_pod_database()),
-  length(0),
   rank(0),
-  length_snaps(0),
-  number_snaps(0),
+  length(0),
   eigen_threshold(1.0e-10),
   valid_eigs(0),
+  length_snaps(0),
+  number_snaps(0),
   eigs(NULL)
 {
   this->db.merge(param_db, true);
-  rank = this->get_rank();
+  rank = db["pod_rank"];
   //TODO set gramian_mat, snaps_mat, pod_basis, snaps_mean to zero
 }
 
@@ -138,7 +138,6 @@ void POD::compute_basis()
   compute_autocorr_mat(autocorr_mat);
 
   ublas::vector<double> vec_eig, vec_Seig;
-  int max_rank;
 
   /* parameters for LAPACK dsyev */
   double** snaps;
@@ -253,7 +252,6 @@ void POD::convert_to_ublas(std::shared_ptr<TMatrix>          mat,
 {
   int nrow  = mat->GetN_Rows();
   int ncol  = mat->GetN_Columns();
-  int nvals = mat->GetN_Entries();
 
   const int* col_idx = mat->GetKCol();
   const int* row_ptr = mat->GetRowPtr();
@@ -303,9 +301,9 @@ void POD::write_pod( std::string basename )
     ofile << "POD basis: full field" << "\n";
   }
 
-  for( int i = 0; i< pod_basis.size2() ; i++ )
+  for( int i = 0; i< (int)pod_basis.size2() ; i++ )
   {
-    for( int j = 0; j < pod_basis.size1(); j++ )
+    for( int j = 0; j < (int)pod_basis.size1(); j++ )
     {
       ofile << pod_basis( j, i ) << " ";
     }
@@ -325,7 +323,6 @@ void POD::read_basis() {
   vector < vector<double> > tmp_basis;
   ifstream podfile(filename.c_str());
   string line;
-  int a_length;
   if( !podfile )
   {
     Output::print<1>("Error: POD file ", filename ," could not be opened.");
@@ -364,17 +361,17 @@ void POD::read_basis() {
 
   if( this->rank <= 0 )
   {
-    this->rank=tmp_basis.size();
+    this->rank=(int)tmp_basis.size();
   }
 
-  if( this->rank > tmp_basis.size() )
+  if( this->rank > (int)tmp_basis.size() )
   {
     Output::warn<1>("Rank of POD basis can't be greater than ",tmp_basis.size(),
                     "! Parameter 'pod_rank' changed to ", tmp_basis.size());
-    this->rank = tmp_basis.size();
+    this->rank = (int)tmp_basis.size();
   }
 
-  this->length = tmp_basis[0].size(); //total dof
+  this->length = (int)tmp_basis[0].size(); //total dof
   this->pod_basis.resize(this->length,this->rank);
 
   Output::print<1>("Length of POD basis     : ", this->length);
@@ -400,9 +397,9 @@ void POD::write_data( ublas::matrix<double> &mat, std::string filename)
     ErrThrow("Error: File ", filename, " could not be created!");
   }
   /** write elements */
-  for(int i=0;i< mat.size2();i++)
+  for(int i=0;i<(int)mat.size2();i++)
   {
-    for(int j=0;j<mat.size1();j++)
+    for(int j=0;j<(int)mat.size1();j++)
     {
       ofile << mat(j,i) << " ";
     }
@@ -427,12 +424,12 @@ void POD::write_averages( string basename )
   }
   ofile << setprecision( 12 );
 
-  if(this->snaps_mean.size()!=this->length)
+  if((int)this->snaps_mean.size()!=this->length)
   {
     ErrThrow( "Error: Vector for averages of snapshots has the wrong length!" );
   }
   // write elements
-  for(int i=0; i<this->snaps_mean.size() ; ++i)
+  for(int i=0; i<(int)this->snaps_mean.size() ; ++i)
   {
       ofile << this->snaps_mean(i) << " ";
   }
@@ -489,7 +486,7 @@ void POD::read_averages()
   read_data( filename , data );
   this->snaps_mean.resize(data.size());
 
-  for(int i=0 ; i<this->snaps_mean.size() ; ++i)
+  for(int i=0 ; i<(int)this->snaps_mean.size() ; ++i)
   {
     this->snaps_mean( i ) = data[ i ];
   }
@@ -543,7 +540,7 @@ void POD::compute_autocorr_mat( ublas::matrix<double> &corr_mat )
   }
   else
   {
-    if( this->gramian_mat.size1() != this->length_snaps )
+    if( (int)this->gramian_mat.size1() != this->length_snaps )
     {
       ErrThrow("ERROR: Dimension of inner product matrix and length of "
                "snapshots must coincide!\nCurrently: dim of matrix : ",

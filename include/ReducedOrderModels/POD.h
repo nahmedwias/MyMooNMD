@@ -35,13 +35,13 @@ namespace ublas = boost::numeric::ublas;
 class POD
 {
   public:
-    /** 
+    /**
     * @brief constructor
     *
-    */ 
+    */
     POD(const ParameterDatabase& param_db);
 
-    /** 
+    /**
     * @brief default destructor
     *
     */
@@ -53,9 +53,9 @@ class POD
      */
     static ParameterDatabase default_pod_database();
 
-    /** 
+    /**
     * @brief set gramian matrix (matrix describing inner product for POD)
-    * 
+    *
     * Set the gramian matrix describing the inner product with respect to which
     * POD basis will be computed.
     * NOTE: If no gramian matrix is set, then it is automatically set to
@@ -90,9 +90,9 @@ class POD
     */
     void compute_basis();
 
-    /** 
+    /**
     * @brief read basis from file
-    * 
+    *
     * Read POD basis from the file with the name
     * this->db["pod_directory"] + "/" + this->db["pod_basename"] + ".pod"
     * If this->db["pod_fluct"] is set to true, then the average
@@ -102,9 +102,9 @@ class POD
     */
     void read_basis();
 
-    /** 
+    /**
     * @brief Write POD data into file
-    * 
+    *
     * Write POD basis functions(row-wise) into
     * this->db["pod_directory"] + "/" + this->db["pod_basename"]
     *                           + this->db["pod_inner_product"] + ".pod",
@@ -122,9 +122,9 @@ class POD
     */
     void write_pod( std::string basename );
 
-    /** 
+    /**
     * @brief Write matrix into file
-    * 
+    *
     * Write the matrix _mat into the file _filename
     *
     * @param _mat matrix which will be written into file
@@ -157,7 +157,7 @@ class POD
     {
       return snaps_mean;
     }
-  
+
   protected:
     // memeber variables
 
@@ -179,7 +179,7 @@ class POD
     double* eigs;
     /* inner product matrix for pod computation */ 
     ublas::compressed_matrix<double> gramian_mat;
-    
+
     /* matrix with snapshots values (DO WE NEED IT? TOO MUCH OF STORAGE?) */
     ublas::matrix<double> snaps_mat;
     /* matrix for pod basis */
@@ -190,7 +190,7 @@ class POD
   private:
     /* functions */
 
-    /** 
+    /**
     * @brief read snapshots
     *
     * Read snapshots from file
@@ -211,8 +211,8 @@ class POD
 
     /**
     * @brief Compute auto-correlation matrix for eigenvalue problem
-    *  
-    * Compute autocorrelation matrix for POD computation which is computed as 
+    *
+    * Compute autocorrelation matrix for POD computation which is computed as
     * U^T*S*U, where U is the snapshot matrix (this->snaps_mat) and S is the
     * inner product matrix (gramian_mat). If S is not specified (i.e.
     * set_gramian() was not called), then the POD basis will be computed with
@@ -222,21 +222,21 @@ class POD
     */
     void compute_autocorr_mat( ublas::matrix<double> &corr_mat );
 
-    /** 
+    /**
     * @brief Write time average of snapshots into file
-    * 
+    *
     * See documentation for write_pod(string) for more info.
     */
     void write_averages( std::string basename );
 
-    /** 
+    /**
     * @brief Write POD eigenvalue data into file
-    * 
+    *
     * See documentation for write_pod(string) for more info.
     */
     void write_eigenvalues( std::string basename );
 
-    /** 
+    /**
     * @brief Read time average of snapshots from file
     *
     * Read snapshots mean from the file
@@ -244,14 +244,14 @@ class POD
     * It is automatically called from read_basis() if db["pod_fluct"]==true.
     */
     void read_averages();
-    
+
     /**
     * @brief Read data from file
     *
     * Read data from the file _filename and save it into the matrix _mat
     *
     * @param _filename full name of the file
-    * @param _mat matrix  
+    * @param _mat matrix
     */
     void read_data( std::string _filename, vector < vector<double> > &_mat );
 
@@ -261,7 +261,7 @@ class POD
     * Read data from the file _filename and save it into the vector 'data'
     *
     * @param _filename full name of the file
-    * @param data vector  
+    * @param data vector
     */
     void read_data( std::string _filename, vector<double> &data);
 

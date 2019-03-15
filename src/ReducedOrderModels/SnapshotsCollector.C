@@ -41,7 +41,7 @@ SnapshotsCollector::SnapshotsCollector(const ParameterDatabase& param_db):
   snapshot_filename =  this->db["snaps_directory"].get<std::string>() + "/";
   snapshot_filename += this->db["snaps_basename"].get<std::string>();
 //  snapshot_filename += ".snap";
-  
+
   if (db["write_snaps"])
   {
     // create directory db["snaps_directory"]
@@ -83,7 +83,7 @@ void SnapshotsCollector::write_data(const BlockVector& solution,
     {
       ErrThrow("Error: Snapfile is not open.");
     }
-  
+
     for( size_t i = 0; i < solution.length(); ++i )
     {
       this->datastream << solution.get_entries()[i] << " ";

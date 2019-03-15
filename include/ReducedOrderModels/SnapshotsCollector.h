@@ -30,17 +30,17 @@ using namespace std;
 class SnapshotsCollector
 {
   public:
-    
-    /** 
+
+    /**
     * @brief constructor
-    * 
+    *
     * The filename for storing snapshots is constructed as
     * filename = db["snaps_directory"] + "/" + db["snaps_basename"].
     * Then, the stream is created and stored as a member of the class.
     */
     SnapshotsCollector(const ParameterDatabase& param_db);
-    
-    /** 
+
+    /**
     * @brief destructor closes the datafile
     */
     ~SnapshotsCollector();
@@ -51,9 +51,9 @@ class SnapshotsCollector
      */
     static ParameterDatabase default_snapshots_database();
 
-    /** 
+    /**
     * @brief Write s snapshot into file
-    * 
+    *
     * Write finite elemenent coefficients of the solution into the file
     * represented by the class member 'datastream'. Moreover, the snapshots
     * will be written only if the database parameter db["write_snaps"] is set
@@ -61,7 +61,7 @@ class SnapshotsCollector
     * satisfied.
     * Note: For 3D problems a binary format could be more appropriate to avoid
     * huge storage volume requirements (to be implemented!)
-    * 
+    *
     * @param solution  vector containing the finite elemenent coefficients of
     *                  the solution (snapshot)
     * @param time_step count of the time step from the time loop (main program)
