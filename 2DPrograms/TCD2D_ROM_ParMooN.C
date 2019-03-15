@@ -1,23 +1,30 @@
 // =======================================================================
 //
-// Purpose:     main program for ROM of scalar 2D time-dep. conv.-diffusion
-//				problems (at the moment for problems with stationary Dirichlet
-//				boundary conditions and problem-specific coefficients)
+// Purpose:     main program for scalar equations with new kernels of ParMooN
 //
-// Author:      Swetlana Giere &  
+// Author:      Sashikumaar Ganesan
+//
+// History:     Implementation started on 08.08.2014
+
 // =======================================================================
 
 #include <Domain.h>
 #include <Database.h>
 #include <FEDatabase2D.h>
-#include <Example_TimeCD2D.h>
-#include <TimeDiscRout.h>
+#include "TimeConvectionDiffusion.h"
 #include <TimeConvectionDiffusionROM.h>
+
+#include <sys/stat.h>
+#include <sys/types.h>
+
+#include <TimeDiscRout.h>
+#include <SnapshotsCollector.h>
 
 using namespace std;
 
-int main(int argc, char* argv[])
+int main(int, char* argv[])
 {
+
   double t_start = GetTime();
   TDatabase Database(argv[1]);
   TFEDatabase2D FEDatabase;
@@ -39,43 +46,75 @@ int main(int argc, char* argv[])
   
   // refine grid
   Domain.refine_and_get_hierarchy_of_collections(parmoon_db);
+
+  // initialize snapshot writer
+  SnapshotsCollector snaps( parmoon_db );
+  
   // write grid into an Postscript file
   if(parmoon_db["output_write_ps"])
-   Domain.PS("Domain.ps", It_Finest, 0);
-   
-  Example_TimeCD2D example( parmoon_db );
-
-  TimeConvectionDiffusionROM<2> rom_2d_rep(parmoon_db, example);
+    Domain.PS("Domain.ps", It_Finest, 0);
   
-  TimeDiscretization& tss = rom_2d_rep.get_time_stepping_scheme();
+  TimeConvectionDiffusion<2> tcd(Domain, parmoon_db);
+
+  // create an object for ROM  
+  TimeConvectionDiffusionROM<2> tcd_rom(parmoon_db, tcd.get_example());
+  // --------------------------
+  
+  TimeDiscretization& tss = tcd.get_time_stepping_scheme();
   tss.current_step_ = 0;
   tss.set_time_disc_parameters();
-  
-  double end_time = tss.get_end_time();
-  double tau = tss.get_step_length();
 
-  rom_2d_rep.assemble_matrices_rhs(true);
+  // --------------------------
+  // assemble matrices and right hand side at start time  
+  // tcd.assemble_initial_time();
+  // ======================================================================
   
-  rom_2d_rep.compute_initial_solution();
-  rom_2d_rep.output(0);
+  // preliminary/initial steps for ROM
+  tcd_rom.assemble_matrices_rhs(true);
+  tcd_rom.compute_initial_solution();
+  tcd_rom.output(0);
+  tcd_rom.set_system_matrix();
+
 
   
-  rom_2d_rep.set_system_matrix();
+  // ======================================================================
+ 
+  double start_time = parmoon_db["time_start"];
+  TDatabase::TimeDB->CURRENTTIME = start_time;
+  //tcd.output();
 
+  // store initial condition as snapshot
+  if (parmoon_db["write_snaps"])
+    snaps.write_data(tcd.get_solution());
+  
   // ======================================================================
   // time iteration
   // ======================================================================
-  while(TDatabase::TimeDB->CURRENTTIME < end_time - 1e-10)
+  while(!tss.reached_final_time_step())
   {
     tss.current_step_++;
+    // Output::print("mem before: ", GetMemory());
+    TDatabase::TimeDB->INTERNAL_STARTTIME = TDatabase::TimeDB->CURRENTTIME;
+    tss.set_time_disc_parameters();
+    tss.current_time_ += tss.get_step_length();
+    double tau = parmoon_db["time_step_length"];
+    
     TDatabase::TimeDB->CURRENTTIME += tau;
-    Output::print<1>("\nCURRENT TIME: ", TDatabase::TimeDB->CURRENTTIME);
+    Output::print("\nCURRENT TIME: ", TDatabase::TimeDB->CURRENTTIME);
+    SetTimeDiscParameters(1);
+    
+    //tcd.assemble();    
+    //tcd.solve();
 
-    rom_2d_rep.assemble_matrices_rhs(false);
-    /* set rom_2d.set_system_rhs(false) if the source term should not be reassembled */
-    rom_2d_rep.set_system_rhs();
-    rom_2d_rep.solve();
-    rom_2d_rep.output(tss.current_step_);
+    bool reassemble_sources = true;
+    // set reassemble_sources = false if the source term should not be reassembled
+    tcd_rom.assemble_matrices_rhs(false);
+    tcd_rom.set_system_rhs(reassemble_sources);
+    tcd_rom.solve();
+    
+    if((tss.current_step_-1) % TDatabase::TimeDB->STEPS_PER_IMAGE == 0)
+      tcd_rom.output(tss.current_step_);
+
   }
   // ======================================================================
   Output::print("MEMORY: ", setw(10), GetMemory()/(1048576.0), " MB");

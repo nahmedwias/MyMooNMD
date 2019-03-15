@@ -18,10 +18,55 @@ extern "C"
 
 /** ***********************************************************************/
 
+ParameterDatabase POD::default_pod_database()
+{
+  Output::print<5>("Creating a default POD-ROM parameter database...");
+  ParameterDatabase db("Default ParMooN parameter database for POD-based ROM problems");
+
+  db.add("pod_directory", ".",
+      	         "This directory is where the POD basis and Co. are written. This "
+      	         "directory will be created, if it does not exist already. Files in "
+      	         "this directory will be overwritten without any warning.");
+  
+  db.add("pod_basename", "parmoon_pod",
+	 "Basename for pod basis and related files."
+	 " When writing the POD basis, the basis elements will be written into pod_basename.pod, "
+	 " the average (if needed) into pod_basename.mean"
+	 " When reading the basis, the program expect to find files ending with .pod and .mean");
+
+  db.add("pod_rank", (size_t) 0,
+      	         "This integer specifies the dimension of the POD space to be computed. "
+      		 "If pod_rank <= 0, then all possible POD modes will be computed. ");
+
+  db.add("pod_fluctuations_only", true,
+	 "This is the flag whether the POD basis should be computed only "
+	 " fluctuation part (without average) of the snapshots "
+	 " (also central trajectory method).",
+	 {true,false});
+
+  db.add("pod_inner_product", "euclidean",
+               "Specification of the inner product which is used to compute POD basis."
+  		  "Besides default value, only 'l2' is possible at the moment.",
+  		  {"euclidean", "L2"});
+
+  db.add("rom_init_regularized", false,
+	 "This is the flag whether the the ROM initial condition should be regularized.",
+	 {true,false});
+
+  db.add("differential_filter_width", 1.0,
+           "Filter width for the differential filter (Helmoltz equation) for the computation "
+           "of of the regularized ROM initial condition.",
+             0., 10.);
+
+  // Merge with other databases
+  db.merge(ParameterDatabase::default_output_database(), true);
+
+  return db;
+}
 
 /** ***********************************************************************/
 POD::POD(const ParameterDatabase& param_db) :
-  db(ParameterDatabase::get_default_pod_database()),
+  db(default_pod_database()),
   length(0),
   rank(0),
   length_snaps(0),
@@ -241,9 +286,9 @@ void POD::write_pod( std::string basename ) {
     ofile << "POD basis: full field" << "\n";
   }
 
-  for( int i = 0; i< pod_basis.size2() ; i++ )
+  for(size_t i = 0; i< pod_basis.size2() ; i++ )
   {
-    for( int j = 0; j < pod_basis.size1(); j++ )
+    for(size_t j = 0; j < pod_basis.size1(); j++ )
       ofile << pod_basis( j, i ) << " ";
     ofile << "\n";
   }
@@ -297,7 +342,7 @@ void POD::read_basis() {
   if( this->rank <= 0 )
 	  this->rank=tmp_basis.size();
   
-  if( this->rank > tmp_basis.size() )
+  if( this->rank > (int) tmp_basis.size() )
   {
 	Output::warn<1>("Rank of POD basis can't be greater than ", tmp_basis.size(), "! "
 			        "Parameter 'pod_rank' changed to ", tmp_basis.size());
@@ -312,7 +357,7 @@ void POD::read_basis() {
   
   //pod basis (for all components)
   for(int i=0; i<this->rank;i++)
-    for(int j=0; j<this->length;j++)
+    for(size_t j=0; j<this->length;j++)
       this->pod_basis(j,i)=tmp_basis[i][j];
 }
 
@@ -325,9 +370,9 @@ void POD::write_data( ublas::matrix<double> &mat, std::string filename) {
     ErrThrow("Error: File ", filename, " could not be created!");
   }
   /** write elements */
-  for(int i=0;i< mat.size2();i++)
+  for(size_t i=0;i< mat.size2();i++)
   {
-    for(int j=0;j<mat.size1();j++)
+    for(size_t j=0;j<mat.size1();j++)
       ofile << mat(j,i) << " ";
     ofile << "\n";
   }
@@ -352,7 +397,7 @@ void POD::write_averages( string basename ) {
     ErrThrow( "Error: Vector for averages of snapshots has the wrong length!" );
   }
   // write elements
-  for(int i=0; i<this->snaps_mean.size() ; ++i)
+  for(size_t i=0; i<this->snaps_mean.size() ; ++i)
   {
       ofile << this->snaps_mean(i) << " ";
   }
@@ -402,7 +447,7 @@ void POD::read_averages() {
   read_data( filename , data );
   this->snaps_mean.resize(data.size());
 
-  for(int i=0 ; i<this->snaps_mean.size() ; ++i)
+  for(size_t i=0 ; i<this->snaps_mean.size() ; ++i)
 	  this->snaps_mean( i ) = data[ i ];
 }
 
