@@ -32,6 +32,7 @@
 double Ddot(int n, const double *x, const double *y);
 
  #ifdef _MPI
+class TParFECommunicator2D;
 /** return inner product (x,y) */
 // double ParDdot(double *x, double *y, TParFECommunicator2D *ParCommunicator);
 

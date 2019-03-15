@@ -15,7 +15,7 @@
 #ifndef __FEFUNCTION3D__
 #define __FEFUNCTION3D__
 
-#include <AllClasses.h>
+class TAuxParam3D;
 #include <FESpace3D.h>
 #include <AuxParam3D.h>
 #include <Constants.h>

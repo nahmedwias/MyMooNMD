@@ -10,6 +10,7 @@
 #ifdef __3D__
   #include <FESpace3D.h>
   #include <FEVectFunct3D.h>
+  class TSquareMatrix3D;
 #endif
 
 #include <JointEqN.h>

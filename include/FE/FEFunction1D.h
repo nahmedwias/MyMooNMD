@@ -13,7 +13,6 @@
 #ifndef __FEFUNCTION1D__
 #define __FEFUNCTION1D__
 
-#include <AllClasses.h>
 #include <FESpace1D.h>
 #include <Constants.h>
 

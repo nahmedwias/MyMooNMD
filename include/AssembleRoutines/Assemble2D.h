@@ -12,6 +12,8 @@
 #ifndef __ASSEMBLE2D__
 #define __ASSEMBLE2D__
 
+class TDiscreteForm2D;
+class TAuxParam2D;
 #include <Constants.h>
 #include <FEDatabase2D.h>
 

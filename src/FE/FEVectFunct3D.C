@@ -44,7 +44,7 @@ TFEVectFunct3D::TFEVectFunct3D()
 
 
 /** constructor with vector initialization */
-TFEVectFunct3D::TFEVectFunct3D(TFESpace3D *fespace3D, const std::string& name,
+TFEVectFunct3D::TFEVectFunct3D(const TFESpace3D *fespace3D, const std::string& name,
                                const std::string& description, double *values,
                                int length, int n_components)
 : TFEFunction3D(fespace3D, name, description, values, length)

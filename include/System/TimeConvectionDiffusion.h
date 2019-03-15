@@ -95,6 +95,8 @@ class TimeConvectionDiffusion
     { return *this->systems.front().fe_space; }
     const ParameterDatabase & get_db() const
     { return db; }
+    const Solver<BlockFEMatrix, BlockVector> & get_solver() const
+    { return solver; }
     
     TimeDiscretization& get_time_stepping_scheme()
     { return time_stepping_scheme; }
