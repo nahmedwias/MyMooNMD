@@ -42,8 +42,8 @@ public:
    *                     assemble,...)
    * @param[in] example The example which is to be calculated.
    */
-  TimeConvectionDiffusionROM(const TDomain& domain, const ParameterDatabase& param_db,
-                   const Example_TimeCD& ex);
+  TimeConvectionDiffusionROM(const ParameterDatabase& param_db,
+			     const Example_TimeCD& ex);
   
   /** @brief return a database with all parameters necessary for 
    * time-dependent convection-diffusion (tcd) probems
@@ -170,7 +170,7 @@ private:
   std::deque<System_per_grid> systems;
   
   /** @brief Definition of the used example */
-  const Example_TimeCD2D example;
+  const Example_TimeCD example;
   /** @brief Reduced system matrix */
   ublas::matrix<double> sys_mat_;
   /** @brief Reduced system rhs */
