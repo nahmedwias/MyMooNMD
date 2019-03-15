@@ -108,6 +108,32 @@ void TCDMassPOD(double Mult, double *, double *, double, double**OrigValues,
 }
 
 template<int d>
+void GradGrad(double Mult, double *, double *, double, double**OrigValues, 
+             int *N_BaseFuncts, double ***LocMatrices, double **)
+{
+  double **Matrix = LocMatrices[0];
+  int N_ = N_BaseFuncts[0];
+  double * u_x=OrigValues[1];
+  double * u_y=OrigValues[2];
+  double * u_z = d == 2 ? nullptr : OrigValues[3];
+  
+  for(int i=0; i<N_; i++)
+  {
+    double test_x = u_x[i];
+    double test_y = u_y[i];
+    double test_z = d == 2 ? 0. : u_z[i];
+    for(int j=0; j<N_; j++)
+    {
+      double ansatz_x=u_x[j];
+      double ansatz_y=u_y[j];
+      double ansatz_z = d == 2 ? 0. : u_z[j];
+      double val = (test_x*ansatz_x + test_y*ansatz_y + test_z*ansatz_z);
+      Matrix[i][j] += Mult * val;
+    }
+  }
+}
+
+template<int d>
 void TCDRhs(double Mult, double* coeff, double*, double, double ** OrigValues, 
             int* N_BaseFuncts, double ***, double ** LocRhs)
 {
@@ -317,6 +343,9 @@ template void TCDMass<2>(
 template void TCDMassPOD<2>(
   double Mult, double *coeff, double *param, double hK, double**OrigValues, 
   int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
+template void GradGrad<2>(
+  double Mult, double *coeff, double *param, double hK, double**OrigValues, 
+  int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
 template void TCDRhs<2>(
   double Mult, double *coeff, double *param, double hK, double**OrigValues, 
   int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
@@ -341,6 +370,9 @@ template void TCDMass<3>(
   double Mult, double *coeff, double *param, double hK, double**OrigValues, 
   int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
 template void TCDMassPOD<3>(
+  double Mult, double *coeff, double *param, double hK, double**OrigValues, 
+  int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
+template void GradGrad<3>(
   double Mult, double *coeff, double *param, double hK, double**OrigValues, 
   int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
 template void TCDRhs<3>(
