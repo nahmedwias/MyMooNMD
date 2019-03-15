@@ -120,16 +120,16 @@ ParameterDatabase Time_BoundaryControlledOptimization<d>::get_adjoint_database(c
 
 template<int d>
 Time_BoundaryControlledOptimization<d>::tnse_primal_solution::tnse_primal_solution()
-  {
+{
 
-  }
+}
 
 template<int d>
 Time_BoundaryControlledOptimization<d>::tnse_primal_solution::tnse_primal_solution(
     const BlockVector& solution_vector, int step, const FEVectFunct& u_sol,
     const FEFunction& p_sol)
-: vector_at_timestep_t_(solution_vector),timestep_t_(step)
-  {
+: vector_at_timestep_t_(solution_vector), timestep_t_(step)
+{
   // the fe functions must be newly created, because copying would mean
   // referencing the BlockVectors in 'other'.
 #ifdef __2D__
@@ -147,7 +147,7 @@ Time_BoundaryControlledOptimization<d>::tnse_primal_solution::tnse_primal_soluti
                                    vector_at_timestep_t_.block(3),
                                    vector_at_timestep_t_ .length(3)); 
 #endif
-  }
+}
 
 template<int d>
 Time_BoundaryControlledOptimization<d>::Time_BoundaryControlledOptimization(
@@ -378,6 +378,8 @@ void Time_BoundaryControlledOptimization<d>::apply_control_and_solve(const doubl
   Output::print<2>("primal solve");
   TimeDiscretization& tss = tnse_primal.get_time_stepping_scheme();
   tss.current_step_ = 0;
+  tss.current_time_ = 0.;
+  TDatabase::TimeDB->CURRENTTIME = 0.;
   tss.set_time_disc_parameters();
 
   // it is necessary to re-set the initial conditions here to re-start correctly the
@@ -409,14 +411,13 @@ void Time_BoundaryControlledOptimization<d>::apply_control_and_solve(const doubl
 
   tnse_primal.assemble_initial_time();
   tnse_primal.output();
-  double end_time = tnse_primal.get_time_stepping_scheme().get_end_time();
   LoopInfo loop_info_time("time loop");
   loop_info_time.print_time_every_step = true;
   loop_info_time.verbosity_threshold = 1;
   int linear_iteration=0;
 
   // solve the primal system, time loop
-  while(TDatabase::TimeDB->CURRENTTIME < end_time - 1e-10)
+  while(!tss.reached_final_time_step())
   {
     tss.current_step_++;
 
@@ -424,6 +425,7 @@ void Time_BoundaryControlledOptimization<d>::apply_control_and_solve(const doubl
     // set the time parameters
     tss.set_time_disc_parameters();
     double tau = tnse_primal.get_db()["time_step_length"];
+    tss.current_time_ += tss.get_step_length();
     TDatabase::TimeDB->CURRENTTIME += tau;
     Output::print("\nCURRENT TIME: ", TDatabase::TimeDB->CURRENTTIME);
 
@@ -627,16 +629,63 @@ double Time_BoundaryControlledOptimization<d>::compute_functional_at_t(int time_
 template<int d>
 void Time_BoundaryControlledOptimization<d>::solve_adjoint_equation()
 {
-//  auto u = tnse_primal.get_velocity();
-//  auto p = tnse_primal.get_pressure();
-//  std::vector<double> cost_functional_weights = db["cost_functional"];
-//  bool restricted_curl_functional = db["restricted_curl_functional"];
-//
-//  Output::print<2>("adjoint solve ", n_computation_derivative);
-//  tnse_adjoint.assemble(u, p, *stokes_sol, cost_functional_weights,
-//                       restricted_curl_functional);
-//  tnse_adjoint.solve();
-//  tnse_adjoint.output(n_calls);
+  // make sure Dirichlet rows are handled differently (1e30 on the diagonal)
+  TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE = 1;
+  
+  Output::print<2>("adjoint solve");
+  TimeDiscretization& tss = tnse_adjoint.get_time_stepping_scheme();
+  tss.current_step_ = n_time_steps_; // last step first / backward in time
+  tss.set_time_disc_parameters();
+
+  {
+    // the "initial" (t=T) condition is zero unless the objective has a term
+    // involving u(T)
+    Output::info<5>("Initial Solution", "Interpolating initial solution from example.");
+    for(int i = 0; i < d; ++i)
+    {
+      FEFunction * ui = tnse_adjoint.get_velocity_component(i);
+      ui->Interpolate(tnse_adjoint.get_example().get_initial_cond(i));
+      delete ui;
+    }
+    FEFunction&  p = tnse_adjoint.get_pressure();
+    p.Interpolate(tnse_adjoint.get_example().get_initial_cond(d));
+  }
+
+  auto final_forward_solution = tnse_primal_solutions_.at(
+    tnse_primal.get_time_stepping_scheme().current_step_);
+  tnse_adjoint.assemble_initial_time(final_forward_solution.u_at_timestep_t_,
+                                     final_forward_solution.p_at_timestep_t_);
+  tnse_adjoint.output();
+  double end_time = 0.;
+  TDatabase::TimeDB->CURRENTTIME = tnse_primal.get_time_stepping_scheme().get_end_time();
+  LoopInfo loop_info_time("time loop");
+  loop_info_time.print_time_every_step = true;
+  loop_info_time.verbosity_threshold = 1;
+  int linear_iteration=0;
+
+  // solve the primal system, time loop
+  while(tss.current_time_ > end_time + 1e-10)
+  {
+    tss.current_step_--;
+
+    TDatabase::TimeDB->INTERNAL_STARTTIME = TDatabase::TimeDB->CURRENTTIME;
+    // set the time parameters
+    tss.set_time_disc_parameters();
+    double tau = tnse_adjoint.get_db()["time_step_length"];
+    TDatabase::TimeDB->CURRENTTIME -= tau;
+    Output::print("\nCURRENT TIME: ", TDatabase::TimeDB->CURRENTTIME);
+
+    auto forward_solution = tnse_primal_solutions_.at(tss.current_step_);
+    tnse_adjoint.assemble_matrices_rhs(forward_solution.u_at_timestep_t_,
+                                       forward_solution.p_at_timestep_t_);
+
+    tnse_adjoint.solve();
+    // save solution for later use (cost functional and adjoint problem)
+    //tnse_adjoint_solutions_.emplace_back(tnse_adjoint.get_solution(),tss.current_step_,
+    //                                    tnse_adjoint.get_velocity(),tnse_adjoint.get_pressure());
+
+    tnse_adjoint.output(); // use this line to output(tss.current_step_) everything
+  }
 }
 
 template<int d>
