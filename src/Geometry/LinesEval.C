@@ -55,21 +55,21 @@ ParameterDatabase LinesEval<d>::default_lineseval_parameters()
 
   db.add("position_file", "", "Name of the file containing the points "
          "coordinates for the line evaluation.");
-  
+
   db.add("directory_name", "line_evaluations", "Name of the directory where "
          "the files of LinesEval::write_fe_values are written to.");
 
   db.add("file_prefix", "line_evaluation", "The prefix of the files where the "
          "evaluations of fe functions in LinesEval::write_fe_values are "
          "written to.");
-  
+
   return db;
 }
 
 /* ************************************************************************** */
 template <int d>
 LinesEval<d>::LinesEval():db(default_lineseval_parameters())
-{  
+{
 }
 
 /* ************************************************************************** */
@@ -111,7 +111,7 @@ LinesEval<d>::LinesEval(const TDomain&           domain,
     std::string directory_name = db["directory_name"];
     mkdir(directory_name.c_str(), 0777);
   }
-  
+
   std::string filename = this->db["position_file"];
 
   // define lines from file
@@ -143,7 +143,7 @@ LinesEval<d>::LinesEval(const TDomain&           domain,
                 coord.begin()+(offset+n_coord[i]),
                 back_inserter(coordinates));
 
-      LineEval<d> line(domain, direction[i], P, coordinates, refi);    
+      LineEval<d> line(domain, direction[i], P, coordinates, refi);
       lines_for_postprocess.emplace_back(line);
 
       offset += n_coord[i];
@@ -251,7 +251,7 @@ void LinesEval<d>::check_position(const std::string         filename,
   unsigned int N_dir = direction.size();
   unsigned int N_pos = position.size()/d;
   unsigned int N_coo = n_coord.size();
-  
+
   if( (position.size())%d != 0 )
   {
     ErrThrow("LineEval :", "Some position coordinates in file: ", filename,
@@ -300,11 +300,11 @@ void LinesEval<d>::write_fe_values(std::vector<const FEFunction*> fe_functions,
   {
     return;
   }
-  
+
   std::stringstream s_out;
   std::string dir_name = db["directory_name"];
   std::string file_prefix = db["file_prefix"];
-  std::string file_name = dir_name + "/" + file_prefix + "_t" 
+  std::string file_name = dir_name + "/" + file_prefix + "_t"
                           + std::to_string(time_step) + ".txt";
   // header:
 #ifdef _MPI
@@ -349,7 +349,7 @@ void LinesEval<d>::write_fe_values(std::vector<const FEFunction*> fe_functions,
       {
         values[i][j] = P[i];
       }
-      
+
       if( j_cell==-1 ) //only append in case of many processes
       {
         continue;
@@ -397,12 +397,12 @@ void LinesEval<d>::write_fe_values(std::vector<const FEFunction*> fe_functions,
       {
         // only write points inside the geometry (avoid in particular holes)
         if(values[d][j] != default_val)
-        {    
+        {
           for(unsigned int i = 0u; i < d + n_fe_functions; ++i)
           {
             s_out << setprecision(7) << setw(14) << values[i][j] << " ";
           }
-          s_out << "\n";       
+          s_out << "\n";
         }
       }
       s_out << "\n";
@@ -432,7 +432,7 @@ LineEval<d>::LineEval(const TDomain&      domain,
 #endif
                       n_refine(refi),
                       fromDB(false)
-{  
+{
   int        my_rank;
   TBaseCell* cell;
 
@@ -526,7 +526,7 @@ LineEval<d>::LineEval(const TDomain& domain,
 #endif
                       n_refine(refi),
                       fromDB(true)
-{  
+{
   int        my_rank;
   double     lmin_cell;
   double     lmax_cell;
@@ -594,10 +594,10 @@ LineEval<d>::LineEval(const TDomain& domain,
 #ifdef _MPI
   // add points from other processes in order to keep the point ordering
   int mpi_size;
-  
+
   int totlength = 0;
   int size_l    = line_tmp.size();
-  
+
   std::vector<double> c_idx(size_l,0.);
   std::vector<double> slmin(size_l,0.);
   std::vector<double> slmax(size_l,0.);
@@ -608,7 +608,7 @@ LineEval<d>::LineEval(const TDomain& domain,
     slmin[i] = line_tmp.at(i).lmin_cell;
     slmax[i] = line_tmp.at(i).lmax_cell;
   }
-  
+
   MPI_Comm_size( MPI_COMM_WORLD, &mpi_size );
   std::vector<int> displs(mpi_size, 0);
   std::vector<int> rlengths(mpi_size, 0);
@@ -791,7 +791,7 @@ double LineEval<d>::mean_value(const FEFunction& f) const
 
   p0 = base_point;
   p1 = base_point;
-  
+
   Output::info<3>("Post-processing function", "Space averaging using trapezoid "
                   "rule (holes in the domain are not consider).");
 
@@ -815,7 +815,7 @@ double LineEval<d>::mean_value(const FEFunction& f) const
     p1[direction] = GetPosition(i+1);
 
     dlength = p1[direction] - p0[direction];
-    
+
 #ifdef __2D__
     f.FindValueLocal(GetCell(i_cell0), i_cell0, p0[0], p0[1], &val_p0);
     f.FindValueLocal(GetCell(i_cell1), i_cell1, p1[0], p1[1], &val_p1);

@@ -28,10 +28,10 @@ int main(int, char* argv[])
   double t_start = GetTime();
   TDatabase Database(argv[1]);
   TFEDatabase2D FEDatabase;
-  
+
   ParameterDatabase parmoon_db = ParameterDatabase::parmoon_default_database();
   parmoon_db.read(argv[1]);
-  
+
   Output::set_outfile(parmoon_db["outfile"], parmoon_db["script_mode"]);
   Output::setVerbosity(parmoon_db["verbosity"]);
 
@@ -39,11 +39,11 @@ int main(int, char* argv[])
   // set the database values and generate mesh
   // ===========================================================================
   TDomain Domain(parmoon_db);
-  
+
   parmoon_db.write(Output::get_outfile());
   Database.WriteParamDB(argv[0]);
   Database.WriteTimeDB();
-  
+
   // refine grid
   Domain.refine_and_get_hierarchy_of_collections(parmoon_db);
 
@@ -62,14 +62,16 @@ int main(int, char* argv[])
   {
     TimeConvectionDiffusion<2> tcd(Domain, parmoon_db);
 
-    // initialize snapshot writer
-    SnapshotsCollector snaps( parmoon_db );
+    // initialize snapshot writer (only needed if parmoon_db["write_snaps"])
+    // the solutions are stored in a special collector which can be later read
+    // by the computation of POD the basis
+    SnapshotsCollector snaps(parmoon_db);
 
     TimeDiscretization& tss = tcd.get_time_stepping_scheme();
     tss.current_step_ = 0;
     tss.set_time_disc_parameters();
 
-    // assemble matrices and right hand side at start time  
+    // assemble matrices and right hand side at start time
     tcd.assemble_initial_time();
 
     double start_time = parmoon_db["time_start"];
@@ -96,7 +98,7 @@ int main(int, char* argv[])
       Output::print("\nCURRENT TIME: ", TDatabase::TimeDB->CURRENTTIME);
       SetTimeDiscParameters(1);
 
-      tcd.assemble();    
+      tcd.assemble();
       tcd.solve();
 
       if((tss.current_step_-1) % TDatabase::TimeDB->STEPS_PER_IMAGE == 0)
@@ -120,11 +122,11 @@ int main(int, char* argv[])
     auto collections            = Domain.get_grid_collections();
     TCollection& cellCollection = *collections.front();
 
-    TimeConvectionDiffusionPOD<2> tcd_pod(cellCollection, parmoon_db); // TODO add TYPE (i.e. TCD2D, TNSE2D,...)
+    TimeConvectionDiffusionPOD<2> tcd_pod(cellCollection, parmoon_db); // TODO add TYPE (i.e. TCD2D)
 
     tcd_pod.compute_pod_basis();
     //pod_2d.read_basis();
-    
+
     tcd_pod.output();
   } // if POD
 
