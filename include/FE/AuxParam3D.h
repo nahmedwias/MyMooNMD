@@ -13,6 +13,7 @@
 #ifndef __AUXPARAM3D__
 #define __AUXPARAM3D__
 
+class TFEFunction3D;
 #include <Constants.h>
 #include <FESpace3D.h>
 #include <FEFunction3D.h>

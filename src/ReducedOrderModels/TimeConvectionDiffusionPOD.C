@@ -10,6 +10,10 @@
 #include "SquareMatrix3D.h"
 #endif
 
+#ifdef _MPI
+#include "ParFECommunicator3D.h"
+#endif
+
 template <int d>
 ParameterDatabase TimeConvectionDiffusionPOD<d>::default_tcd_pod_database()
 {
@@ -149,7 +153,24 @@ void TimeConvectionDiffusionPOD<d>::output_problem_size_info() const
   int n_cells = coll->GetN_Cells();
   int n_dof = space->GetN_DegreesOfFreedom();
 #else // _MPI
+  int root = 0; // root process number
+  int my_rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
   
+  int n_local_master_cells = coll->GetN_OwnCells();
+  int n_cells;
+  MPI_Reduce(&n_local_master_cells, &n_cells, 1, MPI_DOUBLE, MPI_SUM, root,
+             MPI_COMM_WORLD);
+  
+  double local_hmin, local_hmax;
+  coll->GetHminHmax(&local_hmin, &local_hmax);
+  double hMin, hMax;
+  MPI_Reduce(&local_hmin, &hMin, 1, MPI_DOUBLE, MPI_MIN, root, MPI_COMM_WORLD);
+  MPI_Reduce(&local_hmax, &hMax, 1, MPI_DOUBLE, MPI_MAX, root, MPI_COMM_WORLD);
+  
+  auto par_comm = space->get_communicator();
+  int n_dof  = par_comm.get_n_global_dof();
+  if(my_rank == root)
 #endif
   {
     Output::stat("TimeConvectionDiffusion",

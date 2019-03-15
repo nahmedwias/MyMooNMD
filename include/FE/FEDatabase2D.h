@@ -11,6 +11,9 @@
 #ifndef __FEDATABASE2D__
 #define __FEDATABASE2D__
 
+class TRefTrans1D;
+class TQuadFormula3D;
+
 #include <FE1D.h>
 
 #include <FE2D.h>
