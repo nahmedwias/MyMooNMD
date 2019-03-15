@@ -11,6 +11,7 @@ class TimeNavierStokes_Adjoint : public TimeNavierStokes<d>
     using FEVectFunct = typename Template_names<d>::FEVectFunct;
     using DoubleFunction = typename Template_names<d>::DoubleFunction;
     using BoundaryValuesFunction = typename Template_names<d>::BoundaryValuesFunction;
+    using Example_TimeNSE = typename Template_names<d>::Example_TimeNSE;
     
     TimeNavierStokes_Adjoint(const TimeNavierStokes<d>& nse, const ParameterDatabase& param_db);
   
