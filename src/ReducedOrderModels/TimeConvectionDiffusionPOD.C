@@ -52,7 +52,7 @@ TimeConvectionDiffusionPOD<d>::TimeConvectionDiffusionPOD(TCollection& coll,
 /* ************************************************************************** */
 template <int d>
 TimeConvectionDiffusionPOD<d>::TimeConvectionDiffusionPOD(TCollection& coll,
-                                              const ParameterDatabase& param_db, 
+                                              const ParameterDatabase& param_db,
                                               const Example_TimeCD&    ex)
   : POD(param_db), 
     fe_space(&coll, "space", "time_cd_pod space", ex.get_bc(0),
@@ -139,7 +139,7 @@ void TimeConvectionDiffusionPOD<d>::assemble_gramian()
   **/
   auto block = this->gramian_matrix.get_blocks_uniquely()[0].get();
 
-  int nsqMat = 1;
+  const int nsqMat = 1;
   SquareMatrixD *sqMat[nsqMat];
   sqMat[0] = reinterpret_cast<SquareMatrixD*>(block);
   Output::print("HERE");

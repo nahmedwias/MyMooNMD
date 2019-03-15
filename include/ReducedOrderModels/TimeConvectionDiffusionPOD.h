@@ -92,7 +92,7 @@ class TimeConvectionDiffusionPOD : public POD
     * only wants to write vtk files of the POD basis functions.
     */
     void read_basis();
-    
+
     /// @brief write POD basis to file and write vtk files
     void output();
 
@@ -109,7 +109,7 @@ class TimeConvectionDiffusionPOD : public POD
     FEFunction fe_function;
 
     /** @brief set parameters in database
-    * 
+    *
     * This functions checks if the parameters in the database are meaningful
     * and resets them otherwise. The hope is that after calling this function
     * this class is fully functional.
@@ -120,7 +120,7 @@ class TimeConvectionDiffusionPOD : public POD
     void set_parameters();
 
     /** @brief Assemble gramian matrix
-    * 
+    *
     * Assemble gramian matrix, which describes the inner product, with respect
     * to which the POD basis will be computed.
     */
@@ -131,7 +131,7 @@ class TimeConvectionDiffusionPOD : public POD
     void output_problem_size_info() const;
 
     /** @brief a local parameter database which controls this class
-    * 
+    *
     * The database given to the constructor will be merged into this one. Only
     * parameters which are of interest to this class are stored (and the
     * default ParMooN parameters). Note that this usually does not include
@@ -147,7 +147,7 @@ class TimeConvectionDiffusionPOD : public POD
     const Example_TimeCD example;
 
     /** @brief class for output handling */
-    DataWriter<d> outputWriter;  
+    DataWriter<d> outputWriter;
 };
 
 #endif // TIMECONVECTIONDIFFUSIONPOD_H
