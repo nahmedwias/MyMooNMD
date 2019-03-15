@@ -24,6 +24,7 @@ using namespace std;
 
 int main(int, char* argv[])
 {
+  bool do_rom = false;
   double t_start = GetTime();
   TDatabase Database(argv[1]);
   TFEDatabase2D FEDatabase;
@@ -54,14 +55,14 @@ int main(int, char* argv[])
     Domain.PS("Domain.ps", It_Finest, 0);
   
   TimeConvectionDiffusion<2> tcd(Domain, parmoon_db);
-  // for testing ROM
-  //Example_TimeCD2D example = tcd.get_example();
-  //TimeConvectionDiffusionROM<2> tcd_rom(parmoon_db, tcd.get_example());
-  // --------------------------
+
+  
   TimeDiscretization& tss = tcd.get_time_stepping_scheme();
   tss.current_step_ = 0;
   tss.set_time_disc_parameters();
 
+  
+  
   // ======================================================================
   // assemble matrices and right hand side at start time  
   tcd.assemble_initial_time();
@@ -94,9 +95,11 @@ int main(int, char* argv[])
     tcd.assemble();    
     tcd.solve();
 
+ 
     if((tss.current_step_-1) % TDatabase::TimeDB->STEPS_PER_IMAGE == 0)
       tcd.output();
 
+    
     // write the snap shots
     if (parmoon_db["write_snaps"])
       snaps.write_data(tcd.get_solution(), tss.current_step_);

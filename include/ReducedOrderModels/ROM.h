@@ -163,6 +163,8 @@ class ROM : public POD
 	*
 	*/
 	void set_gramian(std::shared_ptr<TMatrix> gram_mat);
+
+
 };
 
 #endif

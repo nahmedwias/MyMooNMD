@@ -45,7 +45,12 @@ class POD
     *
     */
     ~POD();
-    
+
+    /** @brief return a database with all parameters necessary for 
+     * time-dependent convection-diffusion (tcd) probems
+     */
+    static ParameterDatabase default_pod_database();
+  
     /** 
     * @brief set gramian matrix (matrix describing inner product for POD)
     * 
@@ -146,7 +151,7 @@ class POD
     /* rank of pod basis */
     int rank;
     /* dof of pod basis functions */
-    int length;
+    size_t length;
     /* threshold value for eigenvalues of autocorrelation matrix */
     double eigen_threshold;
     /* number of eigenvalues greater than eigen_threshold */

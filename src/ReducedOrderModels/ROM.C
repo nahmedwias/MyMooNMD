@@ -100,7 +100,7 @@ ublas::vector<double> ROM::reduce(double *full_vec)
   ublas::vector<double> red_vec;
   ublas::vector<double> tmp_vec(POD::length);
 
-  for (int i=0; i<POD::length; ++i)
+  for (size_t i=0; i<POD::length; ++i)
   {
 	tmp_vec(i) = full_vec[i];
   }
@@ -113,7 +113,7 @@ void ROM::reduce_solution(double *full_sol, ublas::vector<double> &red_sol)
 {
   ublas::vector<double> tmp_vec(POD::length);
 
-  for (int i=0; i<POD::length; ++i)
+  for (size_t i=0; i<POD::length; ++i)
   {
 	if(POD::db["pod_fluct"])
 	  tmp_vec(i) = full_sol[i] - POD::snaps_mean(i);
@@ -130,7 +130,7 @@ void ROM::reduce_solution(double *full_sol, ublas::vector<double> &red_sol)
 /**************************************************************************** */
 void ROM::get_full_solution(const ublas::vector<double> &red_sol, double *full_sol)
 {
-  if(red_sol.size() != POD::rank)
+  if((int) red_sol.size() != POD::rank)
   {
 	ErrThrow("ROM::get_full_solution(..): Length of input reduced-order "
 			"vector must conicide with the dimension of the POD basis. "
@@ -140,7 +140,7 @@ void ROM::get_full_solution(const ublas::vector<double> &red_sol, double *full_s
   ublas::vector<double> tmp_vec(POD::length);
   tmp_vec = prod(POD::pod_basis, red_sol);
   
-  for (int i=0; i<POD::length; ++i)
+  for (size_t i=0; i<POD::length; ++i)
   {
   	if(POD::db["pod_fluct"])
   	  full_sol[i] = tmp_vec(i) + POD::snaps_mean(i);
