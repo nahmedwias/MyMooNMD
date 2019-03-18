@@ -1,0 +1,193 @@
+/**
+\page page_branching Branching workflow in ParMooN
+\author Clemens Bartsch <bartsch@wias-berlin.de>
+\date 2015/09/30
+
+\brief This is an introduction to branching in hg mercurial and a guide to the associated workflow in ParMooN.
+
+The techniques described in this section are intended to entirely replace the "Main_Users/username"-concept which has been employed in MooNMD.
+
+\tableofcontents
+  
+
+
+\section preface Preface
+
+\subsection nutshell In a nutshell
+To seperate the main line of ParMooN development (ParMooN core) from project- or application-specific features, we are going to use mercurial's named branches.
+This replaces the directory based approach known from MooNMD and moves the control over feature development from the file system to the version control system.
+If you already are familiar with the concept of branching you might consider skipping the \ref tutorial and go directly to the \ref policies section.
+
+\subsection length At more length
+In order to seperate different projects and features from what we want to call core ParMooN, we use the branching feature of hg mercurial. 
+If you are not familiar with the basics of distributed version control and hg mercurial, make sure to read the \ref page_version_control "introduction" first.
+Mercurial supports working in so called "named branches". A named branch can be pictured as as seperate line of development. \n
+Developers start a new feature branch when they want to work at a feature which is of no interest for the core functionality of ParMooN.
+An example of such features are user specific main programs or program parts.
+
+Using branches has some advantages:
+  - program parts which are not of interest for all users are kept out of sight
+  - changesets which belong to those program parts do not pollute the history of the main repository
+  - features are kept under version control
+  - it is very easy to share features developed within branches with other developers
+  
+The main disadvantage is, that all ParMooN developers will have to get familiar with branching.
+Plus there might be some traps which we do not yet foresee.
+But let that not be our concern for now and bravely move onward.
+
+\section tutorial Tutorial
+Let us suppose we want to implement a module which solves coupled systems of convection-diffusion-reaction equations.
+To keep this apart from core ParMooN, we start a new branch "coupledcdr". 
+
+Typical situations which will occur in this setup and the proposed workflow for each are described below.
+All the commands given below must be executed from the shell, while operating in our local repository.
+
+
+
+\subsection starting Starting a new branch
+We start the new branch "coupledcdr" as follows.
+  \code
+  hg branch coupledcdr
+  \endcode
+Mercurial replies
+  > marked working directory as branch coupledcdr
+Using the command hg branch without any arguments reassures us that we are working in the right branch now.
+  \code
+  hg branch
+  \endcode
+  > coupledcdr
+Now the working directory is marked as belonging to the new branch "coupledcdr". If we make a commit now (supposing there is no other uncommitted changes),
+the commited changeset belongs to the branch "coupledcdr" - this is permanently and globally marked in the belonging changesets.
+  \code
+  hg commit -m "Started new feature branch 'coupledcdr'."
+  \endcode
+\remarks Be careful with uncommited changes in the working directory. See \ref shelve "hg shelve".
+
+\subsection seeing Show existing branches and current branch
+The command hg branches shows us all branches which exist in our repository
+  \code
+  hg branches
+  \endcode
+  > coupledcdr default
+With the command hg branch we can see which branch we are currently working on.
+  \code
+  hg branch
+  \endcode
+  > coupledcdr
+This assures us especially that further commits we make now will also belong to the branch "coupledcdr".
+
+\subsection switching Switching between branches 
+    Switching between branches is rather easy. We just have to know, when is the right time to do so.
+    The rule is: if we are working at something which is only interesting to our feature, we work on our feature branch.
+    When we want to work at something which belongs to the ParMooN core functionality, we'd better work in branch "default".
+    Switching is simply done by running the hg update command with the name of the branch given as first argument.
+    \code
+     hg update default
+    \endcode
+    This will set the parent of the working directory to the head of branch default.
+    \remarks     When switching between branches one has to be careful with uncommited changes in the working directory -
+    if there are any, which cannot easily be transferred to the other branch, mercurial might abort the update.
+    A good tool to deal with this problem is the extension \ref shelve .
+  
+\subsection pulling  Pulling from a colleague's feature branch
+    So we decided we want to work at the same feature as a colleague. Let's suppose we want to see Ulrich's most recent progress
+    in his Stokes-Darcy code and suppose that he told us the directory where his personal repository is stored
+    (we have the ssh tunneling command to that place added to our .hgrc file under the pathname "ulrich")
+    as well as the name of the branch: "stokesdarcy". We can pull changesets from only that branch from Ulrich's repo by typing
+    \code
+      hg pull ulrich -b stokesdarcy
+    \endcode
+    and update our working copy to any of the changesets in this branch as  described \ref switching "above".
+    Now we can start working at the features in the branch "stokesdarcy".
+    \remarks
+    A conflict could occur if we have our own branch named "stokesdarcy" which does not have the same ancestors as Ulrich's branch.
+    So which name to choose for branches should be tuned with colleagues.
+    When in doubt, ask in the <a href="https://blog.wias-berlin.de/wias-numath/2015/09/25/question-and-answer-page/">forum</a>.
+  
+    
+\subsection merging_coretofeature  Merging changes from core into feature branch
+    This task will have to be performed on quite a regular basis, because we want to keep our core ParMooN up to date.
+    If we stuck to the \ref policies the merging will be done automatically after we kick it off.
+    First we make sure we are in the branch into which we want to merge the new core developments.
+    \code
+      hg branch
+    \endcode
+      < coupledcdr
+    Then we can start the merge with the latest changeset of the default branch (the latest which is known to our copy of the repo...
+    we must not forget to pull from the central repo from time to time!) by typing
+    \code
+      hg merge default
+    \endcode
+    And the usual merging process will start. In most cases, that is to say if everyone including us obeyed the \ref policies there will be no merge conflicts.
+    Should any merge conflicts occur, we should identify who broke which rule and probably first resolve that issue before merging.
+    \remarks
+    If you have any uncommited changes in the working directory the merge will abort immediately. Should you not want to commit these changes, guess \ref shelve "what".
+    
+\subsection merging_featuretocore Merging changes from feature branch into core branch
+  Since the proposed workflow is: do core work in core branch and feature work in feature branch, this is a situation which should not occur all to often.
+  If it does, then only because your feature has reached a state of maturity and usefulness which justifies it to be elevated to the rank of a ParMooN core feature. \n
+  Congratulations! Now you should follow these two steps.
+    - Step 1: Move your code to a place different from the Main_Users directory.
+    - Step 2: Proceed as \ref merging_coretofeature "above", but the other way round.
+   
+\subsection pushing  Pushing a branch
+    This is a thing which should not happen very often, for it requires us to have write access to the repo to which we push.
+    But then pushing the changesets from our branch "coupledcdr" to e.g. Felix' repository (which is known to our .hgrc file by the name of "felix") can be done by
+      \code
+      hg push felix -b coupledcdr
+      \endcode
+      
+\section policies Branching policies
+  
+  \arg Do core work in core branch and feature work in feature branch. When merging your work at ParMooN core into the main repository your colleagues do not want to have to deal with feature related stuff which magically occu red in your default branch.
+  
+  \arg The WIAS main ParMooN repository does not contain any feature branches. Those are maintained solely in the developers' local copies and distributed by direct communication among these.
+  
+  \arg The feature code should be heavily localized and put into the Main_Users directory. This is in order to keep the required merge operations as simple as possible.
+  
+  \arg Keep the number of branches small, but not too small. Using just one branch "clemens" where I put all my stuff might work perfectly fine for me but is really annoying for anyone 
+  who wants to work at one of my features, too. You could not blame Co-Developers for refusing to pull branch "clemens" and polluting their repo with all the stuff I ever coded.
+  As a rule of thumb: Use one branch per project. 
+  
+  \arg Do not branch from other branches than default.
+  
+   
+\section trouble Troubleshooting, useful tips and miscellaeneous 
+
+These things shold be moved somewhere else someday
+    
+  \subsection rollback I pulled the wrong branch / I commited a thing which I did not want to commit.
+    In case one of these happened, hg mercurial offers a safety net. Mercurial regards exchange of changesets between you and your repo ("commit") and your repo and other repos ("pull") as transactions. The command "hg rollback" can be used to revert exactly the last transaction (and only that one, there is no way I know of to revert transactions subsequently).
+    So if I have pulled unattentiously from Felix' repo and now my repo contains a branch "mom" (method of moments) which I am not interested in, than I type
+     \code
+     hg rollback
+     \endcode
+    and gone is the branch.
+    The same can be done if I commited harum-scarum, for example with a really embarassing spellign mistake in the commit message or some more substantial error.
+     \code
+     hg rollback
+     \endcode
+    Will undo the commit and all my changes are back in the workbench. Note that "hg rollback" will not do you any good, when you pushed the changeset soemwhere else. Then it "escaped into the wild" as <a href="http://hgbook.red-bean.com/read/finding-and-fixing-mistakes.html">this</a>  side puts it.
+    \remarks The command is marked deprecated and dangerous, but I think there is situations when it comes in handy. Just don't rely on it.
+
+   \subsection tidyup Oh my gosh, what does that repo look like?
+    There are two commands I know of in mercurial which can be used to clean up in a bad looking repository history. Both have to be enabled as extensions.\n
+    hg rebase Can be used to reintegrate a line of development and make the commit histroy look more linear.\n
+    hg strip Can be used to group several subsequent changesets into one. \n
+    This is a bit off-topic, and I shall write about this in the <a href="https://blog.wias-berlin.de/wias-numath/2015/09/25/question-and-answer-page/">forum</a> shortly.
+    The only other advice I feel enabled to give is: use commands which modify the changeset history with care and only if you now what you are doing.
+    
+  \subsection whatamess I disobeyed every policy and now my repo is a mess.
+    Check out a new copy of the main repo and put your feature there manually. Stick to the rules this time.
+    
+  \subsection questions I have further questions.
+    Ask it in the <a href="https://blog.wias-berlin.de/wias-numath/2015/09/25/question-and-answer-page/">forum</a>.
+*/
+  
+
+  
+
+
+
+
+
