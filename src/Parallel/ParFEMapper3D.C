@@ -20,9 +20,9 @@
 
 
 #ifndef _OMP
-TParFEMapper3D::TParFEMapper3D(int N_dim, TFESpace3D *fespace)
+TParFEMapper3D::TParFEMapper3D(int N_dim, const TFESpace3D *fespace)
 #else
-TParFEMapper3D::TParFEMapper3D(int N_dim, TFESpace3D *fespace, int *rowptr, int *kcol)
+TParFEMapper3D::TParFEMapper3D(int N_dim, const TFESpace3D *fespace, int *rowptr, int *kcol)
 #endif
 {
   N_Dim       = N_dim; 

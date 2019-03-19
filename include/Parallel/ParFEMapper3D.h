@@ -52,7 +52,7 @@ class TParFEMapper3D
 #endif
     
     //! The underlying fe space for which the communications are needed.
-    TFESpace3D *FESpace;
+    const TFESpace3D *FESpace;
     
     /** array containing the master of the dofs **/ 
     int *Master;
@@ -115,9 +115,9 @@ class TParFEMapper3D
      * @param[in] fespace the FE space the dofs belong to.
      */
 #ifndef _OMP
-    TParFEMapper3D(int N_dim, TFESpace3D *fespace);
+    TParFEMapper3D(int N_dim, const TFESpace3D *fespace);
 #else
-    TParFEMapper3D(int N_dim, TFESpace3D *fespace, int *rowptr, int *kcol);
+    TParFEMapper3D(int N_dim, const TFESpace3D *fespace, int *rowptr, int *kcol);
 #endif
     
     //! A getter method which gives all information needed by the ParFECommunicator.

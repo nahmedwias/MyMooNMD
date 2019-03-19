@@ -29,9 +29,9 @@ class TFEVectFunct3D : public TFEFunction3D
     TFEVectFunct3D();
 
     /** constructor with vector initialization */
-    TFEVectFunct3D(const TFESpace3D *fespace3D, const std::string& name,
-                   const std::string& description, double *values, int length,
-                   int n_components);
+    TFEVectFunct3D(std::shared_ptr<const TFESpace3D> fespace3D,
+                   const std::string& name, const std::string& description,
+                   double *values, int length, int n_components);
 
     /// Copy assignment operator. Shallow copy, as the
     /// FEFunction does not take any memory responsibility.

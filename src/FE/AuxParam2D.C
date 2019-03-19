@@ -64,7 +64,7 @@ void TAuxParam2D::GetParameters(int N_Points, TCollection *, TBaseCell *cell,
     //  if (N_FEValues==8)
     //  OutPut("aac " << (int) fefunction << " " <<  Values[j][0]<< endl);
 
-    const TFESpace2D *fespace = fefunction->GetFESpace2D();
+    auto fespace = fefunction->GetFESpace2D();
     FE2D FE_Id = fespace->GetFE2D(cellnum, cell);
     BaseFunct2D BaseFunct_Id = TFEDatabase2D::GetFE2D(FE_Id)->GetBaseFunct2D_ID();
 
@@ -114,7 +114,6 @@ void TAuxParam2D::GetParameters(int N_Points, TCollection *Coll,
   double s;
   double *param, *currparam, *CurrOrigValues;
   int *CurrIndex;
-  const TFESpace2D *fespace;
   TFEFunction2D *fefunction;
   BaseFunct2D BaseFunct_Id;
   FE2D FE_ID = C_P00_2D_T_A; //avoid uninit warning
@@ -140,7 +139,7 @@ void TAuxParam2D::GetParameters(int N_Points, TCollection *Coll,
     
     Values[j] = fefunction->GetValues();
 
-    fespace = fefunction->GetFESpace2D();
+    auto fespace = fefunction->GetFESpace2D();
     FE_ID = fespace->GetFE2D(cellnum, cell);
     BaseFunct_Id = TFEDatabase2D::GetFE2D(FE_ID)->GetBaseFunct2D_ID();
 

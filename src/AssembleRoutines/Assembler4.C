@@ -462,7 +462,7 @@ void Assembler4::add_local_to_global_matrix(int i,
   {
     double **Matrix = LocMatrices[j];
     std::vector<double> CurrentHangingEntries = this->hangingEntries[j];
-    const TFESpace2D *fespace = square_matrices[j]->GetFESpace2D();
+    auto fespace = square_matrices[j]->GetFESpace2D();
     const int *HangingRowPtr = square_matrices[j]->GetHangingRowPtr();
     const int *HangingColInd = square_matrices[j]->GetHangingKCol();
     int ActiveBound = fespace->GetActiveBound();
@@ -542,10 +542,8 @@ void Assembler4::add_local_to_global_matrix(int i,
   // rectangular matrices
   for (int j = 0; j < this->n_rectangular_matrices; j++)
   {
-    FE2D TestElement = ((TFESpace2D *) rectangular_matrices[j]->GetTestSpace())
-                ->GetFE2D(i, cell);
-    FE2D AnsatzElement = ((TFESpace2D *) rectangular_matrices[j]->GetAnsatzSpace())
-                ->GetFE2D(i, cell);
+    FE2D TestElement = rectangular_matrices[j]->GetTestSpace2D()->GetFE2D(i, cell);
+    FE2D AnsatzElement = rectangular_matrices[j]->GetAnsatzSpace2D()->GetFE2D(i, cell);
 
     int N_Test = N_BaseFunct[TestElement];
     int N_Ansatz = N_BaseFunct[AnsatzElement];
@@ -558,13 +556,10 @@ void Assembler4::add_local_to_global_matrix(int i,
 
     //int *TestDOF = TestGlobalNumbers[j] + TestBeginIndex[j][i];
     //int *AnsatzDOF = AnsatzGlobalNumbers[j] + AnsatzBeginIndex[j][i];
-    int *TestDOF =
-        ((TFESpace2D *) rectangular_matrices[j]->GetTestSpace())->GetGlobalDOF(i);
-    int *AnsatzDOF =
-        ((TFESpace2D *) rectangular_matrices[j]->GetAnsatzSpace())->GetGlobalDOF(i);
+    int *TestDOF = rectangular_matrices[j]->GetTestSpace()->GetGlobalDOF(i);
+    int *AnsatzDOF = rectangular_matrices[j]->GetAnsatzSpace()->GetGlobalDOF(i);
 
-    const TFESpace2D *fespace =
-        (TFESpace2D *)(rectangular_matrices[j]->GetTestSpace2D());
+    auto fespace = rectangular_matrices[j]->GetTestSpace2D();
     int ActiveBound = fespace->GetActiveBound();
     int DirichletBound = fespace->GetHangingBound();
 
@@ -708,7 +703,7 @@ void Assembler4::handle_hanging_nodes(std::vector<const TFESpace2D*>& ferhs)
 {
   for (int j = 0; j < this->n_square_matrices; j++)
   {
-    const TFESpace2D *fespace = square_matrices[j]->GetFESpace2D();
+    auto fespace = square_matrices[j]->GetFESpace2D();
     THangingNode **HangingNodes = fespace->GetHangingNodes();
 
     double *Entries = square_matrices[j]->GetEntries();
@@ -755,7 +750,7 @@ void Assembler4::handle_hanging_nodes(std::vector<const TFESpace2D*>& ferhs)
   for (int j = 0; j < this->n_rectangular_matrices; j++)
   {
     // hanging nodes in test space
-    const TFESpace2D *fespace = (TFESpace2D *) (rectangular_matrices[j]->GetTestSpace2D());
+    auto fespace = rectangular_matrices[j]->GetTestSpace2D();
     THangingNode **HangingNodes = fespace->GetHangingNodes();
 
     double *Entries = rectangular_matrices[j]->GetEntries();
@@ -799,7 +794,7 @@ void Assembler4::handle_hanging_nodes(std::vector<const TFESpace2D*>& ferhs)
 
     // hanging nodes in ansatz space
     //int N_Rows =  matrices[j]->GetN_Rows();
-    fespace = (TFESpace2D *) (rectangular_matrices[j]->GetAnsatzSpace2D());
+    fespace = rectangular_matrices[j]->GetAnsatzSpace2D();
 
     HangingNodes = fespace->GetHangingNodes();
     int AnsatzActiveBound = fespace->GetActiveBound();
@@ -872,7 +867,7 @@ void Assembler4::handle_hanging_nodes(std::vector<const TFESpace2D*>& ferhs)
   //================================================================================
   for (int j = 0; j < this->n_square_matrices; j++)
   {
-    const TFESpace2D *fespace = square_matrices[j]->GetFESpace2D();
+    auto fespace = square_matrices[j]->GetFESpace2D();
     THangingNode **HangingNodes = fespace->GetHangingNodes();
 
     double *Entries = square_matrices[j]->GetEntries();

@@ -43,8 +43,8 @@ TimeConvectionDiffusionPOD<d>::TimeConvectionDiffusionPOD(
   TCollection& coll, const ParameterDatabase& param_db, 
   const Example_TimeCD& ex)
  : POD(param_db), 
- fe_space(&coll, "space", "time_cd_pod space", ex.get_bc(0),
-          TDatabase::ParamDB->ANSATZ_ORDER),
+ fe_space(new FESpace(&coll, "space", "time_cd_pod space", ex.get_bc(0),
+                      TDatabase::ParamDB->ANSATZ_ORDER)),
  db(param_db), time_stepping_scheme(param_db), example(ex),
  outputWriter(param_db)
 {
@@ -55,8 +55,9 @@ TimeConvectionDiffusionPOD<d>::TimeConvectionDiffusionPOD(
   this->gramian_matrix = BlockFEMatrix::CD2D(fe_space);
 #endif
   this->pod_mode = BlockVector(this->gramian_matrix, false);
-  this->fe_function = FEFunction(&this->fe_space, (char*)"c", (char*)"c",
-                     this->pod_mode.get_entries(), this->pod_mode.length());
+  this->fe_function = FEFunction(this->fe_space, (char*)"c", (char*)"c",
+                                 this->pod_mode.get_entries(),
+                                 this->pod_mode.length());
   
   this->set_parameters();
   
@@ -111,7 +112,7 @@ void TimeConvectionDiffusionPOD<d>::assemble_gramian()
   
   using SquareMatrixD = typename Template_names<d>::SquareMatrixD;
   int nFESpaces = 1;
-  const FESpace *fe_space = &this->fe_space;
+  const FESpace *fe_space = this->fe_space.get();
   /**
      @attention
      we get block [1] because the TCD Mass Matrix functions
@@ -128,7 +129,7 @@ void TimeConvectionDiffusionPOD<d>::assemble_gramian()
   Output::print("HERE");
   int nRhs = 0;
   
-  auto * bound_cond = this->fe_space.get_boundary_condition();
+  auto * bound_cond = this->fe_space->get_boundary_condition();
   auto * bound_val = this->example.get_bd(0);
   Output::print("HERE");
 #ifdef __2D__
@@ -145,13 +146,12 @@ void TimeConvectionDiffusionPOD<d>::assemble_gramian()
 template <int d> 
 void TimeConvectionDiffusionPOD<d>::output_problem_size_info() const
 {
-  const FESpace* space = &this->fe_space;
-  TCollection *coll = space->GetCollection();
+  TCollection *coll = this->fe_space->GetCollection();
 #ifndef _MPI
   double hMin, hMax;
   coll->GetHminHmax(&hMin, &hMax);
   int n_cells = coll->GetN_Cells();
-  int n_dof = space->GetN_DegreesOfFreedom();
+  int n_dof = this->fe_space->GetN_DegreesOfFreedom();
 #else // _MPI
   int root = 0; // root process number
   int my_rank;
@@ -168,7 +168,7 @@ void TimeConvectionDiffusionPOD<d>::output_problem_size_info() const
   MPI_Reduce(&local_hmin, &hMin, 1, MPI_DOUBLE, MPI_MIN, root, MPI_COMM_WORLD);
   MPI_Reduce(&local_hmax, &hMax, 1, MPI_DOUBLE, MPI_MAX, root, MPI_COMM_WORLD);
   
-  auto par_comm = space->get_communicator();
+  auto par_comm = this->fe_space->get_communicator();
   int n_dof  = par_comm.get_n_global_dof();
   if(my_rank == root)
 #endif
@@ -179,7 +179,7 @@ void TimeConvectionDiffusionPOD<d>::output_problem_size_info() const
     Output::dash("h(min, max) : ", setw(13), hMin, " ", setw(13), hMax);
     Output::dash("n dofs      : ", setw(13), n_dof);
 #ifndef _MPI
-    Output::dash("n dof active: ", setw(13), space->GetActiveBound());
+    Output::dash("n dof active: ", setw(13), this->fe_space->GetActiveBound());
 #endif
   }
 }
@@ -215,18 +215,18 @@ void TimeConvectionDiffusionPOD<d>::compute_pod_basis()
 template <int d>
 void TimeConvectionDiffusionPOD<d>::output()
 {
-  if (this->fe_space.GetN_DegreesOfFreedom() != POD::get_basis().size1())
+  if (this->fe_space->GetN_DegreesOfFreedom() != (int)POD::get_basis().size1())
   {
     ErrThrow("Current FE space dimension does not coincide with the number "
-             "of dof of POD basis.\n"
-             "Dimension of FE space : ", this->fe_space.GetN_DegreesOfFreedom(),
+             "of dof of POD basis.\nDimension of FE space : ",
+             this->fe_space->GetN_DegreesOfFreedom(),
              "\nDOF of POD basis      : ", POD::get_basis().size1());
   }
 
   /* write averages of snapshots into a vtk-file */
   if(this->db["pod_fluctuations_only"])
   {
-    for(int j=0; j< this->fe_space.GetN_DegreesOfFreedom(); ++j)
+    for(int j=0; j< this->fe_space->GetN_DegreesOfFreedom(); ++j)
     {
       this->pod_mode.get_entries()[j] = POD::get_snaps_avr()(j);
     }
@@ -237,7 +237,7 @@ void TimeConvectionDiffusionPOD<d>::output()
 
   for(int i=0; i < std::min(POD::get_rank(),10); ++i)
   {
-    for(int j=0; j<this->fe_space.GetN_DegreesOfFreedom(); ++j)
+    for(int j=0; j<this->fe_space->GetN_DegreesOfFreedom(); ++j)
     {
       this->pod_mode.get_entries()[j] = POD::get_basis()(j,i);
     }

@@ -32,7 +32,7 @@ class TFEVectFunct2D : public TFEFunction2D
     TFEVectFunct2D();
 
     /** constructor with vector initialization */
-    TFEVectFunct2D(const TFESpace2D *fespace2D, const std::string& name,
+    TFEVectFunct2D(std::shared_ptr<const TFESpace2D> fespace2D, const std::string& name,
                    const std::string& description, double *values, int length,
                    int n_components);
 

@@ -33,10 +33,10 @@ class FEMatrix : public TMatrix
     /// @name construct square matrix using one finite element space
     /// @brief ansatz and test space is the same 
     //@{
-    explicit FEMatrix(const TFESpace1D * space);
-    explicit FEMatrix(const TFESpace2D * space);
+    explicit FEMatrix(std::shared_ptr<const TFESpace1D> space);
+    explicit FEMatrix(std::shared_ptr<const TFESpace2D> space);
     #ifdef __3D__
-    explicit FEMatrix(const TFESpace3D * space);
+    explicit FEMatrix(std::shared_ptr<const TFESpace3D> space);
     #endif // 3D
     //@}
     
@@ -47,19 +47,26 @@ class FEMatrix : public TMatrix
     /// to the test space.
     /// @param[in] is_empty If true, this TMatrix is created with an empty structure.
     //@{
-    FEMatrix(const TFESpace2D * testspace, const TFESpace2D * ansatzspace,  bool is_empty = false);
+    FEMatrix(std::shared_ptr<const TFESpace2D> testspace,
+             std::shared_ptr<const TFESpace2D> ansatzspace,
+             bool is_empty = false);
     #ifdef __3D__
-    FEMatrix(const TFESpace3D * testspace, const TFESpace3D * ansatzspace,  bool is_empty = false);
+    FEMatrix(std::shared_ptr<const TFESpace3D> testspace,
+             std::shared_ptr<const TFESpace3D> ansatzspace,
+             bool is_empty = false);
     #endif // 3D
     //@}
     
     /// @name construct matrix with given structure and finite element space
     /// @brief ansatz and test space is the same. The structure must be square.
     //@{
-    FEMatrix(const TFESpace1D * space, std::shared_ptr<TStructure> structure);
-    FEMatrix(const TFESpace2D * space, std::shared_ptr<TStructure> structure);
+    FEMatrix(std::shared_ptr<const TFESpace1D> space,
+             std::shared_ptr<TStructure> structure);
+    FEMatrix(std::shared_ptr<const TFESpace2D> space,
+             std::shared_ptr<TStructure> structure);
     #ifdef __3D__
-    FEMatrix(const TFESpace3D * space, std::shared_ptr<TStructure> structure);
+    FEMatrix(std::shared_ptr<const TFESpace3D> space,
+             std::shared_ptr<TStructure> structure);
     #endif // 3D
     //@}
     
@@ -143,38 +150,38 @@ class FEMatrix : public TMatrix
     
     
     /** @brief return 1D test space */
-    const TFESpace1D *GetTestSpace1D() const;
+    std::shared_ptr<const TFESpace1D> GetTestSpace1D() const;
     
     /** @brief return 1D ansatz space */
-    const TFESpace1D *GetAnsatzSpace1D() const;
+    std::shared_ptr<const TFESpace1D> GetAnsatzSpace1D() const;
     
     /** @brief return 2D test space */
-    const TFESpace2D *GetTestSpace2D() const;
+    std::shared_ptr<const TFESpace2D> GetTestSpace2D() const;
     
     /** @brief return 2D ansatz space */
-    const TFESpace2D *GetAnsatzSpace2D() const;
+    std::shared_ptr<const TFESpace2D> GetAnsatzSpace2D() const;
     
     #ifdef __3D__
     /** @brief return 3D test space */
-    const TFESpace3D *GetTestSpace3D() const;
+    std::shared_ptr<const TFESpace3D> GetTestSpace3D() const;
     
     /** @brief return 3D ansatz space */
-    const TFESpace3D *GetAnsatzSpace3D() const;
+    std::shared_ptr<const TFESpace3D> GetAnsatzSpace3D() const;
     #endif // 3D
     
     /** @brief return test space */
-    const TFESpace *GetTestSpace() const;
+    std::shared_ptr<const TFESpace> GetTestSpace() const;
     
     /** @brief return ansatz space */
-    const TFESpace *GetAnsatzSpace() const;
+    std::shared_ptr<const TFESpace> GetAnsatzSpace() const;
     
     /** return FESpace */
-    const TFESpace1D *GetFESpace1D() const;
+    std::shared_ptr<const TFESpace1D> GetFESpace1D() const;
     /** return FESpace */
-    const TFESpace2D *GetFESpace2D() const;
+    std::shared_ptr<const TFESpace2D> GetFESpace2D() const;
     #ifdef __3D__
     /** return FESpace */
-    const TFESpace3D *GetFESpace3D() const;
+    std::shared_ptr<const TFESpace3D> GetFESpace3D() const;
     #endif // 3D
     
   private:
@@ -183,9 +190,9 @@ class FEMatrix : public TMatrix
     /// @details Exactly one of these pointers is not a nullptr.
     /// @todo make this a share_ptr
     //@{
-    const TFESpace1D* AnsatzSpace1D;
-    const TFESpace2D* AnsatzSpace2D;
-    const TFESpace3D* AnsatzSpace3D;
+    std::shared_ptr<const TFESpace1D> AnsatzSpace1D;
+    std::shared_ptr<const TFESpace2D> AnsatzSpace2D;
+    std::shared_ptr<const TFESpace3D> AnsatzSpace3D;
     //@}
     
     /// @name test spaces
@@ -193,9 +200,9 @@ class FEMatrix : public TMatrix
     /// @details Exactly one of these pointers is not a nullptr.
     /// @todo make this a share_ptr
     //@{
-    const TFESpace1D* TestSpace1D;
-    const TFESpace2D* TestSpace2D;
-    const TFESpace3D* TestSpace3D;
+    std::shared_ptr<const TFESpace1D> TestSpace1D;
+    std::shared_ptr<const TFESpace2D> TestSpace2D;
+    std::shared_ptr<const TFESpace3D> TestSpace3D;
     //@}
 };
 

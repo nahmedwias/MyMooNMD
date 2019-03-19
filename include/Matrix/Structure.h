@@ -119,9 +119,9 @@ class TStructure
     /// @name construct square structures using one finite element space
     /// @brief ansatz and test space is the same 
     //@{
-    explicit TStructure(const TFESpace1D * space);
-    explicit TStructure(const TFESpace2D * Space);
-    explicit TStructure(const TFESpace3D * space);
+    explicit TStructure(std::shared_ptr<const TFESpace1D> space);
+    explicit TStructure(std::shared_ptr<const TFESpace2D> space);
+    explicit TStructure(std::shared_ptr<const TFESpace3D> space);
     //@}
     
     /// @name construct rectangular structures using two finite element spaces
@@ -132,8 +132,12 @@ class TStructure
     /// @param[in] is_empty If true, the structure will not have any entries.
     /// A matrix which owns this structure thus represents the zero-map between two FE spaces.
     //@{
-    TStructure(const TFESpace2D * testspace, const TFESpace2D * ansatzspace, bool is_empty = false);
-    TStructure(const TFESpace3D * testspace, const TFESpace3D * ansatzspace, bool is_empty = false);
+    TStructure(std::shared_ptr<const TFESpace2D> testspace,
+               std::shared_ptr<const TFESpace2D> ansatzspace,
+               bool is_empty = false);
+    TStructure(std::shared_ptr<const TFESpace3D> testspace,
+               std::shared_ptr<const TFESpace3D> ansatzspace,
+               bool is_empty = false);
     //@}
     
     /**
@@ -143,8 +147,8 @@ class TStructure
      * These grids must be part of the same hierarchy and the corresponding 
      * levels must be given. 
      */
-    TStructure(const TFESpace2D * testspace, int test_level, 
-               const TFESpace2D * ansatzspace, int ansatz_level);
+    TStructure(std::shared_ptr<const TFESpace2D> testspace, int test_level, 
+               std::shared_ptr<const TFESpace2D> ansatzspace, int ansatz_level);
     
 
     /**
