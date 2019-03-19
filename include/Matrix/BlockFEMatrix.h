@@ -102,9 +102,9 @@ class BlockFEMatrix : public BlockMatrix
      * to all blocks of a particular column as ansatz space.
      */
 #ifdef __2D__
-    explicit BlockFEMatrix(const std::vector<const TFESpace2D*>& spaces);
+    explicit BlockFEMatrix(const std::vector<std::shared_ptr<const TFESpace2D>>& spaces);
 #elif __3D__
-    explicit BlockFEMatrix(const std::vector<const TFESpace3D*>& spaces);
+    explicit BlockFEMatrix(const std::vector<std::shared_ptr<const TFESpace3D>>& spaces);
 #endif // 3D
 
     /**
@@ -129,7 +129,7 @@ class BlockFEMatrix : public BlockMatrix
      * @param space Ansatz- equals testspace.
      * @return A newly constructed BlockFEMatrix for CD2D problems.
      */
-    static BlockFEMatrix CD2D( const TFESpace2D& space );
+    static BlockFEMatrix CD2D(std::shared_ptr<const TFESpace2D> space);
 
     /**
      * Named constructor for a matrix of ParMooN-specific NSE Type 1.
@@ -148,7 +148,8 @@ class BlockFEMatrix : public BlockMatrix
      * @return A newly constructed BlockFEMatrix for NSE2D problems,
      * whose block structure is of NSE Type 1.
      */
-    static BlockFEMatrix NSE2D_Type1( const TFESpace2D& velocity, const TFESpace2D& pressure);
+    static BlockFEMatrix NSE2D_Type1(std::shared_ptr<const TFESpace2D> velocity,
+                                     std::shared_ptr<const TFESpace2D> pressure);
 
     /**
      * Named constructor for a matrix of ParMooN-specific NSE Type 2.
@@ -167,7 +168,8 @@ class BlockFEMatrix : public BlockMatrix
      * @return A newly constructed BlockFEMatrix for NSE2D problems,
      * whose block structure is of NSE Type 2.
      */
-    static BlockFEMatrix NSE2D_Type2( const TFESpace2D& velocity, const TFESpace2D& pressure);
+    static BlockFEMatrix NSE2D_Type2(std::shared_ptr<const TFESpace2D> velocity,
+                                     std::shared_ptr<const TFESpace2D> pressure);
 
     /**
      * Named constructor for a matrix of ParMooN-specific NSE Type 3.
@@ -186,7 +188,8 @@ class BlockFEMatrix : public BlockMatrix
      * @return A newly constructed BlockFEMatrix for NSE2D problems,
      * whose block structure is of NSE Type 3.
      */
-    static BlockFEMatrix NSE2D_Type3( const TFESpace2D& velocity, const TFESpace2D& pressure);
+    static BlockFEMatrix NSE2D_Type3(std::shared_ptr<const TFESpace2D> velocity,
+                                     std::shared_ptr<const TFESpace2D> pressure);
 
     /**
      * Named constructor for a matrix of ParMooN-specific NSE Type 4.
@@ -205,7 +208,8 @@ class BlockFEMatrix : public BlockMatrix
      * @return A newly constructed BlockFEMatrix for NSE2D problems,
      * whose block structure is of NSE Type 4.
      */
-    static BlockFEMatrix NSE2D_Type4( const TFESpace2D& velocity, const TFESpace2D& pressure);
+    static BlockFEMatrix NSE2D_Type4(std::shared_ptr<const TFESpace2D>,
+                                     std::shared_ptr<const TFESpace2D> pressure);
 
     /**
      * Named constructor for a matrix of ParMooN-specific NSE Type 14.
@@ -224,7 +228,8 @@ class BlockFEMatrix : public BlockMatrix
      * @return A newly constructed BlockFEMatrix for NSE2D problems,
      * whose block structure is of NSE Type 14.
      */
-    static BlockFEMatrix NSE2D_Type14( const TFESpace2D& velocity, const TFESpace2D& pressure);
+    static BlockFEMatrix NSE2D_Type14(std::shared_ptr<const TFESpace2D>,
+                                      std::shared_ptr<const TFESpace2D> pressure);
 
     /**
      * Named constructor for a matrix for Darcy type problems in 2D.
@@ -240,7 +245,8 @@ class BlockFEMatrix : public BlockMatrix
      * @param pressure The pressure finite element space.
      * @return A newly constructed BlockFEMatrix for Darcy problems in 2D.
      */
-    static BlockFEMatrix Darcy2D( const TFESpace2D& velocity, const TFESpace2D& pressure);
+    static BlockFEMatrix Darcy2D(std::shared_ptr<const TFESpace2D> velocity,
+                                 std::shared_ptr<const TFESpace2D> pressure);
     
     /**
      * Named constructor for a Mass matrix of ParMooN-specific NSE type 1 & 2
@@ -248,10 +254,11 @@ class BlockFEMatrix : public BlockMatrix
      * @param velocity The velocity finite element space
      * @return A newly constructed BlockFEMatrix for 2D NSE problems
      */
-    static BlockFEMatrix Mass_NSE2D(const TFESpace2D& velocity);
+    static BlockFEMatrix Mass_NSE2D(std::shared_ptr<const TFESpace2D> velocity);
     
-    static BlockFEMatrix Mass_Matrix_NSE2D(const TFESpace2D& velocity, 
-                              const TFESpace2D& pressure);
+    static BlockFEMatrix Mass_Matrix_NSE2D(
+      std::shared_ptr<const TFESpace2D> velocity,
+      std::shared_ptr<const TFESpace2D> pressure);
     
     /**
      * Named constructor for a mass matrix type 1, 2
@@ -266,8 +273,12 @@ class BlockFEMatrix : public BlockMatrix
      * @return A newly constructed BlockFEMatrix for NSE2D problems,
      * whose block structure is of NSE Type 1, 2.
      */
-    static BlockFEMatrix Mass_NSE2D_Type1( const TFESpace2D& velocity, const TFESpace2D& pressure);
-    static BlockFEMatrix Mass_NSE2D_Type2( const TFESpace2D& velocity, const TFESpace2D& pressure);
+    static BlockFEMatrix Mass_NSE2D_Type1(
+      std::shared_ptr<const TFESpace2D> velocity,
+      std::shared_ptr<const TFESpace2D> pressure);
+    static BlockFEMatrix Mass_NSE2D_Type2(
+      std::shared_ptr<const TFESpace2D> velocity,
+      std::shared_ptr<const TFESpace2D> pressure);
     /**
      * Named constructor for a mass matrix type 3, 4
      * The matrix takes the block structure
@@ -281,8 +292,12 @@ class BlockFEMatrix : public BlockMatrix
      * @return A newly constructed BlockFEMatrix for NSE2D problems,
      * whose block structure is of NSE Type 3, 4.
      */
-    static BlockFEMatrix Mass_NSE2D_Type3( const TFESpace2D& velocity, const TFESpace2D& pressure);
-    static BlockFEMatrix Mass_NSE2D_Type4( const TFESpace2D& velocity, const TFESpace2D& pressure);
+    static BlockFEMatrix Mass_NSE2D_Type3(
+      std::shared_ptr<const TFESpace2D> velocity,
+      std::shared_ptr<const TFESpace2D> pressure);
+    static BlockFEMatrix Mass_NSE2D_Type4(
+      std::shared_ptr<const TFESpace2D> velocity,
+      std::shared_ptr<const TFESpace2D> pressure);
 
 #elif __3D__
     /**
@@ -297,7 +312,7 @@ class BlockFEMatrix : public BlockMatrix
      * @param space Ansatz- equals testspace.
      * @return A newly constructed BlockFEMatrix for CD3D problems.
      */
-    static BlockFEMatrix CD3D( const TFESpace3D& space );
+    static BlockFEMatrix CD3D(std::shared_ptr<const TFESpace3D> space );
     
     /**
      * Named constructor for a matrix for Darcy type problems in 3D.
@@ -313,8 +328,8 @@ class BlockFEMatrix : public BlockMatrix
      * @param pressure The pressure finite element space.
      * @return A newly constructed BlockFEMatrix for Darcy problems in 2D.
      */
-    static BlockFEMatrix Darcy3D( const TFESpace3D& velocity,
-                                  const TFESpace3D& pressure);
+    static BlockFEMatrix Darcy3D(std::shared_ptr<const TFESpace3D> velocity,
+                                 std::shared_ptr<const TFESpace3D> pressure);
     
     /**
      * Named constructor for a matrix of ParMooN-specific NSE Type 1.
@@ -334,7 +349,8 @@ class BlockFEMatrix : public BlockMatrix
      * @return A newly constructed BlockFEMatrix for NSE3D problems,
      * whose block structure is of NSE Type 1.
      */
-    static BlockFEMatrix NSE3D_Type1( const TFESpace3D& velocity, const TFESpace3D& pressure);
+    static BlockFEMatrix NSE3D_Type1(std::shared_ptr<const TFESpace3D> velocity,
+                                     std::shared_ptr<const TFESpace3D> pressure);
     
     /**
      * Named constructor for a matrix of ParMooN-specific NSE Type 2.
@@ -354,7 +370,8 @@ class BlockFEMatrix : public BlockMatrix
      * @return A newly constructed BlockFEMatrix for NSE3D problems,
      * whose block structure is of NSE Type 2.
      */
-    static BlockFEMatrix NSE3D_Type2( const TFESpace3D& velocity, const TFESpace3D& pressure);
+    static BlockFEMatrix NSE3D_Type2(std::shared_ptr<const TFESpace3D> velocity,
+                                     std::shared_ptr<const TFESpace3D> pressure);
     
     /**
      * Named constructor for a matrix of ParMooN-specific NSE Type 3.
@@ -374,7 +391,8 @@ class BlockFEMatrix : public BlockMatrix
      * @return A newly constructed BlockFEMatrix for NSE3D problems,
      * whose block structure is of NSE Type 3.
      */
-    static BlockFEMatrix NSE3D_Type3( const TFESpace3D& velocity, const TFESpace3D& pressure);
+    static BlockFEMatrix NSE3D_Type3(std::shared_ptr<const TFESpace3D> velocity,
+                                     std::shared_ptr<const TFESpace3D> pressure);
     
     /**
      * Named constructor for a matrix of ParMooN-specific NSE Type 4.
@@ -394,7 +412,8 @@ class BlockFEMatrix : public BlockMatrix
      * @return A newly constructed BlockFEMatrix for NSE3D problems,
      * whose block structure is of NSE Type 4.
      */
-    static BlockFEMatrix NSE3D_Type4( const TFESpace3D& velocity, const TFESpace3D& pressure);
+    static BlockFEMatrix NSE3D_Type4(std::shared_ptr<const TFESpace3D> velocity,
+                                     std::shared_ptr<const TFESpace3D> pressure);
     
     /**
      * Named constructor for a matrix of ParMooN-specific NSE Type 14.
@@ -414,7 +433,8 @@ class BlockFEMatrix : public BlockMatrix
      * @return A newly constructed BlockFEMatrix for NSE3D problems,
      * whose block structure is of NSE Type 14.
      */
-    static BlockFEMatrix NSE3D_Type14( const TFESpace3D& velocity, const TFESpace3D& pressure);
+    static BlockFEMatrix NSE3D_Type14(std::shared_ptr<const TFESpace3D> velocity,
+                                      std::shared_ptr<const TFESpace3D> pressure);
 
     /**
      * Named constructor for a Mass matrix of ParMooN-specific NSE type 1 & 2
@@ -423,7 +443,7 @@ class BlockFEMatrix : public BlockMatrix
      * @return A newly constructed BlockFEMatrix for
      * 3D NSE time dependent problems
      */
-    static BlockFEMatrix Mass_NSE3D(const TFESpace3D& velocity);
+    static BlockFEMatrix Mass_NSE3D(std::shared_ptr<const TFESpace3D> velocity);
     
     /**
      * Named constructor for a mass matrix type 1, 2
@@ -439,8 +459,12 @@ class BlockFEMatrix : public BlockMatrix
      * @return A newly constructed BlockFEMatrix for NSE2D problems,
      * whose block structure is of NSE Type 1, 2.
      */
-    static BlockFEMatrix Mass_NSE3D_Type1( const TFESpace3D& velocity, const TFESpace3D& pressure);
-    static BlockFEMatrix Mass_NSE3D_Type2( const TFESpace3D& velocity, const TFESpace3D& pressure);
+    static BlockFEMatrix Mass_NSE3D_Type1(
+      std::shared_ptr<const TFESpace3D> velocity,
+      std::shared_ptr<const TFESpace3D> pressure);
+    static BlockFEMatrix Mass_NSE3D_Type2(
+      std::shared_ptr<const TFESpace3D> velocity,
+      std::shared_ptr<const TFESpace3D> pressure);
     /**
      * Named constructor for a mass matrix type 3, 4
      * The matrix takes the block structure
@@ -455,8 +479,12 @@ class BlockFEMatrix : public BlockMatrix
      * @return A newly constructed BlockFEMatrix for NSE2D problems,
      * whose block structure is of NSE Type 3, 4.
      */
-    static BlockFEMatrix Mass_NSE3D_Type3( const TFESpace3D& velocity, const TFESpace3D& pressure);
-    static BlockFEMatrix Mass_NSE3D_Type4( const TFESpace3D& velocity, const TFESpace3D& pressure);
+    static BlockFEMatrix Mass_NSE3D_Type3(
+      std::shared_ptr<const TFESpace3D> velocity,
+      std::shared_ptr<const TFESpace3D> pressure);
+    static BlockFEMatrix Mass_NSE3D_Type4(
+      std::shared_ptr<const TFESpace3D> velocity,
+      std::shared_ptr<const TFESpace3D> pressure);
 #endif
 
 
@@ -564,9 +592,11 @@ class BlockFEMatrix : public BlockMatrix
      * @return The ansatzspace, which is the same for the entire column.
      */
 #ifdef __2D__
-    const TFESpace2D& get_ansatz_space(size_t cell_row, size_t cell_column) const;
+    std::shared_ptr<const TFESpace2D> get_ansatz_space(size_t cell_row,
+                                                       size_t cell_column) const;
 #elif __3D__
-    const TFESpace3D& get_ansatz_space(size_t cell_row, size_t cell_column) const;
+    std::shared_ptr<const TFESpace3D> get_ansatz_space(size_t cell_row,
+                                                       size_t cell_column) const;
 #endif
 
     /**
@@ -645,12 +675,12 @@ class BlockFEMatrix : public BlockMatrix
 
     /// @return The column (means: ansatz-)space of a certain cell column.
 #ifdef __2D__
-    const TFESpace2D& get_column_space(size_t cell_column) const
+    std::shared_ptr<const TFESpace2D> get_column_space(size_t cell_column) const
 #elif __3D__
-    const TFESpace3D& get_column_space(size_t cell_column) const
+    std::shared_ptr<const TFESpace3D> get_column_space(size_t cell_column) const
 #endif
     {
-      return *ansatz_spaces_columnwise_.at(cell_column);
+      return ansatz_spaces_columnwise_.at(cell_column);
     }
 
     /** @brief return this BlockMatrix as one TMatrix
@@ -729,12 +759,12 @@ class BlockFEMatrix : public BlockMatrix
 
     /// @return The row (means: test-)space of a certain cell row.
 #ifdef __2D__
-    const TFESpace2D& get_row_space(size_t cell_row) const
+    std::shared_ptr<const TFESpace2D> get_row_space(size_t cell_row) const
 #elif __3D__
-    const TFESpace3D& get_row_space(size_t cell_row) const
+    std::shared_ptr<const TFESpace3D> get_row_space(size_t cell_row) const
 #endif
     {
-      return *test_spaces_rowwise_.at(cell_row);
+      return test_spaces_rowwise_.at(cell_row);
     }
 
     /**
@@ -748,9 +778,11 @@ class BlockFEMatrix : public BlockMatrix
      * @return The testspace, which is the same for the entire row.
      */
 #ifdef __2D__
-    const TFESpace2D& get_test_space(size_t cell_row, size_t cell_column) const;
+    std::shared_ptr<const TFESpace2D> get_test_space(size_t cell_row,
+                                                     size_t cell_column) const;
 #elif __3D__
-    const TFESpace3D& get_test_space(size_t cell_row, size_t cell_column) const;
+    std::shared_ptr<const TFESpace3D> get_test_space(size_t cell_row,
+                                                     size_t cell_column) const;
 #endif
 
     /** @brief this method is used to compare the number of actives in a block vector
@@ -850,15 +882,15 @@ class BlockFEMatrix : public BlockMatrix
 
   protected:
 #ifdef __2D__
-    /// Store pointers to the testspaces rowwise. (TODO could be changed to weak_ptr)
-    std::vector<const TFESpace2D* > test_spaces_rowwise_;
-    /// Store pointers to the ansatzspaces columnwise. (TODO could be changed to weak_ptr)
-    std::vector<const TFESpace2D* > ansatz_spaces_columnwise_;
+    /// Store pointers to the testspaces rowwise.
+    std::vector<std::shared_ptr<const TFESpace2D>> test_spaces_rowwise_;
+    /// Store pointers to the ansatzspaces columnwise.
+    std::vector<std::shared_ptr<const TFESpace2D>> ansatz_spaces_columnwise_;
 #elif __3D__
-    /// Store pointers to the testspaces rowwise. (TODO could be changed to weak_ptr)
-    std::vector<const TFESpace3D* > test_spaces_rowwise_;
-    /// Store pointers to the ansatzspaces columnwise. (TODO could be changed to weak_ptr)
-    std::vector<const TFESpace3D* > ansatz_spaces_columnwise_;
+    /// Store pointers to the testspaces rowwise.
+    std::vector<std::shared_ptr<const TFESpace3D>> test_spaces_rowwise_;
+    /// Store pointers to the ansatzspaces columnwise.
+    std::vector<std::shared_ptr<const TFESpace3D>> ansatz_spaces_columnwise_;
 #endif
     
     /// @brief modify the first pressure row for (Navier-) Stokes matrices

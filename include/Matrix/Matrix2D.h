@@ -8,7 +8,8 @@ class TMatrix2D : public FEMatrix
 {
   public:
     /** generate the matrix */
-    TMatrix2D(const TFESpace2D * testspace, const TFESpace2D * ansatzspace);
+    TMatrix2D(std::shared_ptr<const TFESpace2D> testspace,
+              std::shared_ptr<const TFESpace2D> ansatzspace);
     
     TMatrix2D(const TMatrix2D & m) = default;
     

@@ -321,13 +321,13 @@ void Multigrid::update_rhs_in_coarser_grid(size_t lvl)
   for(size_t i = 0 ; i < matrix_current.get_n_cell_rows() ; ++i)
   {
 #ifdef __2D__
-    const TFESpace2D& space_current = matrix_current.get_row_space(i);
-    const TFESpace2D& space_coarse = matrix_coarse.get_row_space(i);
+    const TFESpace2D& space_current = *matrix_current.get_row_space(i);
+    const TFESpace2D& space_coarse = *matrix_coarse.get_row_space(i);
 
 #endif
 #ifdef __3D__
-    const TFESpace3D& space_current = matrix_current.get_row_space(i);
-    const TFESpace3D& space_coarse = matrix_coarse.get_row_space(i);
+    const TFESpace3D& space_current = *matrix_current.get_row_space(i);
+    const TFESpace3D& space_coarse = *matrix_coarse.get_row_space(i);
 #endif
     double* defect_current_entries = defect_current.block(i);
     int size_current_defect = defect_current.length(i);
@@ -370,12 +370,12 @@ void Multigrid::update_solution_in_finer_grid(size_t lvl)
   for(size_t i = 0 ; i < matrix_current.get_n_cell_rows() ; ++i)
   {
 #ifdef __2D__
-    const TFESpace2D& space_fine = matrix_fine.get_row_space(i);
-    const TFESpace2D& space_current = matrix_current.get_row_space(i);
+    const TFESpace2D& space_fine = *matrix_fine.get_row_space(i);
+    const TFESpace2D& space_current = *matrix_current.get_row_space(i);
 #endif
 #ifdef __3D__
-    const TFESpace3D& space_fine = matrix_fine.get_row_space(i);
-    const TFESpace3D& space_current = matrix_current.get_row_space(i);
+    const TFESpace3D& space_fine = *matrix_fine.get_row_space(i);
+    const TFESpace3D& space_current = *matrix_current.get_row_space(i);
 #endif
 
     double* solution_prolongation = copy_sol_fine.block(i);

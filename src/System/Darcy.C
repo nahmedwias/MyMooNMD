@@ -42,18 +42,18 @@ Darcy<d>::System_per_grid::System_per_grid(const Example_Darcy& example,
   velocity_space->SetAsDGSpace();
   pressure_space->SetAsDGSpace();
 #ifdef __3D__
-  matrix = BlockFEMatrix::Darcy3D(*this->velocity_space, *this->pressure_space);
+  matrix = BlockFEMatrix::Darcy3D(this->velocity_space, this->pressure_space);
 #else
-  matrix = BlockFEMatrix::Darcy2D(*this->velocity_space, *this->pressure_space);
+  matrix = BlockFEMatrix::Darcy2D(this->velocity_space, this->pressure_space);
 #endif
 
   rhs = BlockVector(this->matrix, true);
   solution = BlockVector(this->matrix, false);
 
-  u = FEFunction(this->velocity_space.get(), "u", "u",
-                 this->solution.block(0), this->solution.length(0));
-  p = FEFunction(this->pressure_space.get(), "p", "p",
-                 this->solution.block(1), this->solution.length(1));
+  u = FEFunction(this->velocity_space, "u", "u", this->solution.block(0),
+                 this->solution.length(0));
+  p = FEFunction(this->pressure_space, "p", "p", this->solution.block(1),
+                 this->solution.length(1));
 }
 
 /** ************************************************************************ */
