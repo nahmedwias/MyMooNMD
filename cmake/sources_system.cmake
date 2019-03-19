@@ -14,7 +14,7 @@ list(APPEND SYST_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/System/NavierStokes.C")
 list(APPEND SYST_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/System/Darcy.C")
 list(APPEND SYST_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/System/TimeConvectionDiffusion.C")
 list(APPEND SYST_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/System/TimeNavierStokes.C")
-list(APPEND SYST_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/System/Brinkman2D.C")
+#list(APPEND SYST_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/System/Brinkman2D.C")
 
 # Source files to be added to the 3D library.
 list(APPEND SYST_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/System/ConvectionDiffusion.C")
@@ -22,7 +22,7 @@ list(APPEND SYST_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/System/NavierStokes.C")
 list(APPEND SYST_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/System/Darcy.C")
 list(APPEND SYST_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/System/TimeConvectionDiffusion.C")
 list(APPEND SYST_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/System/TimeNavierStokes.C")
-list(APPEND SYST_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/System/Brinkman3D.C")
+#list(APPEND SYST_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/System/Brinkman3D.C")
 
 # Source files to be added to both 2D and 3D library
 list(APPEND SYST_SOURCES "${PROJECT_SOURCE_DIR}/src/System/Residuals.C")
