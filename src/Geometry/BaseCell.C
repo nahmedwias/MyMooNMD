@@ -183,7 +183,7 @@ void TBaseCell::SetNormalOrientation()
   for (int i=0; i<nEdges;i++)
   {
     normalOrientation[i] = 1;
-    TJoint *joint = Joints[i];
+    const TJoint *joint = Joints[i];
     if(joint->InnerJoint())
     {
       neighbCell = joint->GetNeighbour(this);

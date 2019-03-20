@@ -52,8 +52,9 @@ TAuxParam2D::TAuxParam2D()
 
 
 /** return all parameters at all quadrature points */
-void TAuxParam2D::GetParameters(int N_Points, TCollection *, TBaseCell *cell,
-                                int cellnum, const double *, const double *,
+void TAuxParam2D::GetParameters(int N_Points, TCollection *,
+                                const TBaseCell *cell, int cellnum,
+                                const double *, const double *,
                                 double *X, double *Y, double **Parameters)
 {
   // collect information
@@ -106,7 +107,7 @@ void TAuxParam2D::GetParameters(int N_Points, TCollection *, TBaseCell *cell,
 
 /** return all parameters at all quadrature points on the boundary*/
 void TAuxParam2D::GetParameters(int N_Points, TCollection *Coll,
-                                TBaseCell *cell, int cellnum, const double *t,
+                                const TBaseCell *cell, int cellnum, const double *t,
                                 int joint, double **Parameters)
 {
   int i,j,k,l,n; //N_Cells;
@@ -200,9 +201,10 @@ void TAuxParam2D::GetParameters(int N_Points, TCollection *Coll,
       bf->GetDerivatives(D01, xi, eta, uetaref);
   
       // compute values on the original mesh cell 
-      TFEDatabase2D::GetOrigValues(RefTrans, xi, eta, bf, Coll, (TGridCell *)cell,
-				   uref, uxiref, uetaref, 
-				   uorig, uxorig, uyorig);
+      TFEDatabase2D::GetOrigValues(RefTrans, xi, eta, bf, Coll,
+                                   (const TGridCell *)cell,
+                                   uref, uxiref, uetaref, 
+                                   uorig, uxorig, uyorig);
       switch(FEValue_MultiIndex[j])
       {
         case D00:

@@ -588,7 +588,7 @@ class TFEDatabase2D
         to original element */
     static void GetOrigValues(RefTrans2D RefTrans,
                 double xi, double eta, TBaseFunct2D *bf,
-                TCollection *Coll, TGridCell *cell,
+                TCollection *Coll, const TGridCell *cell,
                 double *uref, double *uxiref, double *uetaref,
                 double *uorig, double *uxorig, double *uyorig);
     
@@ -615,7 +615,7 @@ class TFEDatabase2D
          from reference to original element */
      static RefTrans2D GetOrig(int N_LocalUsedElements, FE2D *LocalUsedElements,
                          TCollection *Coll,
-                         TBaseCell *cell, bool *Needs2ndDer,
+                         const TBaseCell *cell, bool *Needs2ndDer,
                          int &N_Points, const double* &xi, const double* &eta, 
                          const double* &weights, double* X, double* Y,
                          double* absdetjk);

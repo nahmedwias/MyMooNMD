@@ -84,13 +84,13 @@ typedef void AssembleFct3D(double, double *, double, double **,
                            int *, double ***, double **);
 
 class TBaseCell;
-typedef void ManipulateFct2D(int, double **, double **, TBaseCell *);
+typedef void ManipulateFct2D(int, double **, double **, const TBaseCell *);
 
-typedef void ManipulateFct3D(int, double **, double **, TBaseCell *);
+typedef void ManipulateFct3D(int, double **, double **, const TBaseCell *);
 
 class TCollection;
-typedef void EvalAllNF(TCollection *, TBaseCell *, const double *, double *);
-typedef void EvalJointNF(TCollection *, TBaseCell *, int, const double *, double *);
+typedef void EvalAllNF(TCollection *, const TBaseCell *, const double *, double *);
+typedef void EvalJointNF(TCollection *, const TBaseCell *, int, const double *, double *);
 
 class TFESpace2D;
 typedef void CheckWrongNeumannNodesFunct2D(TCollection *, TFESpace2D *,

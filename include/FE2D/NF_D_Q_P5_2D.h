@@ -897,7 +897,7 @@ static double NF_D_Q_P5_2D_W21[36] = {
 
 static double *NF_D_Q_P5_2D_T = nullptr;
 
-void NF_D_Q_P5_2D_EvalAll(TCollection *, TBaseCell *,
+void NF_D_Q_P5_2D_EvalAll(TCollection *, const TBaseCell *,
                           const double *PointValues, double *Functionals)
 {
   Functionals[0] = Ddot(36, PointValues, NF_D_Q_P5_2D_W1);
@@ -923,7 +923,7 @@ void NF_D_Q_P5_2D_EvalAll(TCollection *, TBaseCell *,
   Functionals[20] = Ddot(36, PointValues, NF_D_Q_P5_2D_W21);
 }
 
-void NF_D_Q_P5_2D_EvalEdge(TCollection *, TBaseCell *, int,
+void NF_D_Q_P5_2D_EvalEdge(TCollection *, const TBaseCell *, int,
                            const double *, double *)
 {
 }

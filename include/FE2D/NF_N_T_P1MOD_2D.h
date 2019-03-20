@@ -16,11 +16,11 @@ static double NF_N_T_P1MOD_2D_T[] =
         { -0.77459666924148337703585307995647992, 0,
            0.77459666924148337703585307995647992 };
 
-void NF_N_T_P1MOD_2D_EvalAll(TCollection *Coll, TBaseCell *Cell,
+void NF_N_T_P1MOD_2D_EvalAll(TCollection *Coll, const TBaseCell *Cell,
                              const double *PointValues, double *Functionals)
 {
   int OwnNum, NeighNum;
-  TBaseCell *neigh;
+  const TBaseCell *neigh;
 
   static double weights[]={ 0.27777777777777777777777777778,
                             0.44444444444444444444444444444,
@@ -87,11 +87,11 @@ void NF_N_T_P1MOD_2D_EvalAll(TCollection *Coll, TBaseCell *Cell,
   } // endif Cell
 }
 
-void NF_N_T_P1MOD_2D_EvalEdge(TCollection *Coll, TBaseCell *Cell, int Joint,
+void NF_N_T_P1MOD_2D_EvalEdge(TCollection *Coll, const TBaseCell *Cell, int Joint,
                               const double *PointValues, double *Functionals)
 {
   int OwnNum, NeighNum;
-  TBaseCell *neigh;
+  const TBaseCell *neigh;
 
   static double weights[3]={ 0.27777777777777777777777777778,
                             0.44444444444444444444444444444,

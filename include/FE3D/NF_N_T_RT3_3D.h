@@ -243,7 +243,7 @@ static double *NF_N_T_RT3_3D_ZetaArray[4] = {
 static double NF_N_T_RT3_3D_T[1] = {};// ???
 static double NF_N_T_RT3_3D_S[1] = {};// ???
 
-void NF_N_T_RT3_3D_EvalAll(TCollection *, TBaseCell *,
+void NF_N_T_RT3_3D_EvalAll(TCollection *, const TBaseCell *,
                            const double *PointValues, double *Functionals)
 {
   // PointValues[4*i + j] means i-th component (i=0 for x, i=1 for y, i=2 for z)
@@ -424,7 +424,7 @@ void NF_N_T_RT3_3D_EvalAll(TCollection *, TBaseCell *,
   Functionals[69] = s;
 }
 
-void NF_N_T_RT3_3D_EvalFace(TCollection *, TBaseCell *Cell, int face,
+void NF_N_T_RT3_3D_EvalFace(TCollection *, const TBaseCell *Cell, int face,
                             const double *PointValues, double *Functionals)
 {
   double s; // size of face

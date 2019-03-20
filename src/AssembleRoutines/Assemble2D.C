@@ -63,10 +63,6 @@ double factor
   QuadFormula1D LineQuadFormula;
   TQuadFormula1D *qf1;
   TCollection *Coll;
-  TBaseCell *cell;
-  TJoint *joint;
-  TBoundEdge *boundedge;
-  TIsoBoundEdge *isoboundedge;
   int **GlobalNumbers = nullptr;
   int **BeginIndex = nullptr;
   int **RhsGlobalNumbers = nullptr;
@@ -248,12 +244,12 @@ double factor
   N_Cells = Coll->GetN_Cells();
   for(i=0;i<N_Cells;i++)
   {
-    cell = Coll->GetCell(i);
+    auto cell = Coll->GetCell(i);
     cell->SetCellIndex(i);
   }
   for(i=0;i<N_Cells;i++)
   {
-    cell = Coll->GetCell(i);
+    auto cell = Coll->GetCell(i);
 
     TDatabase::ParamDB->INTERNAL_CELL = i;
     switch (TDatabase::ParamDB->CELL_MEASURE)
@@ -375,7 +371,7 @@ double factor
         BoundaryCondition = BoundaryConditions[j];
         for(m=0;m<N_Joints;m++)
         {
-        joint = cell->GetJoint(m);
+        auto joint = cell->GetJoint(m);
         if(joint->GetType() == BoundaryEdge ||
         joint->GetType() == IsoBoundEdge)
         {
@@ -657,20 +653,20 @@ double factor
 
       for(m=0;m<N_Joints;m++)
       {
-        joint = cell->GetJoint(m);
+        auto joint = cell->GetJoint(m);
 
         if(joint->GetType() == BoundaryEdge ||
           joint->GetType() == IsoBoundEdge)
         {
           if(joint->GetType() == BoundaryEdge)
           {
-            boundedge = (TBoundEdge *)joint;
+            auto boundedge = (const TBoundEdge *)joint;
             BoundComp = boundedge->GetBoundComp();
             boundedge->GetParameters(t0, t1);
           }
           else
           {
-            isoboundedge = (TIsoBoundEdge *)joint;
+            auto isoboundedge = (const TIsoBoundEdge *)joint;
             BoundComp = isoboundedge->GetBoundComp();
             isoboundedge->GetParameters(t0, t1);
           }
@@ -1111,10 +1107,6 @@ TFEFunction2D *u1, TFEFunction2D *u2)
   QuadFormula1D LineQuadFormula;
   TQuadFormula1D *qf1;
   TCollection *Coll;
-  TBaseCell *cell;
-  TJoint *joint;
-  TBoundEdge *boundedge;
-  TIsoBoundEdge *isoboundedge;
   int **GlobalNumbers = nullptr;
   int **BeginIndex = nullptr;
   int **RhsGlobalNumbers = nullptr;
@@ -1273,7 +1265,7 @@ TFEFunction2D *u1, TFEFunction2D *u2)
   N_Cells = Coll->GetN_Cells();
   for(i=0;i<N_Cells;i++)
   {
-    cell = Coll->GetCell(i);
+    auto cell = Coll->GetCell(i);
 
     // double hK = cell->GetDiameter();
     // ####################################################################
@@ -1326,19 +1318,19 @@ TFEFunction2D *u1, TFEFunction2D *u2)
       N_Joints = cell->GetN_Edges();
       for(m=0;m<N_Joints;m++)
       {
-        joint = cell->GetJoint(m);
+        auto joint = cell->GetJoint(m);
         if(joint->GetType() == BoundaryEdge ||
           joint->GetType() == IsoBoundEdge)
         {
           if(joint->GetType() == BoundaryEdge)
           {
-            boundedge = (TBoundEdge *)joint;
+            auto boundedge = (TBoundEdge *)joint;
             BoundComp = boundedge->GetBoundComp();
             boundedge->GetParameters(t0, t1);
           }
           else
           {
-            isoboundedge = (TIsoBoundEdge *)joint;
+            auto isoboundedge = (TIsoBoundEdge *)joint;
             BoundComp = isoboundedge->GetBoundComp();
             isoboundedge->GetParameters(t0, t1);
           }
@@ -1993,7 +1985,7 @@ void Assemble2D_VectFE(int n_fespaces, const TFESpace2D** fespaces,
       }
     }                                             // for ijo
     double hK = 0; // size of cell
-    switch (TDatabase::ParamDB->CELL_MEASURE)
+    switch(TDatabase::ParamDB->CELL_MEASURE)
     {
       case 0:                           // diameter
       case 4:                           // mesh size in convection direction
@@ -2182,10 +2174,10 @@ void Assemble2D_VectFE(int n_fespaces, const TFESpace2D** fespaces,
       
       for(int ijoint=0; ijoint<N_Edges; ijoint++)
       {
-        TJoint *joint = cell->GetJoint(ijoint);
+        const TJoint *joint = cell->GetJoint(ijoint);
         if(joint->GetType() == BoundaryEdge)
         {
-          TBoundEdge *boundedge = (TBoundEdge *)joint;
+          const TBoundEdge *boundedge = (const TBoundEdge *)joint;
           double t0,t1;
           boundedge->GetParameters(t0, t1);
           // get id of the boundary component
@@ -2383,10 +2375,6 @@ void Assemble2D(int n_fespaces, TFESpace2D **fespaces,
   QuadFormula1D LineQuadFormula;
   TQuadFormula1D *qf1;
   TCollection *Coll;
-  TBaseCell *cell;
-  TJoint *joint;
-  TBoundEdge *boundedge;
-  TIsoBoundEdge *isoboundedge;
   int **GlobalNumbers = nullptr;
   int **BeginIndex = nullptr;
   int **RhsGlobalNumbers = nullptr;
@@ -2557,7 +2545,7 @@ void Assemble2D(int n_fespaces, TFESpace2D **fespaces,
   N_Cells = Coll->GetN_Cells();
   for(i=0;i<N_Cells;i++)
   {
-    cell = Coll->GetCell(i);
+    auto cell = Coll->GetCell(i);
 
     hK = cell->GetDiameter();
 
@@ -2627,7 +2615,7 @@ void Assemble2D(int n_fespaces, TFESpace2D **fespaces,
       BoundaryCondition = BoundaryConditions[j];
       for(m=0;m<N_Joints;m++)
       {
-        joint = cell->GetJoint(m);
+        auto joint = cell->GetJoint(m);
         if(joint->GetType() == BoundaryEdge||
            joint->GetType() == InterfaceJoint ||
            joint->GetType() == IsoBoundEdge)
@@ -2635,13 +2623,13 @@ void Assemble2D(int n_fespaces, TFESpace2D **fespaces,
           if(joint->GetType() == BoundaryEdge||
            joint->GetType() == InterfaceJoint)
           {
-            boundedge = (TBoundEdge *)joint;
+            auto boundedge = (const TBoundEdge *)joint;
             BoundComp = boundedge->GetBoundComp();
             boundedge->GetParameters(t0, t1);
           }
           else
           {
-            isoboundedge = (TIsoBoundEdge *)joint;
+            auto isoboundedge = (const TIsoBoundEdge *)joint;
             BoundComp = isoboundedge->GetBoundComp();
             isoboundedge->GetParameters(t0, t1);
           }
@@ -2900,7 +2888,7 @@ void Assemble2D(int n_fespaces, TFESpace2D **fespaces,
       N_Joints = cell->GetN_Edges();
       for(m=0;m<N_Joints;m++)
       {
-        joint = cell->GetJoint(m);
+        auto joint = cell->GetJoint(m);
         if(joint->GetType() == BoundaryEdge||
            joint->GetType() == InterfaceJoint ||
            joint->GetType() == IsoBoundEdge)
@@ -2908,13 +2896,13 @@ void Assemble2D(int n_fespaces, TFESpace2D **fespaces,
           if(joint->GetType() == BoundaryEdge||
            joint->GetType() == InterfaceJoint)
           {
-            boundedge = (TBoundEdge *)joint;
+            auto boundedge = (const TBoundEdge *)joint;
             BoundComp = boundedge->GetBoundComp();
             boundedge->GetParameters(t0, t1);
           }
           else
           {
-            isoboundedge = (TIsoBoundEdge *)joint;
+            auto isoboundedge = (const TIsoBoundEdge *)joint;
             BoundComp = isoboundedge->GetBoundComp();
             isoboundedge->GetParameters(t0, t1);
           }
@@ -3811,10 +3799,6 @@ void Assemble2D_DG(const CoeffFct2D& Coeff, int n_fespaces,
   TQuadFormula1D *qf1D;
   BaseFunct2D BaseFunctCell;
   TCollection *Coll;
-  TBaseCell *cell;
-  TJoint *joint;
-  TBoundEdge *boundedge;
-  TIsoBoundEdge *isoboundedge;
   int **GlobalNumbers = nullptr, **BeginIndex = nullptr;
   int **RhsGlobalNumbers = nullptr, **RhsBeginIndex = nullptr;
   int **TestGlobalNumbers = nullptr, **TestBeginIndex = nullptr;
@@ -3873,7 +3857,6 @@ void Assemble2D_DG(const CoeffFct2D& Coeff, int n_fespaces,
 
   int neigh_edge;
   int N_Neigh;
-  TBaseCell *neigh;
   FE2D LocalUsedElements_neigh[N_FEs2D], CurrEleNeigh;
   BaseFunct2D BaseFunctNeigh;
   TFE2D *eleNeigh;
@@ -4245,7 +4228,7 @@ void Assemble2D_DG(const CoeffFct2D& Coeff, int n_fespaces,
 
   for(i=0;i<N_Cells;i++)                          // set clipboard of cells on finest
   {
-    cell=Coll->GetCell(i);
+    auto cell=Coll->GetCell(i);
     cell->SetClipBoard(i);
   }
 
@@ -4254,7 +4237,7 @@ void Assemble2D_DG(const CoeffFct2D& Coeff, int n_fespaces,
   // ########################################################################
   for(i=0;i<N_Cells;i++)                          // for all cells on the finest level
   {
-    cell = Coll->GetCell(i);                      // next cell
+    auto cell = Coll->GetCell(i);                      // next cell
 
     for(n=0;n<n_sqmatrices;n++)
     {
@@ -4358,7 +4341,7 @@ void Assemble2D_DG(const CoeffFct2D& Coeff, int n_fespaces,
 
       for(r=0;r<N_Edges;r++)
       {                                           // For each edge, get the corresponding neighbour cell.
-        neigh=cell->GetJoint(r)->GetNeighbour(cell);
+        auto neigh=cell->GetJoint(r)->GetNeighbour(cell);
         // If there is a neighbour to the edge, do...
         if(neigh)
         {                                         // Get the number of this neigbbour cell from the clipboard
@@ -4951,7 +4934,7 @@ void Assemble2D_DG(const CoeffFct2D& Coeff, int n_fespaces,
 
       for(m=0;m<N_Joints;m++)
       {
-        joint = cell->GetJoint(m);
+        auto joint = cell->GetJoint(m);
         if(joint->GetType() == BoundaryEdge||
            joint->GetType() == InterfaceJoint ||
           joint->GetType() == IsoBoundEdge)
@@ -4959,13 +4942,13 @@ void Assemble2D_DG(const CoeffFct2D& Coeff, int n_fespaces,
           if(joint->GetType() == BoundaryEdge||
            joint->GetType() == InterfaceJoint)
           {
-            boundedge = (TBoundEdge *)joint;
+            auto boundedge = (const TBoundEdge *)joint;
             BoundComp = boundedge->GetBoundComp();
             boundedge->GetParameters(t0, t1);
           }
           else
           {
-            isoboundedge = (TIsoBoundEdge *)joint;
+            auto isoboundedge = (const TIsoBoundEdge *)joint;
             BoundComp = isoboundedge->GetBoundComp();
             isoboundedge->GetParameters(t0, t1);
           }
@@ -5306,10 +5289,6 @@ void Assemble2D_CIP(const CoeffFct2D& Coeff, int n_fespaces,
   TQuadFormula1D *qf1D;
   BaseFunct2D BaseFunctCell;
   TCollection *Coll;
-  TBaseCell *cell;
-  TJoint *joint;
-  TBoundEdge *boundedge;
-  TIsoBoundEdge *isoboundedge;
   int **GlobalNumbers = nullptr, **BeginIndex = nullptr;
   int **RhsGlobalNumbers = nullptr, **RhsBeginIndex = nullptr;
   int **TestGlobalNumbers = nullptr, **TestBeginIndex = nullptr;
@@ -5369,7 +5348,6 @@ void Assemble2D_CIP(const CoeffFct2D& Coeff, int n_fespaces,
 
   int neigh_edge;
   int N_Neigh;
-  TBaseCell *neigh;
   FE2D LocalUsedElements_neigh[N_FEs2D], CurrEleNeigh;
   BaseFunct2D BaseFunctNeigh;
   TFE2D *eleNeigh;
@@ -5745,7 +5723,7 @@ void Assemble2D_CIP(const CoeffFct2D& Coeff, int n_fespaces,
 
   for(i=0;i<N_Cells;i++)                          // set clipboard of cells on finest
   {
-    cell=Coll->GetCell(i);
+    auto cell=Coll->GetCell(i);
     cell->SetClipBoard(i);
   }
 
@@ -5754,7 +5732,7 @@ void Assemble2D_CIP(const CoeffFct2D& Coeff, int n_fespaces,
   // ########################################################################
   for(i=0;i<N_Cells;i++)                          // for all cells on the finest level
   {
-    cell = Coll->GetCell(i);                      // next cell
+    auto cell = Coll->GetCell(i);                      // next cell
 
     if (out==2)
 	OutPut("cell " << i << endl);
@@ -5823,7 +5801,7 @@ void Assemble2D_CIP(const CoeffFct2D& Coeff, int n_fespaces,
           TFEDatabase2D::GetOrigValues(RefTrans, xi1D[BaseFunctCell][r][j],
             eta1D[BaseFunctCell][r][j],
             TFEDatabase2D::GetBaseFunct2D(BaseFunctCell),
-            Coll, (TGridCell *)cell,
+            Coll, (const TGridCell *)cell,
             xietaval_ref1D[BaseFunctCell][r][j],
             xideriv_ref1D[BaseFunctCell][r][j],
             etaderiv_ref1D[BaseFunctCell][r][j],
@@ -5840,7 +5818,7 @@ void Assemble2D_CIP(const CoeffFct2D& Coeff, int n_fespaces,
         TFEDatabase2D::GetOrigValues(RefTrans, x_pos_ref[l],
           y_pos_ref[l],
           TFEDatabase2D::GetBaseFunct2D(BaseFunctCell),
-          Coll, (TGridCell *)cell,
+          Coll, (const TGridCell *)cell,
           value_basefunct_ref1D[BaseFunctCell][l],
           xderiv_basefunct_ref1D[BaseFunctCell][l],
           yderiv_basefunct_ref1D[BaseFunctCell][l],
@@ -5852,7 +5830,7 @@ void Assemble2D_CIP(const CoeffFct2D& Coeff, int n_fespaces,
 
       for(r=0;r<N_Edges;r++)
       {                                           // For each edge, get the corresponding neighbour cell.
-        neigh=cell->GetJoint(r)->GetNeighbour(cell);
+        auto neigh=cell->GetJoint(r)->GetNeighbour(cell);
         //#######################################################################//
         // get coefficients on edges
         //only implemented for coeffs that do not depend on the params
@@ -6469,19 +6447,19 @@ void Assemble2D_CIP(const CoeffFct2D& Coeff, int n_fespaces,
           if(weak==1)
           {
             OutPut("weak" << r << endl);
-            joint = cell->GetJoint(r);
+            auto joint = cell->GetJoint(r);
             if(joint->GetType() == BoundaryEdge ||
               joint->GetType() == IsoBoundEdge)
             {
               if(joint->GetType() == BoundaryEdge)
               {
-                boundedge = (TBoundEdge *)joint;
+                auto boundedge = (const TBoundEdge *)joint;
                 BoundComp = boundedge->GetBoundComp();
                 boundedge->GetParameters(t0, t1);
               }
               else
               {
-                isoboundedge = (TIsoBoundEdge *)joint;
+                auto isoboundedge = (const TIsoBoundEdge *)joint;
                 BoundComp = isoboundedge->GetBoundComp();
                 isoboundedge->GetParameters(t0, t1);
               }
@@ -6647,7 +6625,7 @@ void Assemble2D_CIP(const CoeffFct2D& Coeff, int n_fespaces,
 
         for(m=0;m<N_Joints;m++)
         {
-          joint = cell->GetJoint(m);
+          auto joint = cell->GetJoint(m);
           if(joint->GetType() == BoundaryEdge||
            joint->GetType() == InterfaceJoint ||
             joint->GetType() == IsoBoundEdge)
@@ -6655,13 +6633,13 @@ void Assemble2D_CIP(const CoeffFct2D& Coeff, int n_fespaces,
             if(joint->GetType() == BoundaryEdge||
             joint->GetType() == InterfaceJoint)
             {
-              boundedge = (TBoundEdge *)joint;
+              auto boundedge = (const TBoundEdge *)joint;
               BoundComp = boundedge->GetBoundComp();
               boundedge->GetParameters(t0, t1);
             }
             else
             {
-              isoboundedge = (TIsoBoundEdge *)joint;
+              auto isoboundedge = (const TIsoBoundEdge *)joint;
               BoundComp = isoboundedge->GetBoundComp();
               isoboundedge->GetParameters(t0, t1);
             }
@@ -7074,7 +7052,7 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
 
   for(int i=0;i<N_Cells;i++)
   {
-    TBaseCell *cell = Coll->GetCell(i);
+    const TBaseCell *cell = Coll->GetCell(i);
     TDatabase::ParamDB->INTERNAL_CELL = i;
 
     // only for multiphase flows
@@ -7403,7 +7381,7 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
           int N_Edges=cell->GetN_Edges();
           for(int jj=0;jj<N_Edges;jj++)                        // loop over all edges of cell
           {
-            TVertex *ver0 = cell->GetVertex(jj);
+            auto  ver0 = cell->GetVertex(jj);
             double t0 =  ver0->GetClipBoard();
             // vertex not on the boundary
             if (t0<-1e-8)
@@ -7474,7 +7452,7 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
       if(!ignore_boundary_for_rhs)
       for(int m=0;m<N_Joints;m++)
       {
-        TJoint *joint = cell->GetJoint(m);
+        auto joint = cell->GetJoint(m);
 
         if(joint->GetType() == BoundaryEdge ||
            joint->GetType() == IsoBoundEdge ||
@@ -7483,13 +7461,13 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
           if(joint->GetType() == BoundaryEdge||
            joint->GetType() == InterfaceJoint)
           {
-            TBoundEdge *boundedge = (TBoundEdge *)joint;
+            auto boundedge = (const TBoundEdge *)joint;
             BoundComp = boundedge->GetBoundComp();
             boundedge->GetParameters(t0, t1);
           }
           else
           {
-            TIsoBoundEdge *isoboundedge = (TIsoBoundEdge *)joint;
+            auto isoboundedge = (const TIsoBoundEdge *)joint;
             BoundComp = isoboundedge->GetBoundComp();
             isoboundedge->GetParameters(t0, t1);
           }
