@@ -666,7 +666,7 @@ void ComputeDifferenceToCoarseLevel(TCollection *Coll_fine,
 	cell = Coll_fine->GetCell(i);
 	// parent cell
 	parent = cell->GetParent();
-	coarse_no = Coll_coarse->GetIndex(parent);
+	coarse_no = Coll_coarse->get_cell_index(parent);
 	//OutPut(coarse_no << " ");
 	// number of edges
 	N_Edges=cell->GetN_Edges();

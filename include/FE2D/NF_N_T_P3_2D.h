@@ -172,12 +172,12 @@ void NF_N_T_P3_2D_EvalAll(TCollection *Coll, TBaseCell *Cell,
 
   if(Cell)
   {
-    OwnNum = Coll->GetIndex(Cell);
+    OwnNum = Coll->get_cell_index(Cell);
 
     neigh = Cell->GetJoint(0)->GetNeighbour(Cell);
     if(neigh)
     {
-      NeighNum = Coll->GetIndex(neigh);
+      NeighNum = Coll->get_cell_index(neigh);
       if(NeighNum < OwnNum)
         Functionals[3] = -Functionals[3];
     } // endif neigh
@@ -185,7 +185,7 @@ void NF_N_T_P3_2D_EvalAll(TCollection *Coll, TBaseCell *Cell,
     neigh = Cell->GetJoint(1)->GetNeighbour(Cell);
     if(neigh)
     {
-      NeighNum = Coll->GetIndex(neigh);
+      NeighNum = Coll->get_cell_index(neigh);
       if(NeighNum < OwnNum)
         Functionals[ 4] = -Functionals[ 4];
     } // endif neigh
@@ -193,7 +193,7 @@ void NF_N_T_P3_2D_EvalAll(TCollection *Coll, TBaseCell *Cell,
     neigh = Cell->GetJoint(2)->GetNeighbour(Cell);
     if(neigh)
     {
-      NeighNum = Coll->GetIndex(neigh);
+      NeighNum = Coll->get_cell_index(neigh);
       if(NeighNum < OwnNum)
         Functionals[ 5] = -Functionals[ 5];
     } // endif neigh
@@ -227,8 +227,8 @@ void NF_N_T_P3_2D_EvalEdge(TCollection *Coll, TBaseCell *Cell, int Joint,
     neigh = Cell->GetJoint(Joint)->GetNeighbour(Cell);
     if(neigh)
     {
-      OwnNum = Coll->GetIndex(Cell);
-      NeighNum = Coll->GetIndex(neigh);
+      OwnNum = Coll->get_cell_index(Cell);
+      NeighNum = Coll->get_cell_index(neigh);
       if(NeighNum < OwnNum)
         Functionals[1] = -Functionals[1];
     } // endif neigh
