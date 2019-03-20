@@ -92,14 +92,14 @@ class TAuxParam2D
 
     /** return all parameters at all quadrature points */
     void GetParameters(int n_points, TCollection *Coll,
-                       TBaseCell *cell, int cellnum,
+                       const TBaseCell *cell, int cellnum,
                        const double *xi, const double *eta,
                        double *x, double *y,
                        double **Parameters);
 
     /** return all parameters at boundary points */
     void GetParameters(int N_Points, TCollection *Coll,
-                       TBaseCell *cell, int cellnum,
+                       const TBaseCell *cell, int cellnum,
                        const double *s, int joint,
                        double **Parameters);
 

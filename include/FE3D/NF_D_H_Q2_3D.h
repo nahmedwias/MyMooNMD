@@ -273,7 +273,7 @@ static double *NF_D_H_Q2_3D_ZetaArray[6] = {
 static double *NF_D_H_Q2_3D_T = nullptr;
 static double *NF_D_H_Q2_3D_S = nullptr;
 
-void NF_D_H_Q2_3D_EvalAll(TCollection *, TBaseCell *,
+void NF_D_H_Q2_3D_EvalAll(TCollection *, const TBaseCell *,
                           const double *PointValues, double *Functionals)
 {
   int i;
@@ -415,7 +415,7 @@ void NF_D_H_Q2_3D_EvalAll(TCollection *, TBaseCell *,
   Functionals[26] = s * 0.244140625;
 }
 
-void NF_D_H_Q2_3D_EvalFace(TCollection *, TBaseCell *, int,
+void NF_D_H_Q2_3D_EvalFace(TCollection *, const TBaseCell *, int,
                            const double *, double *)
 {
   ErrMsg("EvalFace not implemented for discontinuous Q2-elements on hexahedra");

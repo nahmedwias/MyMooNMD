@@ -17,7 +17,7 @@ static double NF_N_Q_BDM1_2D_Eta[]  =
 static double NF_N_Q_BDM1_2D_T[] = { -NF_N_Q_BDM1_2D_a, 0, NF_N_Q_BDM1_2D_a };
 
 
-void NF_N_Q_BDM1_2D_EvalAll(TCollection *, TBaseCell *Cell,
+void NF_N_Q_BDM1_2D_EvalAll(TCollection *, const TBaseCell *Cell,
                             const double *PointValues, double *Functionals)
 {
   // short names
@@ -125,7 +125,7 @@ void NF_N_Q_BDM1_2D_EvalAll(TCollection *, TBaseCell *Cell,
   }
 }
 
-void NF_N_Q_BDM1_2D_EvalEdge(TCollection *, TBaseCell *Cell, int,
+void NF_N_Q_BDM1_2D_EvalEdge(TCollection *, const TBaseCell *Cell, int,
                              const double *PointValues,double *Functionals)
 {
   double x0, x1, y0, y1, z; // z is just a dummy
