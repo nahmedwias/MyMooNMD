@@ -328,6 +328,20 @@ if(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL OR ${PARMOON_PARALLEL_TYPE} STRE
                         ${_EXTERN_LIBRARIES})
   add_test(lineseval3d ParMooN_test_linesEval3d)
   list(APPEND parmoon_tests ParMooN_test_linesEval3d)
+  
+  # collection tests 2d and 3d
+  add_executable(ParMooN_test_collection_2d collection_test.c++)
+  target_link_libraries(ParMooN_test_collection_2d
+                        parmoon_2d_${PARMOON_PARALLEL_TYPE}
+                        ${_EXTERN_LIBRARIES})
+  add_test(collection2d ParMooN_test_collection_2d)
+  list(APPEND parmoon_tests ParMooN_test_collection_2d)
+  add_executable(ParMooN_test_collection_3d collection_test.c++)
+  target_link_libraries(ParMooN_test_collection_3d
+                        parmoon_3d_${PARMOON_PARALLEL_TYPE}
+                        ${_EXTERN_LIBRARIES})
+  add_test(collection3d ParMooN_test_collection_3d)
+  list(APPEND parmoon_tests ParMooN_test_collection_3d)
 
 elseif(${PARMOON_PARALLEL_TYPE} STREQUAL MPI)	
   

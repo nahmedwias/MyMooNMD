@@ -31,9 +31,6 @@ TCollection::TCollection(int n_cells, TBaseCell **cells)
   N_Cells = n_cells;
   Cells = cells;
 
-  SortedCells = nullptr;
-  Index = nullptr;
-
   #ifdef  _MPI
   N_OwnCells = 0;
   GlobalIndex = new int[N_Cells];
@@ -43,27 +40,9 @@ TCollection::TCollection(int n_cells, TBaseCell **cells)
   #endif
 }
 
-void TCollection::GenerateSortedArrays()
-{
-  if(!SortedCells)
-  {
-    SortedCells = new TBaseCell*[N_Cells];
-    Index = new int[N_Cells];
-
-    memcpy(SortedCells, Cells, N_Cells*sizeof(TBaseCell*));
-    std::sort(SortedCells, SortedCells+N_Cells);
-
-    for(int i=0;i<N_Cells;i++)
-      Index[GetSortedIndex(Cells[i])] = i;
-  }
-}
-
 /** destructor: delete arrays */
 TCollection::~TCollection()
 {
-  if(Index) delete [] Index;
-  if(SortedCells) delete [] SortedCells;
-
   if(Cells) delete [] Cells;
 }
 
@@ -87,308 +66,23 @@ int TCollection::GetHminHmax(double *hmin, double *hmax) const
 }
 
 /** return Index of cell in SortedCells-array */
-int TCollection::GetSortedIndex(const TBaseCell *cell)
+int TCollection::get_cell_index(const TBaseCell *cell) const
 {
-  int Left = 0;
-  int Mid;
-  int Right = N_Cells - 1;
-  int ret = -1;
-  TBaseCell *b;
-
-  while (Left <= Right )
+  if(cell_to_index_map.empty()) // only done once
   {
-    Mid = Left + ((Right - Left) / 2);
-
-    b = SortedCells[Mid];
-
-    if (b == cell)
+    for(int i = 0; i < N_Cells; ++i)
     {
-      ret = Mid;
-      break;
-    }
-
-    if(b > cell)
-      Right = Mid - 1;
-    else
-      Left = Mid + 1;
-  }
-
-  return ret;
-}
-
-/** return Index of cell in SortedCells-array */
-int TCollection::GetIndex(const TBaseCell *cell)
-{
-  int ret, gsi;
-
-  GenerateSortedArrays();
-
-  gsi = GetSortedIndex(cell);
-  ret = (gsi==-1)?(N_Cells+1):Index[gsi];
-
-  return ret;
-}
-
- /** return the Index of the vertex in the sorted array */
-int TCollection::GetIndex(TVertex **Array, int Length, TVertex *Element)
-{
-  int l=0, r=Length, m=(r+l)/2;
-  TVertex *Mid;
-
-  Mid=Array[m];
-  while(Mid!=Element)
-  {
-    if(Mid>Element)
-    {
-      l=m;
-    }
-    else
-    {
-      r=m;
-    }
-    m=(r+l)/2;
-    Mid=Array[m];
-  }
-
-  return m;
-}
-
-
-// methods for TJointCollection, 03.11.09  (Sashi)
-static void Sort(TJoint **Array, int length)
-{
-  int n=0, l=0, r=length-1, m;
-  int i, j, *rr, len;
-  TJoint *Mid, *Temp;
-  double lend = length;
-
-  len=(int)(2*log(lend)/log((double) 2.0)+2);
-  rr= new int[len];
-
-  do
-  {
-    do
-    {
-      i=l;
-      j=r;
-
-      m=(l+r)/2;
-      Mid=Array[m];
-
-      do
+      auto it = cell_to_index_map.insert({Cells[i], i});
+      if(it.second == false)
       {
-        while(Array[i] > Mid) i++;
-
-        while(Array[j] < Mid) j--;
-
-        if (i<=j)
-        {
-          Temp=Array[i];
-          Array[i]=Array[j];
-          Array[j]=Temp;
-          i++; j--;
-        }
-      } while (i<=j);
-
-      if (l<j)
-      {
-        rr[++n]=r;
-        r=j;
+        ErrThrow("cell ", Cells[i],
+                 " appears more than once in this collection. Indices ",
+                 it.first->second, " and ", i);
       }
-    } while (l<j);
-
-    if (n>0) r=rr[n--];
-
-    if (i<r) l=i;
-
-  } while (i<r);
-
-  delete [] rr;
-
-}
-
-static void Sort(TVertex **Array, int length)
-{
-  int n=0, l=0, r=length-1, m;
-  int i, j, *rr, len;
-  TVertex *Mid, *Temp;
-  double lend = length;
-
-  len=(int)(2*log(lend)/log((double) 2.0)+2);
-  rr= new int[len];
-
-  do
-  {
-    do
-    {
-      i=l;
-      j=r;
-
-      m=(l+r)/2;
-      Mid=Array[m];
-
-      do
-      {
-        while(Array[i] > Mid) i++;
-
-        while(Array[j] < Mid) j--;
-
-        if (i<=j)
-        {
-          Temp=Array[i];
-          Array[i]=Array[j];
-          Array[j]=Temp;
-          i++; j--;
-        }
-      } while (i<=j);
-
-      if (l<j)
-      {
-        rr[++n]=r;
-        r=j;
-      }
-    } while (l<j);
-
-    if (n>0) r=rr[n--];
-
-    if (i<r) l=i;
-
-  } while (i<r);
-
-  delete [] rr;
-
-}
-
-
-/** return Index of joints in Cells-array */
-TJointCollection *TCollection::GetJointCollection()
-{
- int i, j, N_Joints, N, N_RootJoints;
- TBaseCell *Me;
- TJoint **joints, **RootJoints, *Last, *Current;
- TJointCollection *JointColl;
-
-
- #ifdef __3D__ 
- joints = new TJoint*[6*N_Cells];
- #else 
- joints = new TJoint*[4*N_Cells];
- #endif
-
- N=0;
- for(i=0; i<N_Cells; i++)
-  {
-   Me = Cells[i];
-   Me->SetCellIndex(i); // needed for DG matrices assembling
-   N_Joints = Me->GetN_Joints();
-   
-   for(j=0; j<N_Joints; j++) 
-    {
-     joints[N] = Me->GetJoint(j);
-     N++;
-    } //for(j=0; j<N_Joints; j++) 
-  } //for(i=0; i<N_Cells; i++)
-
-
-  N--;
-  // sort the Vertices array
-  Sort(joints, N);
-  N++;
-
-  Last=nullptr;
-  N_RootJoints=0;
-  for(i=0;i<N;i++)
-   {
-    Current=joints[i];
-    if(Current!=Last)
-    {
-      N_RootJoints++;
-      Last=Current;
     }
-   }
-
-  RootJoints =  new TJoint*[N_RootJoints];
-  Last=nullptr;
-  N_RootJoints=0;
-  for(i=0;i<N;i++)
-   {
-    Current=joints[i];
-    if(Current!=Last)
-    {
-      RootJoints[N_RootJoints] = Current;
-      Last = Current;
-      N_RootJoints++;
-    }
-   }
-
-  JointColl = new TJointCollection(N_RootJoints, RootJoints);
-
- return JointColl;
+  }
+  return cell_to_index_map.at(cell);
 }
-
-
-// for operator-split nodal point collection, 14.07.2010 (Sashi)
-void TCollection::GenerateCellVertNeibs()
-{
- int i, j, k, m, N, N_VertInCell, N_LocVertices;
- int Max_N_VertInCell, N_RootVertices, *NumberVertex, *VertexNumbers;
- TVertex *Current, *Last, **Vertices;
-
-   Max_N_VertInCell = 0;
-   for(i=0;i<N_Cells;i++)
-    if(Max_N_VertInCell<Cells[i]->GetN_Vertices())
-      Max_N_VertInCell=Cells[i]->GetN_Vertices();
-
-   Vertices=new TVertex*[Max_N_VertInCell*N_Cells];
-
-   N=0;
-   for(i=0;i<N_Cells;i++)
-    {
-     N_VertInCell = Cells[i]->GetN_Vertices();
-
-     for(j=0;j<N_VertInCell;j++)
-      {
-       Vertices[N]=Cells[i]->GetVertex(j);
-       N++;
-      } // j
-    } // i
-  N_LocVertices = N;
-  N--;
-  NumberVertex =new int[N_LocVertices];
-  VertexNumbers= new int[N_LocVertices];
-  // sort the Vertices array based on vertices pointer values
-  Sort(Vertices, N);
-
-  Last=nullptr;
-  N_RootVertices=-1;
-  for(i=0;i<N_LocVertices;i++)
-   {
-    if((Current=Vertices[i])!=Last)
-    {
-      N_RootVertices++;
-      Last=Current;
-    }
-    NumberVertex[i]=N_RootVertices;
-   }
-  N_RootVertices++;
-
-  m=0;
-  for(i=0;i<N_Cells;i++)
-   {
-    k=Cells[i]->GetN_Vertices();
-    for(j=0;j<k;j++)
-    {
-      Current=Cells[i]->GetVertex(j);
-      N=GetIndex(Vertices, N_LocVertices, Current);
-      VertexNumbers[m]=NumberVertex[N];
-      m++;
-    } // endfor j
-  } //endfor i
-
-
-
-}
-
 
 /// @brief create lists with vertex coordinates and element ids
 int TCollection::createElementLists()
@@ -724,22 +418,6 @@ unsigned int TCollection::GetNLocVertices()
 
 
 //#############################################################
-
-/** @brief return the index of cell in SortedCells-array 
-    1.- now during construction the array GlobalIndex[] is filled
-    2.- cell index is compared with the ones in GlobalIndex[]
-    3.- return -1 if cell does not belong to collection
-    @warning The previous function GetIndex() does not seem to work properly in general
-*/
-int TCollection::getIndexInCollection(TBaseCell *cell)
-{
-  for (int i=0; i<N_Cells; i++) {
-    if (GlobalIndex[i]==cell->GetCellIndex()) {
-      return i;
-    }
-  }
-  return -1;
-}
 
 /**
    Notes: 

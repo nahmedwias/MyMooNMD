@@ -562,7 +562,7 @@ void TBaseFunct2D::ChangeBF(TCollection *Coll, const TBaseCell *Cell,
   if(BF2Change == nullptr || Values == nullptr) return;
 
   // /*
-  OwnNum = Coll->GetIndex(Cell);
+  OwnNum = Coll->get_cell_index(Cell);
   N_Joints = Cell->GetN_Joints();
   // Hdiv elements are vector valued, in this case the array Values is longer
   bool vector_valued = this->GetBaseVectDim() == 2;
@@ -573,7 +573,7 @@ void TBaseFunct2D::ChangeBF(TCollection *Coll, const TBaseCell *Cell,
     neigh = joint->GetNeighbour(Cell);
     if(neigh)
     {
-      NeighNum = Coll->GetIndex(neigh);
+      NeighNum = Coll->get_cell_index(neigh);
       if(NeighNum < OwnNum)
       {
         JointArray = BF2Change[j];
@@ -661,7 +661,7 @@ void TBaseFunct2D::ChangeBF(TCollection *Coll, const TBaseCell *Cell,
   if(BF2Change == nullptr || Values == nullptr) return;
 
   // /*
-  OwnNum = Coll->GetIndex(Cell);
+  OwnNum = Coll->get_cell_index(Cell);
   N_Joints = Cell->GetN_Joints();
 
   for(j=0;j<N_Joints;j++)
@@ -670,7 +670,7 @@ void TBaseFunct2D::ChangeBF(TCollection *Coll, const TBaseCell *Cell,
     neigh = joint->GetNeighbour(Cell);
     if(neigh)
     {
-      NeighNum = Coll->GetIndex(neigh);
+      NeighNum = Coll->get_cell_index(neigh);
       if(NeighNum < OwnNum)
       {
         JointArray = BF2Change[j];
