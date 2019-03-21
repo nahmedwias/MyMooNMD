@@ -1,12 +1,15 @@
 #include "TimeNavierStokes_Adjoint.hpp"
 #ifdef __2D__
 #include "Assemble2D.h"
+#include "SquareMatrix2D.h"
 #else
 #include "Assemble3D.h"
+#include "SquareMatrix3D.h"
 #endif
 #include "Hotfixglobal_AssembleNSE.h"
 #include "MainUtilities.h" // BoundaryValueHomogenous
 #include "Database.h" // to check TDatabase::ParamDB->NSTYPE
+#include "NSE_local_assembling_routines.h"
 
 namespace tnse_adjoint
 {
@@ -144,7 +147,6 @@ template<int d>
 void TimeNavierStokes_Adjoint<d>::assemble_matrices_rhs(const FEVectFunct& u,
                                                         const FEFunction& p)
 {
-
 }
 
 template<int d>
@@ -205,6 +207,10 @@ void TimeNavierStokes_Adjoint<d>::assemble_adjoint_terms(const FEVectFunct& u,
     sq_mat[i] = reinterpret_cast<SquareMatrixD*>(blocks[j].get());
   }
   
+  // reset A blocks
+  for(auto sm : sq_mat)
+    sm->reset();
+  
   auto n_rect_mat = 0;
   MatrixD** rect_mat = nullptr;
   
@@ -240,8 +246,8 @@ void TimeNavierStokes_Adjoint<d>::assemble_adjoint_terms(const FEVectFunct& u,
   int N_FEValues = d*d+d;
   
 #ifdef __2D__
-  std::vector<MultiIndex2D> derivatives{D00, D10, D01};
-  std::vector<int> FESpaceNumber = { 0, 0, 0 }; // 0: velocity, 1: pressure  
+  std::vector<MultiIndex2D> derivatives{D00, D00, D10, D01};
+  std::vector<int> FESpaceNumber = { 0, 1, 0, 0 }; // 0: velocity, 1: pressure  
   std::vector<int> row_space = {0, 0, 0, 0};
   std::vector<int> column_space = {0, 0, 0, 0};
   std::vector<int> rhs_space = {0, 0};
@@ -249,8 +255,8 @@ void TimeNavierStokes_Adjoint<d>::assemble_adjoint_terms(const FEVectFunct& u,
   std::vector<int> FEValue_FctIndex{0, 1, 0, 1, 0, 1};
   std::vector<MultiIndex2D> FEValue_MultiIndex{D00, D00, D10, D10, D01, D01};
 #else
-  std::vector<MultiIndex3D> derivatives{D000, D100, D010, D001};
-  std::vector<int> FESpaceNumber = { 0, 0, 0, 0 }; // 0: velocity, 1: pressure  
+  std::vector<MultiIndex3D> derivatives{D000, D000, D100, D010, D001};
+  std::vector<int> FESpaceNumber = { 0, 1, 0, 0, 0 }; // 0: velocity, 1: pressure  
   std::vector<int> row_space = {0, 0, 0, 0, 0, 0, 0, 0, 0};
   std::vector<int> column_space = {0, 0, 0, 0, 0, 0, 0, 0, 0};
   std::vector<int> rhs_space = {0, 0, 0};
@@ -262,6 +268,10 @@ void TimeNavierStokes_Adjoint<d>::assemble_adjoint_terms(const FEVectFunct& u,
   auto coeffs = TimeNavierStokes<d>::example.get_coeffs();
   std::vector<AssembleFctParam> local_assembling_routine;
   local_assembling_routine.push_back(tnse_adjoint::adjoint_assembling<d>);
+  if(this->db["laplace_type_deformation"])
+    local_assembling_routine.push_back(NSLaplaceDeformation<d>);
+  else
+    local_assembling_routine.push_back(NSLaplaceGradGrad<d>);
   int n_matrices = d*d;
   int N_ParamFct = 1;
   std::vector<ParamFct*> ParameterFct{tnse_adjoint::params_function};
@@ -305,15 +315,16 @@ void TimeNavierStokes_Adjoint<d>::assemble_adjoint_terms(const FEVectFunct& u,
 
 
 template <int d>
-void tnse_adjoint::adjoint_assembling(double Mult, double *coeff, double *param, double hK,
-                        double **OrigValues, int *N_BaseFuncts, 
-                        double ***LocMatrices, double **LocRhs)
+void tnse_adjoint::adjoint_assembling(double Mult, double *, double *param,
+                                      double, double **OrigValues,
+                                      int *N_BaseFuncts, double ***LocMatrices,
+                                      double **LocRhs)
 {
   const int N_U = N_BaseFuncts[0];
   const double *U = OrigValues[0];
-  const double *U_x = OrigValues[1];
-  const double *U_y = OrigValues[2];
-  const double *U_z = d == 2 ? nullptr : OrigValues[3];
+  const double *U_x = OrigValues[2];
+  const double *U_y = OrigValues[3];
+  const double *U_z = d == 2 ? nullptr : OrigValues[4];
 
   // solution of primal problem
   const double u1 = param[0];
