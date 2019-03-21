@@ -8,10 +8,10 @@ class TSquareMatrix : public FEMatrix
 {
   protected:
     /** generate the matrix, called from derived classes */
-    explicit TSquareMatrix(const TFESpace1D * space);
-    explicit TSquareMatrix(const TFESpace2D * space);
+    explicit TSquareMatrix(std::shared_ptr<const TFESpace1D> space);
+    explicit TSquareMatrix(std::shared_ptr<const TFESpace2D> space);
     #ifdef __3D__
-    explicit TSquareMatrix(const TFESpace3D * space);
+    explicit TSquareMatrix(std::shared_ptr<const TFESpace3D> space);
     #endif // 3D
   public:
 

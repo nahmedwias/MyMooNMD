@@ -58,16 +58,11 @@ double factor
   int N_Test, N_Ansatz, N_Joints;//, N_Edges;
   int *N_BaseFunct;
   BaseFunct2D *BaseFuncts;
-  const TFESpace2D *fespace;
   FE2D LocalUsedElements[N_FEs2D], CurrentElement;
   FE2D TestElement, AnsatzElement;
   QuadFormula1D LineQuadFormula;
   TQuadFormula1D *qf1;
   TCollection *Coll;
-  TBaseCell *cell;
-  TJoint *joint;
-  TBoundEdge *boundedge;
-  TIsoBoundEdge *isoboundedge;
   int **GlobalNumbers = nullptr;
   int **BeginIndex = nullptr;
   int **RhsGlobalNumbers = nullptr;
@@ -162,7 +157,7 @@ double factor
     BeginIndex = new int* [n_sqmatrices];
     for(i=0;i<n_sqmatrices;i++)
     {
-      fespace = sqmatrices[i]->GetFESpace2D();
+      auto fespace = sqmatrices[i]->GetFESpace2D();
       GlobalNumbers[i] = fespace->GetGlobalNumbers();
       BeginIndex[i] = fespace->GetBeginIndex();
     }                                             // endfor
@@ -176,11 +171,11 @@ double factor
     AnsatzBeginIndex = new int* [n_matrices];
     for(i=0;i<n_matrices;i++)
     {
-      fespace = (TFESpace2D *) matrices[i]->GetTestSpace2D();
+      auto fespace = matrices[i]->GetTestSpace2D();
       TestGlobalNumbers[i] = fespace->GetGlobalNumbers();
       TestBeginIndex[i] = fespace->GetBeginIndex();
 
-      fespace = (TFESpace2D *) matrices[i]->GetAnsatzSpace2D();
+      fespace = matrices[i]->GetAnsatzSpace2D();
       AnsatzGlobalNumbers[i] = fespace->GetGlobalNumbers();
       AnsatzBeginIndex[i] = fespace->GetBeginIndex();
     }                                             // endfor
@@ -193,7 +188,7 @@ double factor
     RhsGlobalNumbers = new int* [n_rhs];
     for(i=0;i<n_rhs;i++)
     {
-      fespace = ferhs[i];
+      auto fespace = ferhs[i];
       RhsBeginIndex[i] = fespace->GetBeginIndex();
       RhsGlobalNumbers[i] = fespace->GetGlobalNumbers();
 
@@ -249,12 +244,12 @@ double factor
   N_Cells = Coll->GetN_Cells();
   for(i=0;i<N_Cells;i++)
   {
-    cell = Coll->GetCell(i);
+    auto cell = Coll->GetCell(i);
     cell->SetCellIndex(i);
   }
   for(i=0;i<N_Cells;i++)
   {
-    cell = Coll->GetCell(i);
+    auto cell = Coll->GetCell(i);
 
     TDatabase::ParamDB->INTERNAL_CELL = i;
     switch (TDatabase::ParamDB->CELL_MEASURE)
@@ -352,7 +347,7 @@ double factor
     for(j=0;j<n_sqmatrices;j++)
     {
       // find space for this bilinear form
-      fespace = sqmatrices[j]->GetFESpace2D();
+      auto fespace = sqmatrices[j]->GetFESpace2D();
       CurrentElement = fespace->GetFE2D(i, cell);
       N_ = N_BaseFunct[CurrentElement];
 
@@ -376,7 +371,7 @@ double factor
         BoundaryCondition = BoundaryConditions[j];
         for(m=0;m<N_Joints;m++)
         {
-        joint = cell->GetJoint(m);
+        auto joint = cell->GetJoint(m);
         if(joint->GetType() == BoundaryEdge ||
         joint->GetType() == IsoBoundEdge)
         {
@@ -512,10 +507,8 @@ double factor
     // ####################################################################
     for(j=0;j<n_matrices;j++)
     {
-      TestElement = ((TFESpace2D *) matrices[j]->GetTestSpace2D())
-                    ->GetFE2D(i, cell);
-      AnsatzElement = ((TFESpace2D *) matrices[j]->GetAnsatzSpace2D())
-                    ->GetFE2D(i, cell);
+      TestElement = matrices[j]->GetTestSpace2D()->GetFE2D(i, cell);
+      AnsatzElement = matrices[j]->GetAnsatzSpace2D()->GetFE2D(i, cell);
       // cout << "non square matrix: " << j << endl;
       // cout << "TestElement: " << TestElement << endl;
       // cout << "AnsatzElement: " << AnsatzElement << endl;
@@ -532,7 +525,7 @@ double factor
       TestDOF = TestGlobalNumbers[j] + TestBeginIndex[j][i];
       AnsatzDOF = AnsatzGlobalNumbers[j] + AnsatzBeginIndex[j][i];
 
-      fespace =(const TFESpace2D*)(matrices[j]->GetTestSpace2D());
+      auto fespace = matrices[j]->GetTestSpace2D();
       ActiveBound = fespace->GetActiveBound();
       DirichletBound = fespace->GetHangingBound();
 
@@ -588,7 +581,7 @@ double factor
     // ####################################################################
     for(j=0;j<n_rhs;j++)
     {
-      fespace = ferhs[j];
+      auto fespace = ferhs[j];
       ActiveBound = fespace->GetActiveBound();
       CurrentElement = fespace->GetFE2D(i, cell);
 
@@ -660,20 +653,20 @@ double factor
 
       for(m=0;m<N_Joints;m++)
       {
-        joint = cell->GetJoint(m);
+        auto joint = cell->GetJoint(m);
 
         if(joint->GetType() == BoundaryEdge ||
           joint->GetType() == IsoBoundEdge)
         {
           if(joint->GetType() == BoundaryEdge)
           {
-            boundedge = (TBoundEdge *)joint;
+            auto boundedge = (const TBoundEdge *)joint;
             BoundComp = boundedge->GetBoundComp();
             boundedge->GetParameters(t0, t1);
           }
           else
           {
-            isoboundedge = (TIsoBoundEdge *)joint;
+            auto isoboundedge = (const TIsoBoundEdge *)joint;
             BoundComp = isoboundedge->GetBoundComp();
             isoboundedge->GetParameters(t0, t1);
           }
@@ -834,7 +827,7 @@ double factor
   // ####################################################################
   for(j=0;j<n_sqmatrices;j++)
   {
-    fespace = sqmatrices[j]->GetFESpace2D();
+    auto fespace = sqmatrices[j]->GetFESpace2D();
     N_ = fespace->GetN_Hanging();
     HangingNodes = fespace->GetHangingNodes();
 
@@ -884,7 +877,7 @@ double factor
   for(j=0;j<n_matrices;j++)
   {
     // hanging nodes in test space
-    fespace = (TFESpace2D *) (matrices[j]->GetTestSpace2D());
+    auto fespace = matrices[j]->GetTestSpace2D();
     N_ = fespace->GetN_Hanging();
     HangingNodes = fespace->GetHangingNodes();
 
@@ -932,7 +925,7 @@ double factor
 
     // hanging nodes in ansatz space
     N_Rows =  matrices[j]->GetN_Rows();
-    fespace = (TFESpace2D *) (matrices[j]->GetAnsatzSpace2D());
+    fespace = matrices[j]->GetAnsatzSpace2D();
 
     N_ = fespace->GetN_Hanging();
     HangingNodes = fespace->GetHangingNodes();
@@ -970,7 +963,7 @@ double factor
 
   for(j=0;j<n_rhs;j++)
   {
-    fespace = ferhs[j];
+    auto fespace = ferhs[j];
     N_Hanging = fespace->GetN_Hanging();
     HangingNodes = fespace->GetHangingNodes();
 
@@ -1004,7 +997,7 @@ double factor
   // ####################################################################
   for(j=0;j<n_sqmatrices;j++)
   {
-    fespace = sqmatrices[j]->GetFESpace2D();
+    auto fespace = sqmatrices[j]->GetFESpace2D();
     N_ = fespace->GetN_Hanging();
     HangingNodes = fespace->GetHangingNodes();
 
@@ -1110,15 +1103,10 @@ TFEFunction2D *u1, TFEFunction2D *u2)
   int N_Joints;
   int *N_BaseFunct;
   BaseFunct2D *BaseFuncts;
-  const TFESpace2D *fespace;
   FE2D LocalUsedElements[N_FEs2D], CurrentElement;
   QuadFormula1D LineQuadFormula;
   TQuadFormula1D *qf1;
   TCollection *Coll;
-  TBaseCell *cell;
-  TJoint *joint;
-  TBoundEdge *boundedge;
-  TIsoBoundEdge *isoboundedge;
   int **GlobalNumbers = nullptr;
   int **BeginIndex = nullptr;
   int **RhsGlobalNumbers = nullptr;
@@ -1198,7 +1186,7 @@ TFEFunction2D *u1, TFEFunction2D *u2)
     HangingEntries = new double* [n_sqmatrices];
     for(i=0;i<n_sqmatrices;i++)
     {
-      fespace = sqmatrices[i]->GetFESpace2D();
+      auto fespace = sqmatrices[i]->GetFESpace2D();
       GlobalNumbers[i] = fespace->GetGlobalNumbers();
       BeginIndex[i] = fespace->GetBeginIndex();
 
@@ -1216,11 +1204,11 @@ TFEFunction2D *u1, TFEFunction2D *u2)
     AnsatzBeginIndex = new int* [n_matrices];
     for(i=0;i<n_matrices;i++)
     {
-      fespace = (TFESpace2D *) matrices[i]->GetTestSpace2D();
+      auto fespace = matrices[i]->GetTestSpace2D();
       TestGlobalNumbers[i] = fespace->GetGlobalNumbers();
       TestBeginIndex[i] = fespace->GetBeginIndex();
 
-      fespace = (TFESpace2D *) matrices[i]->GetAnsatzSpace2D();
+      fespace = matrices[i]->GetAnsatzSpace2D();
       AnsatzGlobalNumbers[i] = fespace->GetGlobalNumbers();
       AnsatzBeginIndex[i] = fespace->GetBeginIndex();
     }                                             // endfor
@@ -1233,7 +1221,7 @@ TFEFunction2D *u1, TFEFunction2D *u2)
     RhsGlobalNumbers = new int* [n_rhs];
     for(i=0;i<n_rhs;i++)
     {
-      fespace = ferhs[i];
+      auto fespace = ferhs[i];
       RhsBeginIndex[i] = fespace->GetBeginIndex();
       RhsGlobalNumbers[i] = fespace->GetGlobalNumbers();
 
@@ -1277,7 +1265,7 @@ TFEFunction2D *u1, TFEFunction2D *u2)
   N_Cells = Coll->GetN_Cells();
   for(i=0;i<N_Cells;i++)
   {
-    cell = Coll->GetCell(i);
+    auto cell = Coll->GetCell(i);
 
     // double hK = cell->GetDiameter();
     // ####################################################################
@@ -1304,7 +1292,7 @@ TFEFunction2D *u1, TFEFunction2D *u2)
     // ####################################################################
     for(j=0;j<n_rhs;j++)
     {
-      fespace = ferhs[j];
+      auto fespace = ferhs[j];
       CurrentElement = fespace->GetFE2D(i, cell);
 
       N_ = N_BaseFunct[CurrentElement];
@@ -1330,19 +1318,19 @@ TFEFunction2D *u1, TFEFunction2D *u2)
       N_Joints = cell->GetN_Edges();
       for(m=0;m<N_Joints;m++)
       {
-        joint = cell->GetJoint(m);
+        auto joint = cell->GetJoint(m);
         if(joint->GetType() == BoundaryEdge ||
           joint->GetType() == IsoBoundEdge)
         {
           if(joint->GetType() == BoundaryEdge)
           {
-            boundedge = (TBoundEdge *)joint;
+            auto boundedge = (TBoundEdge *)joint;
             BoundComp = boundedge->GetBoundComp();
             boundedge->GetParameters(t0, t1);
           }
           else
           {
-            isoboundedge = (TIsoBoundEdge *)joint;
+            auto isoboundedge = (TIsoBoundEdge *)joint;
             BoundComp = isoboundedge->GetBoundComp();
             isoboundedge->GetParameters(t0, t1);
           }
@@ -1997,7 +1985,7 @@ void Assemble2D_VectFE(int n_fespaces, const TFESpace2D** fespaces,
       }
     }                                             // for ijo
     double hK = 0; // size of cell
-    switch (TDatabase::ParamDB->CELL_MEASURE)
+    switch(TDatabase::ParamDB->CELL_MEASURE)
     {
       case 0:                           // diameter
       case 4:                           // mesh size in convection direction
@@ -2107,9 +2095,8 @@ void Assemble2D_VectFE(int n_fespaces, const TFESpace2D** fespaces,
     // ########################################################################
     for(int iMat=0;iMat<n_matrices;iMat++)
     {
-      const TFESpace2D* testSpace = matrices[iMat]->GetTestSpace2D();
-      
-      const TFESpace2D* ansatzSpace = matrices[iMat]->GetAnsatzSpace2D();
+      auto testSpace = matrices[iMat]->GetTestSpace2D();
+      auto ansatzSpace = matrices[iMat]->GetAnsatzSpace2D();
       TFE2D * test_fe = TFEDatabase2D::GetFE2D(testSpace->GetFE2D(icell, cell));
       TFE2D *ansatz_fe=TFEDatabase2D::GetFE2D(ansatzSpace->GetFE2D(icell,cell));
       
@@ -2187,10 +2174,10 @@ void Assemble2D_VectFE(int n_fespaces, const TFESpace2D** fespaces,
       
       for(int ijoint=0; ijoint<N_Edges; ijoint++)
       {
-        TJoint *joint = cell->GetJoint(ijoint);
+        const TJoint *joint = cell->GetJoint(ijoint);
         if(joint->GetType() == BoundaryEdge)
         {
-          TBoundEdge *boundedge = (TBoundEdge *)joint;
+          const TBoundEdge *boundedge = (const TBoundEdge *)joint;
           double t0,t1;
           boundedge->GetParameters(t0, t1);
           // get id of the boundary component
@@ -2383,16 +2370,11 @@ void Assemble2D(int n_fespaces, TFESpace2D **fespaces,
   int N_Test, N_Ansatz, N_Joints;
   int *N_BaseFunct;
   BaseFunct2D *BaseFuncts;
-  const TFESpace2D *fespace;
   FE2D LocalUsedElements[N_FEs2D], CurrentElement;
   FE2D TestElement, AnsatzElement;
   QuadFormula1D LineQuadFormula;
   TQuadFormula1D *qf1;
   TCollection *Coll;
-  TBaseCell *cell;
-  TJoint *joint;
-  TBoundEdge *boundedge;
-  TIsoBoundEdge *isoboundedge;
   int **GlobalNumbers = nullptr;
   int **BeginIndex = nullptr;
   int **RhsGlobalNumbers = nullptr;
@@ -2469,7 +2451,7 @@ void Assemble2D(int n_fespaces, TFESpace2D **fespaces,
     HangingEntries = new double* [n_sqmatrices];
     for(i=0;i<n_sqmatrices;i++)
     {
-      fespace = sqmatrices[i]->GetFESpace2D();
+      auto fespace = sqmatrices[i]->GetFESpace2D();
       GlobalNumbers[i] = fespace->GetGlobalNumbers();
       BeginIndex[i] = fespace->GetBeginIndex();
 
@@ -2487,11 +2469,11 @@ void Assemble2D(int n_fespaces, TFESpace2D **fespaces,
     AnsatzBeginIndex = new int* [n_matrices];
     for(i=0;i<n_matrices;i++)
     {
-      fespace = (TFESpace2D *) matrices[i]->GetTestSpace2D();
+      auto fespace = matrices[i]->GetTestSpace2D();
       TestGlobalNumbers[i] = fespace->GetGlobalNumbers();
       TestBeginIndex[i] = fespace->GetBeginIndex();
 
-      fespace = (TFESpace2D *) matrices[i]->GetAnsatzSpace2D();
+      fespace = matrices[i]->GetAnsatzSpace2D();
       AnsatzGlobalNumbers[i] = fespace->GetGlobalNumbers();
       AnsatzBeginIndex[i] = fespace->GetBeginIndex();
     }                                             // endfor
@@ -2504,7 +2486,7 @@ void Assemble2D(int n_fespaces, TFESpace2D **fespaces,
     RhsGlobalNumbers = new int* [n_rhs];
     for(i=0;i<n_rhs;i++)
     {
-      fespace = ferhs[i];
+      auto fespace = ferhs[i];
       RhsBeginIndex[i] = fespace->GetBeginIndex();
       RhsGlobalNumbers[i] = fespace->GetGlobalNumbers();
 
@@ -2563,7 +2545,7 @@ void Assemble2D(int n_fespaces, TFESpace2D **fespaces,
   N_Cells = Coll->GetN_Cells();
   for(i=0;i<N_Cells;i++)
   {
-    cell = Coll->GetCell(i);
+    auto cell = Coll->GetCell(i);
 
     hK = cell->GetDiameter();
 
@@ -2613,7 +2595,7 @@ void Assemble2D(int n_fespaces, TFESpace2D **fespaces,
     for(j=0;j<n_sqmatrices;j++)
     {
       // find space for this bilinear form
-      fespace = sqmatrices[j]->GetFESpace2D();
+      auto fespace = sqmatrices[j]->GetFESpace2D();
       CurrentElement = fespace->GetFE2D(i, cell);
       N_ = N_BaseFunct[CurrentElement];
 
@@ -2633,7 +2615,7 @@ void Assemble2D(int n_fespaces, TFESpace2D **fespaces,
       BoundaryCondition = BoundaryConditions[j];
       for(m=0;m<N_Joints;m++)
       {
-        joint = cell->GetJoint(m);
+        auto joint = cell->GetJoint(m);
         if(joint->GetType() == BoundaryEdge||
            joint->GetType() == InterfaceJoint ||
            joint->GetType() == IsoBoundEdge)
@@ -2641,13 +2623,13 @@ void Assemble2D(int n_fespaces, TFESpace2D **fespaces,
           if(joint->GetType() == BoundaryEdge||
            joint->GetType() == InterfaceJoint)
           {
-            boundedge = (TBoundEdge *)joint;
+            auto boundedge = (const TBoundEdge *)joint;
             BoundComp = boundedge->GetBoundComp();
             boundedge->GetParameters(t0, t1);
           }
           else
           {
-            isoboundedge = (TIsoBoundEdge *)joint;
+            auto isoboundedge = (const TIsoBoundEdge *)joint;
             BoundComp = isoboundedge->GetBoundComp();
             isoboundedge->GetParameters(t0, t1);
           }
@@ -2808,10 +2790,8 @@ void Assemble2D(int n_fespaces, TFESpace2D **fespaces,
     // ####################################################################
     for(j=0;j<n_matrices;j++)
     {
-      TestElement = ((TFESpace2D *) matrices[j]->GetTestSpace2D())
-                     ->GetFE2D(i, cell);
-      AnsatzElement = ((TFESpace2D *) matrices[j]->GetAnsatzSpace2D())
-                     ->GetFE2D(i, cell);
+      TestElement = matrices[j]->GetTestSpace2D()->GetFE2D(i, cell);
+      AnsatzElement = matrices[j]->GetAnsatzSpace2D()->GetFE2D(i, cell);
 
       // cout << "non square matrix: " << j << endl;
       // cout << "TestElement: " << TestElement << endl;
@@ -2856,7 +2836,7 @@ void Assemble2D(int n_fespaces, TFESpace2D **fespaces,
     // ####################################################################
     for(j=0;j<n_rhs;j++)
     {
-      fespace = ferhs[j];
+      auto fespace = ferhs[j];
       ActiveBound = fespace->GetActiveBound();
       CurrentElement = fespace->GetFE2D(i, cell);
 
@@ -2908,7 +2888,7 @@ void Assemble2D(int n_fespaces, TFESpace2D **fespaces,
       N_Joints = cell->GetN_Edges();
       for(m=0;m<N_Joints;m++)
       {
-        joint = cell->GetJoint(m);
+        auto joint = cell->GetJoint(m);
         if(joint->GetType() == BoundaryEdge||
            joint->GetType() == InterfaceJoint ||
            joint->GetType() == IsoBoundEdge)
@@ -2916,13 +2896,13 @@ void Assemble2D(int n_fespaces, TFESpace2D **fespaces,
           if(joint->GetType() == BoundaryEdge||
            joint->GetType() == InterfaceJoint)
           {
-            boundedge = (TBoundEdge *)joint;
+            auto boundedge = (const TBoundEdge *)joint;
             BoundComp = boundedge->GetBoundComp();
             boundedge->GetParameters(t0, t1);
           }
           else
           {
-            isoboundedge = (TIsoBoundEdge *)joint;
+            auto isoboundedge = (const TIsoBoundEdge *)joint;
             BoundComp = isoboundedge->GetBoundComp();
             isoboundedge->GetParameters(t0, t1);
           }
@@ -3200,7 +3180,7 @@ void Assemble2D(int n_fespaces, TFESpace2D **fespaces,
   // ####################################################################
   for(j=0;j<n_sqmatrices;j++)
   {
-    fespace = sqmatrices[j]->GetFESpace2D();
+    auto fespace = sqmatrices[j]->GetFESpace2D();
     N_ = fespace->GetN_Hanging();
     HangingNodes = fespace->GetHangingNodes();
 
@@ -3249,7 +3229,7 @@ void Assemble2D(int n_fespaces, TFESpace2D **fespaces,
 
   for(j=0;j<n_rhs;j++)
   {
-    fespace = ferhs[j];
+    auto fespace = ferhs[j];
     N_Hanging = fespace->GetN_Hanging();
     HangingNodes = fespace->GetHangingNodes();
 
@@ -3283,7 +3263,7 @@ void Assemble2D(int n_fespaces, TFESpace2D **fespaces,
   // ####################################################################
   for(j=0;j<n_sqmatrices;j++)
   {
-    fespace = sqmatrices[j]->GetFESpace2D();
+    auto fespace = sqmatrices[j]->GetFESpace2D();
     N_ = fespace->GetN_Hanging();
     HangingNodes = fespace->GetHangingNodes();
 
@@ -3814,16 +3794,11 @@ void Assemble2D_DG(const CoeffFct2D& Coeff, int n_fespaces,
   int *N_BaseFunct;
   BaseFunct2D *BaseFuncts;
   TBaseFunct2D *bf;
-  const TFESpace2D *fespace;
   FE2D *UsedElements, LocalUsedElements[N_FEs2D], CurrentElement;
   QuadFormula1D LineQuadFormula;
   TQuadFormula1D *qf1D;
   BaseFunct2D BaseFunctCell;
   TCollection *Coll;
-  TBaseCell *cell;
-  TJoint *joint;
-  TBoundEdge *boundedge;
-  TIsoBoundEdge *isoboundedge;
   int **GlobalNumbers = nullptr, **BeginIndex = nullptr;
   int **RhsGlobalNumbers = nullptr, **RhsBeginIndex = nullptr;
   int **TestGlobalNumbers = nullptr, **TestBeginIndex = nullptr;
@@ -3882,7 +3857,6 @@ void Assemble2D_DG(const CoeffFct2D& Coeff, int n_fespaces,
 
   int neigh_edge;
   int N_Neigh;
-  TBaseCell *neigh;
   FE2D LocalUsedElements_neigh[N_FEs2D], CurrEleNeigh;
   BaseFunct2D BaseFunctNeigh;
   TFE2D *eleNeigh;
@@ -3911,7 +3885,7 @@ void Assemble2D_DG(const CoeffFct2D& Coeff, int n_fespaces,
     HangingEntries = new double* [n_sqmatrices];
     for(i=0;i<n_sqmatrices;i++)
     {
-      fespace = sqmatrices[i]->GetFESpace2D();
+      auto fespace = sqmatrices[i]->GetFESpace2D();
       GlobalNumbers[i] = fespace->GetGlobalNumbers();
       BeginIndex[i] = fespace->GetBeginIndex();
 
@@ -3929,11 +3903,11 @@ void Assemble2D_DG(const CoeffFct2D& Coeff, int n_fespaces,
     AnsatzBeginIndex = new int* [n_matrices];
     for(i=0;i<n_matrices;i++)
     {
-      fespace = (TFESpace2D *) matrices[i]->GetTestSpace2D();
+      auto fespace = matrices[i]->GetTestSpace2D();
       TestGlobalNumbers[i] = fespace->GetGlobalNumbers();
       TestBeginIndex[i] = fespace->GetBeginIndex();
 
-      fespace = (TFESpace2D *) matrices[i]->GetAnsatzSpace2D();
+      fespace = matrices[i]->GetAnsatzSpace2D();
       AnsatzGlobalNumbers[i] = fespace->GetGlobalNumbers();
       AnsatzBeginIndex[i] = fespace->GetBeginIndex();
     }                                             // endfor
@@ -3962,7 +3936,7 @@ void Assemble2D_DG(const CoeffFct2D& Coeff, int n_fespaces,
     RhsGlobalNumbers = new int* [n_rhs];
     for(i=0;i<n_rhs;i++)
     {
-      fespace = ferhs[i];
+      auto fespace = ferhs[i];
       RhsBeginIndex[i] = fespace->GetBeginIndex();
       RhsGlobalNumbers[i] = fespace->GetGlobalNumbers();
 
@@ -4025,7 +3999,7 @@ void Assemble2D_DG(const CoeffFct2D& Coeff, int n_fespaces,
 
   for(i=0;i<n_fespaces;i++)
   {
-    fespace = fespaces[i];                        /* fe space */
+    auto fespace = fespaces[i];                        /* fe space */
     n = fespace->GetN_UsedElements();             /* # used finite elements */
     UsedElements = fespace->GetUsedElements();    /* used finite elements */
     for(j=0;j<n;j++)                              /* for all finite elements */
@@ -4254,7 +4228,7 @@ void Assemble2D_DG(const CoeffFct2D& Coeff, int n_fespaces,
 
   for(i=0;i<N_Cells;i++)                          // set clipboard of cells on finest
   {
-    cell=Coll->GetCell(i);
+    auto cell=Coll->GetCell(i);
     cell->SetClipBoard(i);
   }
 
@@ -4263,12 +4237,12 @@ void Assemble2D_DG(const CoeffFct2D& Coeff, int n_fespaces,
   // ########################################################################
   for(i=0;i<N_Cells;i++)                          // for all cells on the finest level
   {
-    cell = Coll->GetCell(i);                      // next cell
+    auto cell = Coll->GetCell(i);                      // next cell
 
     for(n=0;n<n_sqmatrices;n++)
     {
       // calculate all needed derivatives of this FE function
-      fespace = sqmatrices[n]->GetFESpace2D();
+      auto fespace = sqmatrices[n]->GetFESpace2D();
       CurrentElement = fespace->GetFE2D(i,cell);  // finite element on cell
 
       BaseFunctCell = BaseFuncts[CurrentElement]; // basis functions
@@ -4367,7 +4341,7 @@ void Assemble2D_DG(const CoeffFct2D& Coeff, int n_fespaces,
 
       for(r=0;r<N_Edges;r++)
       {                                           // For each edge, get the corresponding neighbour cell.
-        neigh=cell->GetJoint(r)->GetNeighbour(cell);
+        auto neigh=cell->GetJoint(r)->GetNeighbour(cell);
         // If there is a neighbour to the edge, do...
         if(neigh)
         {                                         // Get the number of this neigbbour cell from the clipboard
@@ -4920,7 +4894,7 @@ void Assemble2D_DG(const CoeffFct2D& Coeff, int n_fespaces,
 
     for(n=0;n<n_rhs;n++)
     {
-      fespace = ferhs[n];
+      auto fespace = ferhs[n];
       ActiveBound = fespace->GetActiveBound();
       CurrentElement = fespace->GetFE2D(i,cell);  // finite element on cell
 
@@ -4960,7 +4934,7 @@ void Assemble2D_DG(const CoeffFct2D& Coeff, int n_fespaces,
 
       for(m=0;m<N_Joints;m++)
       {
-        joint = cell->GetJoint(m);
+        auto joint = cell->GetJoint(m);
         if(joint->GetType() == BoundaryEdge||
            joint->GetType() == InterfaceJoint ||
           joint->GetType() == IsoBoundEdge)
@@ -4968,13 +4942,13 @@ void Assemble2D_DG(const CoeffFct2D& Coeff, int n_fespaces,
           if(joint->GetType() == BoundaryEdge||
            joint->GetType() == InterfaceJoint)
           {
-            boundedge = (TBoundEdge *)joint;
+            auto boundedge = (const TBoundEdge *)joint;
             BoundComp = boundedge->GetBoundComp();
             boundedge->GetParameters(t0, t1);
           }
           else
           {
-            isoboundedge = (TIsoBoundEdge *)joint;
+            auto isoboundedge = (const TIsoBoundEdge *)joint;
             BoundComp = isoboundedge->GetBoundComp();
             isoboundedge->GetParameters(t0, t1);
           }
@@ -5310,16 +5284,11 @@ void Assemble2D_CIP(const CoeffFct2D& Coeff, int n_fespaces,
   int *N_BaseFunct;
   BaseFunct2D *BaseFuncts;
   TBaseFunct2D *bf;
-  const TFESpace2D *fespace;
   FE2D *UsedElements, LocalUsedElements[N_FEs2D], CurrentElement;
   QuadFormula1D LineQuadFormula;
   TQuadFormula1D *qf1D;
   BaseFunct2D BaseFunctCell;
   TCollection *Coll;
-  TBaseCell *cell;
-  TJoint *joint;
-  TBoundEdge *boundedge;
-  TIsoBoundEdge *isoboundedge;
   int **GlobalNumbers = nullptr, **BeginIndex = nullptr;
   int **RhsGlobalNumbers = nullptr, **RhsBeginIndex = nullptr;
   int **TestGlobalNumbers = nullptr, **TestBeginIndex = nullptr;
@@ -5379,7 +5348,6 @@ void Assemble2D_CIP(const CoeffFct2D& Coeff, int n_fespaces,
 
   int neigh_edge;
   int N_Neigh;
-  TBaseCell *neigh;
   FE2D LocalUsedElements_neigh[N_FEs2D], CurrEleNeigh;
   BaseFunct2D BaseFunctNeigh;
   TFE2D *eleNeigh;
@@ -5418,7 +5386,7 @@ void Assemble2D_CIP(const CoeffFct2D& Coeff, int n_fespaces,
     BeginIndex = new int* [n_sqmatrices];
     for(i=0;i<n_sqmatrices;i++)
     {
-      fespace = sqmatrices[i]->GetFESpace2D();
+      auto fespace = sqmatrices[i]->GetFESpace2D();
       GlobalNumbers[i] = fespace->GetGlobalNumbers();
       BeginIndex[i] = fespace->GetBeginIndex();
     }                                             // endfor
@@ -5432,11 +5400,11 @@ void Assemble2D_CIP(const CoeffFct2D& Coeff, int n_fespaces,
     AnsatzBeginIndex = new int* [n_matrices];
     for(i=0;i<n_matrices;i++)
     {
-      fespace = (TFESpace2D *) matrices[i]->GetTestSpace2D();
+      auto fespace = matrices[i]->GetTestSpace2D();
       TestGlobalNumbers[i] = fespace->GetGlobalNumbers();
       TestBeginIndex[i] = fespace->GetBeginIndex();
 
-      fespace = (TFESpace2D *) matrices[i]->GetAnsatzSpace2D();
+      fespace = matrices[i]->GetAnsatzSpace2D();
       AnsatzGlobalNumbers[i] = fespace->GetGlobalNumbers();
       AnsatzBeginIndex[i] = fespace->GetBeginIndex();
     }                                             // endfor
@@ -5448,7 +5416,7 @@ void Assemble2D_CIP(const CoeffFct2D& Coeff, int n_fespaces,
     RhsGlobalNumbers = new int* [n_rhs];
     for(i=0;i<n_rhs;i++)
     {
-      fespace = ferhs[i];
+      auto fespace = ferhs[i];
       RhsBeginIndex[i] = fespace->GetBeginIndex();
       RhsGlobalNumbers[i] = fespace->GetGlobalNumbers();
     }                                             // endfor
@@ -5521,7 +5489,7 @@ void Assemble2D_CIP(const CoeffFct2D& Coeff, int n_fespaces,
 
   for(i=0;i<n_fespaces;i++)
   {
-    fespace = fespaces[i];                        /* fe space */
+    auto fespace = fespaces[i];                        /* fe space */
     n = fespace->GetN_UsedElements();             /* # used finite elements */
     UsedElements = fespace->GetUsedElements();    /* used finite elements */
     for(j=0;j<n;j++)                              /* for all finite elements */
@@ -5755,7 +5723,7 @@ void Assemble2D_CIP(const CoeffFct2D& Coeff, int n_fespaces,
 
   for(i=0;i<N_Cells;i++)                          // set clipboard of cells on finest
   {
-    cell=Coll->GetCell(i);
+    auto cell=Coll->GetCell(i);
     cell->SetClipBoard(i);
   }
 
@@ -5764,14 +5732,14 @@ void Assemble2D_CIP(const CoeffFct2D& Coeff, int n_fespaces,
   // ########################################################################
   for(i=0;i<N_Cells;i++)                          // for all cells on the finest level
   {
-    cell = Coll->GetCell(i);                      // next cell
+    auto cell = Coll->GetCell(i);                      // next cell
 
     if (out==2)
 	OutPut("cell " << i << endl);
     for(n=0;n<n_sqmatrices;n++)
     {
       // calculate all needed derivatives of this FE function
-      fespace = sqmatrices[n]->GetFESpace2D();
+      auto fespace = sqmatrices[n]->GetFESpace2D();
       CurrentElement = fespace->GetFE2D(i,cell);  // finite element on cell
 
       BaseFunctCell = BaseFuncts[CurrentElement]; // basis functions
@@ -5833,7 +5801,7 @@ void Assemble2D_CIP(const CoeffFct2D& Coeff, int n_fespaces,
           TFEDatabase2D::GetOrigValues(RefTrans, xi1D[BaseFunctCell][r][j],
             eta1D[BaseFunctCell][r][j],
             TFEDatabase2D::GetBaseFunct2D(BaseFunctCell),
-            Coll, (TGridCell *)cell,
+            Coll, (const TGridCell *)cell,
             xietaval_ref1D[BaseFunctCell][r][j],
             xideriv_ref1D[BaseFunctCell][r][j],
             etaderiv_ref1D[BaseFunctCell][r][j],
@@ -5850,7 +5818,7 @@ void Assemble2D_CIP(const CoeffFct2D& Coeff, int n_fespaces,
         TFEDatabase2D::GetOrigValues(RefTrans, x_pos_ref[l],
           y_pos_ref[l],
           TFEDatabase2D::GetBaseFunct2D(BaseFunctCell),
-          Coll, (TGridCell *)cell,
+          Coll, (const TGridCell *)cell,
           value_basefunct_ref1D[BaseFunctCell][l],
           xderiv_basefunct_ref1D[BaseFunctCell][l],
           yderiv_basefunct_ref1D[BaseFunctCell][l],
@@ -5862,7 +5830,7 @@ void Assemble2D_CIP(const CoeffFct2D& Coeff, int n_fespaces,
 
       for(r=0;r<N_Edges;r++)
       {                                           // For each edge, get the corresponding neighbour cell.
-        neigh=cell->GetJoint(r)->GetNeighbour(cell);
+        auto neigh=cell->GetJoint(r)->GetNeighbour(cell);
         //#######################################################################//
         // get coefficients on edges
         //only implemented for coeffs that do not depend on the params
@@ -6479,19 +6447,19 @@ void Assemble2D_CIP(const CoeffFct2D& Coeff, int n_fespaces,
           if(weak==1)
           {
             OutPut("weak" << r << endl);
-            joint = cell->GetJoint(r);
+            auto joint = cell->GetJoint(r);
             if(joint->GetType() == BoundaryEdge ||
               joint->GetType() == IsoBoundEdge)
             {
               if(joint->GetType() == BoundaryEdge)
               {
-                boundedge = (TBoundEdge *)joint;
+                auto boundedge = (const TBoundEdge *)joint;
                 BoundComp = boundedge->GetBoundComp();
                 boundedge->GetParameters(t0, t1);
               }
               else
               {
-                isoboundedge = (TIsoBoundEdge *)joint;
+                auto isoboundedge = (const TIsoBoundEdge *)joint;
                 BoundComp = isoboundedge->GetBoundComp();
                 isoboundedge->GetParameters(t0, t1);
               }
@@ -6620,7 +6588,7 @@ void Assemble2D_CIP(const CoeffFct2D& Coeff, int n_fespaces,
     {
       for(n=0;n<n_rhs;n++)
       {
-        fespace = ferhs[n];
+        auto fespace = ferhs[n];
         ActiveBound = fespace->GetActiveBound();
         CurrentElement = fespace->GetFE2D(i, cell);
 
@@ -6657,7 +6625,7 @@ void Assemble2D_CIP(const CoeffFct2D& Coeff, int n_fespaces,
 
         for(m=0;m<N_Joints;m++)
         {
-          joint = cell->GetJoint(m);
+          auto joint = cell->GetJoint(m);
           if(joint->GetType() == BoundaryEdge||
            joint->GetType() == InterfaceJoint ||
             joint->GetType() == IsoBoundEdge)
@@ -6665,13 +6633,13 @@ void Assemble2D_CIP(const CoeffFct2D& Coeff, int n_fespaces,
             if(joint->GetType() == BoundaryEdge||
             joint->GetType() == InterfaceJoint)
             {
-              boundedge = (TBoundEdge *)joint;
+              auto boundedge = (const TBoundEdge *)joint;
               BoundComp = boundedge->GetBoundComp();
               boundedge->GetParameters(t0, t1);
             }
             else
             {
-              isoboundedge = (TIsoBoundEdge *)joint;
+              auto isoboundedge = (const TIsoBoundEdge *)joint;
               BoundComp = isoboundedge->GetBoundComp();
               isoboundedge->GetParameters(t0, t1);
             }
@@ -7084,7 +7052,7 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
 
   for(int i=0;i<N_Cells;i++)
   {
-    TBaseCell *cell = Coll->GetCell(i);
+    const TBaseCell *cell = Coll->GetCell(i);
     TDatabase::ParamDB->INTERNAL_CELL = i;
 
     // only for multiphase flows
@@ -7147,7 +7115,7 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
       if(sqmatrices[j] == nullptr)
         continue;
       // find space for this bilinear form
-      const TFESpace2D *fespace = sqmatrices[j]->GetFESpace2D();
+      auto fespace = sqmatrices[j]->GetFESpace2D();
       FE2D CurrentElement = fespace->GetFE2D(i, cell);
       int N_ = N_BaseFunct[CurrentElement];
 
@@ -7306,8 +7274,8 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
     {
       if(matrices[j] == nullptr)
         continue;
-      const TFESpace2D *test_space = matrices[j]->GetTestSpace2D();
-      const TFESpace2D *ansatz_space = matrices[j]->GetAnsatzSpace2D();
+      auto test_space = matrices[j]->GetTestSpace2D();
+      auto ansatz_space = matrices[j]->GetAnsatzSpace2D();
       FE2D TestElement = test_space->GetFE2D(i, cell);
       FE2D AnsatzElement = ansatz_space->GetFE2D(i, cell);
       // cout << "non square matrix: " << j << endl;
@@ -7413,7 +7381,7 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
           int N_Edges=cell->GetN_Edges();
           for(int jj=0;jj<N_Edges;jj++)                        // loop over all edges of cell
           {
-            TVertex *ver0 = cell->GetVertex(jj);
+            auto  ver0 = cell->GetVertex(jj);
             double t0 =  ver0->GetClipBoard();
             // vertex not on the boundary
             if (t0<-1e-8)
@@ -7484,7 +7452,7 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
       if(!ignore_boundary_for_rhs)
       for(int m=0;m<N_Joints;m++)
       {
-        TJoint *joint = cell->GetJoint(m);
+        auto joint = cell->GetJoint(m);
 
         if(joint->GetType() == BoundaryEdge ||
            joint->GetType() == IsoBoundEdge ||
@@ -7493,13 +7461,13 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
           if(joint->GetType() == BoundaryEdge||
            joint->GetType() == InterfaceJoint)
           {
-            TBoundEdge *boundedge = (TBoundEdge *)joint;
+            auto boundedge = (const TBoundEdge *)joint;
             BoundComp = boundedge->GetBoundComp();
             boundedge->GetParameters(t0, t1);
           }
           else
           {
-            TIsoBoundEdge *isoboundedge = (TIsoBoundEdge *)joint;
+            auto isoboundedge = (const TIsoBoundEdge *)joint;
             BoundComp = isoboundedge->GetBoundComp();
             isoboundedge->GetParameters(t0, t1);
           }
@@ -7685,7 +7653,7 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
   {
     if(sqmatrices[j] == nullptr)
       continue;
-    const TFESpace2D *fespace = sqmatrices[j]->GetFESpace2D();
+    auto fespace = sqmatrices[j]->GetFESpace2D();
     int N_ = fespace->GetN_Hanging();
     THangingNode **HangingNodes = fespace->GetHangingNodes();
 
@@ -7737,7 +7705,7 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
     if(matrices[j] == nullptr)
       continue;
     // hanging nodes in test space
-    const TFESpace2D *fespace = (TFESpace2D *) (matrices[j]->GetTestSpace2D());
+    auto fespace = matrices[j]->GetTestSpace2D();
     int N_ = fespace->GetN_Hanging();
     THangingNode **HangingNodes = fespace->GetHangingNodes();
 
@@ -7785,7 +7753,7 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
 
     // hanging nodes in ansatz space
     int N_Rows =  matrices[j]->GetN_Rows();
-    fespace = (TFESpace2D *) (matrices[j]->GetAnsatzSpace2D());
+    fespace = matrices[j]->GetAnsatzSpace2D();
 
     N_ = fespace->GetN_Hanging();
     HangingNodes = fespace->GetHangingNodes();
@@ -7823,7 +7791,7 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
 
   for(int j=0;j<n_rhs;j++)
   {
-    const TFESpace2D *fespace = ferhs[j];
+    auto fespace = ferhs[j];
     int N_Hanging = fespace->GetN_Hanging();
     THangingNode **HangingNodes = fespace->GetHangingNodes();
 
@@ -7861,7 +7829,7 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
   {
     if(sqmatrices[j] == nullptr)
       continue;
-    const TFESpace2D *fespace = sqmatrices[j]->GetFESpace2D();
+    auto fespace = sqmatrices[j]->GetFESpace2D();
     int N_ = fespace->GetN_Hanging();
     THangingNode **HangingNodes = fespace->GetHangingNodes();
 

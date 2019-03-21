@@ -323,12 +323,12 @@ class LocalAssembling
     void GetLocalForms(int N_Points, const double *weights, double *AbsDetjk,
                        std::array<double*, d> coordinates,
                        int *N_BaseFuncts, BaseFunct *BaseFuncts, 
-                       TBaseCell *Cell, int cell_num, int N_Matrices, int N_Rhs,
+                       const TBaseCell *Cell, int cell_num, int N_Matrices, int N_Rhs,
                        double ***LocMatrix, double **LocRhs,
                        double factor = 1.);
     
      /** return all parameters at all quadrature points */
-    void GetParameters(int n_points, TBaseCell *cell, int cellnum,
+    void GetParameters(int n_points, const TBaseCell *cell, int cellnum,
                        std::array<double*, d> coordinates);
 
     /** return array Needs2ndDerivatives */

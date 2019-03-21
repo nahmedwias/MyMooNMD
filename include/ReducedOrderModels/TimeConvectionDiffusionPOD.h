@@ -98,7 +98,7 @@ class TimeConvectionDiffusionPOD : public POD
 
   protected:
     /** @brief Finite Element space */
-    FESpace fe_space;
+    std::shared_ptr<FESpace> fe_space;
 
     /** @brief gramian matrix (needed for POD computation) */
     BlockFEMatrix gramian_matrix;

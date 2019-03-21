@@ -148,7 +148,6 @@ void ComputeLocalExtrema(TFEFunction2D *ufct, double *values)
 {
   TBaseCell *cell;
   TCollection *Coll;
-  const TFESpace2D *FESpace2D;
   RefTrans2D RefTrans;
   TBaseFunct2D *bf;
   FE2D FE_ID;
@@ -166,7 +165,7 @@ void ComputeLocalExtrema(TFEFunction2D *ufct, double *values)
   extr[2] = -1;
   extr[3] = 0;
 
-  FESpace2D = ufct->GetFESpace2D();
+  auto FESpace2D = ufct->GetFESpace2D();
   BeginIndex = FESpace2D->GetBeginIndex();
   GlobalNumbers = FESpace2D->GetGlobalNumbers();
   Values = ufct->GetValues();  
@@ -667,7 +666,7 @@ void ComputeDifferenceToCoarseLevel(TCollection *Coll_fine,
 	cell = Coll_fine->GetCell(i);
 	// parent cell
 	parent = cell->GetParent();
-	coarse_no = Coll_coarse->GetIndex(parent);
+	coarse_no = Coll_coarse->get_cell_index(parent);
 	//OutPut(coarse_no << " ");
 	// number of edges
 	N_Edges=cell->GetN_Edges();

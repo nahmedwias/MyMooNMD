@@ -114,10 +114,8 @@ void ComputeVorticiyThickness(const TFEFunction2D *Vorticity, double &thickness)
   TBaseCell *cell;
   double x0,x1,x,y0,y1,val[3],max;
   double *global_y_coord, *aver_vort;
-  const TFESpace2D *vorticity_space;
 
-
-  vorticity_space=Vorticity->GetFESpace2D();
+  auto vorticity_space=Vorticity->GetFESpace2D();
   N_Vort = vorticity_space->GetN_DegreesOfFreedom();
   global_y_coord = new double[N_Vort];
   aver_vort =  new double[N_Vort];

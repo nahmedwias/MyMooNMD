@@ -47,12 +47,12 @@ void VankaSmoother::update(const BlockFEMatrix& matrix)
   size_t n_blocks = matrix.get_n_cell_rows();
 
   //First space will be interpreted as velocity space, last space as pressure space.
-  const TFESpaceXD* first_space = &matrix.get_test_space(0,0);
-  const TFESpaceXD* last_space = &matrix.get_test_space(n_blocks - 1 , 0);
+  const TFESpaceXD* first_space = matrix.get_test_space(0,0).get();
+  const TFESpaceXD* last_space = matrix.get_test_space(n_blocks - 1 , 0).get();
 
   for(size_t i = 0; i < n_blocks - 1 ; ++i)
   {
-    if(&matrix.get_test_space(i,0) != first_space)
+    if(matrix.get_test_space(i,0).get() != first_space)
     {
       ErrThrow("So far VankaSmoother will only operate for matrices, whose"
           " first n-1 blocks have the same fe space."

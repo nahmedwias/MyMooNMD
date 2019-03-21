@@ -11,7 +11,9 @@
 #ifndef __FE3D__
 #define __FE3D__
 
-#include <AllClasses.h>
+class TBaseFunct3D;
+class TNodalFunctional3D;
+class TFEDesc3D;
 #include <Constants.h>
 #include <Enumerations.h>
 #include <BaseFunct3D.h>

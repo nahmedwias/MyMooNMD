@@ -66,7 +66,7 @@ static double *NF_N_T_BDDF1_3D_ZetaArray[4] = {
 static double NF_N_T_BDDF1_3D_T[] = {-100};// ???
 static double NF_N_T_BDDF1_3D_S[] = {-100};// ???
 
-void NF_N_T_BDDF1_3D_EvalAll(TCollection *, TBaseCell *,
+void NF_N_T_BDDF1_3D_EvalAll(TCollection *, const TBaseCell *,
                              const double *PointValues, double *Functionals)
 {
   //face 0
@@ -87,7 +87,7 @@ void NF_N_T_BDDF1_3D_EvalAll(TCollection *, TBaseCell *,
   Functionals[11] = -PointValues[11];
 }
 
-void NF_N_T_BDDF1_3D_EvalFace(TCollection *, TBaseCell *Cell, int face,
+void NF_N_T_BDDF1_3D_EvalFace(TCollection *, const TBaseCell *Cell, int face,
                               const double *PointValues, double *Functionals)
 {
   double s; // size of face

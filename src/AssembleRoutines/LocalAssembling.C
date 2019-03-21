@@ -672,7 +672,7 @@ void LocalAssembling<d>::GetLocalForms(int N_Points, const double *weights,
                                        double *AbsDetjk,
                                        std::array<double*, d> coordinates,
                                        int *N_BaseFuncts, BaseFunct *BaseFuncts,
-                                       TBaseCell *Cell, int cell_num,
+                                       const TBaseCell *Cell, int cell_num,
                                        int N_Matrices, int N_Rhs,
                                        double ***LocMatrix, double **LocRhs,
                                        double factor)
@@ -766,8 +766,9 @@ void LocalAssembling<d>::GetLocalForms(int N_Points, const double *weights,
 }
 //========================================================================
 template<int d>
-void LocalAssembling<d>::GetParameters(int n_points, TBaseCell *, int cellnum,
-                                      std::array<double*, d> coordinates)
+void LocalAssembling<d>::GetParameters(int n_points, const TBaseCell *,
+                                       int cellnum,
+                                       std::array<double*, d> coordinates)
 {
   if(N_ParamFct == 0)
     return;

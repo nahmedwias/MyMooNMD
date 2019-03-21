@@ -65,7 +65,7 @@ void check_solution_norms(TimeConvectionDiffusion<3> &tcd, int m)
     MultiIndex3D allDerivatives[4] = { D000, D100, D010, D001 };
     TAuxParam3D aux(1, 0, 0, 0, nullptr, nullptr, nullptr, nullptr, nullptr, 0, nullptr);
     std::array<double, 5> locError = {};
-    const TFESpace3D* space = tcd.get_function().GetFESpace3D();
+    const TFESpace3D* space = tcd.get_function().GetFESpace3D().get();
 
     tcd.get_function().GetErrors(tcd.get_example().get_exact(0), 4, allDerivatives, 4,
                             conv_diff_l2_h1_linf_error<3>, tcd.get_example().get_coeffs(), &aux, 1, &space,

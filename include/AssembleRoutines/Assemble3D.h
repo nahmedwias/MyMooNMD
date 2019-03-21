@@ -12,7 +12,9 @@
 #ifndef __ASSEMBLE3D__
 #define __ASSEMBLE3D__
 
-#include <AllClasses.h>
+class TFESpace3D;
+class TSquareMatrix3D;
+class TMatrix3D;
 #include <Constants.h>
 
 #include "LocalAssembling.h"

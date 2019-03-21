@@ -71,13 +71,13 @@ class TNodalFunctional2D
     { n_points = N_PointsEdge; t = T; }
 
     /** return values for all nodal functionals */
-    void GetAllFunctionals(TCollection *Coll, TBaseCell *Cell,
+    void GetAllFunctionals(TCollection *Coll, const TBaseCell *Cell,
                            const double *PointValues, double *Functionals)
       const
     { EvalAll(Coll, Cell, PointValues, Functionals); }
 
     /** return values for edge nodal functional */
-    void GetEdgeFunctionals(TCollection *Coll, TBaseCell *Cell, int Joint,
+    void GetEdgeFunctionals(TCollection *Coll, const TBaseCell *Cell, int Joint,
                             const double *PointValues, double *Functionals)
       const
     { EvalEdge(Coll, Cell, Joint, PointValues, Functionals); }

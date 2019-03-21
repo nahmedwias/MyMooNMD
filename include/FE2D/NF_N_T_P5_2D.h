@@ -397,11 +397,11 @@ static double NF_N_T_P5_2D_CellWeight9[27] = {
         0.003616841493522468607614618,
         0.003616841493522468607614618 };
 
-void NF_N_T_P5_2D_EvalAll(TCollection *Coll, TBaseCell *Cell,
+void NF_N_T_P5_2D_EvalAll(TCollection *Coll, const TBaseCell *Cell,
                           const double *PointValues, double *Functionals)
 {
   int OwnNum, NeighNum;
-  TBaseCell *neigh;
+  const TBaseCell *neigh;
 
   Functionals[0] =( NF_N_T_P5_2D_EdgeWeight0[0]*PointValues[0]
                    +NF_N_T_P5_2D_EdgeWeight0[1]*PointValues[1]
@@ -793,12 +793,12 @@ void NF_N_T_P5_2D_EvalAll(TCollection *Coll, TBaseCell *Cell,
 
   if(Cell)
   {
-    OwnNum = Coll->GetIndex(Cell);
+    OwnNum = Coll->get_cell_index(Cell);
 
     neigh = Cell->GetJoint(0)->GetNeighbour(Cell);
     if(neigh)
     {
-      NeighNum = Coll->GetIndex(neigh);
+      NeighNum = Coll->get_cell_index(neigh);
       if(NeighNum < OwnNum)
       {
         Functionals[3] = -Functionals[3];
@@ -809,7 +809,7 @@ void NF_N_T_P5_2D_EvalAll(TCollection *Coll, TBaseCell *Cell,
     neigh = Cell->GetJoint(1)->GetNeighbour(Cell);
     if(neigh)
     {
-      NeighNum = Coll->GetIndex(neigh);
+      NeighNum = Coll->get_cell_index(neigh);
       if(NeighNum < OwnNum)
       {
         Functionals[ 4] = -Functionals[ 4];
@@ -820,7 +820,7 @@ void NF_N_T_P5_2D_EvalAll(TCollection *Coll, TBaseCell *Cell,
     neigh = Cell->GetJoint(2)->GetNeighbour(Cell);
     if(neigh)
     {
-      NeighNum = Coll->GetIndex(neigh);
+      NeighNum = Coll->get_cell_index(neigh);
       if(NeighNum < OwnNum)
       {
         Functionals[ 5] = -Functionals[ 5];
@@ -830,11 +830,11 @@ void NF_N_T_P5_2D_EvalAll(TCollection *Coll, TBaseCell *Cell,
   } // endif Cell
 }
 
-void NF_N_T_P5_2D_EvalEdge(TCollection *Coll, TBaseCell *Cell, int Joint,
+void NF_N_T_P5_2D_EvalEdge(TCollection *Coll, const TBaseCell *Cell, int Joint,
                            const double *PointValues, double *Functionals)
 {
   int OwnNum, NeighNum;
-  TBaseCell *neigh;
+  const TBaseCell *neigh;
 
   Functionals[0] =( NF_N_T_P5_2D_EdgeWeight0[0]*PointValues[0]
                    +NF_N_T_P5_2D_EdgeWeight0[1]*PointValues[1]
@@ -881,8 +881,8 @@ void NF_N_T_P5_2D_EvalEdge(TCollection *Coll, TBaseCell *Cell, int Joint,
     neigh = Cell->GetJoint(Joint)->GetNeighbour(Cell);
     if(neigh)
     {
-      OwnNum = Coll->GetIndex(Cell);
-      NeighNum = Coll->GetIndex(neigh);
+      OwnNum = Coll->get_cell_index(Cell);
+      NeighNum = Coll->get_cell_index(neigh);
       if(NeighNum < OwnNum)
       {
         Functionals[1] = -Functionals[1];

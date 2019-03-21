@@ -11,13 +11,13 @@ static double NF_C_T_P00_2D_Xi[] = { 0.33333333333333333333 };
 static double NF_C_T_P00_2D_Eta[] = { 0.33333333333333333333 };
 static double *NF_C_T_P00_2D_T = nullptr;
 
-void NF_C_T_P00_2D_EvalAll(TCollection *, TBaseCell *,
+void NF_C_T_P00_2D_EvalAll(TCollection *, const TBaseCell *,
                            const double *PointValues, double *Functionals)
 {
   Functionals[0] = PointValues[0];
 }
 
-void NF_C_T_P00_2D_EvalEdge(TCollection *, TBaseCell *, int,
+void NF_C_T_P00_2D_EvalEdge(TCollection *, const TBaseCell *, int,
                             const double *, double *)
 {
 }

@@ -472,7 +472,7 @@ static double NF_D_Q_P4_2D_W14[25]={
 
 static double *NF_D_Q_P4_2D_T = nullptr;
 
-void NF_D_Q_P4_2D_EvalAll(TCollection *, TBaseCell *,
+void NF_D_Q_P4_2D_EvalAll(TCollection *, const TBaseCell *,
                           const double *PointValues, double *Functionals)
 {
   Functionals[0] =  NF_D_Q_P4_2D_W0[0]*PointValues[0]
@@ -852,7 +852,7 @@ void NF_D_Q_P4_2D_EvalAll(TCollection *, TBaseCell *,
                    +NF_D_Q_P4_2D_W14[24]*PointValues[24];
 }
 
-void NF_D_Q_P4_2D_EvalEdge(TCollection *, TBaseCell *, int,
+void NF_D_Q_P4_2D_EvalEdge(TCollection *, const TBaseCell *, int,
                            const double *, double *)
 {
 }

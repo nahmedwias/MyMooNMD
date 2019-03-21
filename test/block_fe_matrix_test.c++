@@ -60,17 +60,17 @@ int main(int, char**)
   size_t second_ansatz_order = 1;
   size_t third_ansatz_order = 3;
 
-  TFESpace2D first_fe_space(coll, (char*)"first_fe_space",
-                            (char*)"first_fe_space", //may act as velo space dummy
-                            BoundConditionNSE, first_ansatz_order);
+  std::shared_ptr<const TFESpace2D> first_fe_space(
+    new TFESpace2D(coll, (char*)"first_fe_space", (char*)"first_fe_space", //may act as velo space dummy
+                  BoundConditionNSE, first_ansatz_order));
   
-  TFESpace2D second_fe_space(coll, (char*)"second_fe_space",
-                             (char*)"second_fe_space", //may act as pressure space dummy
-                             BoundCondition_FEM_FCT, second_ansatz_order);
+  std::shared_ptr<const TFESpace2D> second_fe_space(
+    new TFESpace2D(coll, (char*)"second_fe_space", (char*)"second_fe_space", //may act as pressure space dummy
+                   BoundCondition_FEM_FCT, second_ansatz_order));
 
-  TFESpace2D third_fe_space(coll, (char*)"third_fe_space",
-                            (char*)"third_fe_space", //yet another space
-                            BoundConditionNSE, third_ansatz_order);
+  std::shared_ptr<const TFESpace2D> third_fe_space(
+    new TFESpace2D(coll, (char*)"third_fe_space", (char*)"third_fe_space", //yet another space
+                   BoundConditionNSE, third_ansatz_order));
   {
     //test default constructor
     BlockFEMatrix zero_matrix;
@@ -81,17 +81,17 @@ int main(int, char**)
     // one transposed storage and one transposed-storage memory hack
 
     //create four FE Matrices to fiddle around with
-    FEMatrix fe_matrix_1(&first_fe_space);
-    FEMatrix fe_matrix_2(&first_fe_space, &second_fe_space);
-    FEMatrix fe_matrix_3(&second_fe_space, &first_fe_space);
-    FEMatrix fe_matrix_4(&second_fe_space);
+    FEMatrix fe_matrix_1(first_fe_space);
+    FEMatrix fe_matrix_2(first_fe_space, second_fe_space);
+    FEMatrix fe_matrix_3(second_fe_space, first_fe_space);
+    FEMatrix fe_matrix_4(second_fe_space);
 
     // one TMatrix, too (copied from one FEMatrix for the sake of a non-emtpy structure)
     TMatrix t_matrix_1(fe_matrix_3);
     t_matrix_1.setEntries(std::vector<double>(t_matrix_1.GetN_Entries(),1.0));
 
    //custom construct and check
-   BlockFEMatrix myMatrix({&first_fe_space,&second_fe_space});
+   BlockFEMatrix myMatrix({first_fe_space, second_fe_space});
    myMatrix.check_pointer_types(); //casts to FEMatrix work?
    myMatrix.check_coloring(); //coloring is unbroken?
 
@@ -132,19 +132,19 @@ int main(int, char**)
    }
 
    // test the space getter methods
-   if(&myMatrix.get_ansatz_space(0,0) != &first_fe_space )
+   if(myMatrix.get_ansatz_space(0,0) != first_fe_space )
    {
      ErrThrow("get_ansatz_space not working correctly.")
    }
-   if(&myMatrix.get_test_space(0,1) != &first_fe_space )
+   if(myMatrix.get_test_space(0,1) != first_fe_space )
    {
      ErrThrow("get_ansatz_space not working correctly.")
    }
-   if(&myMatrix.get_row_space(1) != &second_fe_space )
+   if(myMatrix.get_row_space(1) != second_fe_space )
    {
      ErrThrow("get_row_space not working correctly.")
    }
-   if(&myMatrix.get_column_space(1) != &second_fe_space )
+   if(myMatrix.get_column_space(1) != second_fe_space )
    {
      ErrThrow("get_column_space not working correctly.")
    }
@@ -179,7 +179,7 @@ int main(int, char**)
 
 
    //check scaling of entries
-   const std::vector<std::vector<size_t>>& cell_positions = {{0,0},{1,1}};
+   const std::vector<std::vector<size_t>> cell_positions = {{0,0},{1,1}};
      myMatrix.scale_blocks(0.5, cell_positions);
    myMatrix.check_pointer_types(); //casts to FEMatrix work?
    myMatrix.check_coloring(); //coloring is unbroken?
@@ -195,7 +195,7 @@ int main(int, char**)
 
    //check scaling of active entries
    myMatrix.replace_blocks(fe_matrix_1, {{0,0}}, { false });//give us a new block in {0,0}
-   const std::vector<std::vector<size_t>>& cell_positions_2 = {{0,0}};
+   const std::vector<std::vector<size_t>> cell_positions_2 = {{0,0}};
    myMatrix.scale_blocks_actives(-2, cell_positions_2);
    myMatrix.check_pointer_types(); //casts to FEMatrix work?
    myMatrix.check_coloring(); //coloring is unbroken?
@@ -252,7 +252,7 @@ int main(int, char**)
     hisMatrix.check_coloring();
 
     //copy assignment
-    BlockFEMatrix herMatrix({&first_fe_space});
+    BlockFEMatrix herMatrix({first_fe_space});
     herMatrix = blockmat;
     //herMatrix.print_coloring_pattern("copy assigned fe matrix",true);
     herMatrix.check_pointer_types();
@@ -267,13 +267,13 @@ int main(int, char**)
     //BlockFEMatrix moveConstructedMatrix(BlockFEMatrix::NSE2D_Type14(first_fe_space, second_fe_space));
     BlockFEMatrix moveConstructedMatrix(
       std::move(BlockFEMatrix(
-        std::vector<const TFESpace2D*>({{&first_fe_space, &second_fe_space}}))));
+        std::vector<std::shared_ptr<const TFESpace2D>>({{first_fe_space, second_fe_space}}))));
     moveConstructedMatrix.check_pointer_types();
     moveConstructedMatrix.check_coloring();
 
     Output::print("Test move assigning.");
 
-    BlockFEMatrix moveAssignedMatrix({&first_fe_space});
+    BlockFEMatrix moveAssignedMatrix({first_fe_space});
     moveAssignedMatrix = BlockFEMatrix::Darcy2D(first_fe_space, second_fe_space);
     moveAssignedMatrix.check_pointer_types();
     moveAssignedMatrix.check_coloring();
@@ -471,9 +471,9 @@ int main(int, char**)
      BlockFEMatrix no_transp =
          BlockFEMatrix::NSE2D_Type4(first_fe_space, second_fe_space);
      //fill some blocks in
-     FEMatrix A(&first_fe_space, &first_fe_space);
-     FEMatrix B(&second_fe_space, &first_fe_space);
-     FEMatrix BT(&first_fe_space, &second_fe_space);
+     FEMatrix A(first_fe_space, first_fe_space);
+     FEMatrix B(second_fe_space, first_fe_space);
+     FEMatrix BT(first_fe_space, second_fe_space);
      A.setEntries(std::vector<double>(A.GetN_Entries(), 1.0));
      B.setEntries(std::vector<double>(B.GetN_Entries(), 1.0));
      BT.setEntries(std::vector<double>(BT.GetN_Entries(), 1.0));

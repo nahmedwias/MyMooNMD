@@ -72,7 +72,7 @@ std::shared_ptr<FEMatrix> LPS_for_pressure_Scott_Zhang(
   {
     Output::print("LPS for velocity (Scott/Zhang)");
   }
-  const TFESpace2D *pressure_space = C->GetFESpace2D();
+  auto pressure_space = C->GetFESpace2D();
   BaseFunct2D *BaseFuncts = TFEDatabase2D::GetBaseFunct2D_IDFromFE2D();
   int * N_BaseFunct = TFEDatabase2D::GetN_BaseFunctFromFE2D();
 

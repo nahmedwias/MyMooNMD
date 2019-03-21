@@ -860,9 +860,9 @@ double LineEval<d>::space_average_value(const FEFunction& f) const
     TQuadFormula1D*      qf1;
 
 #ifdef __2D__
-    const TFESpace2D*    FSpace = f.GetFESpace2D();
+    auto FSpace = f.GetFESpace2D();
 #else // __3D__
-    const TFESpace3D*    FSpace = f.GetFESpace3D();
+    auto FSpace = f.GetFESpace3D();
 #endif
 
     pnt_eval = base_point;

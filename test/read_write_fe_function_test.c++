@@ -48,19 +48,20 @@ int main(int argc, char** argv)
   // create finite element space, for that we need a
   // collection of grid cells ( = grid)
   // type of finite element on each cell (here: Q2)
- size_t ansatz_order = 2;
-  TFESpace3D fe_space(grid_collections.back(), (char*) "feSpace_",
-                      (char*) "feSpace_", BoundConditionNoBoundCondition,
-                      ansatz_order);
+  size_t ansatz_order = 2;
+  std::shared_ptr<const TFESpace3D> fe_space(
+    new TFESpace3D(grid_collections.back(), (char*) "feSpace_",
+                   (char*) "feSpace_", BoundConditionNoBoundCondition,
+                   ansatz_order));
 
-  //fe_space.info();
+  //fe_space->info();
 
   // create some vector which could be seen as a finite element function
   // representation
-  BlockVector v1(fe_space.GetN_DegreesOfFreedom());
+  BlockVector v1(fe_space->GetN_DegreesOfFreedom());
   {
     // fill the vector with some values, according to some given function
-    TFEFunction3D f(&fe_space, (char*)"dummy", (char*) "dummy",
+    TFEFunction3D f(fe_space, (char*)"dummy", (char*) "dummy",
                     v1.get_entries(), v1.length());
     f.Interpolate(analytic_function);
   }
@@ -70,7 +71,7 @@ int main(int argc, char** argv)
   v1.write_to_stream(out_in_stream);
 
 // create second vector, read into it
-  BlockVector v2(fe_space.GetN_DegreesOfFreedom());
+  BlockVector v2(fe_space->GetN_DegreesOfFreedom());
   v2.read_from_stream(out_in_stream);
 
   // substract first vector (difference should be zero now)

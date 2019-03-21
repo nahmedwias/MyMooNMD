@@ -110,7 +110,6 @@ void TAuxParam3D::GetParameters(int N_Points, TBaseCell *cell, int cellnum,
 {
   int i, j, k, l, n;
   double *param, *currparam, s;
-  const TFESpace3D *fespace;
   TFEFunction3D *fefunction;
   FE3D FE_Id;
   BaseFunct3D BaseFunct_Id;
@@ -125,7 +124,7 @@ void TAuxParam3D::GetParameters(int N_Points, TBaseCell *cell, int cellnum,
     fefunction = FEFunctions3D[FEValue_FctIndex[j]];
     Values[j] = fefunction->GetValues();
 
-    fespace = fefunction->GetFESpace3D();
+    auto fespace = fefunction->GetFESpace3D();
     FE_Id = fespace->GetFE3D(cellnum, cell);
     BaseFunct_Id = TFEDatabase3D::GetFE3D(FE_Id)->GetBaseFunct3D_ID();
 

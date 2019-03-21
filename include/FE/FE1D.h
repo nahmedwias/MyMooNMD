@@ -11,7 +11,9 @@
 #ifndef __FE1D__
 #define __FE1D__
 
-#include <AllClasses.h>
+class TBaseFunct1D;
+class TNodalFunctional1D;
+class TFEDesc1D;
 #include <Constants.h>
 #include <Enumerations.h>
 #include <BaseFunct1D.h>

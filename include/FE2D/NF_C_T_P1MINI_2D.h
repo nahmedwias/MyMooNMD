@@ -4,7 +4,7 @@ static double NF_C_T_P1MINI_2D_Eta[7] = { 0, 0, 0, 0.5, 0.5, 1,
                                      0.33333333333333333333333 };
 static double NF_C_T_P1MINI_2D_T[2] = { -1, 1 };
 
-void NF_C_T_P1MINI_2D_EvalAll(TCollection *, TBaseCell *,
+void NF_C_T_P1MINI_2D_EvalAll(TCollection *, const TBaseCell *,
                               const double *PointValues, double *Functionals)
 {
   Functionals[0] = PointValues[0];
@@ -16,7 +16,7 @@ void NF_C_T_P1MINI_2D_EvalAll(TCollection *, TBaseCell *,
                   + 3*(PointValues[0]+PointValues[2]+PointValues[5]))/27;
 }
 
-void NF_C_T_P1MINI_2D_EvalEdge(TCollection *, TBaseCell *, int,
+void NF_C_T_P1MINI_2D_EvalEdge(TCollection *, const TBaseCell *, int,
                                const double *PointValues, double *Functionals)
 {
   Functionals[0] = PointValues[0];

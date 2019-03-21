@@ -20,7 +20,8 @@
 #include <NodalFunctional1D.h>
 #include <stdlib.h>
 /** constructor with vector initialization */
-TFEFunction1D::TFEFunction1D(TFESpace1D *fespace1D, const std::string& name,
+TFEFunction1D::TFEFunction1D(std::shared_ptr<TFESpace1D> fespace1D,
+                             const std::string& name,
                              const std::string& description, double *values,
                              int length)
 : Name(name), Description(description)

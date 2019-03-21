@@ -44,7 +44,7 @@ TFEFunction3D::TFEFunction3D() :
 }
 
 /** constructor with vector initialization */
-TFEFunction3D::TFEFunction3D(const TFESpace3D *fespace3D,
+TFEFunction3D::TFEFunction3D(std::shared_ptr<const TFESpace3D> fespace3D,
                              const std::string& name,
                              const std::string& description, double *values, int length)
 : Name(name), Description(description)
