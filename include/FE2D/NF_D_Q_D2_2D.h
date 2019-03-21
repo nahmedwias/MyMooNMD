@@ -66,7 +66,7 @@ static double NF_D_Q_D2_2D_Eta[16] = {
 
 static double *NF_D_Q_D2_2D_t = nullptr;
 
-void NF_D_Q_D2_2D_EvalAll(TCollection *, const TBaseCell *,
+void NF_D_Q_D2_2D_EvalAll(const TCollection *, const TBaseCell *,
                           const double *PointValues, double *Functionals)
 {
   Functionals[0] =  NF_D_Q_D2_2D_W0[ 0]*PointValues[ 0]
@@ -215,7 +215,7 @@ void NF_D_Q_D2_2D_EvalAll(TCollection *, const TBaseCell *,
                    +NF_D_Q_D2_2D_W8[15]*PointValues[15];
 }
 
-void NF_D_Q_D2_2D_EvalEdge(TCollection *, const TBaseCell *, int,
+void NF_D_Q_D2_2D_EvalEdge(const TCollection *, const TBaseCell *, int,
                            const double *, double *)
 {
 }

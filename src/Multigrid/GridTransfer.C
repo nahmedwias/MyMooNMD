@@ -17,6 +17,7 @@
 #include <FESpace3D.h>
 #include <FEDatabase2D.h>
 #include <FEDatabase3D.h>
+#include "BaseCell.h"
 
 #include <cstring>
 
@@ -34,7 +35,6 @@ void GridTransfer::Prolongate(
 {
   int i,j,k,l;
   const TBaseCell *cell, *parent;
-  TCollection *CoarseColl, *FineColl;
   FE2D CoarseId, FineId;
   TFE2D *CoarseElement, *FineElement;
   BaseFunct2D CoarseBF, FineBF;
@@ -55,13 +55,13 @@ void GridTransfer::Prolongate(
   double *entry;
 
   // begin code
-  CoarseColl = CoarseSpace.GetCollection();
+  auto CoarseColl = CoarseSpace.GetCollection();
   N_CoarseCells = CoarseColl->GetN_Cells();
   CoarseBeginIndex = CoarseSpace.GetBeginIndex();
   CoarseGlobalNumbers = CoarseSpace.GetGlobalNumbers();
   N_CoarseDOFs = CoarseSpace.GetN_DegreesOfFreedom();
 
-  FineColl = FineSpace.GetCollection();
+  auto FineColl = FineSpace.GetCollection();
   N_FineCells = FineColl->GetN_Cells();
   FineBeginIndex = FineSpace.GetBeginIndex();
   FineGlobalNumbers = FineSpace.GetGlobalNumbers();
@@ -245,7 +245,6 @@ void GridTransfer::DefectRestriction(
 {
   int i,j,k,l;
   const TBaseCell *cell, *parent;
-  TCollection *CoarseColl, *FineColl;
   FE2D CoarseId, FineId;
   TFE2D *CoarseElement, *FineElement;
   BaseFunct2D CoarseBF, FineBF;
@@ -265,13 +264,13 @@ void GridTransfer::DefectRestriction(
   int *DOF, Index;
 
   // begin code
-  CoarseColl = CoarseSpace.GetCollection();
+  auto CoarseColl = CoarseSpace.GetCollection();
   N_CoarseCells = CoarseColl->GetN_Cells();
   CoarseBeginIndex = CoarseSpace.GetBeginIndex();
   CoarseGlobalNumbers = CoarseSpace.GetGlobalNumbers();
   N_CoarseDOFs = CoarseSpace.GetN_DegreesOfFreedom();
 
-  FineColl = FineSpace.GetCollection();
+  auto FineColl = FineSpace.GetCollection();
   N_FineCells = FineColl->GetN_Cells();
   FineBeginIndex = FineSpace.GetBeginIndex();
   FineGlobalNumbers = FineSpace.GetGlobalNumbers();
@@ -460,7 +459,6 @@ void GridTransfer::RestrictFunction(
 {
   int i,j,k,l;
   const TBaseCell *cell, *parent;
-  TCollection *CoarseColl, *FineColl;
   FE2D CoarseId, FineId;
   TFE2D *CoarseElement, *FineElement;
   BaseFunct2D CoarseBF, FineBF;
@@ -479,13 +477,13 @@ void GridTransfer::RestrictFunction(
   double Val2[MaxN_BaseFunctions2D];
 
   // begin code
-  CoarseColl = CoarseSpace.GetCollection();
+  auto CoarseColl = CoarseSpace.GetCollection();
   N_CoarseCells = CoarseColl->GetN_Cells();
   CoarseBeginIndex = CoarseSpace.GetBeginIndex();
   CoarseGlobalNumbers = CoarseSpace.GetGlobalNumbers();
   N_CoarseDOFs = CoarseSpace.GetN_DegreesOfFreedom();
 
-  FineColl = FineSpace.GetCollection();
+  auto FineColl = FineSpace.GetCollection();
   N_FineCells = FineColl->GetN_Cells();
   FineBeginIndex = FineSpace.GetBeginIndex();
   FineGlobalNumbers = FineSpace.GetGlobalNumbers();
@@ -672,7 +670,6 @@ void GridTransfer::Prolongate(
 {
   int i,j,k,l;
   const TBaseCell *cell, *parent;
-  TCollection *CoarseColl, *FineColl;
   FE3D CoarseId, FineId;
   TFE3D *CoarseElement, *FineElement;
   BaseFunct3D CoarseBF, FineBF;
@@ -693,12 +690,12 @@ void GridTransfer::Prolongate(
   int *DOF, Index;
   double *entry;
   // begin code
-  CoarseColl = CoarseSpace.GetCollection();
+  auto CoarseColl = CoarseSpace.GetCollection();
   N_CoarseCells = CoarseColl->GetN_Cells();
   CoarseBeginIndex = CoarseSpace.GetBeginIndex();
   CoarseGlobalNumbers = CoarseSpace.GetGlobalNumbers();
 
-  FineColl = FineSpace.GetCollection();
+  auto FineColl = FineSpace.GetCollection();
   N_FineCells = FineColl->GetN_Cells();
   FineBeginIndex = FineSpace.GetBeginIndex();
   FineGlobalNumbers = FineSpace.GetGlobalNumbers();
@@ -950,7 +947,6 @@ void GridTransfer::DefectRestriction(
 {
   int i,j,k,l;
   const TBaseCell *cell, *parent;
-  TCollection *CoarseColl, *FineColl;
   FE3D CoarseId, FineId;
   TFE3D *CoarseElement, *FineElement;
   BaseFunct3D CoarseBF, FineBF;
@@ -971,13 +967,13 @@ void GridTransfer::DefectRestriction(
   int *DOF, Index;
 
   // begin code
-  CoarseColl = CoarseSpace.GetCollection();
+  auto CoarseColl = CoarseSpace.GetCollection();
   N_CoarseCells = CoarseColl->GetN_Cells();
   CoarseBeginIndex = CoarseSpace.GetBeginIndex();
   CoarseGlobalNumbers = CoarseSpace.GetGlobalNumbers();
   N_CoarseDOFs = CoarseSpace.GetN_DegreesOfFreedom();
 
-  FineColl = FineSpace.GetCollection();
+  auto FineColl = FineSpace.GetCollection();
   N_FineCells = FineColl->GetN_Cells();
   FineBeginIndex = FineSpace.GetBeginIndex();
   FineGlobalNumbers = FineSpace.GetGlobalNumbers();
@@ -1226,7 +1222,6 @@ void GridTransfer::RestrictFunction(
 {
   int i,j,k,l;
   const TBaseCell *cell, *parent;
-  TCollection *CoarseColl, *FineColl;
   FE3D CoarseId, FineId;
   TFE3D *CoarseElement, *FineElement;
   BaseFunct3D CoarseBF, FineBF;
@@ -1247,13 +1242,13 @@ void GridTransfer::RestrictFunction(
 //  int *DOF, Index;
 //  double *entry;
   // begin code
-  CoarseColl = CoarseSpace.GetCollection();
+  auto CoarseColl = CoarseSpace.GetCollection();
   N_CoarseCells = CoarseColl->GetN_Cells();
   CoarseBeginIndex = CoarseSpace.GetBeginIndex();
   CoarseGlobalNumbers = CoarseSpace.GetGlobalNumbers();
   N_CoarseDOFs = CoarseSpace.GetN_DegreesOfFreedom();
 
-  FineColl = FineSpace.GetCollection();
+  auto FineColl = FineSpace.GetCollection();
   N_FineCells = FineColl->GetN_Cells();
   FineBeginIndex = FineSpace.GetBeginIndex();
   FineGlobalNumbers = FineSpace.GetGlobalNumbers();

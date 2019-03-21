@@ -85,7 +85,7 @@ class DataWriter
   std::vector<const FEVectFunct*> FEVectFunctArray;
 
   ///@brief geometry (collection of cells)
-  TCollection* Coll;
+  const TCollection* Coll;
 
   /**
      @brief vector containing the (physical) output times

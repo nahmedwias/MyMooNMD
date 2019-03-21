@@ -48,7 +48,7 @@ public:
   Assembler4();
 
   ///@brief The collection on which we want to assemble
-  TCollection *Coll;
+  const TCollection *Coll;
 
   ///@brief Vector for handling hanging nodes
   std::vector< std::vector<double> > hangingEntries, hangingRhs;

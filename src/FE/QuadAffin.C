@@ -14,6 +14,7 @@
 #include <QuadAffin.h>
 #include <FEDatabase2D.h>
 #include <LinAlg.h>
+#include "BaseCell.h"
 #include <string.h>
 #include <stdlib.h>
 

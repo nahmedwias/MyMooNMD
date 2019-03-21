@@ -59,9 +59,9 @@ class TLineAffin : public TRefTrans1D
                        QuadFormula1D QuadFormula, bool *Needs2ndDer);
 
 //     /** set element to cell */
-    void SetCell(TBaseCell * cell);
+    void SetCell(const TBaseCell * cell) override;
     
-    double Getrec_detjk()
+    double Getrec_detjk() const
     { return rec_detjk; }
 };
 

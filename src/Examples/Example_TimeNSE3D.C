@@ -3,6 +3,7 @@
 #include <FEDatabase3D.h>
 #include <Database.h>
 #include <MainUtilities.h>
+#include "BaseCell.h"
 
 namespace lin_space_time
 {

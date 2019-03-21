@@ -132,13 +132,13 @@ static double NF_C_T_P3_3D_S[10] = {
         0.66666666666666666667, 0.66666666666666666667,
         1 };
 
-void NF_C_T_P3_3D_EvalAll(TCollection *, const TBaseCell *,
+void NF_C_T_P3_3D_EvalAll(const TCollection *, const TBaseCell *,
                           const double *PointValues, double *Functionals)
 {
   memcpy(Functionals, PointValues, 20*SizeOfDouble);
 }
 
-void NF_C_T_P3_3D_EvalFace(TCollection *, const TBaseCell *, int,
+void NF_C_T_P3_3D_EvalFace(const TCollection *, const TBaseCell *, int,
                            const double *PointValues, double *Functionals)
 {
   memcpy(Functionals, PointValues, 10*SizeOfDouble);

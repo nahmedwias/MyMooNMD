@@ -91,7 +91,7 @@ static double NF_N_H_RT2_3D_S[] = {-100};//???
 
 
 
-void NF_N_H_RT2_3D_EvalAll(TCollection *, const TBaseCell *,
+void NF_N_H_RT2_3D_EvalAll(const TCollection *, const TBaseCell *,
                            const double *, double *Functionals)
 {
 	cout << "Raviart-Thomas elements of order 2 on hexaeder: "
@@ -100,7 +100,7 @@ void NF_N_H_RT2_3D_EvalAll(TCollection *, const TBaseCell *,
 	    Functionals[i] = 0;
 }
 
-void NF_N_H_RT2_3D_EvalFace(TCollection *, const TBaseCell *Cell, int face,
+void NF_N_H_RT2_3D_EvalFace(const TCollection *, const TBaseCell *Cell, int face,
                             const double *PointValues, double *Functionals)
 {
   double s; // size of face

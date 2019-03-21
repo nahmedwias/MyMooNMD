@@ -146,8 +146,6 @@ void ComputeOutflowBoundary(int , TFEFunction2D *ufct)
 // 
 void ComputeLocalExtrema(TFEFunction2D *ufct, double *values)
 {
-  TBaseCell *cell;
-  TCollection *Coll;
   RefTrans2D RefTrans;
   TBaseFunct2D *bf;
   FE2D FE_ID;
@@ -170,13 +168,13 @@ void ComputeLocalExtrema(TFEFunction2D *ufct, double *values)
   GlobalNumbers = FESpace2D->GetGlobalNumbers();
   Values = ufct->GetValues();  
 
-  Coll = FESpace2D->GetCollection();
+  auto Coll = FESpace2D->GetCollection();
   N_Cells = Coll->GetN_Cells();
 
   // loop over all edges
   for(i=0;i<N_Cells;i++)
   {
-    cell = Coll->GetCell(i);
+    auto cell = Coll->GetCell(i);
     N_Edges=cell->GetN_Edges();
     //double diam = cell->GetDiameter();
     

@@ -74,7 +74,7 @@ static double *NF_N_H_Q1_3D_ZetaArray[6] = {
 static double NF_N_H_Q1_3D_T[1] = { 0.5 };
 static double NF_N_H_Q1_3D_S[1] = { 0.5 };
 
-void NF_N_H_Q1_3D_EvalAll(TCollection *, const TBaseCell *,
+void NF_N_H_Q1_3D_EvalAll(const TCollection *, const TBaseCell *,
                           const double *PointValues, double *Functionals)
 {
   Functionals[0] = PointValues[0];
@@ -85,7 +85,7 @@ void NF_N_H_Q1_3D_EvalAll(TCollection *, const TBaseCell *,
   Functionals[5] = PointValues[5];
 }
 
-void NF_N_H_Q1_3D_EvalFace(TCollection *, const TBaseCell *, int,
+void NF_N_H_Q1_3D_EvalFace(const TCollection *, const TBaseCell *, int,
                            const double *PointValues, double *Functionals)
 {
   Functionals[0] = PointValues[0];
@@ -335,7 +335,7 @@ static double NF_N_H_Q1_3D_S[9] = { 0.11270166537925831149,
                                     0.88729833462074168851,
                                     0.88729833462074168851 };
 
-void NF_N_H_Q1_3D_EvalAll(TCollection *, const TBaseCell *,
+void NF_N_H_Q1_3D_EvalAll(const TCollection *, const TBaseCell *,
                            double *PointValues, double *Functionals)
 {
   Functionals[0] = ( 25*PointValues[0]
@@ -394,7 +394,7 @@ void NF_N_H_Q1_3D_EvalAll(TCollection *, const TBaseCell *,
                     +25*PointValues[53])/324;
 }
 
-void NF_N_H_Q1_3D_EvalFace(TCollection *, const TBaseCell *, int,
+void NF_N_H_Q1_3D_EvalFace(const TCollection *, const TBaseCell *, int,
                            double *PointValues, double *Functionals)
 {
   Functionals[0] = ( 25*PointValues[0]

@@ -13,6 +13,7 @@
 #include <Database.h>
 #include <FEDatabase3D.h>
 #include <DiscreteForm3D.h>
+#include "BaseCell.h"
 #include <string.h>
 #include <stdlib.h>
 
@@ -171,7 +172,7 @@ void TDiscreteForm3D::GetLocalForms(int N_Points, double *weights,
                                     double *X, double *Y, double *Z,
                                     int *N_BaseFuncts, BaseFunct3D *BaseFuncts, 
                                     double **Parameters, double **AuxArray,
-                                    TBaseCell *Cell,
+                                    const TBaseCell *Cell,
                                     int n_matrices, int n_rhs,
                                     double ***LocMatrix, double **LocRhs)
 {

@@ -1717,7 +1717,7 @@ void TFEDatabase2D::GenerateArrays()
     from reference to original element */
 RefTrans2D TFEDatabase2D::GetOrig(int N_LocalUsedElements, 
                           FE2D *LocalUsedElements,
-                          TCollection *Coll,
+                          const TCollection *Coll,
                           const TBaseCell *cell, bool *Needs2ndDer,
                           int &N_Points, const double* &xi, const double* &eta, 
                           const double* &weights, double* X, double* Y,
@@ -2087,7 +2087,7 @@ RefTrans2D TFEDatabase2D::GetOrig(int N_LocalUsedElements,
     on the original element */
 void TFEDatabase2D::GetOrigValues(RefTrans2D RefTrans,
                 double xi, double eta, TBaseFunct2D *bf,
-                TCollection *Coll, const TGridCell *cell,
+                const TCollection *Coll, const TGridCell *cell,
                 double *uref, double *uxiref, double *uetaref,
                 double *uorig, double *uxorig, double *uyorig)
 {

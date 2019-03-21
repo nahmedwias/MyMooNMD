@@ -1,15 +1,3 @@
-// =======================================================================
-// @(#)Collection.C        1.2 08/12/99
-//
-// Class:       TCollection
-// Purpose:     store cells in an array
-//              used by cell iterators
-//
-// Author:      Gunar Matthies  14.10.97
-//
-// History:     14.10.97 Starting implementation
-// =======================================================================
-
 #include <algorithm>
 #include <Collection.h>
 #include <BaseCell.h>
@@ -33,10 +21,6 @@ TCollection::TCollection(int n_cells, TBaseCell **cells)
 
   #ifdef  _MPI
   N_OwnCells = 0;
-  GlobalIndex = new int[N_Cells];
-
-  for(int i=0; i<N_Cells; i++)
-   GlobalIndex[i] = Cells[i]->GetGlobalCellNo();
   #endif
 }
 
@@ -85,33 +69,21 @@ int TCollection::get_cell_index(const TBaseCell *cell) const
 }
 
 /// @brief create lists with vertex coordinates and element ids
-int TCollection::createElementLists()
+void TCollection::createElementLists() const
 {
     
   int nVertexPerFace;
   int nBoundaryFaces;
 
-  #ifdef __2D__
+#ifdef __2D__
   nVertexPerFace = 2;
-#else
-  if ( Cells[0]->GetType() == Tetrahedron) {
-    nVertexPerFace = 3; // vertex per face
-  } else {
-    nVertexPerFace = 4;
-  }
+#else  
+  nVertexPerFace = Cells[0]->GetType() == Tetrahedron ? 3 : 4;
 #endif
 
-  // if arrays have been created before
-  // free and recreate (to handle multigrid levels)
-  if (ElementNodes.size()) {
-    ElementNodes.clear();
-  }
-  if (NodesCoords.size()) {
-    NodesCoords.resize(0);
-  }
-  if (BdFacesNodes.size()) {
-    BdFacesNodes.resize(0);
-  }
+  // if arrays have been created before free and recreate (to handle multigrid
+  // levels). Replace by new (empty) object.
+  element_lists = ElementLists();
 
   // create a list with all local vertices
   std::vector<TVertex*> localVertices;
@@ -122,7 +94,7 @@ int TCollection::createElementLists()
       localVertices.push_back(Cells[i]->GetVertex(j));
     }
   }
-  NLocVertices = localVertices.size();
+  element_lists.NLocVertices = localVertices.size();
   std::sort(localVertices.begin(),localVertices.end());
   // remove duplicate
   auto it = std::unique(localVertices.begin(), localVertices.end());
@@ -131,21 +103,24 @@ int TCollection::createElementLists()
 
   // fill the array with nodes coordinates
 #ifdef __2D__
-  NodesCoords.resize(2*nPoints);
-  NodesReferences.resize(nPoints,0.);
+  element_lists.NodesCoords.resize(2*nPoints);
+  element_lists.NodesReferences.resize(nPoints,0.);
   int N_=0;
   for(unsigned int i=0;i<localVertices.size();i++)
   {
-    localVertices[i]->GetCoords(NodesCoords[N_],NodesCoords[N_+1]);
+    localVertices[i]->GetCoords(element_lists.NodesCoords[N_],
+                                element_lists.NodesCoords[N_+1]);
     N_ += 2;
   }
 #else
-  NodesCoords.resize(3*nPoints);
-  NodesReferences.resize(nPoints,0.);
+  element_lists.NodesCoords.resize(3*nPoints);
+  element_lists.NodesReferences.resize(nPoints,0.);
   int N_=0;
   for(unsigned int i=0;i<localVertices.size();i++)
   {
-    localVertices[i]->GetCoords(NodesCoords[N_],NodesCoords[N_+1],NodesCoords[N_+2]);
+    localVertices[i]->GetCoords(element_lists.NodesCoords[N_],
+                                element_lists.NodesCoords[N_+1],
+                                element_lists.NodesCoords[N_+2]);
     N_ += 3;
   }
 #endif
@@ -155,13 +130,13 @@ int TCollection::createElementLists()
      starts from 1, i.e. first (see 'VERTEX OFFEST' below)
   */
   // elements array
-  ElementNodes.resize(N_Cells);
-  ElementReferences.resize(N_Cells);
+  element_lists.ElementNodes.resize(N_Cells);
+  element_lists.ElementReferences.resize(N_Cells);
   
   for(int i=0; i<N_Cells; i++)
   {
-    ElementReferences[i] = Cells[i]->GetReference_ID();
-    ElementNodes[i].resize(Cells[i]->GetN_Vertices());
+    element_lists.ElementReferences[i] = Cells[i]->GetReference_ID();
+    element_lists.ElementNodes[i].resize(Cells[i]->GetN_Vertices());
 
     for (int j=0; j<Cells[i]->GetN_Vertices();j++)
     {
@@ -170,7 +145,7 @@ int TCollection::createElementLists()
       {
         if(current == localVertices[s])
         {
-          ElementNodes[i][j] = s; // VERTEX OFFSET
+          element_lists.ElementNodes[i][j] = s; // VERTEX OFFSET
           break;
         }
       }  
@@ -184,10 +159,13 @@ int TCollection::createElementLists()
   for(int i=0;i<N_Cells;i++){
     for (int j=0; j<Cells[i]->GetN_Edges(); j++) {
       
-      TJoint *joint = Cells[i]->GetJoint(j);
-      if(!(joint->InnerJoint())) {
-	nBoundaryFaces++;	
-      } else {
+      auto joint = Cells[i]->GetJoint(j);
+      if(!(joint->InnerJoint()))
+      {
+        nBoundaryFaces++;	
+      }
+      else
+      {
 	///@todo check for internal/interface joints
 	/*
 	// it is a inner joint but it could be an InterfaceJoint
@@ -216,12 +194,12 @@ int TCollection::createElementLists()
   } //for(int i=0;i<nElements;i++){
 
   nBoundaryFaces = nBoundaryFaces+nInterfaceFaces;
-  BdFacesReferences.resize(nBoundaryFaces);
-  BdFacesNodes.resize(nVertexPerFace*nBoundaryFaces);
+  element_lists.BdFacesReferences.resize(nBoundaryFaces);
+  element_lists.BdFacesNodes.resize(nVertexPerFace*nBoundaryFaces);
   
 #else
   
-  BdFacesReferences.clear();
+  //BdFacesReferences.clear();
   for(int i=0;i<N_Cells;i++)
   {
     for (int j=0;j<Cells[i]->GetN_Faces();j++)
@@ -229,16 +207,16 @@ int TCollection::createElementLists()
       TJoint *joint = Cells[i]->GetJoint(j);
       if(!(joint->InnerJoint()))
       {
-	///@todo assign a meaningful reference to the boundary face
-	//int local_reference = 1;//Cells[i]->GetJointReference(j);
-	TBoundFace* boundface = (TBoundFace *)joint;
-	int local_reference = boundface->GetBoundComp()->get_physical_id();
-	BdFacesReferences.push_back(local_reference);
+        ///@todo assign a meaningful reference to the boundary face
+        //int local_reference = 1;//Cells[i]->GetJointReference(j);
+        TBoundFace* boundface = (TBoundFace *)joint;
+        int local_reference = boundface->GetBoundComp()->get_physical_id();
+        element_lists.BdFacesReferences.push_back(local_reference);
       }
     }
   }
-  nBoundaryFaces = BdFacesReferences.size();
-  BdFacesNodes.resize(nVertexPerFace*nBoundaryFaces);
+  nBoundaryFaces = element_lists.BdFacesReferences.size();
+  element_lists.BdFacesNodes.resize(nVertexPerFace*nBoundaryFaces);
   
 #endif
 
@@ -264,12 +242,12 @@ int TCollection::createElementLists()
 	{
 	  if (v1==localVertices[k])
 	  {
-	    BdFacesNodes[nVertexPerFace*count_boundary_elements]=k+1;
+	    element_lists.BdFacesNodes[nVertexPerFace*count_boundary_elements]=k+1;
 	    foundVertex1 = true;
 	  }
 	  if (v2==localVertices[k])
 	  {
-	    BdFacesNodes[nVertexPerFace*count_boundary_elements+1]=k+1;
+	    element_lists.BdFacesNodes[nVertexPerFace*count_boundary_elements+1]=k+1;
 	    foundVertex2 = true;
 	  }
 	  if (foundVertex1&&foundVertex2)
@@ -347,7 +325,7 @@ int TCollection::createElementLists()
 	  {
 	    if (v_on_face==localVertices[k])
 	    {
-	      BdFacesNodes[nVertexPerFace*count_boundary_elements + kvertex] =
+	      element_lists.BdFacesNodes[nVertexPerFace*count_boundary_elements + kvertex] =
 		k; //+ VERTEX_OFFSET
 	    }
 	  } 
@@ -361,7 +339,6 @@ int TCollection::createElementLists()
 #endif
 
   } // loop over cells
-  return 0;
 }
 
 //############################################################
@@ -369,51 +346,51 @@ int TCollection::createElementLists()
 //############################################################
 
 ///@brief Get number of vertices
-unsigned int TCollection::GetN_Vertices()
+unsigned int TCollection::GetN_Vertices() const
 {
-  if(this->NodesReferences.size()==0)
+  if(this->element_lists.empty())
     this->createElementLists();
-  return this->NodesReferences.size();
+  return this->element_lists.NodesReferences.size();
 }
 
 ///@brief Get number of boundary faces
-unsigned int TCollection::GetN_BdFaces()
+unsigned int TCollection::GetN_BdFaces() const
 {
-    if(this->NodesReferences.size()==0)
+    if(this->element_lists.empty())
       this->createElementLists();
-    return this->BdFacesReferences.size();  
+    return this->element_lists.BdFacesReferences.size();  
 }
 
 ///@brief direct access to the vector NodesCoords
-double TCollection::GetCoord(unsigned int vert)
+double TCollection::GetCoord(unsigned int vert) const
 {
-    if(this->NodesReferences.size()==0)
+    if(this->element_lists.empty())
       this->createElementLists();
-    return this->NodesCoords.at(vert);
+    return this->element_lists.NodesCoords.at(vert);
 }
 
 ///@brief direct access to the vector BdFacesNodes
-unsigned int TCollection::GetBdFacesNode(unsigned int node)
+unsigned int TCollection::GetBdFacesNode(unsigned int node) const
 {
-  if(this->NodesReferences.size()==0)
+  if(this->element_lists.empty())
     this->createElementLists();
-  return this->BdFacesNodes[node];
+  return this->element_lists.BdFacesNodes[node];
 }
 
 ///@brief direct access to global number of the jth vertex of the ith cell
-unsigned int TCollection::GetGlobalVerNo(unsigned int cell, unsigned int locvert)
+unsigned int TCollection::GetGlobalVerNo(unsigned int cell, unsigned int locvert) const
 {
-  if(this->NodesReferences.size()==0)
+  if(this->element_lists.empty())
     this->createElementLists();
-  return this->ElementNodes[cell][locvert];
+  return this->element_lists.ElementNodes[cell][locvert];
 }
 
 ///@brief Get the sum of the numbers of local vertices over all cells
-unsigned int TCollection::GetNLocVertices()
+unsigned int TCollection::GetNLocVertices() const
 {
-  if(this->NodesReferences.size()==0)
+  if(this->element_lists.empty())
     this->createElementLists();
-  return this->NLocVertices;
+  return this->element_lists.NLocVertices;
 }
 
 
@@ -458,30 +435,30 @@ int TCollection::writeMesh(const char *meshFileName)
   MESHfile << "Dimension 3" << endl; //note: dim always 3 (for visualization)
   MESHfile << endl;
   MESHfile << "Vertices" << endl;
-  unsigned int nPoints = NodesReferences.size();
+  unsigned int nPoints = element_lists.NodesReferences.size();
   MESHfile << nPoints << endl;
   for (unsigned int i=0; i<nPoints; i++) {
     for (int j=0; j<dim; j++) {
-     MESHfile << NodesCoords[i*dim+j] << "  ";
+     MESHfile << element_lists.NodesCoords[i*dim+j] << "  ";
     }
     if (dim==2) {
       MESHfile << "0.0000  " ;
     }
-    MESHfile << NodesReferences[i] << endl;
+    MESHfile << element_lists.NodesReferences[i] << endl;
   }
   MESHfile << endl;
 
   // faces (egdes in 2D, triangles/quads in 3D)
-  unsigned int nBoundaryFaces = BdFacesReferences.size();
+  unsigned int nBoundaryFaces = element_lists.BdFacesReferences.size();
 
   // write elements: edges + surface elements in 2D, boundary faces + volume el. in 3D
   if (dim==2) {
     MESHfile << "Edges" << endl;
     MESHfile << nBoundaryFaces << endl;
     for (unsigned int i=0; i<nBoundaryFaces; i++) {
-      MESHfile << BdFacesNodes[nVertexPerFace*i] << "  " 
-	       << BdFacesNodes[nVertexPerFace*i+1] << " "  
-	       << BdFacesReferences[i] << endl;
+      MESHfile << element_lists.BdFacesNodes[nVertexPerFace*i] << "  " 
+	       << element_lists.BdFacesNodes[nVertexPerFace*i+1] << " "  
+	       << element_lists.BdFacesReferences[i] << endl;
     }
     MESHfile << endl;
     
@@ -497,14 +474,14 @@ int TCollection::writeMesh(const char *meshFileName)
       if (Cells[i]->GetN_Vertices() == 3) {
 
 	for (int j=0;j<3;j++) 
-	  nodesTria.push_back(ElementNodes[i][j]+VERTEX_OFFSET);
-	nodesTria.push_back(ElementReferences[i]);
+	  nodesTria.push_back(element_lists.ElementNodes[i][j]+VERTEX_OFFSET);
+	nodesTria.push_back(element_lists.ElementReferences[i]);
 	
       } else if (Cells[i]->GetN_Vertices() == 4) {
 	
 	for (int j=0;j<4;j++) 
-	  nodesQuad.push_back(ElementNodes[i][j]+VERTEX_OFFSET);
-	nodesQuad.push_back(ElementReferences[i]);
+	  nodesQuad.push_back(element_lists.ElementNodes[i][j]+VERTEX_OFFSET);
+	nodesQuad.push_back(element_lists.ElementReferences[i]);
       }
     }
     unsigned int nTrias = nodesTria.size()/4;
@@ -548,9 +525,9 @@ int TCollection::writeMesh(const char *meshFileName)
     MESHfile << nBoundaryFaces << endl;
     for (unsigned int i=0; i<nBoundaryFaces; i++) {
       for (int j=0;j<nVertexPerFace;j++) {
-	MESHfile << BdFacesNodes[nVertexPerFace*i+j] << "  ";
+	MESHfile << element_lists.BdFacesNodes[nVertexPerFace*i+j] << "  ";
       }
-      MESHfile << BdFacesReferences[i] << endl;
+      MESHfile << element_lists.BdFacesReferences[i] << endl;
     }// for (int i=0; i<nBdFaces; i++) {
     MESHfile << endl;
 
@@ -563,9 +540,9 @@ int TCollection::writeMesh(const char *meshFileName)
     MESHfile << N_Cells << endl;
     for (int i=0; i<N_Cells ; i++) {
       for (int j=0;j<nVertexPerElement;j++) {
-	MESHfile << ElementNodes[i][j]+VERTEX_OFFSET << "  ";
+	MESHfile << element_lists.ElementNodes[i][j]+VERTEX_OFFSET << "  ";
       }
-      MESHfile << ElementReferences[i] << endl;
+      MESHfile << element_lists.ElementReferences[i] << endl;
     } // for (int i=0; i<nElements; i++) {
     MESHfile << endl;
     MESHfile << "End" << endl;
@@ -580,7 +557,8 @@ int TCollection::writeMesh(const char *meshFileName)
   
 }
 
-void TCollection::get_edge_list_on_component(int id,std::vector<TBoundEdge*> &edges)
+void TCollection::get_edge_list_on_component(
+  int id, std::vector<TBoundEdge*> &edges) const
 {
   edges.clear();
   for(int i=0;i<this->N_Cells; i++)
@@ -605,7 +583,7 @@ void TCollection::get_edge_list_on_component(int id,std::vector<TBoundEdge*> &ed
     }
 }
 
-void TCollection::get_boundary_edge_list(std::vector<TBoundEdge*> &edges)
+void TCollection::get_boundary_edge_list(std::vector<TBoundEdge*> &edges) const
 {
   edges.clear();
   for(int i = 0; i < this->N_Cells; i++)
@@ -628,7 +606,9 @@ void TCollection::get_boundary_edge_list(std::vector<TBoundEdge*> &edges)
 
 //New LB 11.10.18
 #ifdef __3D__
-void TCollection::get_face_list_on_component(int boundary_component_id, std::vector<TBoundFace*> &faces)
+void TCollection::get_face_list_on_component(int boundary_component_id,
+                                             std::vector<TBoundFace*> &faces)
+const
 {
   faces.clear();
   for (int i = 0; i < this->N_Cells; i++)

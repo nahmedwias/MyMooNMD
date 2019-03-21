@@ -90,8 +90,6 @@ void TFEFunction3D::GetErrors(DoubleFunct3D *Exact, int N_Derivatives,
   int Used[N_FEs3D], *N_BaseFunct;
   FE3D LocalUsedElements[N_FEs3D], CurrentElement;
   BaseFunct3D BaseFunct, *BaseFuncts;
-  TCollection *Coll;
-  TBaseCell *cell;
   const double *weights, *xi, *eta, *zeta;
   double X[MaxN_QuadPoints_3D], Y[MaxN_QuadPoints_3D];
   double Z[MaxN_QuadPoints_3D];
@@ -154,12 +152,12 @@ void TFEFunction3D::GetErrors(DoubleFunct3D *Exact, int N_Derivatives,
 // ########################################################################
 // loop over all cells
 // ########################################################################
-  Coll = fespaces[0]->GetCollection(); // all spaces use same Coll
+  auto Coll = fespaces[0]->GetCollection(); // all spaces use same Coll
   N_Cells = Coll->GetN_Cells();
   
   for(i=0;i<N_Cells;i++)
   {
-    cell = Coll->GetCell(i);
+    auto cell = Coll->GetCell(i);
 
 #ifdef _MPI
     ID = cell->GetSubDomainNo();
@@ -265,7 +263,7 @@ void TFEFunction3D::GetErrorsForVectorValuedFunction(
 {
   // write zeros into the array "errors"
   memset(errors,0,3*SizeOfDouble);
-  TCollection *Coll = FESpace3D->GetCollection(); 
+  auto Coll = FESpace3D->GetCollection(); 
   int N_Cells = Coll->GetN_Cells(); // number of cells
   
   // second derivatives are not needed
@@ -274,7 +272,7 @@ void TFEFunction3D::GetErrorsForVectorValuedFunction(
   // for loop over cells
   for(int i =0; i < N_Cells; i++)
   {
-    TBaseCell *cell = Coll->GetCell(i);
+    auto cell = Coll->GetCell(i);
     FE3D CurrentElement = FESpace3D->GetFE3D(i, cell);
     // number of basis functions
     int N_BaseFuncts = TFEDatabase3D::GetN_BaseFunctFromFE3D(CurrentElement);
@@ -459,8 +457,6 @@ void TFEFunction3D::GetMeshCellParams(DoubleFunct3D *Exact, int N_Derivatives,
   int Used[N_FEs3D], *N_BaseFunct;
   FE3D LocalUsedElements[N_FEs3D], CurrentElement;
   BaseFunct3D BaseFunct, *BaseFuncts;
-  TCollection *Coll;
-  TBaseCell *cell;
   const double *weights, *xi, *eta, *zeta;
   double X[MaxN_QuadPoints_3D], Y[MaxN_QuadPoints_3D];
   double Z[MaxN_QuadPoints_3D];
@@ -511,11 +507,11 @@ void TFEFunction3D::GetMeshCellParams(DoubleFunct3D *Exact, int N_Derivatives,
 // ########################################################################
 // loop over all cells
 // ########################################################################
-  Coll = fespaces[0]->GetCollection(); // all spaces use same Coll
+  auto Coll = fespaces[0]->GetCollection(); // all spaces use same Coll
   N_Cells = Coll->GetN_Cells();
   for(i=0;i<N_Cells;i++)
   {
-    cell = Coll->GetCell(i);
+    auto cell = Coll->GetCell(i);
 
     hK = cell->GetDiameter();
 
@@ -616,8 +612,6 @@ bool TFEFunction3D::FindGradient(double x, double y, double z,
 
   int i,j, N_Cells;
   double xi, eta, zeta;
-  TBaseCell *cell;
-  TCollection *Coll;
   FE3D FE_ID;
   TFE3D *FE_Obj;
   RefTrans3D RefTrans;
@@ -639,11 +633,11 @@ bool TFEFunction3D::FindGradient(double x, double y, double z,
   BeginIndex = FESpace3D->GetBeginIndex();
   GlobalNumbers = FESpace3D->GetGlobalNumbers();
 
-  Coll = FESpace3D->GetCollection();
+  auto Coll = FESpace3D->GetCollection();
   N_Cells = Coll->GetN_Cells();
   for(i=0;i<N_Cells;i++)
   {
-    cell = Coll->GetCell(i);
+    auto cell = Coll->GetCell(i);
     if(cell->PointInCell(x,y,z))
     {
       N_Found++;      
@@ -741,9 +735,8 @@ void TFEFunction3D::FindGradientLocal(const TBaseCell *cell, int cell_no,
   double u, ux, uy, uz;
   double val;
   int *GlobalNumbers, *BeginIndex;
-  TCollection *Coll;
   
-  Coll = FESpace3D->GetCollection();
+  auto Coll = FESpace3D->GetCollection();
   BeginIndex = FESpace3D->GetBeginIndex();
   GlobalNumbers = FESpace3D->GetGlobalNumbers();
 
@@ -829,9 +822,7 @@ void TFEFunction3D::FindValueLocal(const TBaseCell *cell, int cell_no,
   int N_BaseFunct;
   double *uorig, *uxorig, *uyorig, *uzorig, *uref, *uxiref, *uetaref, *uzetaref;
   
-  TCollection *Coll;
-
-  Coll = FESpace3D->GetCollection();
+  auto Coll = FESpace3D->GetCollection();
   
   FE_ID = FESpace3D->GetFE3D(cell_no, cell);
   FE_Obj = TFEDatabase3D::GetFE3D(FE_ID);
@@ -913,8 +904,6 @@ void TFEFunction3D::FindValueLocal(const TBaseCell *cell, int cell_no,
 void TFEFunction3D::Interpolate(DoubleFunct3D *Exact)
 {
   int i,j;
-  TBaseCell *cell;
-  TCollection *Coll;
   FE3D FEId;
   TFE3D *Element;
   TNodalFunctional3D *nf;
@@ -944,7 +933,7 @@ void TFEFunction3D::Interpolate(DoubleFunct3D *Exact)
 
   // begin code
   
-  Coll = FESpace3D->GetCollection();
+  auto Coll = FESpace3D->GetCollection();
   N_Cells = Coll->GetN_Cells();
   BeginIndex = FESpace3D->GetBeginIndex();
   GlobalNumbers = FESpace3D->GetGlobalNumbers();
@@ -955,7 +944,7 @@ void TFEFunction3D::Interpolate(DoubleFunct3D *Exact)
 
   for(i=0;i<N_Cells;i++)
   {
-    cell = Coll->GetCell(i);
+    auto cell = Coll->GetCell(i);
     FEId = FESpace3D->GetFE3D(i, cell);
     Element = TFEDatabase3D::GetFE3D(FEId);
     nf = Element->GetNodalFunctional3D();
@@ -1090,11 +1079,11 @@ void TFEFunction3D::Interpolate_vector_valued_function(
 
 
   // loop over all cells
-  TCollection * Coll = this->FESpace3D->GetCollection();
+  auto Coll = this->FESpace3D->GetCollection();
   int N_Cells = Coll->GetN_Cells();
   for(int i = 0; i < N_Cells; i++)
   {
-    TBaseCell* cell = Coll->GetCell(i);
+    auto cell = Coll->GetCell(i);
     FE3D FEId = FESpace3D->GetFE3D(i, cell);
     TFE3D *Element = TFEDatabase3D::GetFE3D(FEId);
     TNodalFunctional3D * nf = Element->GetNodalFunctional3D();
@@ -1169,8 +1158,6 @@ void TFEFunction3D::Interpolate_vector_valued_function(
 void TFEFunction3D::InterpolateSuper(DoubleFunct3D *Exact)
 {
   int i,j;
-  TBaseCell *cell;
-  TCollection *Coll;
   FE3D FEId;
   TFE3D *Element;
   TNodalFunctional3D *nf;
@@ -1200,7 +1187,7 @@ void TFEFunction3D::InterpolateSuper(DoubleFunct3D *Exact)
 
   // begin code
   
-  Coll = FESpace3D->GetCollection();
+  auto Coll = FESpace3D->GetCollection();
   N_Cells = Coll->GetN_Cells();
   BeginIndex = FESpace3D->GetBeginIndex();
   GlobalNumbers = FESpace3D->GetGlobalNumbers();
@@ -1211,7 +1198,7 @@ void TFEFunction3D::InterpolateSuper(DoubleFunct3D *Exact)
 
   for(i=0;i<N_Cells;i++)
   {
-    cell = Coll->GetCell(i);
+    auto cell = Coll->GetCell(i);
     FEId = FESpace3D->GetFE3D(i, cell);
     Element = TFEDatabase3D::GetFE3D(FEId);
     nf = Element->GetNodalFunctional3D();
@@ -1340,8 +1327,6 @@ void TFEFunction3D::InterpolateSuper(DoubleFunct3D *Exact)
 void TFEFunction3D::Interpolate(int N_Coord, double *Coords, int N_AuxFeFcts,  TFEFunction3D **AuxFeFcts, DoubleFunctND *Exact)
 {
   int i,j, jj;
-  TBaseCell *cell;
-  TCollection *Coll;
   FE3D FEId;
   TFE3D *Element;
   TNodalFunctional3D *nf;
@@ -1389,7 +1374,7 @@ void TFEFunction3D::Interpolate(int N_Coord, double *Coords, int N_AuxFeFcts,  T
   N_CoordAll = N_Coord+3; // this is 3D functon  
     
     
-  Coll = FESpace3D->GetCollection();
+  auto Coll = FESpace3D->GetCollection();
   N_Cells = Coll->GetN_Cells();
   BeginIndex = FESpace3D->GetBeginIndex();
   GlobalNumbers = FESpace3D->GetGlobalNumbers();
@@ -1400,7 +1385,7 @@ void TFEFunction3D::Interpolate(int N_Coord, double *Coords, int N_AuxFeFcts,  T
 
   for(i=0;i<N_Cells;i++)
   {
-    cell = Coll->GetCell(i);
+    auto cell = Coll->GetCell(i);
     FEId = FESpace3D->GetFE3D(i, cell);
     Element = TFEDatabase3D::GetFE3D(FEId);
     nf = Element->GetNodalFunctional3D();
@@ -1540,8 +1525,7 @@ void TFEFunction3D::add(AnalyticFunction)
 void TFEFunction3D::compute_integral_and_measure(double& integral,
                                                  double& measure) const
 {
-
-  TCollection *coll = FESpace3D->GetCollection();
+  auto coll = FESpace3D->GetCollection();
 
   integral = 0.0; // variable to store integral value of this TFEFunction3D
   measure = 0.0; // variable to store the measure of the domain
@@ -1625,11 +1609,11 @@ void TFEFunction3D::project_into_L20(double a)
   // for standard P_k or Q_k finite elements this is a constant function
   double *interpol = new double[Length];
 
-  TCollection *coll = FESpace3D->GetCollection();
+  auto coll = FESpace3D->GetCollection();
   const int n_cells = coll->GetN_Cells();
   for(int i = 0; i < n_cells; i++)
   {
-    TBaseCell *cell = coll->GetCell(i); // current cell
+    auto cell = coll->GetCell(i); // current cell
     FE3D feID = FESpace3D->GetFE3D(i, cell); // id of finite element
     // finite element on the current cell
     TFE3D *fe = TFEDatabase3D::GetFE3D(feID);
@@ -1665,8 +1649,6 @@ void TFEFunction3D::SetDirichletBC(BoundCondFunct3D *BoundaryCondition,
                                    BoundValueFunct3D *BoudaryValue)
 {
   int i,j, m;
-  TBaseCell *cell;
-  TCollection *Coll;
   FE3D FEId;
   TFE3D *Element;
   TNodalFunctional3D *nf;  
@@ -1701,7 +1683,7 @@ void TFEFunction3D::SetDirichletBC(BoundCondFunct3D *BoundaryCondition,
   int *EdgeDOF;
   
   
-  Coll = FESpace3D->GetCollection();
+  auto Coll = FESpace3D->GetCollection();
   N_Cells = Coll->GetN_Cells();
   
   BeginIndex = FESpace3D->GetBeginIndex();
@@ -1712,7 +1694,7 @@ void TFEFunction3D::SetDirichletBC(BoundCondFunct3D *BoundaryCondition,
 
   for(i=0;i<N_Cells;i++)
   {
-    cell = Coll->GetCell(i);
+    auto cell = Coll->GetCell(i);
     FEId = FESpace3D->GetFE3D(i, cell);
     Element = TFEDatabase3D::GetFE3D(FEId);
     nf = Element->GetNodalFunctional3D();

@@ -93,7 +93,8 @@ void TFEFunction2D::GetL2BoundaryError(BoundValueFunct2D *Exact,
   // ########################################################################
   // loop over all Nitsche edges
   // ########################################################################
-  TCollection *Coll = fespaces[0]->GetCollection();  // all spaces use the same Coll
+  // all spaces use the same Coll
+  const TCollection *Coll = fespaces[0]->GetCollection();
 
   final_boundary_error_l2[0] = 0;
   for(int k = 0; k < TDatabase::ParamDB->n_nitsche_boundary; k++)
@@ -196,7 +197,8 @@ void TFEFunction2D::GetL2BoundaryError(BoundValueFunct2D *Exact,
   // ########################################################################
   // loop over all Nitsche edges
   // ########################################################################
-  TCollection *Coll = fespaces[0]->GetCollection();  // all spaces use the same Coll
+  // all spaces use the same Coll
+  const TCollection *Coll = fespaces[0]->GetCollection();
 
   final_boundary_error_l2[0] = 0;
 
@@ -340,7 +342,8 @@ void TFEFunction2D::GetErrors(DoubleFunct2D *Exact, int N_Derivatives,
   // ########################################################################
   // loop over all cells
   // ########################################################################
-  TCollection *Coll = fespaces[0]->GetCollection();  // all spaces use same Coll
+  // all spaces use same Coll
+  const TCollection *Coll = fespaces[0]->GetCollection();
   int N_Cells = Coll->GetN_Cells();
   double x_coord_max_error, y_coord_max_error;
 
@@ -670,8 +673,6 @@ void TFEFunction2D::FindGradient(double x, double y, double *values) const
 {
   int i,j, N_Cells;
   double xi, eta;
-  TBaseCell *cell;
-  TCollection *Coll;
   FE2D FE_ID;
   TFE2D *FE_Obj;
   RefTrans2D RefTrans;
@@ -692,11 +693,11 @@ void TFEFunction2D::FindGradient(double x, double y, double *values) const
   BeginIndex = FESpace2D->GetBeginIndex();
   GlobalNumbers = FESpace2D->GetGlobalNumbers();
 
-  Coll = FESpace2D->GetCollection();
+  auto Coll = FESpace2D->GetCollection();
   N_Cells = Coll->GetN_Cells();
   for(i=0;i<N_Cells;i++)
   {
-    cell = Coll->GetCell(i);
+    auto cell = Coll->GetCell(i);
     if(cell->PointInCell(x,y))
     {
       N_Found++;
@@ -781,7 +782,6 @@ void TFEFunction2D::FindGradientLocal(const TBaseCell *cell, int cell_no,
 {
   int j,k;
   double xi, eta, eps = 1e-20;
-  TCollection *Coll;
   FE2D FE_ID;
   TFE2D *FE_Obj;
   RefTrans2D RefTrans;
@@ -794,7 +794,7 @@ void TFEFunction2D::FindGradientLocal(const TBaseCell *cell, int cell_no,
   double val;
   int *GlobalNumbers, *BeginIndex;
 
-  Coll = FESpace2D->GetCollection();
+  auto Coll = FESpace2D->GetCollection();
 
   // get properties of the fe space
   BeginIndex = FESpace2D->GetBeginIndex();
@@ -900,7 +900,6 @@ void TFEFunction2D::FindValueLocal(const TBaseCell *cell, int cell_no, double x,
 {
   int i, j, k;
   double xi, eta;
-  TCollection *Coll;
   FE2D FE_ID;
   TFE2D *FE_Obj;
   RefTrans2D RefTrans;
@@ -919,7 +918,7 @@ void TFEFunction2D::FindValueLocal(const TBaseCell *cell, int cell_no, double x,
   BeginIndex = FESpace2D->GetBeginIndex();
   GlobalNumbers = FESpace2D->GetGlobalNumbers();
 
-  Coll = FESpace2D->GetCollection();
+  auto Coll = FESpace2D->GetCollection();
 
   FE_ID = FESpace2D->GetFE2D(cell_no, cell);
   FE_Obj = TFEDatabase2D::GetFE2D(FE_ID);
@@ -1001,8 +1000,6 @@ void TFEFunction2D::FindValueLocal(const TBaseCell *cell, int cell_no, double x,
 void TFEFunction2D::Interpolate(DoubleFunct2D *Exact)
 {
   int i,j;
-  TBaseCell *cell;
-  TCollection *Coll;
   FE2D FEId;
   TFE2D *Element;
   TNodalFunctional2D *nf;
@@ -1030,7 +1027,7 @@ void TFEFunction2D::Interpolate(DoubleFunct2D *Exact)
 
   // begin code
 
-  Coll = FESpace2D->GetCollection();
+  auto Coll = FESpace2D->GetCollection();
   N_Cells = Coll->GetN_Cells();
   BeginIndex = FESpace2D->GetBeginIndex();
   GlobalNumbers = FESpace2D->GetGlobalNumbers();
@@ -1041,7 +1038,7 @@ void TFEFunction2D::Interpolate(DoubleFunct2D *Exact)
 
   for(i=0;i<N_Cells;i++)
   {
-    cell = Coll->GetCell(i);
+    auto cell = Coll->GetCell(i);
     FEId = FESpace2D->GetFE2D(i, cell);
     Element = TFEDatabase2D::GetFE2D(FEId);
     nf = Element->GetNodalFunctional2D();
@@ -1172,8 +1169,6 @@ void TFEFunction2D::GetMeshCellParams(DoubleFunct2D* Exact, int N_Derivatives,
   int Used[N_FEs2D], *N_BaseFunct;
   FE2D LocalUsedElements[N_FEs2D], CurrentElement;
   BaseFunct2D BaseFunct, *BaseFuncts;
-  TCollection *Coll;
-  TBaseCell *cell;
   const double *weights;
   const double *xi, *eta;
   double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D];
@@ -1224,11 +1219,11 @@ void TFEFunction2D::GetMeshCellParams(DoubleFunct2D* Exact, int N_Derivatives,
   // ########################################################################
   // loop over all cells
   // ########################################################################
-  Coll = fespaces[0]->GetCollection();            // all spaces use same Coll
+  auto Coll = fespaces[0]->GetCollection();         // all spaces use same Coll
   N_Cells = Coll->GetN_Cells();
   for(i=0;i<N_Cells;i++)
   {
-    cell = Coll->GetCell(i);
+    auto cell = Coll->GetCell(i);
 
     hK = cell->GetDiameter();
 
@@ -1320,8 +1315,6 @@ void TFEFunction2D::GetMeshCellParams(DoubleFunct2D* Exact, int N_Derivatives,
 void TFEFunction2D::InterpolateSuper(DoubleFunct2D *Exact)
 {
   int i,j;
-  TBaseCell *cell;
-  TCollection *Coll;
   FE2D FEId;
   TFE2D *Element;
   TNodalFunctional2D *nf;
@@ -1350,7 +1343,7 @@ void TFEFunction2D::InterpolateSuper(DoubleFunct2D *Exact)
 
   // begin code
 
-  Coll = FESpace2D->GetCollection();
+  auto Coll = FESpace2D->GetCollection();
   N_Cells = Coll->GetN_Cells();
   BeginIndex = FESpace2D->GetBeginIndex();
   GlobalNumbers = FESpace2D->GetGlobalNumbers();
@@ -1361,7 +1354,7 @@ void TFEFunction2D::InterpolateSuper(DoubleFunct2D *Exact)
 
   for(i=0;i<N_Cells;i++)
   {
-    cell = Coll->GetCell(i);
+    auto cell = Coll->GetCell(i);
     FEId = FESpace2D->GetFE2D(i, cell);
     Element = TFEDatabase2D::GetFE2D(FEId);
     nf = Element->GetNodalFunctional2D();
@@ -1501,7 +1494,7 @@ void TFEFunction2D::GetErrorsForVectorValuedFunction(
 {
   // set all errors to zero at first
   memset(errors,0,3*sizeof(double));
-  TCollection *coll = FESpace2D->GetCollection(); 
+  auto coll = FESpace2D->GetCollection(); 
   const int n_cells = coll->GetN_Cells();
 
   for(int i = 0; i < n_cells; i++)
@@ -1635,15 +1628,12 @@ void TFEFunction2D::WriteSol(const std::string& directory,
   static int img=0;
   char Dquot;
 
-  TCollection *Coll;
-  TBaseCell *cell;
-
   Dquot = 34; //  see ASCII Chart
-  Coll = FESpace2D->GetCollection();
+  auto Coll = FESpace2D->GetCollection();
   N_Cells = Coll->GetN_Cells();
 
   i=0;
-  cell =  Coll->GetCell(i);
+  auto cell = Coll->GetCell(i);
   N_Joints = cell->GetN_Joints();
   const char* BaseName = basename.c_str();
   const char* output_directory = directory.c_str();
@@ -1683,14 +1673,11 @@ void TFEFunction2D::ReadSol(std::string BaseName)
   int i, j, N_Joints, N_Cells, N_cells, N_joints, length;
   char line[100];
 
-  TCollection *Coll;
-  TBaseCell *cell;
-
-  Coll = FESpace2D->GetCollection();
+  auto Coll = FESpace2D->GetCollection();
   N_Cells = Coll->GetN_Cells();
 
   i=0;
-  cell =  Coll->GetCell(i);
+  auto cell =  Coll->GetCell(i);
   N_Joints = cell->GetN_Joints();
 
   std::ifstream dat(BaseName);
@@ -1741,13 +1728,10 @@ void TFEFunction2D::Interpolate(TFEFunction2D *OldFeFunction)
   double FunctionalValues[MaxN_PointsForNodal2D];
   double values[4];
 
-  TBaseCell *cell;
-  TCollection *Coll;
   FE2D FEId;
   TFE2D *Element;
   TNodalFunctional2D *nf;
   bool IsIsoparametric;
-  TJoint *joint;
   JointType jointtype;
   BoundTypes bdtype;
   BF2DRefElements RefElement;
@@ -1755,7 +1739,7 @@ void TFEFunction2D::Interpolate(TFEFunction2D *OldFeFunction)
 
   // begin code
 
-  Coll = FESpace2D->GetCollection();
+  auto Coll = FESpace2D->GetCollection();
   N_Cells = Coll->GetN_Cells();
   BeginIndex = FESpace2D->GetBeginIndex();
   GlobalNumbers = FESpace2D->GetGlobalNumbers();
@@ -1770,7 +1754,7 @@ void TFEFunction2D::Interpolate(TFEFunction2D *OldFeFunction)
 
   for(i=0;i<N_Cells;i++)
   {
-    cell = Coll->GetCell(i);
+    auto cell = Coll->GetCell(i);
     FEId = FESpace2D->GetFE2D(i, cell);
     Element = TFEDatabase2D::GetFE2D(FEId);
     nf = Element->GetNodalFunctional2D();
@@ -1796,7 +1780,7 @@ void TFEFunction2D::Interpolate(TFEFunction2D *OldFeFunction)
     {
       for(j=0;j<N_Edges;j++)
       {
-        joint = cell->GetJoint(j);
+        auto joint = cell->GetJoint(j);
         jointtype = joint->GetType();
         if(jointtype == BoundaryEdge)
         {
@@ -1875,7 +1859,7 @@ void TFEFunction2D::add(AnalyticFunction f)
   const double *xi, *eta;
   // begin code
 
-  TCollection *Coll = FESpace2D->GetCollection();
+  auto Coll = FESpace2D->GetCollection();
   int N_Cells = Coll->GetN_Cells();
   int N_DOFs = FESpace2D->GetN_DegreesOfFreedom();
   std::vector<int> IntIndex(N_DOFs, 0);
@@ -1966,7 +1950,7 @@ void TFEFunction2D::add(AnalyticFunction f)
 void TFEFunction2D::compute_integral_and_measure(double& integral, 
     double& measure) const
 {
-  TCollection *coll = FESpace2D->GetCollection(); 
+  auto coll = FESpace2D->GetCollection(); 
 
   integral = 0.0; // variable to store integral value of this TFEFunction2D
   measure = 0.0; // variable to store the measure of the domain
@@ -2046,7 +2030,7 @@ void TFEFunction2D::project_into_L20(double a)
   // for standard P_k or Q_k finite elements this is a constant function
   double *interpol = new double[Length];
 
-  TCollection *coll = FESpace2D->GetCollection();
+  auto coll = FESpace2D->GetCollection();
   const int n_cells = coll->GetN_Cells();
   for(int i = 0; i < n_cells; i++)
   {
@@ -2167,14 +2151,9 @@ void TFEFunction2D::PrintMinMax(const std::string& name) const
 void TFEFunction2D::SetDirichletBC(BoundCondFunct2D *BoundaryCondition,
     BoundValueFunct2D *BoundaryValue)
 {
-  TCollection *Coll;
-  TBaseCell *cell;
   FE2D FEId;
   TFE2D *Element;
   TFEDesc2D *FEDesc_Obj;
-  TJoint *joint;
-  TBoundEdge *boundedge;
-  TIsoBoundEdge *isoboundedge;
   TNodalFunctional2D *nf;
   const TBoundComp2D* BoundComp;
   BoundCond Cond0, Cond1;
@@ -2193,11 +2172,11 @@ void TFEFunction2D::SetDirichletBC(BoundCondFunct2D *BoundaryCondition,
   BeginIndex = FESpace2D->GetBeginIndex();
   GlobalNumbers = FESpace2D->GetGlobalNumbers();
 
-  Coll = FESpace2D->GetCollection();
+  auto Coll = FESpace2D->GetCollection();
   N_Cells = Coll->GetN_Cells();
   for(i=0;i<N_Cells;i++)
   {
-    cell  = Coll->GetCell(i);
+    auto cell  = Coll->GetCell(i);
     FEId = FESpace2D->GetFE2D(i, cell);
     Element = TFEDatabase2D::GetFE2D(FEId);
     nf = Element->GetNodalFunctional2D();
@@ -2210,19 +2189,19 @@ void TFEFunction2D::SetDirichletBC(BoundCondFunct2D *BoundaryCondition,
     N_Joints = cell->GetN_Edges();
     for(m=0;m<N_Joints;m++)
     {
-      joint = cell->GetJoint(m);
+      auto joint = cell->GetJoint(m);
       if(joint->GetType() == BoundaryEdge ||
           joint->GetType() == IsoBoundEdge)
       {
         if(joint->GetType() == BoundaryEdge)
         {
-          boundedge = (TBoundEdge *)joint;
+          auto boundedge = (const TBoundEdge *)joint;
           BoundComp = boundedge->GetBoundComp();
           boundedge->GetParameters(t0, t1);
         }
         else
         {
-          isoboundedge = (TIsoBoundEdge *)joint;
+          auto isoboundedge = (const TIsoBoundEdge *)joint;
           BoundComp = isoboundedge->GetBoundComp();
           isoboundedge->GetParameters(t0, t1);
         }
@@ -2344,9 +2323,6 @@ void  TFEFunction2D::GetMassAndMean(double *OutVal)
   double values[MaxN_QuadPoints_2D][MaxN_BaseFunctions2D];
   double AbsDetjk[MaxN_QuadPoints_2D], X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D];
 
-  TJoint *joint;
-  TBaseCell *cell;
-  TCollection *coll;
   JointType jointtype;
   BoundTypes bdtype;
   RefTrans2D RefTrans;
@@ -2362,7 +2338,7 @@ void  TFEFunction2D::GetMassAndMean(double *OutVal)
   GlobalNumbers = FESpace2D->GetGlobalNumbers();
   //   U = fefunction->GetValues();
 
-  coll = FESpace2D->GetCollection();
+  auto coll = FESpace2D->GetCollection();
   N_Cells = coll->GetN_Cells();
 
   mass = 0.;
@@ -2370,7 +2346,7 @@ void  TFEFunction2D::GetMassAndMean(double *OutVal)
   //   Concentration = 0.;
   for(i=0;i<N_Cells;i++)
   {
-    cell = coll->GetCell(i);
+    auto cell = coll->GetCell(i);
     FEid = FESpace2D->GetFE2D(i, cell);
 
     RefTrans = TFEDatabase2D::GetRefTrans2D_IDFromFE2D(FEid);
@@ -2380,16 +2356,16 @@ void  TFEFunction2D::GetMassAndMean(double *OutVal)
     {
       for(j=0;j<N_Joints;j++)
       {
-        joint = cell->GetJoint(j);
+        auto joint = cell->GetJoint(j);
         jointtype = joint->GetType();
         if(jointtype == BoundaryEdge)
         {
-          bdtype = ((TBoundEdge *)(joint))->GetBoundComp()->GetType();
+          bdtype = ((const TBoundEdge *)(joint))->GetBoundComp()->GetType();
           if(bdtype != Line)  IsIsoparametric = true;
         }
         if(jointtype == InterfaceJoint)
         {
-          bdtype = ((TInterfaceJoint *)(joint))->GetBoundComp()->GetType();
+          bdtype = ((const TInterfaceJoint *)(joint))->GetBoundComp()->GetType();
           if(bdtype != Line)
             IsIsoparametric = true;
         }

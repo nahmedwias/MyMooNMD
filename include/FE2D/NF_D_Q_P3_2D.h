@@ -100,7 +100,7 @@ static double NF_D_Q_P3_2D_Weight9[16]={
 
 static double *NF_D_Q_P3_2D_T = nullptr;
 
-void NF_D_Q_P3_2D_EvalAll(TCollection *, const TBaseCell *,
+void NF_D_Q_P3_2D_EvalAll(const TCollection *, const TBaseCell *,
                           const double *PointValues, double *Functionals)
 {
   static double weights[16]={ 
@@ -286,7 +286,7 @@ void NF_D_Q_P3_2D_EvalAll(TCollection *, const TBaseCell *,
   Functionals[9] *= 0.25;
 }
 
-void NF_D_Q_P3_2D_EvalEdge(TCollection *, const TBaseCell *, int,
+void NF_D_Q_P3_2D_EvalEdge(const TCollection *, const TBaseCell *, int,
                            const double *, double *)
 {
 }

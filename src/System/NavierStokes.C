@@ -373,7 +373,7 @@ void NavierStokes<d>::output_problem_size_info() const
   size_t nTotal = d*nDofu + nDofp;
   size_t nActive= d*velocity_space.GetActiveBound();
 
-  TCollection* coll = velocity_space.GetCollection();
+  auto coll = velocity_space.GetCollection();
 
   double hmin, hmax;
   coll->GetHminHmax(&hmin, &hmax);
@@ -1369,7 +1369,7 @@ void NavierStokes<d>::assemble_boundary_terms()
 
 #else
 
-    TCollection* coll = s.velocity_space.get()->GetCollection();
+    auto coll = s.velocity_space.get()->GetCollection();
     BoundaryAssembling3D ba;
     if (n_neumann_bd)
     {

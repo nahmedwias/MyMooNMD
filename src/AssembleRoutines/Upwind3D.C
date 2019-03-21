@@ -18,6 +18,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <MooNMD_Io.h>
+#include "BaseCell.h"
 
 void GetUpwindValue(double UPWIND_ORDER,double t,double *phi)
 {
@@ -59,8 +60,6 @@ void UpwindForNavierStokes3D(TSquareMatrix3D *sqmatrix, TFEFunction3D *u1,
   int UPWIND_ORDER=upwind_order;
   double UPWIND_FLUX_DAMP=upwind_flux_damp;
   int  UPW_APPL = upwind_application;
-  TBaseCell *cell;
-  TCollection *coll;
   int i,j,k,l,m,n,m1, N_Cells, N_Edges, N_Faces, N_Vertices;
 //  int n_mat, m_mat;
   double *u1vect, *u2vect, *u3vect;
@@ -114,14 +113,14 @@ void UpwindForNavierStokes3D(TSquareMatrix3D *sqmatrix, TFEFunction3D *u1,
   u3vect = u3->GetValues();
   
   // get collection and number of cells
-  coll = fespace->GetCollection();
+  auto coll = fespace->GetCollection();
   N_Cells = coll->GetN_Cells();
 
   // loop over all cells for computing the upwind stabilization
   for(i=0;i<N_Cells;i++)
   {
     // next cell
-    cell = coll->GetCell(i);
+    auto cell = coll->GetCell(i);
     // pointer to global indices of dof connected with this cell
     DOF = GlobalNumbers + BeginIndex[i];
     // # of vertices
@@ -326,8 +325,6 @@ void UpwindForConvDiff(TSquareMatrix3D *sqmatrix, double *,
   double UPWIND_ORDER=TDatabase::ParamDB->UPWIND_ORDER;
   double UPWIND_FLUX_DAMP=TDatabase::ParamDB->UPWIND_FLUX_DAMP;
   int  UPW_APPL = TDatabase::ParamDB->UPWIND_APPLICATION;
-  TBaseCell *cell;
-  TCollection *coll;
   const TShapeDesc *desc;
   int i,j,k,l,m,n, N_Edges, N_Cells, N_Vertices, N_Faces;
 //  int n_mat, m_mat;
@@ -361,14 +358,14 @@ void UpwindForConvDiff(TSquareMatrix3D *sqmatrix, double *,
   DirichletBound = fespace->GetHangingBound();
   
   // get collection and number of cells
-  coll = fespace->GetCollection();
+  auto coll = fespace->GetCollection();
   N_Cells = coll->GetN_Cells();
 
   // loop over all cells for computing the upwind stabilization
   for(i=0;i<N_Cells;i++)
   {
     // next cell
-    cell = coll->GetCell(i);
+    auto cell = coll->GetCell(i);
     // pointer to global indices of dof connected with this cell
     DOF = GlobalNumbers + BeginIndex[i];
     // # of vertices

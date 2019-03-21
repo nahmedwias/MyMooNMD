@@ -72,177 +72,6 @@ TFEVectFunct2D& TFEVectFunct2D::operator=( const TFEVectFunct2D & other)
   return *this;
 }
 
-/** convert current grid to vector-values FE function */
-void TFEVectFunct2D::GridToData()
-{
-  int i,j,k;
-  TBaseCell *cell;
-  TCollection *Coll;
-  FE2D FEId;
-  TFE2D *Element;
-  TNodalFunctional2D *nf;
-  int N_Cells;
-  int N_LocalDOFs;
-  int *BeginIndex, *GlobalNumbers;
-  int N_Points;
-  const double *xi, *eta;
-  int *DOF;
-  RefTrans2D F_K;
-  TRefTrans2D *rt;
-  double X[MaxN_PointsForNodal2D], Y[MaxN_PointsForNodal2D];
-  double AbsDetjk[MaxN_PointsForNodal2D];
-  double FunctionalValuesX[MaxN_PointsForNodal2D];
-  double FunctionalValuesY[MaxN_PointsForNodal2D];
-
-  // begin code
-  
-  Coll = FESpace2D->GetCollection();
-  N_Cells = Coll->GetN_Cells();
-  BeginIndex = FESpace2D->GetBeginIndex();
-  GlobalNumbers = FESpace2D->GetGlobalNumbers();
-
-  for(i=0;i<N_Cells;i++)
-  {
-    // cout << "cell: " << i << endl;
-    cell = Coll->GetCell(i);
-    FEId = FESpace2D->GetFE2D(i, cell);
-    Element = TFEDatabase2D::GetFE2D(FEId);
-    nf = Element->GetNodalFunctional2D();
-    nf->GetPointsForAll(N_Points, xi, eta);
-    N_LocalDOFs = Element->GetN_DOF();
-
-    F_K = Element->GetRefTransID();
-
-    switch(F_K)
-    {
-      case QuadAffin:
-        rt = TFEDatabase2D::GetRefTrans2D(QuadAffin);
-        ((TQuadAffin *)rt)->SetCell(cell);
-        break;
-      case QuadBilinear:
-        rt = TFEDatabase2D::GetRefTrans2D(QuadBilinear);
-        ((TQuadBilinear *)rt)->SetCell(cell);
-        break;
-      case QuadIsoparametric:
-        rt = TFEDatabase2D::GetRefTrans2D(QuadIsoparametric);
-        ((TQuadIsoparametric *)rt)->SetCell(cell);
-        break;
-      case TriaAffin:
-        rt = TFEDatabase2D::GetRefTrans2D(TriaAffin);
-        ((TTriaAffin *)rt)->SetCell(cell);
-        break;
-      case TriaIsoparametric:
-        rt = TFEDatabase2D::GetRefTrans2D(TriaIsoparametric);
-        ((TTriaIsoparametric *)rt)->SetCell(cell);
-        break;
-    }
-    TFEDatabase2D::GetOrigFromRef(F_K, N_Points, xi, eta,
-                                X, Y, AbsDetjk);
-
-    // for(j=0;j<4;j++)
-    //   cout << X[j] << " " << Y[j] << endl;
-
-    nf->GetAllFunctionals(Coll, cell, X, FunctionalValuesX);
-    nf->GetAllFunctionals(Coll, cell, Y, FunctionalValuesY);
-
-    DOF = GlobalNumbers+BeginIndex[i];
-
-    for(j=0;j<N_LocalDOFs;j++)
-    {
-      k = DOF[j];
-      Values[k] = FunctionalValuesX[j];
-      Values[k+Length] = FunctionalValuesY[j];
-      // cout << k << " " << Values[k] << " " << Values[k+Length] << endl;
-    }
-  } // endfor i
-}
-
-/** use current data for grid replacement */
-void TFEVectFunct2D::DataToGrid()
-{
-  int i,j,k;
-  TBaseCell *cell;
-  TCollection *Coll;
-  FE2D FEId;
-  TFE2D *Element;
-  TBaseFunct2D *bf;
-  int N_Cells, N_Vertices;
-  int N_LocalDOFs;
-  int *BeginIndex, *GlobalNumbers;
-  double s, t;
-  int *DOF;
-  RefTrans2D F_K;
-  double xi[4], eta[4];
-  double X[4], Y[4];
-  double FunctValues[4][MaxN_BaseFunctions2D];
-
-  // begin code
-  
-  Coll = FESpace2D->GetCollection();
-  N_Cells = Coll->GetN_Cells();
-  BeginIndex = FESpace2D->GetBeginIndex();
-  GlobalNumbers = FESpace2D->GetGlobalNumbers();
-
-  for(i=0;i<N_Cells;i++)
-  {
-    cell = Coll->GetCell(i);
-    FEId = FESpace2D->GetFE2D(i, cell);
-    Element = TFEDatabase2D::GetFE2D(FEId);
-    bf = Element->GetBaseFunct2D();
-    N_LocalDOFs = Element->GetN_DOF();
-
-    F_K = Element->GetRefTransID();
-
-    switch(F_K)
-    {
-      case QuadAffin:
-      case QuadBilinear:
-      case QuadIsoparametric:
-        N_Vertices = 4;
-        xi[0]  = -1; xi[1]  =  1; xi[2]  =  1; xi[3]  = -1;
-        eta[0] = -1; eta[1] = -1; eta[2] =  1; eta[3] =  1;
-        X[0] = X[1] = X[2] = X[3] = 0;
-        Y[0] = Y[1] = Y[2] = Y[3] = 0;
-      break;
-
-      case TriaAffin:
-      case TriaIsoparametric:
-        N_Vertices = 3;
-        xi[0]  = 0; xi[1]  = 1; xi[2]  = 0;
-        eta[0] = 0; eta[1] = 0; eta[2] = 1;
-        X[0] = X[1] = X[2] = 0;
-        Y[0] = Y[1] = Y[2] = 0;
-      break;
-    }
-
-    for(j=0;j<N_Vertices;j++)
-    {
-      bf->GetDerivatives(D00, xi[j], eta[j], FunctValues[j]);
-      bf->ChangeBF(Coll, cell, FunctValues[j]);
-    }
-
-    DOF = GlobalNumbers+BeginIndex[i];
-
-    for(j=0;j<N_LocalDOFs;j++)
-    {
-      k = DOF[j];
-      s = Values[k];
-      t = Values[k+Length];
-      for(k=0;k<N_Vertices;k++)
-      {
-        X[k] += FunctValues[k][j]*s;
-        Y[k] += FunctValues[k][j]*t;
-      } // endfor k
-    } // endfor j
-
-    for(j=0;j<N_Vertices;j++)
-    {
-      // cout << "j: " << j << " x: " << X[j] << " y: " << Y[j] << endl;
-      cell->GetVertex(j)->SetCoords(X[j], Y[j]);
-    }
-  } // endfor i
-}
-
 //====================================================================
 /** calculate errors to given vector function */
 void TFEVectFunct2D::GetDeformationTensorErrors( 
@@ -261,8 +90,6 @@ void TFEVectFunct2D::GetDeformationTensorErrors(
   TFESpace2D *fespace;
   FE2D LocalUsedElements[N_FEs2D], CurrentElement;
   BaseFunct2D BaseFunct, *BaseFuncts;
-  TCollection *Coll;
-  TBaseCell *cell;
   const double *weights, *xi, *eta;
   double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D];
   double AbsDetjk[MaxN_QuadPoints_2D];
@@ -317,11 +144,11 @@ void TFEVectFunct2D::GetDeformationTensorErrors(
 // ########################################################################
 // loop over all cells
 // ########################################################################
-  Coll = fespaces[0]->GetCollection(); // all spaces use same Coll
+  auto Coll = fespaces[0]->GetCollection(); // all spaces use same Coll
   N_Cells = Coll->GetN_Cells();
   for(i=0;i<N_Cells;i++)
   {
-    cell = Coll->GetCell(i);
+    auto cell = Coll->GetCell(i);
 
     hK = cell->GetDiameter();
 
@@ -530,7 +357,7 @@ double TFEVectFunct2D::GetL2NormNormalComponentError(BoundValueFunct2D *Exact_u1
   int *GlobalNumbers = FESpace2D->GetGlobalNumbers();
   int *BeginIndex = FESpace2D->GetBeginIndex();
 
-  TCollection *Coll = FESpace2D->GetCollection();
+  auto Coll = FESpace2D->GetCollection();
 
   // Initialize Pointer (necessary: Resource allocation is initialization Paradigm)
   double *ExactVal_u1[MaxN_QuadPoints_2D], *ExactVal_u2[MaxN_QuadPoints_2D];
@@ -638,7 +465,7 @@ double TFEVectFunct2D::GetL2NormNormalComponentError(BoundValueFunct2D *Exact_u1
   int *GlobalNumbers = FESpace2D->GetGlobalNumbers();
   int *BeginIndex = FESpace2D->GetBeginIndex();
 
-  TCollection *Coll = FESpace2D->GetCollection();
+  auto Coll = FESpace2D->GetCollection();
 
   // Initialize Pointer (necessary: Resource allocation is initialization Paradigm)
   double *ExactVal_u1[MaxN_QuadPoints_2D], *ExactVal_u2[MaxN_QuadPoints_2D];
@@ -745,7 +572,7 @@ double TFEVectFunct2D::GetL2NormDivergenceError(DoubleFunct2D *Exact_u1,DoubleFu
   int *GlobalNumbers = FESpace2D->GetGlobalNumbers();
   int *BeginIndex = FESpace2D->GetBeginIndex();
 
-  TCollection *Coll = FESpace2D->GetCollection();
+  auto Coll = FESpace2D->GetCollection();
   int N_Cells = Coll->GetN_Cells();
 
   // Initialize Pointer (necessary: Resource allocation is initialization Paradigm)
@@ -775,7 +602,7 @@ double TFEVectFunct2D::GetL2NormDivergenceError(DoubleFunct2D *Exact_u1,DoubleFu
   // loop over all cells
   for(int i = 0; i < N_Cells; i++)
   {
-    TBaseCell *cell = Coll->GetCell(i);
+    auto cell = Coll->GetCell(i);
     FE2D FEid = FESpace2D->GetFE2D(i, cell);
     UsedElements[0] = FEid;
 
@@ -841,15 +668,12 @@ void TFEVectFunct2D::WriteSol(double t, const std::string& directory,
   MPI_Comm_rank(TDatabase::ParamDB->Comm, &rank);
   #endif
 
-  TCollection *Coll;
-  TBaseCell *cell;
-
   Dquot = 34; //  see ASCII Chart
-  Coll = FESpace2D->GetCollection();
+  auto Coll = FESpace2D->GetCollection();
   N_Cells = Coll->GetN_Cells();
 
   i=0;
-  cell =  Coll->GetCell(i);
+  auto cell =  Coll->GetCell(i);
   N_Joints = cell->GetN_Joints();
   const char* BaseName = basename.c_str();
   const char* output_directory = directory.c_str();
@@ -896,14 +720,11 @@ void TFEVectFunct2D::ReadSol(const std::string& BaseName)
  int i, j, N_Joints, N_Cells, N_cells, N_joints, N_components, length;
  char line[100];
 
- TCollection *Coll;
- TBaseCell *cell;
-
-  Coll = FESpace2D->GetCollection();
+  auto Coll = FESpace2D->GetCollection();
   N_Cells = Coll->GetN_Cells();
 
   i=0;
-  cell =  Coll->GetCell(i);
+  auto cell =  Coll->GetCell(i);
   N_Joints = cell->GetN_Joints();
 
   std::ifstream dat(BaseName);
@@ -955,8 +776,6 @@ void TFEVectFunct2D::Interpolate(TFEVectFunct2D *OldVectFunct)
   
  bool IsIsoparametric;
    
- TCollection *Coll;
- TBaseCell *cell;
  RefTrans2D RefTrans, *RefTransArray;
  FE2D FEId;
  TFE2D *Element;
@@ -969,7 +788,7 @@ void TFEVectFunct2D::Interpolate(TFEVectFunct2D *OldVectFunct)
  RefTrans2D F_K;
  TRefTrans2D *rt;
 
-  Coll = FESpace2D->GetCollection();
+  auto Coll = FESpace2D->GetCollection();
   N_Cells = Coll->GetN_Cells();
   BeginIndex = FESpace2D->GetBeginIndex();
   GlobalNumbers = FESpace2D->GetGlobalNumbers();
@@ -981,7 +800,7 @@ void TFEVectFunct2D::Interpolate(TFEVectFunct2D *OldVectFunct)
     
   for(i=0;i<N_Cells;i++)
   {
-    cell = Coll->GetCell(i);
+    auto cell = Coll->GetCell(i);
     FEId = FESpace2D->GetFE2D(i, cell);
     Element = TFEDatabase2D::GetFE2D(FEId);
     nf = Element->GetNodalFunctional2D();
@@ -1121,8 +940,6 @@ void TFEVectFunct2D::FindVectGradient(double x, double y, double *val1, double *
   double *uorig, *uxorig, *uyorig, *uref, *uxiref, *uetaref;
   double u1, u1x, u1y, u2, u2x, u2y;
   
-  TBaseCell *cell;
-  TCollection *Coll;
   FE2D FE_ID;
   TFE2D *FE_Obj;
   RefTrans2D RefTrans;
@@ -1149,12 +966,12 @@ void TFEVectFunct2D::FindVectGradient(double x, double y, double *val1, double *
   GlobalNumbers = FESpace2D->GetGlobalNumbers();
   N_DOFs = FESpace2D->GetN_DegreesOfFreedom();
   
-  Coll = FESpace2D->GetCollection();
+  auto Coll = FESpace2D->GetCollection();
   N_Cells = Coll->GetN_Cells();  
 
   for(i=0;i<N_Cells;i++)
   {
-    cell = Coll->GetCell(i);
+    auto cell = Coll->GetCell(i);
     
     if(cell->PointInCell(x,y))
     {

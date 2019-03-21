@@ -146,7 +146,7 @@ void TimeConvectionDiffusionPOD<d>::assemble_gramian()
 template <int d> 
 void TimeConvectionDiffusionPOD<d>::output_problem_size_info() const
 {
-  TCollection *coll = this->fe_space->GetCollection();
+  const TCollection *coll = this->fe_space->GetCollection();
 #ifndef _MPI
   double hMin, hMax;
   coll->GetHminHmax(&hMin, &hMax);

@@ -13,10 +13,9 @@
 
 #include <vector>
 #include <map>
-#include <BaseCell.h>
-#include <JointCollection.h>
-#include <BoundEdge.h>
-#include <BoundFace.h>
+class TBaseCell;
+class TBoundEdge;
+class TBoundFace;
 
 /** @brief store cells in an array, used by cell iterators */
 class TCollection
@@ -37,23 +36,29 @@ class TCollection
 #ifdef  _MPI
     /** @brief Number of own cells (excluding Halo cells) */
     int N_OwnCells;
-    
-    /** @brief array for Globalcell number in Cells */
-    int *GlobalIndex;
 #endif
     
-   // ------------------------------------------------
-   ///@brief create a list of nodes, vertices, elements
-   int createElementLists();
-   std::vector<double> NodesCoords;
-   std::vector<unsigned int> NodesReferences;
-   std::vector< std::vector<unsigned int> > ElementNodes;
-   std::vector<unsigned int> ElementReferences;
-   std::vector<unsigned int> BdFacesNodes;
-   std::vector<unsigned int> BdFacesReferences;
-   std::vector<unsigned int> DomainVertexNumbers;
-   unsigned int NLocVertices;
-   //----- used in DataWriter ----
+    struct ElementLists
+    {
+      //----- used in DataWriter ----
+      std::vector<double> NodesCoords;
+      std::vector<unsigned int> NodesReferences;
+      std::vector< std::vector<unsigned int> > ElementNodes;
+      std::vector<unsigned int> ElementReferences;
+      std::vector<unsigned int> BdFacesNodes;
+      std::vector<unsigned int> BdFacesReferences;
+      std::vector<unsigned int> DomainVertexNumbers;
+      unsigned int NLocVertices;
+      bool empty() const { return NodesCoords.empty(); }
+    };
+    /// @brief store redundant data for faster access, mostly needed for 
+    /// DataWriter. It serves as a cache is therefore mutable.
+    mutable ElementLists element_lists;
+    /// @brief create a list of nodes, vertices, elements.
+    /// This method is 'const' because it only alters the mutable member 
+    /// 'element_lists'.
+    void createElementLists() const;
+   
     
   public:
     /** @brief constructor */
@@ -86,11 +91,6 @@ class TCollection
     int GetN_HaloCells() const
      { return (N_Cells - N_OwnCells); }
 
-    int *GetGlobalIndex()
-    {
-      return GlobalIndex;
-    }
-
     /**
      * Find the lowest-number process which contains the given point (x,y,z)
      * in an OwnCell.
@@ -111,33 +111,34 @@ class TCollection
     
    /**@brief Write a list of boundary edges
     */
-   void get_edge_list_on_component(int i,std::vector<TBoundEdge*> &edges);
+   void get_edge_list_on_component(int i,std::vector<TBoundEdge*> &edges) const;
    ///@todo it is better to return the vector?
    // std::vector<TBoundEdge*> get_edge_list_on_component(int i);
    // ------------------------------------------------
    
-   void get_boundary_edge_list(std::vector<TBoundEdge*> &edges);
+   void get_boundary_edge_list(std::vector<TBoundEdge*> &edges) const;
    
    //New LB 11.10.18
 #ifdef __3D__
-   void get_face_list_on_component(int boundary_component_id, std::vector< TBoundFace* > &faces);
+   void get_face_list_on_component(int boundary_component_id,
+                                   std::vector<TBoundFace*> &faces) const;
 #endif
 
    //####################################################
    //--------------- used in DataWriter -----------------
    //####################################################
    
-   unsigned int GetN_Vertices();
+   unsigned int GetN_Vertices() const;
    
-   unsigned int GetN_BdFaces();
+   unsigned int GetN_BdFaces() const;
    
-   double GetCoord(unsigned int vert);
+   double GetCoord(unsigned int vert) const;
    
-   unsigned int GetBdFacesNode(unsigned int face);
+   unsigned int GetBdFacesNode(unsigned int face) const;
    
-   unsigned int GetGlobalVerNo(unsigned int cell, unsigned int locvert);
+   unsigned int GetGlobalVerNo(unsigned int cell, unsigned int locvert) const;
    
-   unsigned int GetNLocVertices();
+   unsigned int GetNLocVertices() const;
 };
 
 #endif

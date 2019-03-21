@@ -10,6 +10,7 @@
 // =======================================================================
 
 #include <It_LELevel.h>
+#include "BaseCell.h"
 
 // Methods
 TBaseCell *TIt_LELevel::Next(int &info)

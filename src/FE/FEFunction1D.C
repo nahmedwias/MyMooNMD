@@ -15,6 +15,7 @@
 #include <FEFunction1D.h>
 #include <AllRefTrans.h>
 #include <MooNMD_Io.h>
+#include "BaseCell.h"
 
 #include <BaseFunct1D.h>
 #include <NodalFunctional1D.h>
@@ -50,8 +51,6 @@ void TFEFunction1D::Interpolate(DoubleFunct2D *Exact)
   double FunctionalValues[MaxN_PointsForNodal1D];
   double FctVal[4];
 
-  TBaseCell *cell;
-  TCollection *Coll;
   FE1D FEId;
   TFE1D *Element;
 //  TFE1D *FE_Obj;
@@ -62,7 +61,7 @@ void TFEFunction1D::Interpolate(DoubleFunct2D *Exact)
 
 //  RefTrans1D RefTrans, *RefTransArray;
 
-  Coll = FESpace1D->GetCollection();
+  auto Coll = FESpace1D->GetCollection();
   N_Cells = Coll->GetN_Cells();
   BeginIndex = FESpace1D->GetBeginIndex();
   GlobalNumbers = FESpace1D->GetGlobalNumbers();
@@ -71,7 +70,7 @@ void TFEFunction1D::Interpolate(DoubleFunct2D *Exact)
   memset(Values, 0, SizeOfDouble*N_DOFs);
   for(i=0;i<N_Cells;i++)
   {
-    cell = Coll->GetCell(i);
+    auto cell = Coll->GetCell(i);
     FEId = FESpace1D->GetFE1D(i, cell);
     Element = TFEDatabase2D::GetFE1D(FEId);
 //    FE_Obj = TFEDatabase2D::GetFE1D(FEId);
@@ -127,8 +126,6 @@ void TFEFunction1D::Interpolate(int ConstCoord, double x, DoubleFunct2D *Exact)
   double FunctionalValues[MaxN_PointsForNodal1D];
   double FctVal[4];
 
-  TBaseCell *cell;
-  TCollection *Coll;
   FE1D FEId;
   TFE1D *Element;
 //  TFE1D *FE_Obj;
@@ -137,7 +134,7 @@ void TFEFunction1D::Interpolate(int ConstCoord, double x, DoubleFunct2D *Exact)
 //  TBaseFunct1D *bf;
 //  RefTrans1D RefTrans, *RefTransArray;
 
-  Coll = FESpace1D->GetCollection();
+  auto Coll = FESpace1D->GetCollection();
   N_Cells = Coll->GetN_Cells();
   BeginIndex = FESpace1D->GetBeginIndex();
   GlobalNumbers = FESpace1D->GetGlobalNumbers();
@@ -146,7 +143,7 @@ void TFEFunction1D::Interpolate(int ConstCoord, double x, DoubleFunct2D *Exact)
 
   for(i=0; i<N_Cells; i++)
    {
-    cell = Coll->GetCell(i);
+    auto cell = Coll->GetCell(i);
     FEId = FESpace1D->GetFE1D(i, cell);
     Element = TFEDatabase2D::GetFE1D(FEId);
 //    FE_Obj = TFEDatabase2D::GetFE1D(FEId);
@@ -204,8 +201,6 @@ void TFEFunction1D::Interpolate(double x, double y, DoubleFunct3D *Exact)
   double FunctionalValues[MaxN_PointsForNodal1D];
   double FctVal[4];
 
-  TBaseCell *cell;
-  TCollection *Coll;
   FE1D FEId;
   TFE1D *Element;
 //  TFE1D *FE_Obj;
@@ -214,7 +209,7 @@ void TFEFunction1D::Interpolate(double x, double y, DoubleFunct3D *Exact)
 //  TBaseFunct1D *bf;
 //  RefTrans1D RefTrans, *RefTransArray;
 
-  Coll = FESpace1D->GetCollection();
+  auto Coll = FESpace1D->GetCollection();
   N_Cells = Coll->GetN_Cells();
   BeginIndex = FESpace1D->GetBeginIndex();
   GlobalNumbers = FESpace1D->GetGlobalNumbers();
@@ -223,7 +218,7 @@ void TFEFunction1D::Interpolate(double x, double y, DoubleFunct3D *Exact)
 
   for(i=0; i<N_Cells; i++)
    {
-    cell = Coll->GetCell(i);
+    auto cell = Coll->GetCell(i);
     FEId = FESpace1D->GetFE1D(i, cell);
     Element = TFEDatabase2D::GetFE1D(FEId);
 //    FE_Obj = TFEDatabase2D::GetFE1D(FEId);
@@ -271,8 +266,6 @@ void TFEFunction1D::InterpolateNodalPts(int N_Coord, double *Coords, DoubleFunct
 //  double FunctionalValues[MaxN_PointsForNodal1D];
   double FctVal[4]; // double x, y;
 
-  TBaseCell *cell;
-  TCollection *Coll;
   FE1D FEId;
   TFE1D *Element;
 //  TFE1D *FE_Obj;
@@ -289,7 +282,7 @@ void TFEFunction1D::InterpolateNodalPts(int N_Coord, double *Coords, DoubleFunct
 #endif  
   N_Coord++; // this 1D Coord
   
-  Coll = FESpace1D->GetCollection();
+  auto Coll = FESpace1D->GetCollection();
   N_Cells = Coll->GetN_Cells();
 //  BeginIndex = FESpace1D->GetBeginIndex();
 //  GlobalNumbers = FESpace1D->GetGlobalNumbers();
@@ -304,7 +297,7 @@ void TFEFunction1D::InterpolateNodalPts(int N_Coord, double *Coords, DoubleFunct
   disp = 0;
   for(i=0; i<N_Cells; i++)
    {
-    cell = Coll->GetCell(i);
+    auto cell = Coll->GetCell(i);
     FEId = FESpace1D->GetFE1D(i, cell);
     Element = TFEDatabase2D::GetFE1D(FEId);
 //    FE_Obj = TFEDatabase2D::GetFE1D(FEId);
@@ -362,8 +355,6 @@ void TFEFunction1D::GridToData()
   double FunctionalValues[MaxN_PointsForNodal1D];
 //  double FctVal[4];
 
-  TBaseCell *cell;
-  TCollection *Coll;
   FE1D FEId;
   TFE1D *Element;
 //  TFE1D *FE_Obj;
@@ -372,7 +363,7 @@ void TFEFunction1D::GridToData()
 //  TBaseFunct1D *bf;
 //  RefTrans1D RefTrans, *RefTransArray;
 
-  Coll = FESpace1D->GetCollection();
+  auto Coll = FESpace1D->GetCollection();
   N_Cells = Coll->GetN_Cells();
   BeginIndex = FESpace1D->GetBeginIndex();
   GlobalNumbers = FESpace1D->GetGlobalNumbers();
@@ -381,7 +372,7 @@ void TFEFunction1D::GridToData()
 
   for(i=0; i<N_Cells; i++)
    {
-    cell = Coll->GetCell(i);
+    auto cell = Coll->GetCell(i);
     FEId = FESpace1D->GetFE1D(i, cell);
     Element = TFEDatabase2D::GetFE1D(FEId);
 

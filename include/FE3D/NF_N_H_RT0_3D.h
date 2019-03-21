@@ -75,10 +75,10 @@ static double NF_N_H_RT0_3D_T[1] = {0};// ???
 static double NF_N_H_RT0_3D_S[1] = {0};// ???
 
 // forward declaration
-void NF_N_H_RT0_3D_EvalFace(TCollection *Coll, const TBaseCell *Cell, int face,
+void NF_N_H_RT0_3D_EvalFace(const TCollection *Coll, const TBaseCell *Cell, int face,
                             const double *PointValues, double *Functionals);
 
-void NF_N_H_RT0_3D_EvalAll(TCollection *Coll, const TBaseCell *Cell,
+void NF_N_H_RT0_3D_EvalAll(const TCollection *Coll, const TBaseCell *Cell,
                            const double *PointValues, double *Functionals)
 {
   if(Coll != nullptr && Cell != nullptr)
@@ -114,7 +114,7 @@ void NF_N_H_RT0_3D_EvalAll(TCollection *Coll, const TBaseCell *Cell,
   }
 }
 
-void NF_N_H_RT0_3D_EvalFace(TCollection *, const TBaseCell *Cell, int face,
+void NF_N_H_RT0_3D_EvalFace(const TCollection *, const TBaseCell *Cell, int face,
                             const double *PointValues, double *Functionals)
 {
   double s; // size of face

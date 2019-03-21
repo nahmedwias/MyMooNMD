@@ -233,9 +233,6 @@ void TParFEMapper3D::ConstructDofMap_Master_Halo()
  
   double start_time, end_time, temp_time;
 
-  TCollection *Coll;
-  TBaseCell *cell;
-
   int rank, size;
   MPI_Comm_rank(Comm, &rank);
   MPI_Comm_size(Comm, &size);
@@ -243,7 +240,7 @@ void TParFEMapper3D::ConstructDofMap_Master_Halo()
   start_time = MPI_Wtime();
   temp_time  = start_time;
   
-  Coll       = FESpace->GetCollection();
+  auto Coll       = FESpace->GetCollection();
   N_Cells    = Coll->GetN_Cells();
   N_Dof      = FESpace->GetN_DegreesOfFreedom();
   //int N_Active   = FESpace->GetN_ActiveDegrees();
@@ -252,7 +249,7 @@ void TParFEMapper3D::ConstructDofMap_Master_Halo()
   // Make a check, whether the Collection is in proper order: own cells first, then halo cells.
   for(i=0;i<N_OwnCells;i++)
   {
-    cell = Coll->GetCell(i);
+    auto cell = Coll->GetCell(i);
     if(cell->IsHaloCell())
     {
       Output::print("Halo cell at position ", i, " although position 0 to ",
@@ -261,7 +258,7 @@ void TParFEMapper3D::ConstructDofMap_Master_Halo()
   }
   for(i=N_OwnCells;i<N_Cells;i++)
   {
-    cell = Coll->GetCell(i);
+    auto cell = Coll->GetCell(i);
     if(!cell->IsHaloCell())
     {
       Output::print("Non-halo cell at position ", i, " although position ", N_OwnCells, " to ",
@@ -304,7 +301,7 @@ void TParFEMapper3D::ConstructDofMap_Master_Halo()
   /** *************************************************************************************/
   for(i=0; i<N_Cells; i++)
   {
-     cell          = Coll->GetCell(i);
+     auto cell          = Coll->GetCell(i);
      LocalIndex[i] = cell->GetGlobalCellNo();
 
      if(cell->IsDependentCell() && !cell->IsHaloCell())
@@ -326,7 +323,7 @@ void TParFEMapper3D::ConstructDofMap_Master_Halo()
   /** *************************************************************************************/  
   for(i=N_OwnCells;i<N_Cells;i++)
   {
-     cell = Coll->GetCell(i);
+     auto cell = Coll->GetCell(i);
      ID = cell->GetSubDomainNo();
      DOF = GlobalNumbers + BeginIndex[i];
      N_LocDof = BeginIndex[i+1] - BeginIndex[i];
@@ -488,7 +485,7 @@ if(TDatabase::ParamDB->Par_P4){
   
   //mark all (interface) dofs as 'z'
   for(i=N_OwnCells;i<N_Cells;i++){
-    cell = Coll->GetCell(i);
+    auto cell = Coll->GetCell(i);
     ID = cell->GetSubDomainNo();
     DOF = GlobalNumbers + BeginIndex[i];
     N_LocDof = BeginIndex[i+1] - BeginIndex[i];
@@ -904,7 +901,7 @@ if(TDatabase::ParamDB->Par_P4){
   memset(DofMarker, 'i', N_Dof*sizeof(char));		//all dofs marked as independent
   //all dofs in halo cell marked as halo_type2(unused)
   for(i=N_OwnCells;i<N_Cells;i++){
-    cell     = Coll->GetCell(i);
+    auto cell     = Coll->GetCell(i);
     DOF      = GlobalNumbers + BeginIndex[i];
     N_LocDof = BeginIndex[i+1] - BeginIndex[i];
    
@@ -915,7 +912,7 @@ if(TDatabase::ParamDB->Par_P4){
   }
   
   for(i=0;i<N_OwnCells;i++){
-    cell = Coll->GetCell(i);
+    auto cell = Coll->GetCell(i);
     //now mark dofs in dependent cells
     if(cell->IsDependentCell()){
       DOF      = GlobalNumbers + BeginIndex[i];
@@ -930,7 +927,7 @@ if(TDatabase::ParamDB->Par_P4){
   }
   
   for(i=0;i<N_OwnCells;i++){
-    cell = Coll->GetCell(i);
+    auto cell = Coll->GetCell(i);
     //now mark dofs in dependent cells
     if(cell->IsDependentCell()){
       DOF      = GlobalNumbers + BeginIndex[i];
@@ -951,7 +948,7 @@ if(TDatabase::ParamDB->Par_P4){
   //mark dependent type1 & type2
   bool flag = false;
   for(i=0;i<N_OwnCells;i++){
-    cell = Coll->GetCell(i);
+    auto cell = Coll->GetCell(i);
     //now mark dofs in dependent cells
     if(cell->IsDependentCell()){
       DOF      = GlobalNumbers + BeginIndex[i];
@@ -1581,13 +1578,10 @@ void TParFEMapper3D::ConstructDofMap()
  int *DOF, *GlobalNumbers, *BeginIndex,*LocalIndex,*Verify;
  int N_OwnCells;
 
- TCollection *Coll;
- TBaseCell *cell;
-
   MPI_Comm_rank(Comm, &rank);
   MPI_Comm_size(Comm, &size);
 
-  Coll = FESpace->GetCollection();
+  auto Coll = FESpace->GetCollection();
   N_Cells = Coll->GetN_Cells();
   N_U = FESpace->GetN_DegreesOfFreedom();
   N_OwnCells = Coll->GetN_OwnCells();
@@ -1597,12 +1591,12 @@ void TParFEMapper3D::ConstructDofMap()
   
   for(i=0;i<N_OwnCells;i++)
   {
-    cell = Coll->GetCell(i);
+    auto cell = Coll->GetCell(i);
     if(cell->IsHaloCell()) printf("This shudnt happen l.1587---------------------------------------------\n");
   }
   for(i=N_OwnCells;i<N_Cells;i++)
   {
-    cell = Coll->GetCell(i);
+    auto cell = Coll->GetCell(i);
     if(!cell->IsHaloCell()) printf("This shudnt happen l.1592---------------------------------------------\n");
   }
 
@@ -1636,7 +1630,7 @@ void TParFEMapper3D::ConstructDofMap()
  /** START ---> [ DofRankIndex ------- N_DofRankIndex -------- N_DependentCells ] **/ 
  for(i=0; i<N_Cells; i++)
   {
-     cell = Coll->GetCell(i);
+     auto cell = Coll->GetCell(i);
      LocalIndex[i] = cell->GetGlobalCellNo();
      
      if(cell->IsDependentCell() && !cell->IsHaloCell())
@@ -1656,7 +1650,7 @@ void TParFEMapper3D::ConstructDofMap()
 
  for(i=N_OwnCells;i<N_Cells;i++)
  {
-      cell = Coll->GetCell(i);
+      auto cell = Coll->GetCell(i);
       ID = cell->GetSubDomainNo();
       DOF = GlobalNumbers + BeginIndex[i];
       N_LocDof = BeginIndex[i+1] - BeginIndex[i];
