@@ -74,35 +74,35 @@ NavierStokes<d>::System_per_grid::System_per_grid (
     {
 #ifdef __2D__
     case 1:
-      matrix = BlockFEMatrix::NSE2D_Type1(*velocity_space, *pressure_space);
+      matrix = BlockFEMatrix::NSE2D_Type1(velocity_space, pressure_space);
       break;
     case 2:
-      matrix = BlockFEMatrix::NSE2D_Type2(*velocity_space, *pressure_space);
+      matrix = BlockFEMatrix::NSE2D_Type2(velocity_space, pressure_space);
       break;
     case 3:
-      matrix = BlockFEMatrix::NSE2D_Type3(*velocity_space, *pressure_space);
+      matrix = BlockFEMatrix::NSE2D_Type3(velocity_space, pressure_space);
       break;
     case 4:
-      matrix = BlockFEMatrix::NSE2D_Type4(*velocity_space, *pressure_space);
+      matrix = BlockFEMatrix::NSE2D_Type4(velocity_space, pressure_space);
       break;
     case 14:
-      matrix = BlockFEMatrix::NSE2D_Type14(*velocity_space, *pressure_space);
+      matrix = BlockFEMatrix::NSE2D_Type14(velocity_space, pressure_space);
       break;
 #else // 3D
     case 1:
-      matrix = BlockFEMatrix::NSE3D_Type1(*velocity_space, *pressure_space);
+      matrix = BlockFEMatrix::NSE3D_Type1(velocity_space, pressure_space);
       break;                                               
     case 2:                                                
-      matrix = BlockFEMatrix::NSE3D_Type2(*velocity_space, *pressure_space);
+      matrix = BlockFEMatrix::NSE3D_Type2(velocity_space, pressure_space);
       break;                                               
     case 3:                                                
-      matrix = BlockFEMatrix::NSE3D_Type3(*velocity_space, *pressure_space);
+      matrix = BlockFEMatrix::NSE3D_Type3(velocity_space, pressure_space);
       break;                                               
     case 4:                                                
-      matrix = BlockFEMatrix::NSE3D_Type4(*velocity_space, *pressure_space);
+      matrix = BlockFEMatrix::NSE3D_Type4(velocity_space, pressure_space);
       break;                                               
     case 14:                                               
-      matrix = BlockFEMatrix::NSE3D_Type14(*velocity_space, *pressure_space);
+      matrix = BlockFEMatrix::NSE3D_Type14(velocity_space, pressure_space);
       break;
 #endif
     default:
@@ -111,9 +111,9 @@ NavierStokes<d>::System_per_grid::System_per_grid (
   rhs = BlockVector(matrix, true);
   solution = BlockVector(matrix, false);
 
-  u = FEVectFunct(velocity_space.get(), "u", "u", solution.block(0),
+  u = FEVectFunct(velocity_space, "u", "u", solution.block(0),
                   solution.length(0), d);
-  p = FEFunction(pressure_space.get(), "p", "p", solution.block(d),
+  p = FEFunction(pressure_space, "p", "p", solution.block(d),
                  solution.length(d));
   
 #ifdef _MPI
@@ -131,9 +131,9 @@ NavierStokes<d>::System_per_grid::System_per_grid(const System_per_grid& other)
 {
   // the fe functions must be newly created, because copying would mean 
   // referencing the BlockVectors in 'other'.
-  u = FEVectFunct(velocity_space.get(), "u", "u", solution.block(0),
+  u = FEVectFunct(velocity_space, "u", "u", solution.block(0),
                   solution.length(0), d);
-  p = FEFunction(pressure_space.get(), "p", "p", solution.block(d),
+  p = FEFunction(pressure_space, "p", "p", solution.block(d),
                  solution.length(d));
 }
 
@@ -226,10 +226,10 @@ NavierStokes<d>::NavierStokes(const TDomain& domain,
   {
     // initialize variables for storing exact solution (FE functions)
     solution_exact = BlockVector(this->get_solution());
-    u_exact = FEVectFunct(this->systems.front().velocity_space.get(), "u_exact",
+    u_exact = FEVectFunct(this->systems.front().velocity_space, "u_exact",
                           "u_exact", solution_exact.block(0),
                           solution_exact.length(0), d);
-    p_exact = FEFunction(this->systems.front().pressure_space.get(), "p_exact",
+    p_exact = FEFunction(this->systems.front().pressure_space, "p_exact",
                          "p_exact", solution_exact.block(d),
                          solution_exact.length(d));
     // Interpolating the exact solution
@@ -838,7 +838,7 @@ void NavierStokes<d>::compute_residuals()
 
   if(s.matrix.pressure_projection_enabled())
   {
-    FEFunction defect_fctn(s.pressure_space.get(), "p_defect",
+    FEFunction defect_fctn(s.pressure_space, "p_defect",
                            "pressure defect function", &defect[d*n_u_dof],
                            n_p_dof);
     defect_fctn.project_into_L20();

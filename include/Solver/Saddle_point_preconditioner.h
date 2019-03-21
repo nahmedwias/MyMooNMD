@@ -144,11 +144,11 @@ class Saddle_point_preconditioner : public Preconditioner<BlockVector>
      * as well.
      */
     #ifdef __2D__
-    const TFESpace2D * velocity_space;
-    const TFESpace2D * pressure_space;
+    std::shared_ptr<const TFESpace2D> velocity_space;
+    std::shared_ptr<const TFESpace2D> pressure_space;
     #else
-    const TFESpace3D * velocity_space;
-    const TFESpace3D * pressure_space;
+    std::shared_ptr<const TFESpace3D> velocity_space;
+    std::shared_ptr<const TFESpace3D> pressure_space;
     #endif
     
     /** @brief damping factor, zero means no preconditioner is used 

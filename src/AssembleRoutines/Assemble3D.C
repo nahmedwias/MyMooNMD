@@ -54,7 +54,6 @@ void Assemble3D(int n_fespaces, const TFESpace3D** fespaces, int n_sqmatrices,
           int N_Test, N_Ansatz, N_Joints;
           int *N_BaseFunct;
           BaseFunct3D *BaseFuncts;
-          const TFESpace3D *fespace;
           FE3D LocalUsedElements[N_FEs3D], CurrentElement;
           FE3D TestElement, AnsatzElement;
           QuadFormula2D FaceQuadFormula = BaryCenterTria;
@@ -156,7 +155,7 @@ void Assemble3D(int n_fespaces, const TFESpace3D** fespaces, int n_sqmatrices,
             HangingRhs = new double* [n_rhs];
             for(int i=0;i<n_rhs;i++)
             {
-              fespace = ferhs[i];
+              auto fespace = ferhs[i];
               j = fespace->GetN_Hanging();
               HangingRhs[i] = new double [j];
               memset(HangingRhs[i], 0, SizeOfDouble*j);
@@ -325,7 +324,7 @@ void Assemble3D(int n_fespaces, const TFESpace3D** fespaces, int n_sqmatrices,
               if(sqmatrices[j] == nullptr)
                 continue;
              // find space for this bilinear form
-              fespace = sqmatrices[j]->GetFESpace3D();
+              auto fespace = sqmatrices[j]->GetFESpace3D();
               CurrentElement = fespace->GetFE3D(i, cell);
               N_ = N_BaseFunct[CurrentElement];
 
@@ -420,8 +419,8 @@ void Assemble3D(int n_fespaces, const TFESpace3D** fespaces, int n_sqmatrices,
             {
               if(matrices[j] == nullptr)
                 continue;
-              const TFESpace3D *test_space = matrices[j]->GetTestSpace3D();
-              const TFESpace3D *ansatz_space = matrices[j]->GetAnsatzSpace3D();
+              auto test_space = matrices[j]->GetTestSpace3D();
+              auto ansatz_space = matrices[j]->GetAnsatzSpace3D();
               TestElement = test_space->GetFE3D(i, cell);
               AnsatzElement = ansatz_space->GetFE3D(i, cell);
 
@@ -470,7 +469,7 @@ void Assemble3D(int n_fespaces, const TFESpace3D** fespaces, int n_sqmatrices,
             // ####################################################################
             for(j=0;j<n_rhs;j++)
             {
-              fespace = ferhs[j];
+              auto fespace = ferhs[j];
               ActiveBound = fespace->GetActiveBound();
               CurrentElement = fespace->GetFE3D(i, cell);
 
@@ -905,7 +904,7 @@ void Assemble3D(int n_fespaces, const TFESpace3D** fespaces, int n_sqmatrices,
           {
             if(sqmatrices[j] == nullptr)
               continue;
-            fespace = sqmatrices[j]->GetFESpace3D();
+            auto fespace = sqmatrices[j]->GetFESpace3D();
             N_ = fespace->GetN_Hanging();
             // there are no hanging nodes
             if (N_ == 0)
@@ -958,7 +957,7 @@ void Assemble3D(int n_fespaces, const TFESpace3D** fespaces, int n_sqmatrices,
 
           for(j=0;j<n_rhs;j++)
           {
-            fespace = ferhs[j];
+            auto fespace = ferhs[j];
             N_Hanging = fespace->GetN_Hanging();
             // there are no hanging nodes
             if (N_Hanging == 0)
@@ -997,7 +996,7 @@ void Assemble3D(int n_fespaces, const TFESpace3D** fespaces, int n_sqmatrices,
           {
             if(sqmatrices[j] == nullptr)
               continue;
-            fespace = sqmatrices[j]->GetFESpace3D();
+            auto fespace = sqmatrices[j]->GetFESpace3D();
             N_ = fespace->GetN_Hanging();
             // there are no hanging nodes
             if (N_ == 0)
@@ -1085,7 +1084,7 @@ void Assemble3D(int n_fespaces, const TFESpace3D** fespaces, int n_sqmatrices,
             ColInd = sqmatrices[k]->GetKCol();
             N_Rows = sqmatrices[k]->GetN_Rows();
 
-            fespace = sqmatrices[k]->GetFESpace3D();
+            auto fespace = sqmatrices[k]->GetFESpace3D();
             ActiveBound = fespace->GetActiveBound();
             for(i=ActiveBound;i<N_Rows;i++)
             {
@@ -1151,11 +1150,10 @@ void Assemble3DSlipBC(int n_fespaces, const TFESpace3D **fespaces,
   double hK;
   int N_AllMatrices = n_sqmatrices+n_matrices;
   int i,j,l,l1,m, N_LocalUsedElements;
-  int N_Cells, N_Points, N_Parameters, N_;
+  int N_Cells, N_Points, N_;
   int N_Joints;
   int *N_BaseFunct;
   BaseFunct3D *BaseFuncts;
-  const TFESpace3D *fespace;
   FE3D LocalUsedElements[N_FEs3D], CurrentElement;
   QuadFormula2D FaceQuadFormula = BaryCenterTria; //avoid uninit warning
   TQuadFormula2D *qf2;
@@ -1173,7 +1171,6 @@ void Assemble3DSlipBC(int n_fespaces, const TFESpace3D **fespaces,
   double X[MaxN_QuadPoints_3D], Y[MaxN_QuadPoints_3D];
   double Z[MaxN_QuadPoints_3D];
   double AbsDetjk[MaxN_QuadPoints_3D];
-  double *Param[MaxN_QuadPoints_3D];
   double *righthand=nullptr;
   double **Matrices, *aux;
   double ***LocMatrices=nullptr, **LocRhs=nullptr;
@@ -1223,7 +1220,7 @@ void Assemble3DSlipBC(int n_fespaces, const TFESpace3D **fespaces,
     HangingEntries = new double* [n_sqmatrices];
     for(i=0;i<n_sqmatrices;i++)
     {
-      fespace = sqmatrices[i]->GetFESpace3D();
+      auto fespace = sqmatrices[i]->GetFESpace3D();
       GlobalNumbers[i] = fespace->GetGlobalNumbers();
       BeginIndex[i] = fespace->GetBeginIndex();
 
@@ -1241,11 +1238,11 @@ void Assemble3DSlipBC(int n_fespaces, const TFESpace3D **fespaces,
     AnsatzBeginIndex = new int* [n_matrices];
     for(i=0;i<n_matrices;i++)
     {
-      fespace = (TFESpace3D *) matrices[i]->GetTestSpace3D();
+      auto fespace = matrices[i]->GetTestSpace3D();
       TestGlobalNumbers[i] = fespace->GetGlobalNumbers();
       TestBeginIndex[i] = fespace->GetBeginIndex();
   
-      fespace = (TFESpace3D *) matrices[i]->GetAnsatzSpace3D();
+      fespace = matrices[i]->GetAnsatzSpace3D();
       AnsatzGlobalNumbers[i] = fespace->GetGlobalNumbers();
       AnsatzBeginIndex[i] = fespace->GetBeginIndex();
     } // endfor
@@ -1258,7 +1255,7 @@ void Assemble3DSlipBC(int n_fespaces, const TFESpace3D **fespaces,
     RhsGlobalNumbers = new int* [n_rhs];
     for(i=0;i<n_rhs;i++)
     {
-      fespace = ferhs[i];
+      auto fespace = ferhs[i];
       RhsBeginIndex[i] = fespace->GetBeginIndex();
       RhsGlobalNumbers[i] = fespace->GetGlobalNumbers();
   
@@ -1342,7 +1339,7 @@ void Assemble3DSlipBC(int n_fespaces, const TFESpace3D **fespaces,
     for(j=0;j<n_rhs;j++)
     {
       // get fe space
-      fespace = ferhs[j];
+      auto fespace = ferhs[j];
       // get current finite element
       CurrentElement = fespace->GetFE3D(i, cell);
       // get number of basis function of current finite element
@@ -2547,7 +2544,6 @@ BoundValueFunct3D **BoundaryValues)
   int N_AllMatrices = n_sqmatrices+n_matrices;
   int N_Points, N_;
   int N_Test, N_Ansatz, N_Joints;
-  const TFESpace3D *fespace;
   FE3D LocalUsedElements[N_FEs3D], CurrentElement;
   FE3D TestElement, AnsatzElement;
   QuadFormula2D FaceQuadFormula = BaryCenterTria; //to avoid uninit warning
@@ -2617,7 +2613,7 @@ BoundValueFunct3D **BoundaryValues)
     BeginIndex = new int* [n_sqmatrices];
     for(int i = 0; i < n_sqmatrices; ++i)
     {
-      fespace = sqmatrices[i]->GetFESpace3D();
+      auto fespace = sqmatrices[i]->GetFESpace3D();
       GlobalNumbers[i] = fespace->GetGlobalNumbers();
       BeginIndex[i] = fespace->GetBeginIndex();
     }                                             // endfor
@@ -2631,11 +2627,11 @@ BoundValueFunct3D **BoundaryValues)
     AnsatzBeginIndex = new int* [n_matrices];
     for(int i = 0; i < n_matrices; ++i)
     {
-      fespace = (TFESpace3D *) matrices[i]->GetTestSpace3D();
+      auto fespace = matrices[i]->GetTestSpace3D();
       TestGlobalNumbers[i] = fespace->GetGlobalNumbers();
       TestBeginIndex[i] = fespace->GetBeginIndex();
 
-      fespace = (TFESpace3D *) matrices[i]->GetAnsatzSpace3D();
+      fespace = matrices[i]->GetAnsatzSpace3D();
       AnsatzGlobalNumbers[i] = fespace->GetGlobalNumbers();
       AnsatzBeginIndex[i] = fespace->GetBeginIndex();
     }                                             // endfor
@@ -2646,7 +2642,7 @@ BoundValueFunct3D **BoundaryValues)
     RhsGlobalNumbers = new int* [n_rhs];
     for(int i = 0; i < n_rhs; ++i)
     {
-      fespace = ferhs[i];
+      auto fespace = ferhs[i];
       RhsBeginIndex[i] = fespace->GetBeginIndex();
       RhsGlobalNumbers[i] = fespace->GetGlobalNumbers();
     }                                             // endfor
@@ -2762,7 +2758,7 @@ BoundValueFunct3D **BoundaryValues)
     for(int j = 0; j < n_sqmatrices; ++j)
     {
       // find space for this bilinear form
-      fespace = sqmatrices[j]->GetFESpace3D();
+      auto fespace = sqmatrices[j]->GetFESpace3D();
       CurrentElement = fespace->GetFE3D(i, cell);
       N_ = N_BaseFunct[CurrentElement];
       Matrix = Matrices+j*MaxN_BaseFunctions3D;
@@ -2838,10 +2834,8 @@ BoundValueFunct3D **BoundaryValues)
     // ####################################################################
     for(int j = 0; j < n_matrices; ++j)
     {
-      TestElement = ((TFESpace3D *) matrices[j]->GetTestSpace3D())
-                    ->GetFE3D(i, cell);
-      AnsatzElement = ((TFESpace3D *) matrices[j]->GetAnsatzSpace3D())
-                      ->GetFE3D(i, cell);
+      TestElement = matrices[j]->GetTestSpace3D()->GetFE3D(i, cell);
+      AnsatzElement = matrices[j]->GetAnsatzSpace3D()->GetFE3D(i, cell);
 
       N_Test = N_BaseFunct[TestElement];
       N_Ansatz = N_BaseFunct[AnsatzElement];
@@ -2855,8 +2849,7 @@ BoundValueFunct3D **BoundaryValues)
       TestDOF = TestGlobalNumbers[j] + TestBeginIndex[j][i];
       AnsatzDOF = AnsatzGlobalNumbers[j] + AnsatzBeginIndex[j][i];
 
-      int ActiveBound = ((TFESpace3D *) matrices[j]->GetTestSpace3D())
-                        ->GetActiveBound();
+      int ActiveBound = matrices[j]->GetTestSpace3D()->GetActiveBound();
       
       // add local matrix to global
       for(int m = 0; m < N_Test; ++m)
@@ -2901,7 +2894,7 @@ BoundValueFunct3D **BoundaryValues)
     for(int j = 0; j < n_rhs; ++j)
     {
       //OutPut("rhs " << j << endl);
-      fespace = ferhs[j];
+      auto fespace = ferhs[j];
       ActiveBound = fespace->GetActiveBound();
       CurrentElement = fespace->GetFE3D(i, cell);
 

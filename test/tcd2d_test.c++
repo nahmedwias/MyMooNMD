@@ -28,7 +28,7 @@ void testCN(TimeConvectionDiffusion<2> &tcd, int m)
   const TFEFunction2D& function = tcd.get_function();
   tcd.output();
 
-  const TFESpace2D* space = function.GetFESpace2D();
+  const TFESpace2D* space = function.GetFESpace2D().get();
 
   function.GetErrors(tcd.get_example().get_exact(0), 3, AllDerivatives, 4,
                      conv_diff_l2_h1_linf_error<2>,

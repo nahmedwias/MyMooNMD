@@ -758,7 +758,6 @@ void DataWriter<d>::Write_ParVTK(MPI_Comm comm, int img, char* subID,
   std::vector<TVertex*> Vertices;
   TVertex *Last, *Current;
   TBaseCell* cell;
-  const TFESpace3D* fespace;
   TBaseFunct3D* bf;
 
   const char* VtkBaseName = basename.c_str();
@@ -1213,7 +1212,7 @@ void DataWriter<d>::Write_ParVTK(MPI_Comm comm, int img, char* subID,
   if(N_LocVertices)
     for(k = 0; k < N_VectorVar; k++)
     {
-      fespace = FEVectFunctArray[k]->GetFESpace3D();
+      auto fespace = FEVectFunctArray[k]->GetFESpace3D();
       N_Comp = FEVectFunctArray[k]->GetN_Components();
       Length = FEVectFunctArray[k]->GetLength();
       Coeffs = FEVectFunctArray[k]->GetValues();
@@ -1311,7 +1310,7 @@ void DataWriter<d>::Write_ParVTK(MPI_Comm comm, int img, char* subID,
   if(N_LocVertices)
     for(k = 0; k < N_ScalarVar; k++)
     {
-      fespace = FEFunctionArray[k]->GetFESpace3D();
+      auto fespace = FEFunctionArray[k]->GetFESpace3D();
       Coeffs = FEFunctionArray[k]->GetValues();
       GlobalNumbers = fespace->GetGlobalNumbers();
       BeginIndex = fespace->GetBeginIndex();

@@ -51,45 +51,45 @@ TimeNavierStokes<d>::System_per_grid::System_per_grid(
   {
 #ifdef __2D__
     case 1:
-      matrix = BlockFEMatrix::NSE2D_Type1(*velocity_space, *pressure_space);
-      mass_matrix = BlockFEMatrix::Mass_NSE2D_Type1(*velocity_space, *pressure_space);
+      matrix = BlockFEMatrix::NSE2D_Type1(velocity_space, pressure_space);
+      mass_matrix = BlockFEMatrix::Mass_NSE2D_Type1(velocity_space, pressure_space);
       break;
     case 2:
-      matrix = BlockFEMatrix::NSE2D_Type2(*velocity_space, *pressure_space);
-      mass_matrix = BlockFEMatrix::Mass_NSE2D_Type2(*velocity_space, *pressure_space);
+      matrix = BlockFEMatrix::NSE2D_Type2(velocity_space, pressure_space);
+      mass_matrix = BlockFEMatrix::Mass_NSE2D_Type2(velocity_space, pressure_space);
       break;
     case 3:
-      matrix = BlockFEMatrix::NSE2D_Type3(*velocity_space, *pressure_space);
-      mass_matrix = BlockFEMatrix::Mass_NSE2D_Type3(*velocity_space, *pressure_space);
+      matrix = BlockFEMatrix::NSE2D_Type3(velocity_space, pressure_space);
+      mass_matrix = BlockFEMatrix::Mass_NSE2D_Type3(velocity_space, pressure_space);
       break;
     case 4:
-      matrix = BlockFEMatrix::NSE2D_Type4(*velocity_space, *pressure_space);
-      mass_matrix = BlockFEMatrix::Mass_NSE2D_Type4(*velocity_space, *pressure_space);
+      matrix = BlockFEMatrix::NSE2D_Type4(velocity_space, pressure_space);
+      mass_matrix = BlockFEMatrix::Mass_NSE2D_Type4(velocity_space, pressure_space);
       break;
     case 14:
-      matrix = BlockFEMatrix::NSE2D_Type14(*velocity_space, *pressure_space);
-      mass_matrix = BlockFEMatrix::Mass_NSE2D_Type4(*velocity_space, *pressure_space);
+      matrix = BlockFEMatrix::NSE2D_Type14(velocity_space, pressure_space);
+      mass_matrix = BlockFEMatrix::Mass_NSE2D_Type4(velocity_space, pressure_space);
       break;
 #else
     case 1:
-      matrix = BlockFEMatrix::NSE3D_Type1(*velocity_space, *pressure_space);
-      mass_matrix = BlockFEMatrix::Mass_NSE3D_Type1(*velocity_space, *pressure_space);
+      matrix = BlockFEMatrix::NSE3D_Type1(velocity_space, pressure_space);
+      mass_matrix = BlockFEMatrix::Mass_NSE3D_Type1(velocity_space, pressure_space);
       break;
     case 2:
-      matrix = BlockFEMatrix::NSE3D_Type2(*velocity_space, *pressure_space);
-      mass_matrix = BlockFEMatrix::Mass_NSE3D_Type2(*velocity_space, *pressure_space);
+      matrix = BlockFEMatrix::NSE3D_Type2(velocity_space, pressure_space);
+      mass_matrix = BlockFEMatrix::Mass_NSE3D_Type2(velocity_space, pressure_space);
       break;
     case 3:
-      matrix = BlockFEMatrix::NSE3D_Type3(*velocity_space, *pressure_space);
-      mass_matrix = BlockFEMatrix::Mass_NSE3D_Type3(*velocity_space, *pressure_space);
+      matrix = BlockFEMatrix::NSE3D_Type3(velocity_space, pressure_space);
+      mass_matrix = BlockFEMatrix::Mass_NSE3D_Type3(velocity_space, pressure_space);
       break;
     case 4:
-      matrix = BlockFEMatrix::NSE3D_Type4(*velocity_space, *pressure_space);
-      mass_matrix = BlockFEMatrix::Mass_NSE3D_Type4(*velocity_space, *pressure_space);
+      matrix = BlockFEMatrix::NSE3D_Type4(velocity_space, pressure_space);
+      mass_matrix = BlockFEMatrix::Mass_NSE3D_Type4(velocity_space, pressure_space);
       break;
     case 14:
-      matrix = BlockFEMatrix::NSE3D_Type14(*velocity_space, *pressure_space);
-      mass_matrix = BlockFEMatrix::Mass_NSE3D_Type4(*velocity_space, *pressure_space);
+      matrix = BlockFEMatrix::NSE3D_Type14(velocity_space, pressure_space);
+      mass_matrix = BlockFEMatrix::Mass_NSE3D_Type4(velocity_space, pressure_space);
       break;
 #endif
     default:
@@ -97,33 +97,33 @@ TimeNavierStokes<d>::System_per_grid::System_per_grid(
   }
   rhs = BlockVector(matrix, true);
   solution = BlockVector(matrix, false);
-  u = FEVectFunct(velocity_space.get(), "u", "u", solution.block(0),
+  u = FEVectFunct(velocity_space, "u", "u", solution.block(0),
                   solution.length(0), d);
-  p = FEFunction(pressure_space.get(), "p", "p", this->solution.block(d),
+  p = FEFunction(pressure_space, "p", "p", this->solution.block(d),
                  solution.length(d));
   solution_m1 = BlockVector(matrix, false);
-  u_m1 = FEVectFunct(velocity_space.get(), "u", "u", solution_m1.block(0),
+  u_m1 = FEVectFunct(velocity_space, "u", "u", solution_m1.block(0),
                      solution_m1.length(0), d);
-  p_m1 = FEFunction(pressure_space.get(), "p", "p", this->solution_m1.block(d),
+  p_m1 = FEFunction(pressure_space, "p", "p", this->solution_m1.block(d),
                     solution_m1.length(d));
   solution_m2 = BlockVector(matrix, false);
-  u_m2 = FEVectFunct(velocity_space.get(),"u","u", solution_m2.block(0),
+  u_m2 = FEVectFunct(velocity_space,"u","u", solution_m2.block(0),
                      solution_m2.length(0), d);
-  p_m2 = FEFunction(pressure_space.get(), "p", "p", this->solution_m2.block(d),
+  p_m2 = FEFunction(pressure_space, "p", "p", this->solution_m2.block(d),
                     solution_m2.length(d));
 
   time_avg_sol = BlockVector(matrix, false);
-  u_time_avg = FEVectFunct(velocity_space.get(), "u_t_avg", "u time averaged",
+  u_time_avg = FEVectFunct(velocity_space, "u_t_avg", "u time averaged",
                            time_avg_sol.block(0), time_avg_sol.length(0), d);
-  p_time_avg = FEFunction(pressure_space.get(), "p_t_avg", "p time averaged",
+  p_time_avg = FEFunction(pressure_space, "p_t_avg", "p time averaged",
                           this->time_avg_sol.block(d), time_avg_sol.length(d));
 
   combined_old_sols = BlockVector(matrix, false);
-  comb_old_u = FEVectFunct(velocity_space.get(), "u", "u",
+  comb_old_u = FEVectFunct(velocity_space, "u", "u",
                            combined_old_sols.block(0),
                            combined_old_sols.length(0), d);
   extrapolate_sol = BlockVector(matrix, false);
-  extrapolate_u = FEVectFunct(velocity_space.get(), "u", "u",
+  extrapolate_u = FEVectFunct(velocity_space, "u", "u",
                               extrapolate_sol.block(0),
                               extrapolate_sol.length(0), d);
 #ifdef _MPI
@@ -142,9 +142,9 @@ TimeNavierStokes<d>::System_per_grid::System_per_grid(
 {
   // the fe functions must be newly created, because copying would mean
   // referencing the BlockVectors in 'other'.
-  u = FEVectFunct(velocity_space.get(), "u", "u", solution.block(0),
+  u = FEVectFunct(velocity_space, "u", "u", solution.block(0),
                   solution.length(0), d);
-  p = FEFunction(pressure_space.get(), "p", "p", solution.block(d),
+  p = FEFunction(pressure_space, "p", "p", solution.block(d),
                  solution.length(d));
 }
 
@@ -1310,7 +1310,7 @@ void TimeNavierStokes<d>::compute_residuals()
 
   if(s.matrix.pressure_projection_enabled())
   {
-    FEFunction defect_fctn(s.pressure_space.get(), "p_defect",
+    FEFunction defect_fctn(s.pressure_space, "p_defect",
                            "pressure defect function", &defect[d*number_u_Dof],
                            number_p_Dof);
     defect_fctn.project_into_L20();

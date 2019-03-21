@@ -384,7 +384,7 @@ void UltraLocalProjection(void* A, bool ForPressure)
   int CoarseOrder;
   int N_CoarseDOF, N_DOF;
   TCollection *Coll;
-  const TFESpace2D *fespace;
+  std::shared_ptr<const TFESpace2D> fespace;
   FE2D CurrEleID, UsedElements[2];
   int N_UsedElements;
   TFE2D *CurrentElement, *CoarseElement;
@@ -438,7 +438,7 @@ void UltraLocalProjection(void* A, bool ForPressure)
 
   if(ForPressure)
   {
-    fespace = (TFESpace2D*)(((TMatrix2D *)A)->GetTestSpace2D());
+    fespace = ((TMatrix2D *)A)->GetTestSpace2D();
     ActiveBound = -1;
     RowPtr = ((TMatrix2D *)A)->GetRowPtr();
     KCol = ((TMatrix2D *)A)->GetKCol();
@@ -652,7 +652,6 @@ double UltraLocalError(TFEFunction2D *uh, DoubleFunct2D *ExactU,
   int CoarseOrder;
   int N_CoarseDOF, N_DOF;
   TCollection *Coll;
-  const TFESpace2D *fespace;
   FE2D CurrEleID, UsedElements[2];
   int N_UsedElements;
   TFE2D *CurrentElement, *CoarseElement;
@@ -683,7 +682,7 @@ double UltraLocalError(TFEFunction2D *uh, DoubleFunct2D *ExactU,
 
   error = 0.0;
 
-  fespace = uh->GetFESpace2D();
+  auto fespace = uh->GetFESpace2D();
   Values = uh->GetValues();
 
   Coll = fespace->GetCollection();
@@ -865,7 +864,6 @@ void AddStreamlineTerm(TSquareMatrix2D* A, TFEFunction2D *uh1,
   int CoarseOrder;
   int N_CoarseDOF, N_DOF;
   TCollection *Coll;
-  const TFESpace2D *fespace;
   FE2D CurrEleID, UsedElements[2];
   int N_UsedElements;
   TFE2D *CurrentElement, *CoarseElement;
@@ -899,7 +897,7 @@ void AddStreamlineTerm(TSquareMatrix2D* A, TFEFunction2D *uh1,
   double *Values1, *Values2;
   double BValue[MaxN_BaseFunctions2D];
 
-  fespace = A->GetFESpace2D();
+  auto fespace = A->GetFESpace2D();
   ActiveBound = fespace->GetActiveBound();
   RowPtr = A->GetRowPtr();
   KCol = A->GetKCol();
@@ -1117,7 +1115,6 @@ void AddStreamlineTermPWConst(TSquareMatrix2D* A, TFEFunction2D *uh1,
   int CoarseOrder;
   int N_CoarseDOF, N_DOF;
   TCollection *Coll;
-  const TFESpace2D *fespace;
   FE2D CurrEleID, UsedElements[2];
   int N_UsedElements;
   TFE2D *CurrentElement, *CoarseElement;
@@ -1151,7 +1148,7 @@ void AddStreamlineTermPWConst(TSquareMatrix2D* A, TFEFunction2D *uh1,
   double *Values1, *Values2;
   double BValue[MaxN_BaseFunctions2D];
 
-  fespace = A->GetFESpace2D();
+  auto fespace = A->GetFESpace2D();
   ActiveBound = fespace->GetActiveBound();
   RowPtr = A->GetRowPtr();
   KCol = A->GetKCol();
@@ -1391,7 +1388,6 @@ void AddDivergenceTerm(TSquareMatrix2D *A11,TSquareMatrix2D *A12,
   int CoarseOrder;
   int N_CoarseDOF, N_DOF;
   TCollection *Coll;
-  const TFESpace2D *fespace;
   FE2D CurrEleID, UsedElements[2];
   int N_UsedElements;
   TFE2D *CurrentElement, *CoarseElement;
@@ -1424,7 +1420,7 @@ void AddDivergenceTerm(TSquareMatrix2D *A11,TSquareMatrix2D *A12,
   const int *RowPtr, *KCol;
   double *EntriesA11, *EntriesA12, *EntriesA21, *EntriesA22;
 
-  fespace = A11->GetFESpace2D();
+  auto fespace = A11->GetFESpace2D();
   ActiveBound = fespace->GetActiveBound();
   RowPtr = A11->GetRowPtr();
   KCol = A11->GetKCol();
@@ -1969,7 +1965,6 @@ double UltraLocalErrorDivergence(TFEFunction2D *uh1, TFEFunction2D *uh2,
   int CoarseOrder;
   int N_CoarseDOF, N_DOF;
   TCollection *Coll;
-  const TFESpace2D *fespace;
   FE2D CurrEleID, UsedElements[2];
   int N_UsedElements;
   TFE2D *CurrentElement, *CoarseElement;
@@ -2001,7 +1996,7 @@ double UltraLocalErrorDivergence(TFEFunction2D *uh1, TFEFunction2D *uh2,
 
   error = 0.0;
 
-  fespace = uh1->GetFESpace2D();
+  auto fespace = uh1->GetFESpace2D();
 
   Coll = fespace->GetCollection();
   N_Cells = Coll->GetN_Cells();
@@ -2184,7 +2179,6 @@ double UltraLocalErrorStreamline(TFEFunction2D *uh, DoubleFunct2D *ExactU,
   int CoarseOrder;
   int N_CoarseDOF, N_DOF;
   TCollection *Coll;
-  const TFESpace2D *fespace;
   FE2D CurrEleID, UsedElements[2];
   int N_UsedElements;
   TFE2D *CurrentElement, *CoarseElement;
@@ -2218,7 +2212,7 @@ double UltraLocalErrorStreamline(TFEFunction2D *uh, DoubleFunct2D *ExactU,
 
   error = 0.0;
 
-  fespace = uh->GetFESpace2D();
+  auto fespace = uh->GetFESpace2D();
 
   Coll = fespace->GetCollection();
   N_Cells = Coll->GetN_Cells();
@@ -2408,7 +2402,6 @@ double UltraLocalErrorStreamlinePWConst(TFEFunction2D *uh, DoubleFunct2D *ExactU
   int CoarseOrder;
   int N_CoarseDOF, N_DOF;
   TCollection *Coll;
-  const TFESpace2D *fespace;
   FE2D CurrEleID, UsedElements[2];
   int N_UsedElements;
   TFE2D *CurrentElement, *CoarseElement;
@@ -2442,7 +2435,7 @@ double UltraLocalErrorStreamlinePWConst(TFEFunction2D *uh, DoubleFunct2D *ExactU
 
   error = 0.0;
 
-  fespace = uh->GetFESpace2D();
+  auto fespace = uh->GetFESpace2D();
 
   Coll = fespace->GetCollection();
   N_Cells = Coll->GetN_Cells();
@@ -2656,7 +2649,6 @@ void UltraLocalProjectionStreamlinePLaplacian(TSquareMatrix2D* A,
   int CoarseOrder;
   int N_CoarseDOF, N_DOF;
   TCollection *Coll;
-  const TFESpace2D *fespace;
   FE2D CurrEleID, UsedElements[2];
   int N_UsedElements;
   TFE2D *CurrentElement, *CoarseElement;
@@ -2707,7 +2699,7 @@ void UltraLocalProjectionStreamlinePLaplacian(TSquareMatrix2D* A,
   lpexponent_crosswind = TDatabase::ParamDB->LP_CROSSWIND_EXPONENT;
   
   // get fespace and matrices
-  fespace = A->GetFESpace2D();
+  auto fespace = A->GetFESpace2D();
   ActiveBound = fespace->GetActiveBound();
   RowPtr = A->GetRowPtr();
   KCol = A->GetKCol();
@@ -3344,7 +3336,6 @@ void LocalProjectionCoarseGridQ0(TFEFunction2D *uh,
     0.57735026918962576450914878050195746
   };
   TCollection *Coll;
-  const TFESpace2D *fespace_fine;
   const TBaseCell *cell, *parent_cell, *child_cell;
 
   OutPut("compute local projection to Q0 on coarse grid"<<endl);
@@ -3352,7 +3343,7 @@ void LocalProjectionCoarseGridQ0(TFEFunction2D *uh,
   params = new double[10];
   memset(params, 0, 10 * SizeOfDouble);
 
-  fespace_fine = uh->GetFESpace2D();
+  auto fespace_fine = uh->GetFESpace2D();
   //const TFESpace2D *fespace_coarse = uh_proj->GetFESpace2D();
   // get collection, same for fine and coarse fe space
   Coll = fespace_fine->GetCollection();
@@ -3504,7 +3495,6 @@ void LocalProjectionCrossWindCoarseGridQ0(TDomain *, int,
   };
   TCollection *coll_coarse, *coll;
   const TBaseCell *cell, *child_cell;
-  const TFESpace2D *fespace;
  
    OutPut("update rhs of crosswind local projection to Q0 on coarse grid"<<endl);
   // get coarse grid
@@ -3529,7 +3519,7 @@ void LocalProjectionCrossWindCoarseGridQ0(TDomain *, int,
     coll->GetCell(i)->SetClipBoard(i);
   
   // fespace on the fine grid
-  fespace = uh->GetFESpace2D();
+  auto fespace = uh->GetFESpace2D();
   // array with global numbers of d.o.f.
   global_numbers = fespace->GetGlobalNumbers();
   // array which points to the beginning of the global numbers in
@@ -3730,7 +3720,6 @@ void AdaptivePostProcess(TFEFunction2D *FeFunction, double *PostSol, bool)
 
   bool SecondDer[1] = { false };
 
-  const TFESpace2D *fespace;
   TCollection *coll;
   TFE2D *CurrentElement, *CoarseElement;
   TBaseFunct2D *BF, *CoarseBF;
@@ -3739,7 +3728,7 @@ void AdaptivePostProcess(TFEFunction2D *FeFunction, double *PostSol, bool)
   FE2D CurrEleID, UsedElements[1];
   TNodalFunctional2D *nf;
 
-  fespace = FeFunction->GetFESpace2D();
+  auto fespace = FeFunction->GetFESpace2D();
   coll = fespace->GetCollection();
   N_Cells = coll->GetN_Cells();
   LPS_sol = FeFunction->GetValues();
@@ -3870,7 +3859,7 @@ void AddALEStreamlineLPS(TSquareMatrix2D* A, int N_FeFunct, TFEFunction2D **FeFu
   int CoarseOrder;
   int N_CoarseDOF, N_DOF, N_UDOF, N_WDOF;
   TCollection *Coll;
-  const TFESpace2D *fespace, *U_fespace, *W_fespace;
+  std::shared_ptr<const TFESpace2D> W_fespace;
   FE2D CurrEleID, U_CurrEleID, W_CurrEleID, UsedElements[2];
   int N_UsedElements;
   TFE2D *CurrentElement, *CoarseElement, *U_CurrentElement, *W_CurrentElement;
@@ -3910,7 +3899,7 @@ void AddALEStreamlineLPS(TSquareMatrix2D* A, int N_FeFunct, TFEFunction2D **FeFu
   double *Values1, *Values2, *Values3, *Values4;
   double BValue[MaxN_BaseFunctions2D];
 
-  fespace = A->GetFESpace2D();
+  auto fespace = A->GetFESpace2D();
   ActiveBound = fespace->GetActiveBound();
   RowPtr = A->GetRowPtr();
   KCol = A->GetKCol();
@@ -3935,7 +3924,7 @@ void AddALEStreamlineLPS(TSquareMatrix2D* A, int N_FeFunct, TFEFunction2D **FeFu
     exit(0);    
    }
    
-  U_fespace = uh1->GetFESpace2D();
+  auto U_fespace = uh1->GetFESpace2D();
   U_BeginIndex = U_fespace->GetBeginIndex();
   U_GlobalNumbers = U_fespace->GetGlobalNumbers(); 
   Values1 = uh1->GetValues();
@@ -4265,7 +4254,6 @@ void AddStreamlineTerm(TSquareMatrix3D* A, TFEFunction3D *uh1,
   const int *RowPtr, *KCol;
 
   TCollection *Coll;
-  const TFESpace3D *fespace;
   FE3D CurrEleID, UsedElements[2];
   TFE3D *CurrentElement, *CoarseElement;
   TBaseFunct3D *BF, *CoarseBF;
@@ -4294,7 +4282,7 @@ void AddStreamlineTerm(TSquareMatrix3D* A, TFEFunction3D *uh1,
   double *Values1, *Values2, *Values3;
   double BValue[MaxN_BaseFunctions3D];
 
-  fespace = A->GetFESpace3D();
+  auto fespace = A->GetFESpace3D();
   ActiveBound = fespace->GetActiveBound();
   RowPtr = A->GetRowPtr();
   KCol = A->GetKCol();
@@ -4525,7 +4513,6 @@ void UltraLocalProjection(TSquareMatrix3D* A,
   const int *RowPtr, *KCol;
 
   TCollection *Coll;
-  const TFESpace3D *fespace;
   FE3D CurrEleID, UsedElements[2];
   TFE3D *CurrentElement, *CoarseElement;
   TBaseFunct3D *BF, *CoarseBF;
@@ -4553,7 +4540,7 @@ void UltraLocalProjection(TSquareMatrix3D* A,
   double *Entries;
 //  double BValue[MaxN_BaseFunctions3D];
 
-  fespace = A->GetFESpace3D();
+  auto fespace = A->GetFESpace3D();
   ActiveBound = fespace->GetActiveBound();
   RowPtr = A->GetRowPtr();
   KCol = A->GetKCol();
@@ -5717,7 +5704,7 @@ void UltraLocalProjection3D(void* A, bool ForPressure)
   int CoarseOrder;
   int N_CoarseDOF, N_DOF;
   TCollection *Coll;
-  const TFESpace3D *fespace;
+  std::shared_ptr<const TFESpace3D> fespace;
   FE3D CurrEleID, UsedElements[2];
   int N_UsedElements;
   TFE3D *CurrentElement, *CoarseElement;
@@ -5773,7 +5760,7 @@ void UltraLocalProjection3D(void* A, bool ForPressure)
 
   if(ForPressure)
   {
-    fespace = (TFESpace3D*)(((TMatrix3D *)A)->GetTestSpace3D());
+    fespace = ((TMatrix3D *)A)->GetTestSpace3D();
     ActiveBound = -1;
     RowPtr = ((TMatrix3D *)A)->GetRowPtr();
     KCol = ((TMatrix3D *)A)->GetKCol();
@@ -5998,7 +5985,6 @@ double UltraLocalError3D(TFEFunction3D *uh, DoubleFunct3D *ExactU,
   int CoarseOrder;
   int N_CoarseDOF, N_DOF;
   TCollection *Coll;
-  const TFESpace3D *fespace;
   FE3D CurrEleID, UsedElements[2];
   int N_UsedElements;
   TFE3D *CurrentElement, *CoarseElement;
@@ -6034,7 +6020,7 @@ double UltraLocalError3D(TFEFunction3D *uh, DoubleFunct3D *ExactU,
 
   error = 0.0;
 
-  fespace = uh->GetFESpace3D();
+  auto fespace = uh->GetFESpace3D();
   Values = uh->GetValues();
 
   Coll = fespace->GetCollection();

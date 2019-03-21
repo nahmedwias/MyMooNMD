@@ -352,7 +352,7 @@ void create_sub_matrix(const BlockFEMatrix& matrix,
   size_t n_global_rows = 0;
   for(size_t r = 0; r < n_block_rows; ++r)
   {
-    auto comm = &matrix.get_row_space(r + start.first).get_communicator();
+    auto comm = &matrix.get_row_space(r + start.first)->get_communicator();
     row_communicators[r] = comm;
     n_master_rows += comm->GetN_Master();
     n_global_rows += comm->get_n_global_dof();
@@ -363,7 +363,7 @@ void create_sub_matrix(const BlockFEMatrix& matrix,
   size_t n_global_cols = 0;
   for(size_t c = 0; c < n_block_cols; ++c)
   {
-    auto comm = &matrix.get_column_space(c + start.second).get_communicator();
+    auto comm = &matrix.get_column_space(c + start.second)->get_communicator();
     col_communicators[c] = comm;
     n_master_cols += comm->GetN_Master();
     n_global_cols += comm->get_n_global_dof();

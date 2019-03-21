@@ -36,7 +36,7 @@ class TFEFunction3D
     std::string Description;
 
     /** space to which this function belongs to */
-    const TFESpace3D *FESpace3D;
+    std::shared_ptr<const TFESpace3D> FESpace3D;
 
     /** double vector according to FE isomorphism */
     double *Values;
@@ -49,7 +49,7 @@ class TFEFunction3D
     TFEFunction3D();
 
     /** constructor with vector initialization */
-    TFEFunction3D(const TFESpace3D *fespace3D,
+    TFEFunction3D(std::shared_ptr<const TFESpace3D> fespace3D,
                   const std::string& name, const std::string& description,
                   double *values, int length);
 
@@ -69,11 +69,11 @@ class TFEFunction3D
     { return Description; }
 
     /** return fe space */
-    const TFESpace3D *GetFESpace3D() const
+    std::shared_ptr<const TFESpace3D> GetFESpace3D() const
     { return FESpace3D; }
     
     /** return fe space */
-    const TFESpace *GetFESpace() const
+    std::shared_ptr<const TFESpace> GetFESpace() const
     { return FESpace3D; }
 
     /** return length */
