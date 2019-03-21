@@ -109,12 +109,12 @@ int main(int argc, char* argv[])
   //Start the actual computations.
   //=========================================================================
 
-  cd3d.assemble(0); // assemble matrix and rhs
+  cd3d.assemble(); // assemble matrix and rhs
   timer.restart_and_print("Assembling");
   
-  cd3d.solve(0);    // solve the system
+  cd3d.solve();    // solve the system
   timer.restart_and_print("Solving");
-
+/*
   if( cd3d.get_db()["algebraic_flux_correction"].is("afc") )
   {//nonlinear loop necessary
     size_t Max_It = cd3d.get_db()["afc_nonlinloop_maxit"];
@@ -126,7 +126,7 @@ int main(int argc, char* argv[])
       if ((converged)||(k>= Max_It))
 	break;
     }
-  }
+  }*/
   
   cd3d.output();   // produce nice output
   timer.restart_and_print("output");

@@ -26,7 +26,6 @@
 #include <ParameterDatabase.h>
 #include <Solver.h>
 #include <PostProcessing2D.h>
-#include <anderson.h>
 
 class Multigrid;
 
@@ -38,6 +37,7 @@ class CD2D
      * 
      * This combines a matrix, rhs, solution, space and function needed to 
      * describe one convection-diffusion-reaction problem in 2D.
+     * afc_gamma and afc_matrix_D_entries are required in the AFC schemes
      */
     struct System_per_grid
     {
@@ -138,6 +138,7 @@ class CD2D
      */
     void set_parameters();
     
+    
   public:
     
     /** @brief constructor 
@@ -180,14 +181,11 @@ class CD2D
      * assembling routines are used. Also in case of multigrid the matrices
      * on all grids are assembled.
      */
-    void assemble(const int iteration);
+    void assemble();
     
     /** @brief solve the system 
-     * 
-     * @param[in] iteration current iteration
      */
-    /// @brief returns whether or not the method is converged, unimportant for linear discretizations
-    bool solve(const int iteration);
+    void solve();
     
     /** 
      * @brief measure errors and write pictures 
@@ -254,83 +252,11 @@ class CD2D
 
     //! Delete move assignment operator.
     CD2D& operator=(CD2D&&) = delete;
-    
-    //Dynamic Damping from [JK08]
-    void dynamic_damping(const int iteration);
-    
-    void anderson_acceleration_damping(int N_Unknowns, int iteration, 
-     std::list<std::vector<double>> & solAnderson,
-     std::list<std::vector<double>> & deltaAnderson);
+        
     
     //! Destructor. Still leaks memory (esp. because of the multigrid objeect).
     ~CD2D();
 
-  private:
-    /**
-     * Apply an algebraic flux correction scheme to the assembled matrix.
-     * Should be called within the assemble routine, after the actual assembling
-     * has been performed with the INTERNAL_FULL_MATRIX_STRUCTURE switch on.
-     *
-     * Which afc algorithm is performed is determined by switching over
-     * ALGEBRAIC_FLUX_CORRECTION.
-     */
-    
-    /* residual: norm of current residual r_k+1
-     * residual_old: norm of previous residue r_k */
-     double residual, residual_old; 
-   
-    /* t: time taken to complete one iteration */
-     double t;
-    /*
-     * rhs_flag: Use to denote when one it takes one iteration of Newton as well as one iteration of Fixed_point_RHS more than 2 seconds
-     * newton_flag: Use to denote when iteration moves from Newton to Fixed_point_RHS and hence increase the tolerance
-     * up_param: The tolerance taken to change fron one schem to another
-     * 
-     */
-    void do_algebraic_flux_correction(const int iteration, const int check_fpr);
-    /*
-     * time_total: time taken to compute solve the problem
-     * time_rhs: Time taken to compute one Fixed_point_RHS iteration
-     */    
-    double time_total, time_rhs, time_newton;
-    //counts the number of steps between two range of residue
-    int count_steps;
-    
-    /*
-     * rejected_steps: rejected iteration steps
-     */
-    int rejected_steps;
-        
-    /*
-     * rhs_flag, newton_flag: Used for finding if time taken by one step of Newton as well as one step of Fixed_point_RHS is same
-     * newton_iterate: Count the number of Newton iteration
-     *rhs_iterate: Count the number of Fixed_point_RHS iteration     
-     */
-    int rhs_flag, newton_flag;
-    int newton_iterate, rhs_iterate;
-    /*
-     * up_param: Tolerance limit of the residual which decides when to switch the iteration technique
-     */
-    double up_param;
-     
-    BlockVector alphas_x_i;
-    BlockVector old_solution;
-    //Copy the RHS after the first iteration is done so that it can be used for Fixed_point_RHS
-    BlockVector rhs_copy;
-    //checks whether we have Fixed_point_RHS and iteration>1
-    int is_not_afc_fixed_point_rhs;
-    //copy for the AFC steady state function
-    BlockFEMatrix matrix_copy;
-    //thresh_hold_fpm: to check the number of jumps between two residues
-    double thresh_hold_fpm;
-    
-    //storage of anderson previous updates
-    std::list<std::vector<double>>  solAnderson;
-    std::list<std::vector<double>>  deltaAnderson;
-
-    
-    //number of steps in anderson acceleration
-    int kAnderson;
 };
 
 #endif // __CD2D_H__

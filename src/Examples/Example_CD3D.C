@@ -38,6 +38,15 @@ namespace BJKR18
   #include "CD_3D/BJKR18.h"
 }
 
+namespace smooth_solution_3d
+{
+  #include "CD_3D/smooth_solution_3d.h"
+}
+
+namespace boundary_layer_known_3d
+{
+  #include "CD_3D/boundary_layer_known_3d.h"
+}
 //=========================================================================
 
 Example_CD3D::Example_CD3D(const ParameterDatabase& user_input_parameter_db)
@@ -62,27 +71,27 @@ Example_CD3D::Example_CD3D(const ParameterDatabase& user_input_parameter_db)
       /** coefficients */
       problem_coefficients = BilinearCoeffs;
       
-      sine_laplace_3D::PECLET_NUMBER = this->get_nu();
+      PECLET_NUMBER = this->get_nu();
       ExampleFile();
-    }
       break;
+    }
       
     case 1:
     {
       using namespace hemker_3d;
       /** exact_solution */
-      exact_solution.push_back( hemker_3d::Exact );
+      exact_solution.push_back( Exact );
       
       /** boundary condition */
-      boundary_conditions.push_back( hemker_3d::BoundCondition );
+      boundary_conditions.push_back( BoundCondition );
       
       /** boundary values */
-      boundary_data.push_back( hemker_3d::BoundValue );
+      boundary_data.push_back( BoundValue );
       
       /** coefficients */
-      problem_coefficients = hemker_3d::BilinearCoeffs;
+      problem_coefficients = BilinearCoeffs;
       
-      hemker_3d::PECLET_NUMBER = this->get_nu();
+      PECLET_NUMBER = this->get_nu();
       
       ExampleFile();
       break;
@@ -92,18 +101,60 @@ Example_CD3D::Example_CD3D(const ParameterDatabase& user_input_parameter_db)
     {
       using namespace BJKR18;
       /** exact_solution */
-      exact_solution.push_back( BJKR18::Exact );
+      exact_solution.push_back( Exact );
       
       /** boundary condition */
-      boundary_conditions.push_back( BJKR18::BoundCondition );
+      boundary_conditions.push_back( BoundCondition );
       
       /** boundary values */
-      boundary_data.push_back( BJKR18::BoundValue );
+      boundary_data.push_back( BoundValue );
       
       /** coefficients */
-      problem_coefficients = BJKR18::BilinearCoeffs;
+      problem_coefficients = BilinearCoeffs;
       
-      BJKR18::PECLET_NUMBER = this->get_nu();
+      PECLET_NUMBER = this->get_nu();
+      
+      ExampleFile();
+      break;
+    }
+    
+    case 3:
+    {
+      using namespace smooth_solution_3d;
+      /** exact_solution */
+      exact_solution.push_back( Exact );
+      
+      /** boundary condition */
+      boundary_conditions.push_back( BoundCondition );
+      
+      /** boundary values */
+      boundary_data.push_back( BoundValue );
+      
+      /** coefficients */
+      problem_coefficients = BilinearCoeffs;
+      
+      PECLET_NUMBER = this->get_nu();
+      
+      ExampleFile();
+      break;
+    }
+    
+    case 4:
+    {
+      using namespace boundary_layer_known_3d;
+      /** exact_solution */
+      exact_solution.push_back( Exact );
+      
+      /** boundary condition */
+      boundary_conditions.push_back( BoundCondition );
+      
+      /** boundary values */
+      boundary_data.push_back( BoundValue );
+      
+      /** coefficients */
+      problem_coefficients = BilinearCoeffs;
+      
+      PECLET_NUMBER = this->get_nu();
       
       ExampleFile();
       break;

@@ -83,8 +83,8 @@ void check(ParameterDatabase& db, int ansatz_order,
   CD3D cd3d(gridCollections, db, example_obj);
 #endif
 
-  cd3d.assemble(0);
-  cd3d.solve(0);
+  cd3d.assemble();
+  cd3d.solve();
   cd3d.output();
 
   compare(cd3d, errors, tol);

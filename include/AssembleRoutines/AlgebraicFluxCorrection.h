@@ -25,12 +25,12 @@ namespace AlgebraicFluxCorrection {
 
 /**
  * control parameter which limiter to use (in steady-state problem so far)
- * ZALESAK: limiter from Zalesak (1979)
- * LINEAR_PRESERVE_BJK17: limiter from Barrenechea, John, Knobloch (2017)
+ * KUZMIN: limiter from Zalesak (1979) and Kuzmin (2007)
+ * BJK17: limiter from Barrenechea, John, Knobloch (2017)
  */
 enum class Limiter
 {
-    KUZMIN, BJK17, ZALESAK
+    KUZMIN, BJK17
 };
 
 /**
@@ -92,6 +92,9 @@ ParameterDatabase default_afc_database();
  * D and the vector gamma need to be computed 
  * @param[in] limiter Specifies the used limiter
  * @param[in] it_scheme Specifies the used iteration scheme
+ * @param[in] is_not_afc_fixed_point_rhs Specifies if the scheme is fixed_point_rhs or not
+ * @param[in] d_h_error Computes the error of d_h(u_h,u-u_h,u-u_h)
+ * @param[in] exact_interpolant Gives the exact_interpolant solution
  */
 void steady_state_algorithm(
     FEMatrix& system_matrix,
@@ -102,7 +105,7 @@ void steady_state_algorithm(
     std::vector<double>& gamma,
     bool compute_D_and_gamma,    
     const ParameterDatabase& db,
-    Limiter limiter = AlgebraicFluxCorrection::Limiter::ZALESAK,
+    Limiter limiter = AlgebraicFluxCorrection::Limiter::KUZMIN,
     Iteration_Scheme it_scheme = AlgebraicFluxCorrection::Iteration_Scheme::FIXEDPOINT_MATRIX,
     const int is_not_afc_fixed_point_rhs=1);
 

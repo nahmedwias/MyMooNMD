@@ -9,7 +9,7 @@
 #include <Domain.h>
 #include <Database.h>
 #include <FEDatabase2D.h>
-#include <CD2D.h>
+#include <CD2D_AFC.h>
 
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -51,7 +51,7 @@ int main(int argc, char* argv[])
     domain.PS("Domain.ps", It_Finest, 0);
    
   //=========================================================================
-  CD2D cd2d(domain, parmoon_db);
+  CD2D_AFC cd2d(domain, parmoon_db);
   cd2d.assemble(0);
   cd2d.solve(0);
   

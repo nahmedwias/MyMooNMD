@@ -524,7 +524,7 @@ namespace
     // MPI: At output, correction factors alpha_ij are rowwise level-0-consistent
   }
 
-  /* Computation of the Jacobian times the fluxes for the Zalesak limiter
+  /** Computation of the Jacobian times the fluxes for the Zalesak limiter
    *            used in Newton's method
    * @param[in] A: The system matrix A
    * @param[in] F: The Matrix where entries f_ij=d_ij-(uj_-u_i)
@@ -913,7 +913,7 @@ namespace
     return value;
   }
 
-  /* Computation of the Jacobian times the fluxes for the regularized Kuzmin limiter
+  /** Computation of the Jacobian times the fluxes for the regularized Kuzmin limiter
    *            used in Newton's method
    * @param[in] A: The system matrix A
    * @param[in] F: The Matrix where entries f_ij=d_ij-(uj_-u_i)
@@ -1226,7 +1226,7 @@ namespace
     return sum;
   }
 
-  /* computation of the Jacobian times the fluxes for the BJK17 limiter
+  /** computation of the Jacobian times the fluxes for the BJK17 limiter
    *            used in Newton's method
    * @param[in] A: The system matrix A
    * @param[in] F: The Matrix where entries f_ij=d_ij-(uj_-u_i)
@@ -1234,8 +1234,8 @@ namespace
    *            P_minus, Q_minus
    *            R_plus, R_minus: The fluxes used for computation of the limiters alpha_ij
    * @param[in] umax: Vector where umax_i=max{u_ij, 1<=j<=Ndofs}
-   * @parma[in] umin: Vector where umin_i=min{u_ij, 1<=j<=Ndofs}
-   * @parma[in] q: Vector where q_i=gamma_i\sum d_ij
+   * @param[in] umin: Vector where umin_i=min{u_ij, 1<=j<=Ndofs}
+   * @param[in] q: Vector where q_i=gamma_i\sum d_ij
    * @param[in] sol_col_j: entry of sol[col_j]
    * @param[in] row_i: Denotes the ith row of matrix DF for which summation is required
    * @param[in] col_j: Column number for entry a_ij
@@ -1435,260 +1435,11 @@ namespace
           continue;
         }
       }
-      ErrThrow("Compute_Jacobian_times_flux_BJK17: index pair without case !!!");
-
+        ErrThrow("Compute_Jacobian_times_flux_BJK17: index pair without case !!!", k, " ", F[k]);
     }
     return sum;
   }
-  /* computation of the Jacobian times the fluxes for the regularised BJK17 limiter
-   *            used in Newton's method
-   * @param[in] A: The system matrix A
-   * @param[in] F: The Matrix where entries f_ij=d_ij-(uj_-u_i)}
-   * @param[in] row_i: Denotes the ith row of matrix DF for which summation is required
-   * @param[in] col_j: Column number for entry a_ij
-   * @param[in] entries_pointer: Denotes the pointer to the array Entries
-   * @parma[in] q: Vector where q_i=gamma_i\sum d_ij
-   * @param[in] sol: solution vector
-   * @param[in] afc_matrix_D_entries: The artificial diffusion matrix
-   * @param[in] upper_bound: Upper bound for the solution
-   * @param[in] lower_bound: Lower bound for the solution
-   * @param[out] The summation required in the entry of the Jacobian matrix.
-   */
 
-  //umax and umin to verify the approximate values
-
-  double Compute_Jacobian_times_flux_BJK17_Regularized(const FEMatrix& A,
-    const double * F,
-    const int row_i,
-    const int col_j,
-    const int entries_pointer,
-    const std::vector<double>& sol,
-    const std::vector<double>& q,
-    const std::vector<double>& afc_matrix_D_entries,
-    const double upper_bound,
-    const double lower_bound, const double umax, const double umin,
-    const double sigma)
-  {
-    const double pos_num= 50.0;
-
-    // Regularized version of Q_plus[row_i], P_plus[row_i], Q_minus[row-i], P_minus[row_i], Q_plus[col_k], P_plus[col_k], Q_minus[col_k], P_minus[col_k]
-    double Q_plus_reg_i=0, P_plus_reg_i=0, Q_minus_reg_i=0, P_minus_reg_i=0, Q_plus_reg_k=0, Q_minus_reg_k=0, P_plus_reg_k=0, P_minus_reg_k=0, R_plus_i=0, R_minus_i=0, R_plus_k=0, R_minus_k=0;
-
-    // Derivatives of the regularizations
-    double DR_plus_i=0.0, DR_minus_k=0.0, DR_minus_i=0.0, DR_plus_k=0.0,DQ_plus_i=0.0, DQ_minus_i=0.0, DP_plus_i=0.0, DP_minus_i=0.0,DQ_plus_k=0.0, DQ_minus_k=0.0, DP_plus_k=0.0, DP_minus_k=0.0, DF_ik=0.0;
-    double Du_i_max=0.0, Du_i_min=0.0,Du_k_max=0.0, Du_k_min=0.0;
-
-    double u_max_reg=0.0, u_min_reg=0.0, sum_max=0.0, sum_min=0.0;
-    double sum=0.0;
-    const int* ColInd = A.GetKCol();
-    const int* RowPtr = A.GetRowPtr();
-    //sol_in_umax: To check whether we have u_j in S_i
-    //jj: To find the index d_kj. If in row k we have an entry at column j we give it that index otherwise we give it -1, so that we can assign zero value to d_kj
-    int k0, k1, col_k, j0, j1, jj=-1, sol_in_S_i=0;
-
-    k0=RowPtr[row_i];
-    k1=RowPtr[row_i+1];
-    // computation of the regularized P_plus, P_minus, Q_plus, Q_minus
-    for (int j=k0; j<k1 ; j++)
-    {
-      // check whether the column col_j belongs to S_i \cup {i}
-      if(ColInd[j]==col_j)
-        sol_in_S_i=1;
-      P_plus_reg_i += smooth_max(0., F[j], sigma);
-      P_minus_reg_i += smooth_min(0., F[j], sigma);
-      sum_max += pow(sol[ColInd[j]]-lower_bound, pos_num);
-      sum_min += pow(upper_bound-sol[ColInd[j]], pos_num);
-    }                                             //end of loop j
-    u_max_reg = pow(sum_max, 1./pos_num)+lower_bound;
-    u_min_reg = -pow(sum_min, 1./pos_num)+upper_bound;
-
-    //Output::print<1>("u_max_regular=", u_max_reg, " u_max=", umax);
-    //Output::print<1>("u_min_regular=", u_min_reg, " u_min=", umin);
-
-    // case that the column index is not in S_i \cup {i}
-    if (sol_in_S_i==0)
-    {
-      DQ_plus_i =  DQ_minus_i = DP_plus_i = DP_minus_i = 0.0;
-    }
-    // case that the column index is not in S_i \cup {i}
-    else
-    {
-      // compute   DQ_plus_i, DQ_minus_i, DP_plus_i,   DP_minus_i
-      Du_i_max = pow(sum_max, 1./pos_num-1.0)*pow(sol[col_j]-lower_bound, pos_num-1.0);
-      Du_i_min = pow(sum_min, 1./pos_num-1.0)*pow(upper_bound-sol[col_j], pos_num-1.0);
-      // column index is not in S_i
-      if(row_i!=col_j)
-      {
-        DQ_plus_i = -q[row_i]*Du_i_max;
-        DQ_minus_i = -q[row_i]*Du_i_min;
-
-        double d_ij = afc_matrix_D_entries[entries_pointer];
-        double f_ij = F[entries_pointer];
-        double f_ij_f_ij2_sigma = f_ij/std::sqrt(f_ij * f_ij + sigma);
-        DP_plus_i=(1.+f_ij_f_ij2_sigma)*d_ij/2.0;
-        DP_minus_i=(1.-f_ij_f_ij2_sigma)*d_ij/2.0;
-      }
-      else
-        // row_i == col_j
-      {
-        DQ_plus_i=q[row_i]*(1-Du_i_max);
-        DQ_minus_i=q[row_i]*(1-Du_i_min);
-
-        for(int m=k0;m<k1;m++)
-        {
-          DP_plus_i -= (1+F[m]/std::sqrt(F[m]*F[m]+sigma)) * afc_matrix_D_entries[m]/2.0;
-          DP_minus_i -= (1-F[m]/std::sqrt(F[m]*F[m]+sigma)) * afc_matrix_D_entries[m]/2.0;
-        }                                         //end of loop m
-      }
-    }                                             // end of case that the column index is not in S_i \cup {i}
-
-    // calculate terms that do not depend on k
-    Q_plus_reg_i = q[row_i]*(sol[row_i]-u_max_reg);
-    Q_minus_reg_i = q[row_i]*(sol[row_i]-u_min_reg);
-
-    R_plus_i = smooth_min(1.,Q_plus_reg_i/(P_plus_reg_i),sigma)/2.0;
-    R_minus_i = smooth_min(1.,Q_minus_reg_i/(P_minus_reg_i),sigma)/2.0;
-
-    DR_plus_i = ((DQ_plus_i*P_plus_reg_i-Q_plus_reg_i*DP_plus_i)/(P_plus_reg_i*P_plus_reg_i))
-      *der_smooth_min(1,Q_plus_reg_i/P_plus_reg_i,sigma)/2.0;
-    DR_minus_i= ((DQ_minus_i*P_minus_reg_i-Q_minus_reg_i*DP_minus_i)/(P_minus_reg_i*P_minus_reg_i))
-      *der_smooth_min(1,Q_minus_reg_i/P_minus_reg_i,sigma)/2.0;
-
-    //Output::print<1>("u_min regular=", u_min_reg, " u_min=", umin);
-    //Output::print<1>("u_max regular=", u_max_reg, " u_max=", umax);
-
-    // compute sum partial beta_ik/partial u_j
-    // loop over all dofs that are connected with the matrix entry a_{ij}
-    for(int k=k0; k<k1;k++)
-    {
-
-      // derivative of F_ik
-      if (row_i==col_j)
-      {
-        if(ColInd[k]==col_j)
-          DF_ik=0;
-        else
-          DF_ik=-afc_matrix_D_entries[k];
-      }
-      else
-      {
-        if(ColInd[k]==col_j)
-          DF_ik=afc_matrix_D_entries[k];
-        else
-          DF_ik=0;
-      }
-
-      sum += DR_plus_i*smooth_max(0,F[k],sigma) + R_plus_i*der_smooth_min(F[k],0,sigma)*DF_ik
-        + DR_minus_i*smooth_min(0,F[k],sigma) + R_minus_i*der_smooth_min(0,F[k],sigma)*DF_ik;
-    }
-    return sum;
-
-    /*
-    //Computations for R_k_plus and R_k_minus
-    for(int k=k0; k<k1;k++)
-    {
-      //resetting the values to the previous values
-      u_max_reg=0, u_min_reg=0;
-      P_plus_reg_k=0.0, P_minus_reg_k=0.0, Q_plus_reg_k=0.0, Q_minus_reg_k=0.0, sum_max=0.0, sum_min=0.0;
-      sol_in_S_i=0;  jj=-1;
-      col_k=ColInd[k];
-      j0=RowPtr[col_k];
-      j1=RowPtr[col_k+1];
-    for(int j=j0; j<j1 ; j++)
-    {
-    if(ColInd[j]==col_j)
-    {
-    sol_in_S_i=1;
-    jj=j;
-    }
-    P_plus_reg_k+=smooth_max(0, F[j]);
-    P_minus_reg_k+=smooth_min(0, F[j]);
-    sum_max+=pow(sol[ColInd[j]]-lower_bound, pos_num);
-    sum_min+=pow(upper_bound-sol[ColInd[j]], pos_num);
-    }//end of loop j
-    u_max_reg=pow(sum_max, 1./pos_num)+lower_bound;
-    u_min_reg=-pow(sum_min, 1./pos_num)+upper_bound;
-    //case when solution is not in the patch S_k
-    if(sol_in_S_i==0)
-    {
-    if(col_k!=col_j)
-    {
-    DQ_plus_k=0;
-    DQ_minus_k=0;
-    }
-    else
-    {
-    DQ_plus_k=q[col_k];
-    DQ_minus_k=q[col_k];
-    }
-    DP_plus_k=0;
-    DP_minus_k=0;
-    }//end of if case when sol is in the patch S_k
-    //case when solution is in the patch S_k
-    else
-    {
-    Du_k_max=pow(sum_max, 1.0/pos_num-1)*pow(sol[col_j], pos_num-1.0);
-    Du_k_min=pow(sum_min, 1.0/pos_num-1)*pow(sol[col_j], pos_num-1.0);
-    if(col_k!=col_j)
-    {
-    DQ_plus_k=-q[col_k]*Du_k_max;
-    DQ_minus_k=-q[col_k]*Du_k_min;
-    double d_kj, f_kj;
-    if(jj!=-1)
-    {
-    d_kj=afc_matrix_D_entries[jj];
-    f_kj=F[jj];
-    }
-    else
-    {
-    d_kj=0.0;
-    f_kj=0.0;
-    }
-    double f_kj_f_kj2_sigma = f_kj/std::sqrt(f_kj * f_kj + sigma);
-    DP_plus_k=(1.+f_kj_f_kj2_sigma)*d_kj*0.5;
-    DP_minus_k=(1.-f_kj_f_kj2_sigma)*d_kj*0.5;
-    }
-    else
-    {
-    DQ_plus_k=q[col_k]*(1-Du_k_max);
-    DQ_minus_k=q[col_k]*(1-Du_k_min);
-    for(int m=k0;m<k1;m++)
-    {
-    DP_plus_k -= (1+F[m]/sqrt(F[m]*F[m]+sigma)) * afc_matrix_D_entries[m]*0.5;
-    DP_minus_k -= (1-F[m]/sqrt(F[m]*F[m]+sigma)) * afc_matrix_D_entries[m]*0.5;
-    }//end of loop m
-    }
-    }// end of else case when sol_in_S_i
-    Q_plus_reg_k=q[col_k]*(sol[col_k]-u_max_reg);
-    Q_minus_reg_k=q[col_k]*(sol[col_k]-u_min_reg);
-    DR_plus_k = ((DQ_plus_k*P_plus_reg_k-Q_plus_reg_k*DP_plus_k)/(P_plus_reg_k*P_plus_reg_k))
-    *der_smooth_min(1,Q_plus_reg_k/(P_plus_reg_k))*0.5;
-    DR_minus_k= ((DQ_minus_k*P_minus_reg_k-Q_minus_reg_k*DP_minus_k)/(P_minus_reg_k*P_minus_reg_k))
-    *der_smooth_min(1,Q_minus_reg_k/(P_minus_reg_k))*0.5;
-    R_plus_k = smooth_min(1.,Q_plus_reg_k/P_plus_reg_k);
-    R_minus_k = smooth_min(1.,Q_minus_reg_k/P_minus_reg_k);
-
-    // derivative of F_ik
-    if (row_i==col_j)
-    {
-    if(col_k==col_j)
-    DF_ik=0;
-    else
-    DF_ik=-afc_matrix_D_entries[k];
-    }
-    else
-    {
-    if(col_k==col_j)
-    DF_ik=afc_matrix_D_entries[k];
-    else
-    DF_ik=0;
-    }
-    sum+=(DR_plus_i*der_smooth_min(R_minus_k, R_plus_i)*0.5+DR_minus_k*der_smooth_min(R_plus_i,R_minus_k)*0.5)*smooth_max(0,F[k])+(smooth_min(R_plus_i,R_minus_k))*der_smooth_min(F[k],0)*DF_ik*0.5
-    +(DR_minus_i*der_smooth_min(R_plus_k, R_minus_i)*0.5+DR_plus_k*der_smooth_min(R_minus_i,R_plus_k)*0.5)*smooth_min(0,F[k])+(smooth_min(R_minus_i,R_plus_k))*der_smooth_min(0,F[k])*DF_ik*0.5;
-    }// end of loop k
-    return sum;
-    */
-  }                                               // end of the function
   /**
    * Compute the weights for the linearty preserving limiter from Barrenechea, John, Knobloch; M3AS 2017.
    *
@@ -1896,7 +1647,7 @@ namespace
     }
     for (i=0;i<N_Unknowns;i++)
     {
-      gamma[i] =1.5*( parameter[i]/ parameter[i+N_Unknowns]);  
+      gamma[i] =(parameter[i]/ parameter[i+N_Unknowns]);  
     }
 #endif
   }
@@ -1931,25 +1682,28 @@ ParameterDatabase AlgebraicFluxCorrection::default_afc_database()
     "fixed_point_rhs, fixed_point_matrix, newton, newton_regu",
     {"fixed_point_rhs", "fixed_point_matrix", "newton", "newton_regu", "newton_no_damp"}
   );
-
-  db.add("afc_iteration_scheme_automatic", "no", "Whether or not the iteration scheme is chosen"
-    "automatically", {"no", "yes"}
-  );
-
-  db.add("afc_nonlinloop_damping_factor", 1.0, "A damping parameter for the nonlinear loop in AFC."
-    "Must be a value between 1 (no damping) and 0 (no update).", 0.0,1.0);
-
+  
+  //maximum number of iterations in the non linear loop
   db.add("afc_nonlinloop_maxit", (size_t) 1 , "Maximal number of iterations for the nonlinear loop in AFC."
     "Must be a value between 0 and 100000.", (size_t)  0, (size_t)  100000);
-
+  
+  //tolerance for non linear loop in AFC scheme
   db.add("afc_nonlinloop_epsilon", 1e-10, "Stopping criterion for the nonlinear loop in AFC."
     "Must be a value between 1e-20 an 1e20.", 1e-20, 1e20);
+  
+
+  //Constants related to Dynamic Damping from [JK08]
+  db.add("afc_nonlinloop_damping_factor", 1.0, "A damping parameter for the nonlinear loop in AFC."
+    "Must be a value between 1 (no damping) and 0 (no update).", 0.0,1.0);
 
   db.add("afc_nonlinloop_damping_factor_max", 1.0, "Maximal number for afc_nonlinloop_damping_factor."
     "Only changed internally", 0.0,1.0);
 
   db.add("afc_nonlinloop_damping_factor_min", 0.01, "Minimal number for afc_nonlinloop_damping_factor."
     "Intended to stay constant", 0.0,1.0);
+  
+  db.add("afc_nonlinloop_damping_factor_max_global", 1.0, "Maximal number for afc_nonlinloop_damping_factor."
+    "for complete iteration", 0.0,1.0);
 
   db.add("afc_nonlinloop_damping_factor_increase", 1.1, "Increase factor for afc_nonlinloop_damping_factor"
     "Intended to stay constant", 1.0,2.0);        // c_2 in [JK08]
@@ -1972,27 +1726,18 @@ ParameterDatabase AlgebraicFluxCorrection::default_afc_database()
     "no", "yes"
   });
   
+  //Anderson acceleration parameters
   db.add("afc_nonlinloop_anderson_acc", "yes", "Whether or not to use Anderson acceleration", {"no", "yes"}
   );
   
   db.add("afc_nonlinloop_anderson_acc_vec", (size_t) 10, "Number of vectors in Anderson acceleration",  (size_t)  1, (size_t)  1000);
+  
+  db.add("afc_nonlinloop_anderson_acc_start", (size_t) 0, "Starting iterate for Anderson acceleration",  (size_t)  0, (size_t)  1000);
+  
+  db.add("afc_anderson_damping", "yes", "Anderson Damping from WN11 choice", {"yes", "no"});
 
-   db.add("afc_nonlinloop_anderson_acc_start", (size_t) 0, "Starting iterate for Anderson acceleration",  (size_t)  0, (size_t)  1000);
-
-   db.add("afc_nonlinloop_damping_factor_max_global", 1.0, "Maximal number for afc_nonlinloop_damping_factor."
-    "for complete iteration", 0.0,1.0);
-
-  db.add("afc_nonlinloop_switch_fprhs_to_newton", 10.0, "Tolerance for switching to Newton's method",
-    1.0,1.e36);
-
-  db.add("afc_nonlinloop_switch_newton_to_fprhs", 1.01, "Tolerance for switching to Newton's method",
-    1.0,1.e36);
-
-  db.add("afc_nonlinloop_kuzmin_first", "no", "Whether or not the solution of the Kuzmin problem"
-    "should be the starting iterate for the BJK limiter", {"no", "yes"}
-  );
+  //parameters related to fixed point matrix and Newton method
   db.add("afc_newton_regu_sigma", 1e-8, "Penalty for regularized Newton method"
-                                                  // c_4 in [JK08]
     "is scaled with fourth power of mesh width", 0.0,1.0);
 
   db.add("afc_fixed_point_matrix_weight", 0.75, "weight for implicit fixed point method"
@@ -2007,13 +1752,16 @@ ParameterDatabase AlgebraicFluxCorrection::default_afc_database()
   db.add("afc_damping_bound_newton", 0.02, "bound for switching from fixed_point_rhs to Newton", 0.02, 1.0);
  
   db.add("afc_change_method_threshold", 1e-5, "threshold for changing to Newton's method", 0.0,100.0);
-  
-  db.add("afc_anderson_damping", "yes", "Anderson Damping from WN11 choice", {"yes", "no"});
 
-  db.add("afc_nonlinloop_switch_to_newton_scheme", 1, "scheme for switching to formal Newton's method"
+  /*db.add("afc_nonlinloop_switch_to_newton_scheme", 1, "scheme for switching to formal Newton's method"
     "1 - standard, 10 - first fpr (for BAIL proceedings), 11 - first fpm (for BAIL proceedings)"
     "20 - first fpr with reswitch (for BAIL proceedings), 21 - first fpm with reswitch (for BAIL proceedings)"
-    ,{1,10,11,20,21});
+    ,{1,10,11,20,21});*/
+  
+  //projection to admissible values. Idea from [BB17.CMAME] 
+  db.add("afc_project_to_admissible_values", "no", "Whether or not to project intermediate iterates to admissible values",
+    {"no", "yes"});
+   
   return db;
 }
 
@@ -2031,6 +1779,8 @@ std::vector<double>& afc_matrix_D_entries,
 std::vector<double>& gamma,
 bool compute_D_and_gamma,
 const ParameterDatabase& db,
+//std::vector<double>& exact_interpolant,
+//double& d_h_error,
 Limiter limiter,
 Iteration_Scheme it_scheme,
 const int is_not_afc_fixed_point_rhs)
@@ -2067,17 +1817,18 @@ const int is_not_afc_fixed_point_rhs)
   double* R_minus = R_plus + nDofs;
   std::vector<double> alphas;
   std::vector<double> umin, umax, q;
+  
  
   if ((it_scheme == Iteration_Scheme::NEWTON)||(it_scheme == Iteration_Scheme::FIXEDPOINT_MATRIX)
     ||(it_scheme == Iteration_Scheme::NEWTON_REGU))
-    alphas.resize(N_Entries,0.0);
+    alphas.resize(N_Entries+1,0.0);
   // compute entries of the artificial diffusion matrix D
   // TODO make matrix D an actual TMatrix and not only an entries vector
   if (compute_D_and_gamma)
   {
     Output::print<4>("AFC: compute matrix D");
     compute_artificial_diffusion_matrix(system_matrix, afc_matrix_D_entries);
-    if ((limiter == Limiter::BJK17)||(db["afc_nonlinloop_kuzmin_first"].is("yes")))
+    if (limiter == Limiter::BJK17)
     {
       Output::print<4>("AFC: compute vector gamma");
       Compute_Parameter_For_Linearity_Preservation(system_matrix, sol, gamma);
@@ -2093,6 +1844,7 @@ const int is_not_afc_fixed_point_rhs)
   // allocate and fill arrays for linearity preserving limiter
   // from Barrenechea, John, Knobloch M3AS (2017)
   //if ((TDatabase::ParamDB->FEM_FCT_LINEAR_TYPE==4)||(TDatabase::ParamDB->FEM_FCT_LINEAR_TYPE==14))
+
   if (limiter == Limiter::BJK17)
   {
     umin.resize(nDofs,0.0);
@@ -2359,11 +2111,12 @@ const int is_not_afc_fixed_point_rhs)
         }
       }                                           //End of Kuzmin limiter
     }                                             //End of For loop j
-
     if((it_scheme==Iteration_Scheme::NEWTON)||(it_scheme == Iteration_Scheme::FIXEDPOINT_MATRIX)
       || (it_scheme == Iteration_Scheme::NEWTON_REGU))
       alphas[diag_index]=1.0;
   }                                               //End of loop i
+
+                                               
 
   if (it_scheme == Iteration_Scheme::FIXEDPOINT_MATRIX)
   {
@@ -2401,8 +2154,6 @@ const int is_not_afc_fixed_point_rhs)
 
           rhs[i] -= sum_flux*sol[i]*tau1;
         }
-        //rhs[i] += alphas[j]*F[j];
-        //rhs[i] += alphas[j]*afc_matrix_D_entries[j]*(sol[index_j]-sol[i]);
       }
     }                                             //Formation of matrix complete
   }
@@ -2416,12 +2167,11 @@ const int is_not_afc_fixed_point_rhs)
     if (db["afc_iteration_scheme"].is("newton_no_damp"))
     {
       if ((double)db["afc_fixed_point_derivative_weight_factor"]>1e-3)
-       tau0 =  tau1 = 1.0;
+      {
+	tau0 =  tau1 = 1.0;
+      }
     }
-    //Output::print<2>("afc_fixed_point_derivative_weight ",  (double)db["afc_fixed_point_derivative_weight"]);
-    //Output::print<2>("afc_fixed_point_matrix_weight ",  (double)db["afc_fixed_point_matrix_weight"]);
     Output::print<2>("tau0/tau1 ", tau0 , " " , tau1);
-    //tau0 = tau1 = 1.0;
     
     // compute first part of rhs
     // with old matrix
@@ -2432,8 +2182,6 @@ const int is_not_afc_fixed_point_rhs)
       for(int j=j3;j<j4;j++)
       {
         index_j = ColInd[j];
-        //rhs[i] -= Entries[j]*sol[index_j]-alphas[j]*F[j]-sol[i]*afc_matrix_D_entries[j];
-                                                  //-sol[i]*afc_matrix_D_entries[j];
         rhs[i] += -(Entries[j])*sol[index_j]+alphas[j]*F[j];
         //Output::print<4>(index_j, " ", sol[index_j],  " " , alphas[j], " " , F[j]);
       }
@@ -2542,71 +2290,7 @@ const int is_not_afc_fixed_point_rhs)
           }
         }
       }
-      if (it_scheme == Iteration_Scheme::NEWTON_REGU)
-      {
-        {
-          double sigma = (double)db["afc_newton_regu_sigma"];
-          double upper_bound, lower_bound;
-          upper_bound=sol[0], lower_bound=sol[0];
-          // compute an upper and a lower bound of the current solution
-          for(int i=0;i<nDofs;i++)
-          {
-            if(sol[i]>=upper_bound)
-              upper_bound=sol[i];
-            if(sol[i]<=lower_bound)
-              lower_bound=sol[i];
-          }
-          /*	if(lower_bound<0.0)
-          lower_bound=lower_bound*2.0;
-          else if(lower_bound==0.0)
-          lower_bound=-1.0;
-          else
-          lower_bound=lower_bound/2.0;
-          //Finding consatnt upper bound so to get strict inequality
-          if(upper_bound>0.0)
-          upper_bound=upper_bound*2.0;
-          else if(upper_bound==0.0)
-          upper_bound=1.0;
-          else
-          upper_bound=upper_bound/2.0;*/
-          lower_bound -= 0.1;
-          upper_bound += 0.1;
-          Output::print<1>("Upper bound= ", upper_bound, " Lower bound= ", lower_bound);
-
-          // computation of Matrix DF
-          // loop over the degrees of freedom
-          for(int i=0;i<nDofs;i++)
-          {
-            j3=RowPtr[i];
-            j4=RowPtr[i+1];
-            // loop over the columns of the matrix
-            for(int j=j3;j<j4;j++)
-            {
-              index_j=ColInd[j];
-              // non-Diagonal Entries
-              if(i!=index_j)
-              {
-                df[j]=Entries[j]+afc_matrix_D_entries[j]
-                  -Compute_Jacobian_times_flux_BJK17_Regularized(system_matrix,F,i,
-                  index_j,j,sol, q, afc_matrix_D_entries, upper_bound, lower_bound, umax[i], umin[i],sigma);
-              }
-              else
-              {
-                double sum_flux=0.0;
-                for(int jj=j3;jj<j4;jj++)
-                {
-                  if(ColInd[jj]!=i)
-                    sum_flux-= alphas[jj]*afc_matrix_D_entries[jj];
-                }
-                df[j]=Entries[j]+afc_matrix_D_entries[j]
-                  -Compute_Jacobian_times_flux_BJK17_Regularized(system_matrix,F,i,
-                  index_j,j,sol, q,afc_matrix_D_entries, upper_bound, lower_bound, umax[i], umin[i],sigma);
-              }
-            }
-          }                                       //Formation of matrix DF complete
-        }                                         //Computation of matrix DF
-      }
-    }
+    }                                           //end of BJK17 limiter case
 
     // update rhs for system to be solved
     for(int i=0;i<nDofs;i++)
@@ -2877,4 +2561,19 @@ const ParameterDatabase& db)
   new_solution.scale(db["afc_nonlinloop_damping_factor"]);
   new_solution.add_scaled(old_solution,1.0);
   new_solution.copy_nonactive(old_solution);
+
+  //Note: Projection only possible when the maximum and minimum are already known.
+  if (db["afc_project_to_admissible_values"].is("yes"))
+  {
+    Output::print<2>("  projection to admissible values");
+
+    int len = new_solution.length();
+    for (int i=0;i<len;i++)
+    {
+      if (new_solution[i]<0)
+        new_solution[i] = 0;
+      if (new_solution[i]>1)
+        new_solution[i] = 1;
+    }
+  }
 }
