@@ -1432,8 +1432,8 @@ void TimeNavierStokes<d>::output()
     TAuxParam2D aux;
     MultiIndex2D nsAllDerivs[d+1] = {D00, D10, D01};
 #endif
-    const FESpace *velocity_space = &this->get_velocity_space();
-    const FESpace *pressure_space = &this->get_pressure_space();
+    const FESpace *velocity_space = this->systems.front().velocity_space.get();
+    const FESpace *pressure_space = this->systems.front().pressure_space.get();
     double tau = TDatabase::TimeDB->TIMESTEPLENGTH;
     
     // errors in the velocity components
