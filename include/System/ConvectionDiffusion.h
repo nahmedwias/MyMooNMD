@@ -217,8 +217,8 @@ class ConvectionDiffusion
     const FEFunction & get_function() const
     { return this->systems.front().fe_function; }
     
-    const FESpace & get_space() const
-    { return *this->systems.front().fe_space; }
+    std::shared_ptr<const FESpace> get_space() const
+    { return this->systems.front().fe_space; }
     
     const BlockVector & get_solution() const
     { return this->systems.front().solution; }
