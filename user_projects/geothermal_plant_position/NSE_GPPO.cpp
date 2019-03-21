@@ -19,8 +19,10 @@ NSE_GPPO<d>::NSE_GPPO(const TDomain &domain,
           const ParameterDatabase& param_db,
           const Example_NSE& example)
   :NavierStokes<d>(domain, param_db, example),
- coefficient_function_FEspace(new FESpace(this->get_pressure_space().GetCollection(),
-         "coefficient_function_FEspace", "s",  BoundConditionNoBoundCondition, 1))
+ coefficient_function_FEspace(
+   new FESpace(this->get_pressure_space()->GetCollection(),
+               "coefficient_function_FEspace", "s",
+               BoundConditionNoBoundCondition, 1))
 {
   if (false) //param_db["variable_sigma_fct_type"])
   {
@@ -30,7 +32,7 @@ NSE_GPPO<d>::NSE_GPPO(const TDomain &domain,
     /// TCollection *coll = brinkman2d.get_pressure_space().GetCollection();
     coefficient_function_vector = BlockVector(coefficient_function_FEspace->GetN_DegreesOfFreedom());
 
-    coefficient_function = FEFunction(coefficient_function_FEspace.get(), "coefficient_function", "coefficient_function",
+    coefficient_function = FEFunction(coefficient_function_FEspace, "coefficient_function", "coefficient_function",
             &coefficient_function_vector.at(0), coefficient_function_FEspace->GetN_DegreesOfFreedom());
 
     coefficient_function.ReadSol(param_db["read_coefficient_function_directory"]);
@@ -146,7 +148,7 @@ void NSE_GPPO<d>::assemble_with_coefficient_fct(bool read_coeff_fct)
 
     if (coefficient_function)
     {
-      coefficient_function_space = coefficient_function->GetFESpace2D(); // ->GetFESpace2D();
+      coefficient_function_space = coefficient_function->GetFESpace2D().get(); // ->GetFESpace2D();
       fe_functions[3] = coefficient_function;
     }
 #else

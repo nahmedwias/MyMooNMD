@@ -170,12 +170,12 @@ void TimeNavierStokes_Adjoint<d>::assemble_adjoint_terms(const FEVectFunct& u,
   using BoundaryConditionFunction 
     = typename Template_names<d>::BoundaryConditionFunction;
     
-  const FESpace * v_space = this->TimeNavierStokes<d>::systems.front().velocity_space.get();
-  const FESpace * p_space = this->TimeNavierStokes<d>::systems.front().pressure_space.get();
+  auto v_space = this->TimeNavierStokes<d>::systems.front().velocity_space.get();
+  auto p_space = this->TimeNavierStokes<d>::systems.front().pressure_space.get();
 #ifdef __2D__  
-  if(u.GetFESpace2D() != v_space || p.GetFESpace2D() != p_space)
+  if(u.GetFESpace2D().get() != v_space || p.GetFESpace2D().get() != p_space)
 #else
-  if(u.GetFESpace3D() != v_space || p.GetFESpace3D() != p_space)
+  if(u.GetFESpace3D().get() != v_space || p.GetFESpace3D().get() != p_space)
 #endif
   {
     ErrThrow("primal and adjoint solutions should be defined on the same FE "

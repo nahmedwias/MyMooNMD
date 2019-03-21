@@ -816,28 +816,29 @@ void GeothermalPlantsPositionOptimization<d>::apply_control_and_solve(const doub
 			0, d+1, 0,  {},  {},   0,   nullptr,  0,  {}, {});
 #endif
 
-  auto& v_space = brinkman_mixed.get_velocity_space();
-  auto& p_space = brinkman_mixed.get_pressure_space();
+  auto v_space = brinkman_mixed.get_velocity_space();
+  auto p_space = brinkman_mixed.get_pressure_space();
   auto& rhs = brinkman_mixed.get_rhs();
   rhs.reset(); //????
 
 #ifdef __2D__
-  std::array<const FESpace*, d+1> fespaces = {{&v_space, &v_space, &p_space}};
+  std::array<const FESpace*, d+1> fespaces = {{v_space.get(), v_space.get(), p_space.get()}};
   double *rhs_pointers[d+1] = {rhs.block(0), rhs.block(1), rhs.block(2)};
   BoundaryConditionFunction* boundary_conditions[d+1] = {
-          v_space.get_boundary_condition(), v_space.get_boundary_condition(),
-          p_space.get_boundary_condition() };
+          v_space->get_boundary_condition(), v_space->get_boundary_condition(),
+          p_space->get_boundary_condition() };
   auto& example = brinkman_mixed.get_example();
   std::array<BoundaryValuesFunction*, d+1> non_const_bound_values;
   non_const_bound_values[0] = example.get_bd()[0];
   non_const_bound_values[1] = example.get_bd()[1];
   non_const_bound_values[2] = example.get_bd()[2];
 #else
-  std::array<const FESpace*, d+1> fespaces = {{&v_space, &v_space, &v_space, &p_space}};
+  std::array<const FESpace*, d+1> fespaces = {{v_space.get(), v_space.get(),
+                                               v_space.get(), p_space.get()}};
   double *rhs_pointers[d+1] = {rhs.block(0), rhs.block(1), rhs.block(2), rhs.block(3)};
   BoundaryConditionFunction* boundary_conditions[d+1] = {
-      v_space.get_boundary_condition(), v_space.get_boundary_condition(),
-      v_space.get_boundary_condition(), p_space.get_boundary_condition() };
+      v_space->get_boundary_condition(), v_space->get_boundary_condition(),
+      v_space->get_boundary_condition(), p_space->get_boundary_condition() };
   auto& example = brinkman_mixed.get_example();
   std::array<BoundaryValuesFunction*, d+1> non_const_bound_values;
   non_const_bound_values[0] = example.get_bd()[0];

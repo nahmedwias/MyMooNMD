@@ -796,7 +796,7 @@ void TCD_Temperature<d>::assemble(const FEVectFunct& convection,
     la.setFeValueMultiIndex({D000, D000, D000});
 #endif
 
-    auto fe_space = &this->get_space();
+    auto fe_space = this->get_space().get();
     double * rhs_entries = s.rhs.get_entries();
     auto * boundary_conditions = fe_space->get_boundary_condition();
     BoundaryValuesFunction * non_const_bound_value[1] {this->example.get_bd()[0]};
