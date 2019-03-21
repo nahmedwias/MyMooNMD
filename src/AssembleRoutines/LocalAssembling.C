@@ -103,7 +103,7 @@ LocalAssembling<d>::LocalAssembling(ParameterDatabase param_db,
   Output::print<5>("Constructor of LocalAssembling3D: using type ", type);
   db.merge(param_db, false);
   Parameter disc_type{this->db["space_discretization_type"]};
-  
+
   // the values below only matter if you need an existing finite element
   // function during your assembly. Change them in such a case
   this->N_Parameters = 0;
@@ -113,7 +113,7 @@ LocalAssembling<d>::LocalAssembling(ParameterDatabase param_db,
   this->FEValue_FctIndex = {};
   this->FEValue_MultiIndex = {};
   this->BeginParameter = {};
-  
+
   this->N_Spaces=0; // is unused for built-in discretization types anyway
 
   // set all member variables according to type
@@ -154,6 +154,8 @@ LocalAssembling<d>::LocalAssembling(ParameterDatabase param_db,
           this->local_assemblings_routines.push_back(
             Brinkman3DType1Galerkin);
           break;
+        default:
+          ErrThrow("Unknown parameter TDatabase::ParamDB->NSTYPE in LocalAssembling3D_type::Brinkman3D_Galerkin case.");
       }
       break;
     }
@@ -190,8 +192,11 @@ LocalAssembling<d>::LocalAssembling(ParameterDatabase param_db,
           this->Manipulate = nullptr;
           break;
         }
+        default:
+          ErrThrow("Unknown parameter TDatabase::ParamDB->NSTYPE in LocalAssembling3D_type::ResidualStabPkPk_for_Brinkman3D_Galerkin1 case.");
       }
       break;
+
     }
     case LocalAssembling_type::GradDivStab_for_Brinkman3D_Galerkin1:
     {
@@ -226,6 +231,8 @@ LocalAssembling<d>::LocalAssembling(ParameterDatabase param_db,
           this->Manipulate = nullptr;
           break;
         }
+        default:
+          ErrThrow("Unknown parameter TDatabase::ParamDB->NSTYPE in LocalAssembling3D_type::GradDivStab_for_Brinkman3D_Galerkin1 case.");
       }
       break;
     }
@@ -1102,14 +1109,17 @@ void LocalAssembling<d>::set_parameters_for_nse( LocalAssembling_type type)
           std::bind(NSDivergenceBlocks<d>,
               _1, _2, _3, _4, _5, _6,
               _7, _8, -1));
+      this->local_assemblings_routines.push_back(std::bind(NSRightHandSide<d>, _1, _2, _3, _4, _5, _6,
+							   _7, _8, -1));
     }
     else
     {
       this->local_assemblings_routines.push_back(
           std::bind(NSDivergenceBlocks<d>, _1, _2, _3, _4, _5, _6, _7, _8, 1));
+      this->local_assemblings_routines.push_back(std::bind(NSRightHandSide<d>, _1, _2, _3, _4, _5, _6,
+							   _7, _8, 1));
     }
-    this->local_assemblings_routines.push_back(std::bind(NSRightHandSide<d>, _1, _2, _3, _4, _5, _6,
-        _7, _8, -1));
+    
     if(nstype == 2 || nstype == 4 || nstype == 14)
     {
       this->local_assemblings_routines.push_back(NSGradientBlocks<d>);

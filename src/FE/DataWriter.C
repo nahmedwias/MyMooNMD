@@ -61,7 +61,7 @@ DataWriter<d>::DataWriter(const ParameterDatabase& param_db)
       output_initial_index, ". It is assumed that both 'time_step_length' "
       "and 'n_steps_per_output' are the same in the previous and current simulations.");
   }
-};
+}
 
 template <int d>
 void DataWriter<d>::add_fe_function(const FEFunction* fefunction)

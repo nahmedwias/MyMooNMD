@@ -53,6 +53,7 @@ struct Template_names<2>
   typedef std::vector<MultiIndex2D> MultiIndex_vector;
   typedef BaseFunct2D BaseFunct;
   typedef CoeffFct2D CoeffFct;
+  typedef DoubleFunct2D DoubleFunction;
   typedef ManipulateFct2D ManipulateFct;
   typedef BoundCondFunct2D BoundaryConditionFunction;
   typedef BoundValueFunct2D BoundaryValuesFunction;
@@ -73,6 +74,7 @@ struct Template_names<3>
   typedef std::vector<MultiIndex3D> MultiIndex_vector;
   typedef BaseFunct3D BaseFunct;
   typedef CoeffFct3D CoeffFct;
+  typedef DoubleFunct3D DoubleFunction;
   typedef ManipulateFct3D ManipulateFct;
   typedef BoundCondFunct3D BoundaryConditionFunction;
   typedef BoundValueFunct3D BoundaryValuesFunction;
