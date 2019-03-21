@@ -21,7 +21,7 @@
 #include <string.h>
 
 /** Constructor */
-TFESpace1D::TFESpace1D(TCollection *coll, const std::string& name,
+TFESpace1D::TFESpace1D(const TCollection *coll, const std::string& name,
                        const std::string& description) :
      TFESpace(coll, name, description)
 {
@@ -36,7 +36,7 @@ TFESpace1D::TFESpace1D(TCollection *coll, const std::string& name,
 // =====================================================================
 
 /** constructor for building a space with elements of order k */
-TFESpace1D::TFESpace1D(TCollection *coll, const std::string& name,
+TFESpace1D::TFESpace1D(const TCollection *coll, const std::string& name,
                        const std::string& description, int ord)
  : TFESpace(coll, name, description)
 {
@@ -89,7 +89,7 @@ TFESpace1D::TFESpace1D(TCollection *coll, const std::string& name,
 }
 
 /** constructor for building a space with the given elements */
-TFESpace1D::TFESpace1D(TCollection *coll, const std::string& name,
+TFESpace1D::TFESpace1D(const TCollection *coll, const std::string& name,
                        const std::string& description, FE1D *fes)
  : TFESpace(coll, name, description)
 {

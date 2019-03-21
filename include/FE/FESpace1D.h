@@ -41,15 +41,15 @@ class TFESpace1D : public TFESpace
 
   public:
     /** constructor */
-    TFESpace1D(TCollection *coll, const std::string& name,
+    TFESpace1D(const TCollection *coll, const std::string& name,
                const std::string& description);
 
     /** constructor for building a space with elements of order k */
-    TFESpace1D(TCollection *coll, const std::string& name,
+    TFESpace1D(const TCollection *coll, const std::string& name,
                const std::string& description, int k);
 
     /** constructor for building a space with the given elements */
-    TFESpace1D(TCollection *coll, const std::string& name,
+    TFESpace1D(const TCollection *coll, const std::string& name,
                const std::string& description, FE1D *fes);
 
     /** destructor */
