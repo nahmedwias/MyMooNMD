@@ -38,7 +38,7 @@
 #endif
 
 /** Constructor */
-TFESpace3D::TFESpace3D(TCollection *coll, const std::string& name,
+TFESpace3D::TFESpace3D(const TCollection *coll, const std::string& name,
                        const std::string& description)
  : TFESpace(coll, name, description)
 {
@@ -55,7 +55,7 @@ TFESpace3D::TFESpace3D(TCollection *coll, const std::string& name,
 // =====================================================================
 
 /** constructor for building a space with elements of order k */
-TFESpace3D::TFESpace3D(TCollection *coll, const std::string& name,
+TFESpace3D::TFESpace3D(const TCollection *coll, const std::string& name,
                        const std::string& description,
                        BoundCondFunct3D *BoundaryCondition, int ord)
  : TFESpace(coll, name, description)
@@ -229,7 +229,7 @@ TFESpace3D::TFESpace3D(TCollection *coll, const std::string& name,
 }
 
 /** constructor for building a space with the given elements */
-TFESpace3D::TFESpace3D(TCollection *coll, const std::string& name,
+TFESpace3D::TFESpace3D(const TCollection *coll, const std::string& name,
                        const std::string& description,
                        BoundCondFunct3D *BoundaryCondition, FE3D *fes)
  : TFESpace(coll, name, description)
@@ -256,7 +256,7 @@ TFESpace3D::TFESpace3D(TCollection *coll, const std::string& name,
 }
 
 /** constructor for building a space with elements of order k */
-TFESpace3D::TFESpace3D(TCollection *coll, const std::string& name,
+TFESpace3D::TFESpace3D(const TCollection *coll, const std::string& name,
                        const std::string& description,
                        BoundCondFunct3D *BoundaryCondition, SpaceType type,
                        int ord)

@@ -60,20 +60,20 @@ class TFESpace2D : public TFESpace
 
   public:
     /** constructor */
-    TFESpace2D(TCollection *coll, const std::string& name,
+    TFESpace2D(const TCollection *coll, const std::string& name,
                const std::string& description);
 
     /** constructor for building a space with elements of order k */
-    TFESpace2D(TCollection *coll, const std::string& name,
+    TFESpace2D(const TCollection *coll, const std::string& name,
                const std::string& description,
                BoundCondFunct2D *BoundaryCondition, int k);
 
-    TFESpace2D(TCollection *coll, const std::string& name,
+    TFESpace2D(const TCollection *coll, const std::string& name,
                const std::string& description,
                BoundCondFunct2D *BoundaryCondition, SpaceType type, int k);
 
     /** constructor for building a space with the given elements */
-    TFESpace2D(TCollection *coll, const std::string& name,
+    TFESpace2D(const TCollection *coll, const std::string& name,
                const std::string& description,
                BoundCondFunct2D *BoundaryCondition, FE2D *fes);
 

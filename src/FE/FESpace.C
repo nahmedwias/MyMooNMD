@@ -17,7 +17,7 @@
 #include <FESpace.h>
 #include <MooNMD_Io.h>
 
-TFESpace::TFESpace(TCollection *coll,
+TFESpace::TFESpace(const TCollection *coll,
                    const std::string& name,
                    const std::string& description)
 :  Name(name), Description(description),
