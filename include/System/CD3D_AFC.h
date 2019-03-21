@@ -56,6 +56,7 @@ class CD3D_AFC : public CD3D
     
      /** @brief an interpolant of the exact solution onto the fe space */
     std::vector<double> exact_interpolant;
+    void AFC_checkParameters();
 
   public:
 
@@ -208,8 +209,6 @@ class CD3D_AFC : public CD3D
     
     //number of steps in anderson acceleration
     int kAnderson;
-        
-    void call_assembling_routine(SystemPerGrid& s, LocalAssembling3D& la);
 
 };
 

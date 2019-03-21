@@ -28,6 +28,7 @@
 #include <PostProcessing2D.h>
 
 class Multigrid;
+class LocalAssembling2D;
 
 class CD2D
 {
@@ -137,6 +138,8 @@ class CD2D
      * throws an exception.
      */
     void set_parameters();
+    
+    void call_assembling_routine(System_per_grid& s, LocalAssembling2D& la);
     
     
   public:

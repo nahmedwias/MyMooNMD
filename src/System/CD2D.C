@@ -174,27 +174,6 @@ void CD2D::set_parameters()
       db["problem_type"] = 1;
     }
   }
-  //////////////// Algebraic flux correction ////////////
-  
-  //How to access the TDatabase from CD2D_AFC?
-  if(!db["algebraic_flux_correction"].is("none"))
-  {                                               //some kind of afc enabled
-    if(!db["algebraic_flux_correction"].is("afc"))
-    {
-      db["algebraic_flux_correction"].set("afc");
-      Output::print("Only kind of algebraic flux correction"
-        " for CD problems is AFC (afc).");
-    }
-    //make sure that galerkin discretization is used
-    if (!db["space_discretization_type"].is("galerkin"))
-    {                                             //some other disctype than galerkin
-      db["space_discretization_type"] = "galerkin";
-      Output::warn<1>("Parameter 'space_discretization_type' changed to 'galerkin' "
-        "because Algebraic Flux Correction is enabled.");
-    }
-    // when using afc, create system matrices as if all dofs were active
-    TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE = 1;
-  }
 }
 
 
@@ -229,34 +208,17 @@ void CD2D::assemble()
     }
     else
       ErrThrow("space_discretization_type ", db["space_discretization_type"].get_name(), " not implemented !");
-
-    {
-      // create a local assembling object which is needed to assemble the matrix
-      //LocalAssembling2D la(t, &pointer_to_function, example.get_coeffs(),disc_type_code);
-      //disc_type_code = (int) db["space_discretization_type"];
-      Output::print<4>("assembling discretization ",disc_type_code);
-      la = std::make_shared<LocalAssembling2D>(t, &pointer_to_function, example.get_coeffs(),disc_type_code);
-    }
-    
-    // assemble the system matrix with given local assembling, solution and rhs
-    const TFESpace2D * fe_space = s.fe_space.get();
-    BoundCondFunct2D * boundary_conditions = fe_space->GetBoundCondition();
-    int N_Matrices = 1;
-    double * rhs_entries = s.rhs.get_entries();
-
+    // create a local assembling object which is needed to assemble the matrix
+    //LocalAssembling2D la(t, &pointer_to_function, example.get_coeffs(),disc_type_code);
+    //disc_type_code = (int) db["space_discretization_type"];
+    Output::print<4>("assembling discretization ",disc_type_code);
     std::vector<std::shared_ptr<FEMatrix>> blocks = s.matrix.get_blocks_uniquely();
+    la = std::make_shared<LocalAssembling2D>(t, &pointer_to_function, example.get_coeffs(),disc_type_code);
+    
     TSquareMatrix2D * matrix = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
-    BoundValueFunct2D * non_const_bound_value[1] {example.get_bd()[0]};
-
-    //Previous Implementation
-    {
-      s.rhs.reset();
-      matrix->reset();
-      Output::print<4>("call assemble");
-      // assemble
-      Assemble2D(1, &fe_space, N_Matrices, &matrix, 0, NULL, 1, &rhs_entries,
-                 &fe_space, &boundary_conditions, non_const_bound_value, *la);
-    }
+    
+    call_assembling_routine(s, *la);    
+   
     // apply local projection stabilization method
     if(db["space_discretization_type"].is("local_projection")
       && TDatabase::ParamDB->LP_FULL_GRADIENT>0)
@@ -275,7 +237,7 @@ void CD2D::assemble()
       if ((mdml && !finest_grid) || (db["space_discretization_type"].is("upwind")))
       {
         Output::print<2>("upwind for convection-diffusion equation");
-        UpwindForConvDiff(la->GetCoeffFct(), matrix, rhs_entries, fe_space,
+        UpwindForConvDiff(la->GetCoeffFct(), matrix, s.rhs.get_entries(), s.fe_space.get(),
           nullptr, nullptr, false);
       }
     }
@@ -383,4 +345,26 @@ double CD2D::get_SD_error() const
 double CD2D::get_L_inf_error() const
 {
   return this->errors[3];
+}
+
+/** ************************************************************************ */
+void CD2D::call_assembling_routine(System_per_grid& s, LocalAssembling2D& local_assem)
+{
+  // assemble the system matrix with given local assembling, solution and rhs
+    const TFESpace2D * fe_space = s.fe_space.get();
+    BoundCondFunct2D * boundary_conditions = fe_space->GetBoundCondition();
+    int N_Matrices = 1;
+    double * rhs_entries = s.rhs.get_entries();
+
+    std::vector<std::shared_ptr<FEMatrix>> blocks = s.matrix.get_blocks_uniquely();
+    TSquareMatrix2D * matrix = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
+    BoundValueFunct2D * non_const_bound_value[1] {example.get_bd()[0]};
+    
+    s.rhs.reset();
+    matrix->reset();
+    Output::print<4>("call assemble");
+    // assemble
+    Assemble2D(1, &fe_space, N_Matrices, &matrix, 0, NULL, 1, &rhs_entries,
+                 &fe_space, &boundary_conditions, non_const_bound_value, local_assem);
+  
 }

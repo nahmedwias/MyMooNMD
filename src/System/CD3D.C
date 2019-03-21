@@ -326,27 +326,7 @@ void CD3D::checkParameters()
     global_space_type=1;
   else
     ErrThrow("space_discretization_type ", db["space_discretization_type"].get_name(), " not implemented !");
-  
-  if(!db["algebraic_flux_correction"].is("none"))
-  {                                               //some kind of afc enabled
-    if(!db["algebraic_flux_correction"].is("afc"))
-    {
-      db["algebraic_flux_correction"].set("afc");
-      Output::print("Only kind of algebraic flux correction"
-        " for CD problems is AFC (afc).");
-    }
-    //make sure that galerkin discretization is used
-    if (!db["space_discretization_type"].is("galerkin"))
-    {                                             //some other disctype than galerkin
-      global_space_type=1;
-      Output::warn<1>("Parameter 'space_discretization_type' changed to 'galerkin' "
-        "because Algebraic Flux Correction is enabled.");
-    }/*
-    Why is this condition missing in 3D? 
-    // when using afc, create system matrices as if all dofs were active
-    TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE = 1;*/
-  }
-  
+ 
   //an error when using ansatz order 0
   if(TDatabase::ParamDB->ANSATZ_ORDER == 0)
   {
