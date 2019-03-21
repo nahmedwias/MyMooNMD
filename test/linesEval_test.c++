@@ -118,10 +118,12 @@ int main(int argc, char* argv[])
   }
   
   auto coll = domain.get_grid_collections().front();
-  FESpace fespace(coll, "dummy", "", all_dirichlet_boundary_condition, 2);
-  int length = fespace.GetN_DegreesOfFreedom();
+  
+  std::shared_ptr<const FESpace> fespace(
+    new FESpace(coll, "dummy", "", all_dirichlet_boundary_condition, 2));
+  int length = fespace->GetN_DegreesOfFreedom();
   std::vector<double> entries(length, 0);
-  FEFunction fefunction(&fespace, "testfunction", "", &entries[0], length);
+  FEFunction fefunction(fespace, "testfunction", "", &entries[0], length);
   fefunction.Interpolate(analytic_function);
 
   auto lines_eval_db = LinesEval<d>::default_lineseval_parameters();

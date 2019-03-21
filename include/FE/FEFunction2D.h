@@ -19,6 +19,7 @@
 #include <string.h>
 #include <vector>
 #include <functional>
+#include <memory>
 
 class TAuxParam2D;
 #include <FESpace2D.h>
@@ -40,7 +41,7 @@ class TFEFunction2D
     std::string Description;
 
     /** space to which this function belongs to */
-    const TFESpace2D *FESpace2D;
+    std::shared_ptr<const TFESpace2D> FESpace2D;
 
     /** double vector according to FE isomorphism */
     double *Values;
@@ -54,8 +55,9 @@ class TFEFunction2D
     TFEFunction2D();
 
     /** constructor with vector initialization */
-    TFEFunction2D(const TFESpace2D *fespace2D, const std::string& name,
-                  const std::string& description, double *values, int length);
+    TFEFunction2D(std::shared_ptr<const TFESpace2D> fespace2D,
+                  const std::string& name, const std::string& description,
+                  double *values, int length);
 
     /// Copy assignment operator. Shallow copy, as the
     /// FEFunction does not take any memory responsibility.
@@ -73,11 +75,11 @@ class TFEFunction2D
     { return Description; }
 
     /** return fe space */
-    const TFESpace2D *GetFESpace2D() const
+    std::shared_ptr<const TFESpace2D> GetFESpace2D() const
     { return FESpace2D; }
     
     /** return fe space */
-    const TFESpace *GetFESpace() const
+    std::shared_ptr<const TFESpace> GetFESpace() const
     { return FESpace2D; }
 
     /** return length */

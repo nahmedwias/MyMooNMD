@@ -1,17 +1,17 @@
 #include <SquareMatrix.h>
 
-TSquareMatrix::TSquareMatrix(const TFESpace1D * space)
+TSquareMatrix::TSquareMatrix(std::shared_ptr<const TFESpace1D> space)
  : FEMatrix(space)
 {
   
 }
-TSquareMatrix::TSquareMatrix(const TFESpace2D * space)
+TSquareMatrix::TSquareMatrix(std::shared_ptr<const TFESpace2D> space)
  : FEMatrix(space)
 {
   
 }
 #ifdef __3D__
-TSquareMatrix::TSquareMatrix(const TFESpace3D * space)
+TSquareMatrix::TSquareMatrix(std::shared_ptr<const TFESpace3D> space)
  : FEMatrix(space)
 {
   

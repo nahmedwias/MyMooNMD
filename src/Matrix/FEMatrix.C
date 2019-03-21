@@ -3,27 +3,28 @@
 #include <algorithm>
 
 
-FEMatrix::FEMatrix(const TFESpace1D * space)
+FEMatrix::FEMatrix(std::shared_ptr<const TFESpace1D> space)
 : FEMatrix(space, std::make_shared<TStructure>(space))
 {
   
 }
 
-FEMatrix::FEMatrix(const TFESpace2D * space)
+FEMatrix::FEMatrix(std::shared_ptr<const TFESpace2D> space)
 : FEMatrix(space, std::make_shared<TStructure>(space))
 {
   
 }
 
 #ifdef __3D__
-FEMatrix::FEMatrix(const TFESpace3D * space)
+FEMatrix::FEMatrix(std::shared_ptr<const TFESpace3D> space)
 : FEMatrix(space, std::make_shared<TStructure>(space))
 {
   
 }
 #endif // 3D
 
-FEMatrix::FEMatrix(const TFESpace2D * testspace, const TFESpace2D * ansatzspace, bool is_empty)
+FEMatrix::FEMatrix(std::shared_ptr<const TFESpace2D> testspace,
+                   std::shared_ptr<const TFESpace2D> ansatzspace, bool is_empty)
  : TMatrix(std::make_shared<TStructure>(testspace, ansatzspace, is_empty)),
    AnsatzSpace1D(nullptr), AnsatzSpace2D(ansatzspace), AnsatzSpace3D(nullptr),
    TestSpace1D(nullptr), TestSpace2D(testspace), TestSpace3D(nullptr)
@@ -32,7 +33,8 @@ FEMatrix::FEMatrix(const TFESpace2D * testspace, const TFESpace2D * ansatzspace,
 }
 
 #ifdef __3D__
-FEMatrix::FEMatrix(const TFESpace3D * testspace, const TFESpace3D * ansatzspace, bool is_empty)
+FEMatrix::FEMatrix(std::shared_ptr<const TFESpace3D> testspace,
+                   std::shared_ptr<const TFESpace3D> ansatzspace, bool is_empty)
 : TMatrix(std::make_shared<TStructure>(testspace, ansatzspace, is_empty)),
   AnsatzSpace1D(nullptr), AnsatzSpace2D(nullptr), AnsatzSpace3D(ansatzspace),
   TestSpace1D(nullptr), TestSpace2D(nullptr), TestSpace3D(testspace)
@@ -41,7 +43,7 @@ FEMatrix::FEMatrix(const TFESpace3D * testspace, const TFESpace3D * ansatzspace,
 }
 #endif // 3D
 
-FEMatrix::FEMatrix(const TFESpace1D * space,
+FEMatrix::FEMatrix(std::shared_ptr<const TFESpace1D> space,
                    std::shared_ptr<TStructure> structure)
 : TMatrix(structure),
   AnsatzSpace1D(space), AnsatzSpace2D(nullptr), AnsatzSpace3D(nullptr),
@@ -57,7 +59,7 @@ FEMatrix::FEMatrix(const TFESpace1D * space,
   }
 }
 
-FEMatrix::FEMatrix(const TFESpace2D * space,
+FEMatrix::FEMatrix(std::shared_ptr<const TFESpace2D> space,
                    std::shared_ptr<TStructure> structure)
 : TMatrix(structure),
   AnsatzSpace1D(nullptr), AnsatzSpace2D(space), AnsatzSpace3D(nullptr),
@@ -74,7 +76,7 @@ FEMatrix::FEMatrix(const TFESpace2D * space,
 }
 
 #ifdef __3D__
-FEMatrix::FEMatrix(const TFESpace3D * space,
+FEMatrix::FEMatrix(std::shared_ptr<const TFESpace3D> space,
                    std::shared_ptr<TStructure> structure)
 : TMatrix(structure),
   AnsatzSpace1D(nullptr), AnsatzSpace2D(nullptr), AnsatzSpace3D(space),
@@ -192,39 +194,39 @@ int FEMatrix::GetActiveBound() const
   return structure->GetActiveBound();
 }
 
-const TFESpace1D *FEMatrix::GetTestSpace1D() const
+std::shared_ptr<const TFESpace1D> FEMatrix::GetTestSpace1D() const
 {
   return TestSpace1D;
 }
 
-const TFESpace1D *FEMatrix::GetAnsatzSpace1D() const
+std::shared_ptr<const TFESpace1D> FEMatrix::GetAnsatzSpace1D() const
 {
   return AnsatzSpace1D;
 }
 
-const TFESpace2D *FEMatrix::GetTestSpace2D() const
+std::shared_ptr<const TFESpace2D> FEMatrix::GetTestSpace2D() const
 {
   return TestSpace2D;
 }
 
-const TFESpace2D *FEMatrix::GetAnsatzSpace2D() const
+std::shared_ptr<const TFESpace2D> FEMatrix::GetAnsatzSpace2D() const
 {
   return AnsatzSpace2D;
 }
 
 #ifdef __3D__
-const TFESpace3D *FEMatrix::GetTestSpace3D() const
+std::shared_ptr<const TFESpace3D> FEMatrix::GetTestSpace3D() const
 {
   return TestSpace3D;
 }
 
-const TFESpace3D *FEMatrix::GetAnsatzSpace3D() const
+std::shared_ptr<const TFESpace3D> FEMatrix::GetAnsatzSpace3D() const
 {
   return AnsatzSpace3D;
 }
 #endif // 3D
 
-const TFESpace *FEMatrix::GetTestSpace() const
+std::shared_ptr<const TFESpace> FEMatrix::GetTestSpace() const
 {
   if(TestSpace1D)
   {
@@ -240,7 +242,7 @@ const TFESpace *FEMatrix::GetTestSpace() const
   }
 }
 
-const TFESpace *FEMatrix::GetAnsatzSpace() const
+std::shared_ptr<const TFESpace> FEMatrix::GetAnsatzSpace() const
 {
   if(AnsatzSpace1D)
   {
@@ -256,7 +258,7 @@ const TFESpace *FEMatrix::GetAnsatzSpace() const
   }
 }
 
-const TFESpace1D *FEMatrix::GetFESpace1D() const
+std::shared_ptr<const TFESpace1D> FEMatrix::GetFESpace1D() const
 {
   if(this->structure->isSquare())
     return TestSpace1D;
@@ -264,7 +266,7 @@ const TFESpace1D *FEMatrix::GetFESpace1D() const
     ErrThrow("accessing FESpace for non-square matrix, but which one?");
 }
 
-const TFESpace2D *FEMatrix::GetFESpace2D() const
+std::shared_ptr<const TFESpace2D> FEMatrix::GetFESpace2D() const
 {
   if(this->structure->isSquare())
     return TestSpace2D;
@@ -273,7 +275,7 @@ const TFESpace2D *FEMatrix::GetFESpace2D() const
 }
 
 #ifdef __3D__
-const TFESpace3D *FEMatrix::GetFESpace3D() const
+std::shared_ptr<const TFESpace3D> FEMatrix::GetFESpace3D() const
 {
   if(this->structure->isSquare())
     return TestSpace3D;

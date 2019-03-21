@@ -64,7 +64,6 @@ TFEFunction2D *u1, TFEFunction2D *u2)
   int i,j,k,l,m,n, N_Cells, N_Vertices;
   double *u1vect, *u2vect;
   int *GlobalNumbers, *BeginIndex, *DOF;
-  const TFESpace2D *fespace;
 //  double FctValNQuad[4][4] =
 //  {
 //    {
@@ -146,7 +145,7 @@ TFEFunction2D *u1, TFEFunction2D *u2)
   Entries = sqmatrix->GetEntries();
 
   // get finite element space for velocity
-  fespace = u1->GetFESpace2D();
+  auto fespace = u1->GetFESpace2D();
   // get arrays with the numbering of the dof
   GlobalNumbers = fespace->GetGlobalNumbers();
   BeginIndex = fespace->GetBeginIndex();

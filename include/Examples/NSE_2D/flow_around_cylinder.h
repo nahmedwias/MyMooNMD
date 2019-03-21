@@ -139,7 +139,6 @@ void GetCdCl(TFEFunction2D *u1fct, TFEFunction2D *u2fct,
   double **OrigFEValues, *Orig;
   bool SecondDer[2] = { false, false };
   double *u1, *u2, *p;
-  const TFESpace2D *USpace, *PSpace;
   int *UGlobalNumbers, *UBeginIndex;
   int *PGlobalNumbers, *PBeginIndex;
   int *N_BaseFunct, N_Cells;
@@ -168,8 +167,8 @@ void GetCdCl(TFEFunction2D *u1fct, TFEFunction2D *u2fct,
   u2 = u2fct->GetValues();
   p = pfct->GetValues();
 
-  USpace = u1fct->GetFESpace2D();
-  PSpace = pfct->GetFESpace2D();
+  auto USpace = u1fct->GetFESpace2D();
+  auto PSpace = pfct->GetFESpace2D();
 
   UGlobalNumbers = USpace->GetGlobalNumbers();
   UBeginIndex = USpace->GetBeginIndex();

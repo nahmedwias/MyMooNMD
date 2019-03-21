@@ -14,7 +14,7 @@
 
 
 /* generate the matrix structure, both space are 1D */
-TStructure::TStructure( const TFESpace1D * space )
+TStructure::TStructure(std::shared_ptr<const TFESpace1D> space)
 : TStructure()
 {
   int i,j,k,l,n,N_, n1,n2, m;
@@ -280,7 +280,7 @@ TStructure::TStructure( const TFESpace1D * space )
 
 
 /* generate the matrix structure, both space are 2D */
-TStructure::TStructure( const TFESpace2D* space )
+TStructure::TStructure(std::shared_ptr<const TFESpace2D> space)
 : TStructure()
 {
   int i,j,k,l,n,N_, n1,n2,m,p,q,r;
@@ -832,7 +832,7 @@ TStructure::TStructure( const TFESpace2D* space )
 
 #ifdef __3D__
 /* generate the matrix structure, both spaces are 3D */
-TStructure::TStructure( const TFESpace3D *space )
+TStructure::TStructure(std::shared_ptr<const TFESpace3D> space)
 {
   int i,j,k,l,n,N_, n1, m; 
   int *Numbers;
@@ -1290,8 +1290,9 @@ TStructure::TStructure( const TFESpace3D *space )
 
 
 /* generate the matrix structure, both spaces are 2D */
-TStructure::TStructure(const TFESpace2D* testspace,
-                       const TFESpace2D* ansatzspace, bool is_empty)
+TStructure::TStructure(std::shared_ptr<const TFESpace2D> testspace,
+                       std::shared_ptr<const TFESpace2D> ansatzspace,
+                       bool is_empty)
  : TStructure()
 {
   nRows = testspace->GetN_DegreesOfFreedom();
@@ -1716,7 +1717,9 @@ TStructure::TStructure(const TFESpace2D* testspace,
 
 #ifdef __3D__
 /* generate the matrix structure, both spaces are 3D */
-TStructure::TStructure(const TFESpace3D *testspace, const TFESpace3D *ansatzspace, bool is_empty)
+TStructure::TStructure(std::shared_ptr<const TFESpace3D> testspace,
+                       std::shared_ptr<const TFESpace3D> ansatzspace,
+                       bool is_empty)
  : TStructure()
 {
   nRows = testspace->GetN_DegreesOfFreedom();
@@ -1937,8 +1940,10 @@ TStructure::TStructure(const TFESpace3D *testspace, const TFESpace3D *ansatzspac
 
 /* generate the matrix structure, both spaces are 2D */
 /* both spaces are defined on different grids */
-TStructure::TStructure(const TFESpace2D * testspace, int test_level,
-                       const TFESpace2D * ansatzspace, int ansatz_level)
+TStructure::TStructure(std::shared_ptr<const TFESpace2D> testspace,
+                       int test_level,
+                       std::shared_ptr<const TFESpace2D> ansatzspace,
+                       int ansatz_level)
 {
   TCollection *coll_coarse, *coll_fine;
   const TBaseCell *cell_coarse, *cell_fine;

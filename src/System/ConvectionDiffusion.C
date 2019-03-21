@@ -49,14 +49,14 @@ ConvectionDiffusion<d>::SystemPerGrid::SystemPerGrid(
   fe_space->get_communicator().print_info();
 #endif // _MPI
 #ifdef __3D__
-  matrix = BlockFEMatrix::CD3D(*fe_space);
+  matrix = BlockFEMatrix::CD3D(fe_space);
 #else
-  matrix = BlockFEMatrix::CD2D(*fe_space);
+  matrix = BlockFEMatrix::CD2D(fe_space);
 #endif
 
   rhs = BlockVector(this->matrix, true);
   solution = BlockVector(this->matrix, false);
-  fe_function = FEFunction(fe_space.get(), "c", "c", solution.get_entries(),
+  fe_function = FEFunction(fe_space, "c", "c", solution.get_entries(),
                            solution.length());
 }
 

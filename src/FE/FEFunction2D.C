@@ -56,7 +56,7 @@ TFEFunction2D::TFEFunction2D() :
 }
 
 /** constructor with vector initialization */
-TFEFunction2D::TFEFunction2D(const TFESpace2D *fespace2D,
+TFEFunction2D::TFEFunction2D(std::shared_ptr<const TFESpace2D> fespace2D,
                              const std::string& name,
                              const std::string& description, double *values,
                              int length)
