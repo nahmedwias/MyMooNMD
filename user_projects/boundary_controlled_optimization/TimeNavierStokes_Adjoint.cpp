@@ -27,9 +27,9 @@ bool restricted_curl_functional;
 
 
 constexpr double diagonal_scaling = 1.e30;
-void tnse_adjoint::zero_solution(double x, double y, 
+void tnse_adjoint::zero_solution(double, double , 
 #ifdef __3D__     
-                   double z,
+                   double,
 #endif
                    double *values)
 {
@@ -73,13 +73,7 @@ TimeNavierStokes_Adjoint<d>::TimeNavierStokes_Adjoint(const TimeNavierStokes<d>&
 template<int d>
 void TimeNavierStokes_Adjoint<d>::assemble_initial_time(const FEVectFunct& u,
                                                         const FEFunction& p)
-{
-  using SquareMatrixD = typename Template_names<d>::SquareMatrixD;
-  using MatrixD = typename Template_names<d>::MatrixD;
-  using BoundaryConditionFunction 
-    = typename Template_names<d>::BoundaryConditionFunction;
-    
-    
+{    
   // Preliminary verifications
   if(this->systems.size() > 1)
   {
@@ -91,18 +85,7 @@ void TimeNavierStokes_Adjoint<d>::assemble_initial_time(const FEVectFunct& u,
     ErrThrow("The adjoint problem requires a full matrix structure. Please set "
             "'NSTYPE' to 4");
   }
-  const FESpace * v_space = this->TimeNavierStokes<d>::systems.front().velocity_space.get();
-  const FESpace * p_space = this->TimeNavierStokes<d>::systems.front().pressure_space.get();
-#ifdef __2D__  
-  if(u.GetFESpace2D() != v_space || p.GetFESpace2D() != p_space)
-#else
-  if(u.GetFESpace3D() != v_space || p.GetFESpace3D() != p_space)
-#endif
-  {
-    ErrThrow("primal and adjoint solutions should be defined on the same FE "
-             "Space");
-  }
-  
+
   //=======================================================================
   // Assemble linear terms from TimeNavierStokes class and mass matrix
   for(auto &s : this->systems)
@@ -142,6 +125,66 @@ void TimeNavierStokes_Adjoint<d>::assemble_initial_time(const FEVectFunct& u,
   //=======================================================================
   // assemble additional terms, which depend on the primal solution (u,p)
   // what follows is basically a wrapper to call Assemble2D or 3D
+  this->assemble_adjoint_terms(u,p);
+  
+  //======================================================================= 
+  // MANAGE OLD_RHS AND FREE SLIP
+  
+  // the call to assembleslip is necessary here, in order to get
+  // the correct old_rhs, i.e., zeros on the slip dofs
+  //if(TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION >=1)
+  //  this->modify_slip_bc(true, true);
+   
+  // copy the current right hand side vector to the old_rhs
+  this->old_rhs = this->systems.front().rhs;
+}
+
+
+template<int d>
+void TimeNavierStokes_Adjoint<d>::assemble_matrices_rhs(const FEVectFunct& u,
+                                                        const FEFunction& p)
+{
+
+}
+
+template<int d>
+void TimeNavierStokes_Adjoint<d>::solve()
+{
+  this->TimeNavierStokes<d>::solve();
+  
+  //System_per_grid& s = this->TimeNavierStokes<d>.systems.front();
+  std::vector<std::shared_ptr<FEMatrix>> blocks = this->TimeNavierStokes<d>::systems.front().matrix.get_blocks_uniquely(
+    {{0,0},{1,1}});
+  for(auto mat : blocks)
+  {
+    mat->scale_non_active_diagonals(1./diagonal_scaling);
+  }
+}
+
+template<int d>
+void TimeNavierStokes_Adjoint<d>::assemble_adjoint_terms(const FEVectFunct& u,
+                                                        const FEFunction& p)
+{
+  using SquareMatrixD = typename Template_names<d>::SquareMatrixD;
+  using MatrixD = typename Template_names<d>::MatrixD;
+  using BoundaryConditionFunction 
+    = typename Template_names<d>::BoundaryConditionFunction;
+    
+  const FESpace * v_space = this->TimeNavierStokes<d>::systems.front().velocity_space.get();
+  const FESpace * p_space = this->TimeNavierStokes<d>::systems.front().pressure_space.get();
+#ifdef __2D__  
+  if(u.GetFESpace2D() != v_space || p.GetFESpace2D() != p_space)
+#else
+  if(u.GetFESpace3D() != v_space || p.GetFESpace3D() != p_space)
+#endif
+  {
+    ErrThrow("primal and adjoint solutions should be defined on the same FE "
+             "Space");
+  }
+    
+  //=======================================================================
+  // assemble additional terms, which depend on the primal solution (u,p)
+  // what follows is basically a wrapper to call Assemble2D or 3D
   this->systems.front().rhs.reset();
   auto n_fe_spaces = 1;
   const FESpace* fe_spaces[1]{v_space};
@@ -167,9 +210,9 @@ void TimeNavierStokes_Adjoint<d>::assemble_initial_time(const FEVectFunct& u,
   
   auto n_rhs = d; // the velocity components on the right-hand side
   double *rhs[d] = {this->TimeNavierStokes<d>::systems.front().rhs.block(0), 
-		    this->TimeNavierStokes<d>::systems.front().rhs.block(1)
+                    this->TimeNavierStokes<d>::systems.front().rhs.block(1)
 #ifdef __3D__
-		   ,this->TimeNavierStokes<d>::systems.front().rhs.block(2)
+                   ,this->TimeNavierStokes<d>::systems.front().rhs.block(2)
 #endif
   };
   const FESpace *fe_rhs[d+1] = {v_space, v_space
@@ -256,41 +299,9 @@ void TimeNavierStokes_Adjoint<d>::assemble_initial_time(const FEVectFunct& u,
 #endif
   {
     mat->scale_non_active_diagonals(diagonal_scaling);
-  }
-  
-  //======================================================================= 
-  // MANAGE OLD_RHS AND FREE SLIP
-  
-  // the call to assembleslip is necessary here, in order to get
-  // the correct old_rhs, i.e., zeros on the slip dofs
-  //if(TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION >=1)
-  //  this->modify_slip_bc(true, true);
-   
-  // copy the current right hand side vector to the old_rhs
-  this->old_rhs = this->systems.front().rhs;
+  }     
 }
 
-
-template<int d>
-void TimeNavierStokes_Adjoint<d>::assemble_matrices_rhs(const FEVectFunct& u,
-                                                        const FEFunction& p)
-{
-
-}
-
-template<int d>
-void TimeNavierStokes_Adjoint<d>::solve()
-{
-  this->TimeNavierStokes<d>::solve();
-  
-  //System_per_grid& s = this->TimeNavierStokes<d>.systems.front();
-  std::vector<std::shared_ptr<FEMatrix>> blocks = this->TimeNavierStokes<d>::systems.front().matrix.get_blocks_uniquely(
-    {{0,0},{1,1}});
-  for(auto mat : blocks)
-  {
-    mat->scale_non_active_diagonals(1./diagonal_scaling);
-  }
-}
 
 template <int d>
 void tnse_adjoint::adjoint_assembling(double Mult, double *coeff, double *param, double hK,
@@ -400,7 +411,7 @@ void tnse_adjoint::adjoint_assembling(double Mult, double *coeff, double *param,
         val = test * u2z * ansatz;
         MatrixA32[i][j] += Mult * val;
         
-        val = test * u2z * ansatz;
+        val = test * u3z * ansatz;
         val += (u1 * test_x + u2 * test_y + u3 * test_z) * ansatz;
         MatrixA33[i][j] += Mult * val;
       }
