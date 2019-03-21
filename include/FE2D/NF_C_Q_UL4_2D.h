@@ -150,7 +150,7 @@ static double NF_C_Q_UL4_2D_W26[] = {
 };
 
 
-void NF_C_Q_UL4_2D_EvalAll(TCollection *, TBaseCell *,
+void NF_C_Q_UL4_2D_EvalAll(TCollection *, const TBaseCell *,
                            const double *PointValues, double *Functionals)
 {
   // point values on the boundary: 0 - 15
@@ -432,7 +432,7 @@ void NF_C_Q_UL4_2D_EvalAll(TCollection *, TBaseCell *,
                    +NF_C_Q_UL4_2D_W26[24]*PointValues[40];
 }
 
-void NF_C_Q_UL4_2D_EvalEdge(TCollection *, TBaseCell *, int,
+void NF_C_Q_UL4_2D_EvalEdge(TCollection *, const TBaseCell *, int,
                             const double *PointValues, double *Functionals)
 {
   memcpy(Functionals, PointValues, 5*SizeOfDouble);

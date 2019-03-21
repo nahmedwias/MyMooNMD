@@ -168,10 +168,10 @@ if(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL OR ${PARMOON_PARALLEL_TYPE} STRE
   list(APPEND parmoon_tests ParMooN_test_darcy3d)
 
   #brinkman2d test
-  add_executable(ParMooN_test_brinkman2d brinkman2d_test.c++)
-  target_link_libraries(ParMooN_test_brinkman2d parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
-  add_test(brinkman2d ParMooN_test_brinkman2d)
-  list(APPEND parmoon_tests ParMooN_test_brinkman2d)
+#   add_executable(ParMooN_test_brinkman2d brinkman2d_test.c++)
+#   target_link_libraries(ParMooN_test_brinkman2d parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
+#   add_test(brinkman2d ParMooN_test_brinkman2d)
+#   list(APPEND parmoon_tests ParMooN_test_brinkman2d)
 
   #nse2d test
   add_executable(ParMooN_test_nse2d nse2d_test.c++)
@@ -328,6 +328,20 @@ if(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL OR ${PARMOON_PARALLEL_TYPE} STRE
                         ${_EXTERN_LIBRARIES})
   add_test(lineseval3d ParMooN_test_linesEval3d)
   list(APPEND parmoon_tests ParMooN_test_linesEval3d)
+  
+  # collection tests 2d and 3d
+  add_executable(ParMooN_test_collection_2d collection_test.c++)
+  target_link_libraries(ParMooN_test_collection_2d
+                        parmoon_2d_${PARMOON_PARALLEL_TYPE}
+                        ${_EXTERN_LIBRARIES})
+  add_test(collection2d ParMooN_test_collection_2d)
+  list(APPEND parmoon_tests ParMooN_test_collection_2d)
+  add_executable(ParMooN_test_collection_3d collection_test.c++)
+  target_link_libraries(ParMooN_test_collection_3d
+                        parmoon_3d_${PARMOON_PARALLEL_TYPE}
+                        ${_EXTERN_LIBRARIES})
+  add_test(collection3d ParMooN_test_collection_3d)
+  list(APPEND parmoon_tests ParMooN_test_collection_3d)
 
   #snapshots, POD and ROM tests 2d
   add_executable(ParMooN_test_snaps_pod_rom2d snaps_pod_rom_test.c++)

@@ -32,7 +32,7 @@ Saddle_point_preconditioner::Saddle_point_preconditioner(
   : spp_type(t), M(&m), velocity_block(), pressure_block(), 
     pressure_mass(), gradient_block(nullptr),
     divergence_block(nullptr), velocity_solver(nullptr), inverse_diagonal(), 
-    velocity_space(&m.get_row_space(0)), pressure_space(nullptr),
+    velocity_space(m.get_row_space(0)), pressure_space(nullptr),
     damping_factor(1.0), gamma(1.), Poisson_solver_matrix(nullptr),
     Poisson_solver(nullptr), up_star(m), bdryCorrectionMatrix_(),
     poissonMatrixBdry_(nullptr), poissonSolverBdry_(nullptr)
@@ -50,7 +50,7 @@ Saddle_point_preconditioner::Saddle_point_preconditioner(
 	size_t n_rows = this->M->get_n_cell_rows();
 	size_t n_cols = this->M->get_n_cell_columns();
 
-	pressure_space = &m.get_row_space(n_rows - 1);
+	pressure_space = m.get_row_space(n_rows - 1);
 	if(n_rows < 2 || n_cols != n_rows)
 		ErrThrow("can not create a Saddle_point_preconditioner with this matrix");
 	if(n_rows == 2 && this->spp_type == Saddle_point_preconditioner::type::bd_lsc)
@@ -813,9 +813,9 @@ void Saddle_point_preconditioner::fill_pressure_mass_matrix()
     //FESpace* neumann_velocity_space = 
     //  this->velocity_space->copy_with_all_Neumann_boundary();
     //const FESpace* v_space = neumann_velocity_space;
-    const FESpace* q_space = this->pressure_space;
+    auto q_space = this->pressure_space.get();
 
-    SqMat one_block_of_mass_matrix(q_space);
+    SqMat one_block_of_mass_matrix(this->pressure_space);
 
     sq_matrices[0] =  &one_block_of_mass_matrix;
     int n_rect_mat = 0; // only square matrices
@@ -837,7 +837,7 @@ void Saddle_point_preconditioner::fill_pressure_mass_matrix()
         n_rect_mat, rect_matrices, n_rhs, rhs, fe_spaces_rhs,
         boundary_conditions, non_const_bound_values, la);
 
-    BlockFEMatrix pressure_mass_matrix({q_space});
+    BlockFEMatrix pressure_mass_matrix({this->pressure_space});
     pressure_mass_matrix.replace_blocks(one_block_of_mass_matrix,
         {{0,0}}, {false});
 #else
@@ -845,7 +845,7 @@ void Saddle_point_preconditioner::fill_pressure_mass_matrix()
                n_rect_mat, rect_matrices, n_rhs, rhs, fe_spaces_rhs,
                boundary_conditions, non_const_bound_values, la);
 
-    BlockFEMatrix pressure_mass_matrix({q_space});
+    BlockFEMatrix pressure_mass_matrix({this->pressure_space});
     pressure_mass_matrix.replace_blocks(one_block_of_mass_matrix,
         {{0,0}}, {false});
 #endif
@@ -943,9 +943,9 @@ void Saddle_point_preconditioner::fill_inverse_diagonal()
     //FESpace* neumann_velocity_space = 
     //  this->velocity_space->copy_with_all_Neumann_boundary();
     //const FESpace* v_space = neumann_velocity_space;
-    const FESpace* v_space = this->velocity_space;
+    const FESpace* v_space = this->velocity_space.get();
     
-    SqMat one_block_of_mass_matrix(v_space);
+    SqMat one_block_of_mass_matrix(this->velocity_space);
     
     sq_matrices[0] =  &one_block_of_mass_matrix;
     int n_rect_mat = 0; // only square matrices
@@ -970,7 +970,7 @@ void Saddle_point_preconditioner::fill_inverse_diagonal()
     Assemble2D(n_fe_spaces, &v_space, n_matrices, sq_matrices,
                n_rect_mat, rect_matrices, n_rhs, rhs, fe_spaces_rhs,
                boundary_conditions, non_const_bound_values, la);
-    BlockFEMatrix mass_matrix({v_space, v_space});
+    BlockFEMatrix mass_matrix({this->velocity_space, this->velocity_space});
     mass_matrix.replace_blocks(one_block_of_mass_matrix,
                                {{0,0}, {1,1}}, {false, false});
 #else
@@ -982,7 +982,8 @@ void Saddle_point_preconditioner::fill_inverse_diagonal()
     Assemble3D(n_fe_spaces, &v_space, n_matrices, sq_matrices,
                n_rect_mat, rect_matrices, n_rhs, rhs, fe_spaces_rhs,
                boundary_conditions, non_const_bound_values, la);
-    BlockFEMatrix mass_matrix({v_space, v_space, v_space});
+    BlockFEMatrix mass_matrix({this->velocity_space, this->velocity_space,
+                               this->velocity_space});
     mass_matrix.replace_blocks(one_block_of_mass_matrix,
                                {{0,0}, {1,1}, {2,2}}, {false, false, false});
 #endif
@@ -1016,7 +1017,7 @@ void Saddle_point_preconditioner::computeBdryCorrectionMatrix(
   double epsilon = 0.1;
   
   // just a simple check
-  if(this->velocity_space != &m.get_row_space(0))
+  if(this->velocity_space != m.get_row_space(0))
     ErrThrow("bd_lsc preconditioner: matrix has wrong fe space");
   
   //Hold a reference to the TCollection underlying the problem
@@ -1113,7 +1114,7 @@ void Saddle_point_preconditioner::computeBdryCorrectionMatrix(
   double epsilon = 0.1;
   
   // just a simple check
-  if(this->velocity_space != &m.get_row_space(0))
+  if(this->velocity_space.get() != m.get_row_space(0).get())
     ErrThrow("bd_lsc preconditioner: matrix has wrong fe space");
   
   //Hold a reference to the TCollection underlying the problem

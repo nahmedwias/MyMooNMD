@@ -28,7 +28,7 @@ static double NF_C_Q_Q3_2D_Eta[] = { -1, -1, -1, -1,
 static double NF_C_Q_Q3_2D_T[] = { -1, -0.33333333333333333333,
                                  0.33333333333333333333, 1 };
 
-void NF_C_Q_Q3_2D_EvalAll(TCollection *, TBaseCell *,
+void NF_C_Q_Q3_2D_EvalAll(TCollection *, const TBaseCell *,
                           const double *PointValues, double *Functionals)
 {
 /*
@@ -52,7 +52,7 @@ void NF_C_Q_Q3_2D_EvalAll(TCollection *, TBaseCell *,
   memcpy(Functionals, PointValues, 16*SizeOfDouble);
 }
 
-void NF_C_Q_Q3_2D_EvalEdge(TCollection *, TBaseCell *, int,
+void NF_C_Q_Q3_2D_EvalEdge(TCollection *, const TBaseCell *, int,
                            const double *PointValues, double *Functionals)
 {
 /*

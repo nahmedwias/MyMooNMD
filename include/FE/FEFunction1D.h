@@ -13,9 +13,9 @@
 #ifndef __FEFUNCTION1D__
 #define __FEFUNCTION1D__
 
-#include <AllClasses.h>
 #include <FESpace1D.h>
 #include <Constants.h>
+#include <memory>
 
 /** a function from a finite element space */
 class TFEFunction1D
@@ -28,7 +28,7 @@ class TFEFunction1D
     std::string Description;
 
     /** space to which this function belongs to */
-    TFESpace1D *FESpace1D;
+    std::shared_ptr<TFESpace1D> FESpace1D;
 
     /** double vector according to FE isomorphism */
     double *Values;
@@ -38,8 +38,9 @@ class TFEFunction1D
 
   public:
     /** constructor with vector initialization */
-    TFEFunction1D(TFESpace1D *fespace1D, const std::string& name,
-                  const std::string& description, double *values, int length);
+    TFEFunction1D(std::shared_ptr<TFESpace1D> fespace1D,
+                  const std::string& name, const std::string& description,
+                  double *values, int length);
 
     /** destructor */
     ~TFEFunction1D();
@@ -53,7 +54,7 @@ class TFEFunction1D
     { return Description; }
 
     /** return fe space */
-    TFESpace1D *GetFESpace1D()
+    std::shared_ptr<TFESpace1D> GetFESpace1D()
     { return FESpace1D; }
 
     /** return length */

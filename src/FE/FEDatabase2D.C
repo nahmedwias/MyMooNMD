@@ -1718,13 +1718,12 @@ void TFEDatabase2D::GenerateArrays()
 RefTrans2D TFEDatabase2D::GetOrig(int N_LocalUsedElements, 
                           FE2D *LocalUsedElements,
                           TCollection *Coll,
-                          TBaseCell *cell, bool *Needs2ndDer,
+                          const TBaseCell *cell, bool *Needs2ndDer,
                           int &N_Points, const double* &xi, const double* &eta, 
                           const double* &weights, double* X, double* Y,
                           double* absdetjk)
 {
   BaseFunct2D BaseFuncts[N_FEs2D];
-  TJoint *joint;
   BaseFunct2D BaseFunct;
   double **origvaluesD00, **origvaluesD10, **origvaluesD01;
   double **origvaluesD20, **origvaluesD11, **origvaluesD02;
@@ -1948,17 +1947,17 @@ RefTrans2D TFEDatabase2D::GetOrig(int N_LocalUsedElements,
   {
     for(int i=0;i<N_Edges;i++)
     {
-      joint = cell->GetJoint(i);
+      auto joint = cell->GetJoint(i);
         JointType jointtype = joint->GetType();
       if(jointtype == BoundaryEdge)
       {
-        BoundTypes bdtype = ((TBoundEdge *)(joint))->GetBoundComp()->GetType();
+        BoundTypes bdtype = ((const TBoundEdge *)(joint))->GetBoundComp()->GetType();
         if(bdtype != Line)
           IsIsoparametric = true;
       }
       if(jointtype == InterfaceJoint)
       {
-        BoundTypes bdtype = ((TInterfaceJoint *)(joint))->GetBoundComp()->GetType();
+        BoundTypes bdtype = ((const TInterfaceJoint *)(joint))->GetBoundComp()->GetType();
         if(bdtype != Line)
           IsIsoparametric = true;
       }
@@ -2088,7 +2087,7 @@ RefTrans2D TFEDatabase2D::GetOrig(int N_LocalUsedElements,
     on the original element */
 void TFEDatabase2D::GetOrigValues(RefTrans2D RefTrans,
                 double xi, double eta, TBaseFunct2D *bf,
-                TCollection *Coll, TGridCell *cell,
+                TCollection *Coll, const TGridCell *cell,
                 double *uref, double *uxiref, double *uetaref,
                 double *uorig, double *uxorig, double *uyorig)
 {

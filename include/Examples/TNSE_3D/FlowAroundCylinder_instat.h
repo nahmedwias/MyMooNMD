@@ -169,7 +169,6 @@ void get_cdrag_clift(TFEFunction3D *u1fct, TFEFunction3D *u2fct,
   double **OrigFEValues, *Orig;
   bool SecondDer[2] = { false, false };
   double *u1, *u2, *u3, *p;
-  const TFESpace3D *USpace, *PSpace;
   int *UGlobalNumbers, *UBeginIndex;
   int *PGlobalNumbers, *PBeginIndex;
   int *N_BaseFunct, N_Cells;
@@ -203,8 +202,8 @@ void get_cdrag_clift(TFEFunction3D *u1fct, TFEFunction3D *u2fct,
   u3 = u3fct->GetValues();
   p = pfct->GetValues();
 
-  USpace = u1fct->GetFESpace3D();
-  PSpace = pfct->GetFESpace3D();
+  auto USpace = u1fct->GetFESpace3D();
+  auto PSpace = pfct->GetFESpace3D();
 
   UGlobalNumbers = USpace->GetGlobalNumbers();
   UBeginIndex = USpace->GetBeginIndex();

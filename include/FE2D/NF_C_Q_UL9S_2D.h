@@ -18,13 +18,13 @@ static double NF_C_Q_UL9S_2D_Eta[] = {
 static double NF_C_Q_UL9S_2D_T[] = {
 -1.0 ,-7.0/9.0 ,-5.0/9.0 ,-1.0/3.0 ,-1.0/9.0 ,1.0/9.0 ,1.0/3.0 ,5.0/9.0 ,7.0/9.0 ,1.0 };
 
-void NF_C_Q_UL9S_2D_EvalAll(TCollection *, TBaseCell *,
+void NF_C_Q_UL9S_2D_EvalAll(TCollection *, const TBaseCell *,
                             const double *PointValues, double *Functionals)
 {
   memcpy(Functionals, PointValues, 87*SizeOfDouble);
 }
 
-void NF_C_Q_UL9S_2D_EvalEdge(TCollection *, TBaseCell *, int,
+void NF_C_Q_UL9S_2D_EvalEdge(TCollection *, const TBaseCell *, int,
                              const double *PointValues, double *Functionals)
 {
   memcpy(Functionals, PointValues, 10*SizeOfDouble);

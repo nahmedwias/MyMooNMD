@@ -109,7 +109,7 @@ class TDiscreteForm2D
                        double hK, double *X, double *Y,
                        int *N_BaseFuncts, BaseFunct2D *BaseFuncts, 
                        double **Parameters, double **AuxArray,
-                       TBaseCell *Cell, int N_Matrices, int N_Rhs,
+                       const TBaseCell *Cell, int N_Matrices, int N_Rhs,
                        double ***LocMatrix, double **LocRhs,
                        double factor = 1.);
     
@@ -120,7 +120,7 @@ class TDiscreteForm2D
     void GetLocalForms(int N_Points, const double *weights, double *AbsDetjk,
                         double hK, double *X, double *Y,
                         int *N_BaseFuncts, BaseFunct2D *BaseFuncts, 
-                        TBaseCell *Cell,double ***LocMatrix, double **LocRhs);
+                        const TBaseCell *Cell,double ***LocMatrix, double **LocRhs);
 
     /** return array Needs2ndDerivatives */
     bool *GetNeeds2ndDerivatives() const

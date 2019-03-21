@@ -172,7 +172,7 @@ void TDiscreteForm2D::GetLocalForms(int N_Points, const double *weights,
                                     double *X, double *Y,
                                     int *N_BaseFuncts, BaseFunct2D *BaseFuncts, 
                                     double **Parameters, double **AuxArray,
-                                    TBaseCell *Cell, int n_matrices, int n_rhs,
+                                    const TBaseCell *Cell, int n_matrices, int n_rhs,
                                     double ***LocMatrix, double **LocRhs,
                                     double factor)
 {
@@ -252,7 +252,7 @@ void TDiscreteForm2D::GetLocalForms(int N_Points, const double *weights,
                         double *AbsDetjk, double hK, 
                         double *X, double *Y,
                         int *N_BaseFuncts, BaseFunct2D *BaseFuncts, 
-                        TBaseCell *Cell,
+                        const TBaseCell *Cell,
                         double ***LocMatrix, double **LocRhs)
 {
   double Mult;

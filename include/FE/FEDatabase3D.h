@@ -11,6 +11,9 @@
 #ifndef __FEDATABASE3D__
 #define __FEDATABASE3D__
 
+class THNDesc;
+class TRefTrans3D;
+
 #include <Constants.h>
 #include <Enumerations.h>
 

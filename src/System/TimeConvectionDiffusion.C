@@ -48,22 +48,22 @@ TimeConvectionDiffusion<d>::SystemPerGrid::SystemPerGrid(
   fe_space->get_communicator().print_info();
 #endif
 #ifdef __3D__
-  stiffness_matrix = BlockFEMatrix::CD3D(*fe_space);
-  mass_matrix = BlockFEMatrix::CD3D(*fe_space);
+  stiffness_matrix = BlockFEMatrix::CD3D(fe_space);
+  mass_matrix = BlockFEMatrix::CD3D(fe_space);
 #else
-  stiffness_matrix = BlockFEMatrix::CD2D(*fe_space);
-  mass_matrix = BlockFEMatrix::CD2D(*fe_space);
+  stiffness_matrix = BlockFEMatrix::CD2D(fe_space);
+  mass_matrix = BlockFEMatrix::CD2D(fe_space);
 #endif
 
   rhs = BlockVector(stiffness_matrix, true);
   solution = BlockVector(stiffness_matrix, false);
-  fe_function = FEFunction(fe_space.get(), "c", "c", solution.get_entries(),
+  fe_function = FEFunction(fe_space, "c", "c", solution.get_entries(),
                            solution.length());
   solution_m1 = BlockVector(stiffness_matrix, false);
-  u_m1 = FEFunction(fe_space.get(),"um1","um1", solution_m1.get_entries(),
+  u_m1 = FEFunction(fe_space,"um1","um1", solution_m1.get_entries(),
                     solution_m1.length());
   solution_m2 = BlockVector(stiffness_matrix, false);
-  u_m2 = FEFunction(fe_space.get(),"um2","um2", solution_m2.get_entries(),
+  u_m2 = FEFunction(fe_space,"um2","um2", solution_m2.get_entries(),
                     solution_m2.length());
 }
 
