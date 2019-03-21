@@ -8,15 +8,24 @@
 #include <LocalAssembling2D.h>
 #include <Assemble2D.h>
 #include <Upwind.h>
-#include <LocalProjection.h>
 #include <anderson.h>
+
+const ParameterDatabase& test(const ParameterDatabase& db)
+{
+  if(!db["algebraic_flux_correction"].is("none"))
+  {                                               //some kind of afc enabled
+    // when using afc, create system matrices as if all dofs were active
+    TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE = 1;
+  }
+  return db;
+}
 
 /** ************************************************************************ */
 CD2D_AFC::CD2D_AFC(const TDomain& domain, const ParameterDatabase& param_db,
 int reference_id)
-: CD2D(domain, param_db, Example_CD2D(param_db), reference_id), alphas_x_i(), old_solution()
+: CD2D (domain, test(param_db), Example_CD2D(param_db), reference_id), alphas_x_i(), old_solution()
 {
-  //this->set_AFC_parameters();
+  this->set_AFC_parameters();
   alphas_x_i=this->CD2D::systems.front().solution;
   old_solution=this->CD2D::systems.front().solution;
   newton_iterate=0;
@@ -55,8 +64,8 @@ void CD2D_AFC::set_AFC_parameters()
       Output::warn<1>("Parameter 'space_discretization_type' changed to 'galerkin' "
         "because Algebraic Flux Correction is enabled.");
     }
-    // when using afc, create system matrices as if all dofs were active
-    TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE = 1;
+//     // when using afc, create system matrices as if all dofs were active
+//     TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE = 1;
   }
 }
 
@@ -106,16 +115,9 @@ void CD2D_AFC::assemble(const int iteration)
       Output::print<4>("assembling discretization ",disc_type_code);
       la = std::make_shared<LocalAssembling2D>(t, &pointer_to_function, example.get_coeffs(),disc_type_code);
     }
-    
-    // assemble the system matrix with given local assembling, solution and rhs
-    const TFESpace2D * fe_space = s.fe_space.get();
-    BoundCondFunct2D * boundary_conditions = fe_space->GetBoundCondition();
-    int N_Matrices = 1;
-    double * rhs_entries = s.rhs.get_entries();
 
     std::vector<std::shared_ptr<FEMatrix>> blocks = s.matrix.get_blocks_uniquely();
     TSquareMatrix2D * matrix = reinterpret_cast<TSquareMatrix2D*>(blocks.at(0).get());
-    BoundValueFunct2D * non_const_bound_value[1] {example.get_bd()[0]};
 
     //Previous Implementation
     /*{
@@ -128,13 +130,7 @@ void CD2D_AFC::assemble(const int iteration)
     }*/
     if(is_not_afc_fixed_point_rhs==1)
     {
-      // reset right hand side and matrix to zero (just in case)
-      s.rhs.reset();
-      matrix->reset();
-      Output::print<4>("call assemble");
-      // assemble
-      Assemble2D(1, &fe_space, N_Matrices, &matrix, 0, NULL, 1, &rhs_entries,
-        &fe_space, &boundary_conditions, non_const_bound_value, *la);
+      CD2D::call_assembling_routine(s, *la);
       if(iteration==1)
         rhs_copy=s.rhs;
     }
@@ -148,14 +144,14 @@ void CD2D_AFC::assemble(const int iteration)
       if ((mdml && !finest_grid))
       {
         Output::print<2>("upwind for convection-diffusion equation");
-        UpwindForConvDiff(la->GetCoeffFct(), matrix, rhs_entries, fe_space,
+        UpwindForConvDiff(la->GetCoeffFct(), matrix, s.rhs.get_entries(), s.fe_space.get(),
           nullptr, nullptr, false);
       }
       if (!db["algebraic_flux_correction"].is("none")&&(iteration==0)&&
         db["afc_initial_iterate"].is("upwind"))
       {
         Output::print<2>("upwind for convection-diffusion equation");
-        UpwindForConvDiff(la->GetCoeffFct(), matrix, rhs_entries, fe_space,
+        UpwindForConvDiff(la->GetCoeffFct(), matrix, s.rhs.get_entries(), s.fe_space.get(),
           nullptr, nullptr, false);
       }
     }

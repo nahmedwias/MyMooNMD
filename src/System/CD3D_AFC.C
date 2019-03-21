@@ -44,6 +44,7 @@ const ParameterDatabase& param_db, const Example_CD3D& example
 #endif  
 ), alphas_x_i(), old_solution()
 {
+  this->AFC_checkParameters();
   alphas_x_i=this->CD3D::systems_.front().solution_;
   old_solution=this->CD3D::systems_.front().solution_;
   newton_iterate=0;
@@ -104,7 +105,7 @@ void CD3D_AFC::assemble(const int iteration)
     
     if(is_not_afc_fixed_point_rhs==1)  
     {
-      call_assembling_routine(s, *la);
+      CD3D::call_assembling_routine(s, *la);
       if(iteration==1)
         rhs_copy=s.rhs_;  
     }
@@ -673,6 +674,32 @@ void CD3D_AFC::do_algebraic_flux_correction(const int iteration, const int is_no
   }
 }
 
+/** ********************************************************************* */
+
+void CD3D_AFC::AFC_checkParameters()
+{
+   if(!db["algebraic_flux_correction"].is("none"))
+  {                                               //some kind of afc enabled
+    if(!db["algebraic_flux_correction"].is("afc"))
+    {
+      db["algebraic_flux_correction"].set("afc");
+      Output::print("Only kind of algebraic flux correction"
+        " for CD problems is AFC (afc).");
+    }
+    //make sure that galerkin discretization is used
+    if (!db["space_discretization_type"].is("galerkin"))
+    {                                             //some other disctype than galerkin
+      global_space_type=1;
+      Output::warn<1>("Parameter 'space_discretization_type' changed to 'galerkin' "
+        "because Algebraic Flux Correction is enabled.");
+    }/*
+    Why is this condition missing in 3D? 
+    // when using afc, create system matrices as if all dofs were active
+    TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE = 1;*/
+  }
+  
+}
+
 
 /** ************************************************************************ */
 AlgebraicFluxCorrection::Limiter string_to_limiter(std::string afc_limiter)
@@ -708,28 +735,3 @@ AlgebraicFluxCorrection::Iteration_Scheme string_to_it_scheme(std::string afc_it
 
 /* *************************************************************************** */
 
-
-void CD3D_AFC::call_assembling_routine(SystemPerGrid& s, LocalAssembling3D& local_assem)
-{                                                 //FIXME the body of this function was copy and paste
-
-  const TFESpace3D * fe_space = s.feSpace_.get();
-  BoundCondFunct3D * boundary_conditions = fe_space->getBoundCondition();
-  int N_Matrices = 1;
-  double * rhs_entries = s.rhs_.get_entries();
-
-  BoundValueFunct3D * non_const_bound_value[1] {example_.get_bd()[0]};
-
-  //fetch stiffness matrix as block
-  std::vector<std::shared_ptr<FEMatrix>> blocks = s.matrix_.get_blocks_uniquely();
-  TSquareMatrix3D * block[1]{reinterpret_cast<TSquareMatrix3D*>(blocks.at(0).get())};
-
-  // Do the Assembling!
-
-  // reset right hand side and matrix to zero
-  s.rhs_.reset();
-  block[0]->reset();
-  //and call the method
-  Assemble3D(1, &fe_space, N_Matrices, block, 0, nullptr, 1, &rhs_entries,
-    &fe_space, &boundary_conditions, non_const_bound_value, local_assem);
-
-}

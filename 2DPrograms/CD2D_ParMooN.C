@@ -9,7 +9,7 @@
 #include <Domain.h>
 #include <Database.h>
 #include <FEDatabase2D.h>
-#include <CD2D_AFC.h>
+#include <CD2D.h>
 
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -51,23 +51,23 @@ int main(int argc, char* argv[])
     domain.PS("Domain.ps", It_Finest, 0);
    
   //=========================================================================
-  CD2D_AFC cd2d(domain, parmoon_db);
-  cd2d.assemble(0);
-  cd2d.solve(0);
+  CD2D cd2d(domain, parmoon_db);
+  cd2d.assemble();
+  cd2d.solve();
   
-  if( cd2d.get_db()["algebraic_flux_correction"].is("afc") )
-  {//nonlinear loop necessary
-    size_t Max_It = cd2d.get_db()["afc_nonlinloop_maxit"];
-    for(unsigned int k = 1;; k++)
-    {
-      bool converged;
-      
-      converged = cd2d.solve(k);
-
-      if ((converged)||(k>= Max_It))
-	break;
-    }
-  }
+//   if( cd2d.get_db()["algebraic_flux_correction"].is("afc") )
+//   {//nonlinear loop necessary
+//     size_t Max_It = cd2d.get_db()["afc_nonlinloop_maxit"];
+//     for(unsigned int k = 1;; k++)
+//     {
+//       bool converged;
+//       
+//       converged = cd2d.solve(k);
+// 
+//       if ((converged)||(k>= Max_It))
+// 	break;
+//     }
+//   }
   
   cd2d.output();  
   

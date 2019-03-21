@@ -157,6 +157,9 @@ class CD3D
     
      /** @brief an interpolant of the exact solution onto the fe space */
     std::vector<double> exact_interpolant;
+    
+    void call_assembling_routine(SystemPerGrid& s, LocalAssembling3D& la);
+
 
   public:
 
@@ -336,12 +339,8 @@ class CD3D
 
     //! Default destructor. Does most likely cause memory leaks.
     ~CD3D() = default;
-
-  private:
-
+   
     
-    void call_assembling_routine(SystemPerGrid& s, LocalAssembling3D& la);
-
 };
 
 #endif // __CD3D_H__
