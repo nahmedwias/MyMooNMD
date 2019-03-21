@@ -108,7 +108,7 @@ void POD::read_snapshots()
     }
   }
 
-  Output::print<1>("... done");
+  Output::print<1>("... done.");
   Output::print<1>("  * Length of snapshots : ", this->length_snaps);
   Output::print<1>("  * Number of snapshots : ", this->number_snaps);
 }
@@ -172,12 +172,13 @@ void POD::compute_basis()
     }
   }
 
-  Output::print<1>("Calling lapack... ");
+  Output::print<1>("Calling lapack for solving eigenproblem.");
+  /* workspace query: the routine only calculates the optimal size of work */
   lwork = -1;
   dsyev_( &arg1, &arg2, &n, *snaps, &n, this->eigs, &wkopt, &lwork, &info );
   lwork = (int)wkopt;
   work = (double*)malloc( lwork*sizeof(double) );
-  /* Solve eigenproblem */
+  /* Solve eigenproblem, the eigenvalues are stored in ascending order */
   dsyev_( &arg1, &arg2, &n, *snaps, &n, this->eigs, work, &lwork, &info );
   /* Check for convergence */
   if( info > 0 )
@@ -232,6 +233,8 @@ void POD::compute_basis()
     this->eigs[ i ] = this->eigs[ this->number_snaps-1-i ] ;
     this->eigs[ this->number_snaps-1-i ] = help;
   }
+
+  Output::print<1>("... POD basis computed.");
 
   this->length = this->length_snaps;
   delete [] *snaps;
@@ -467,7 +470,7 @@ void POD::write_eigenvalues( string basename )
   for( int i = 0 ; i < min(no_eigen,valid_eigen); i++ )
   {
     cumulative += this->eigs[ i ] / sum_eigen;
-    ofile << i+1 << " " << this->eigs[ i ] << " " << cumulative << endl;
+    ofile << i+1 << " \t" << this->eigs[ i ] << " \t" << cumulative << endl;
   }
   ofile.close();
 }
@@ -552,7 +555,7 @@ void POD::compute_autocorr_mat( ublas::matrix<double> &corr_mat )
     noalias(tmp_mat)  = ublas::prod( this->gramian_mat, this->snaps_mat );
     noalias(corr_mat) = ublas::prod(trans(this->snaps_mat), tmp_mat);
   } // end else
-  Output::print<1>("Computation of autocorrelation matrix completed...");
+  Output::print<1>("... computation of autocorrelation matrix completed.");
 }
 
 /** ***************************************************************************/

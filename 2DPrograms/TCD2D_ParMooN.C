@@ -122,7 +122,7 @@ int main(int, char* argv[])
     auto collections            = Domain.get_grid_collections();
     TCollection& cellCollection = *collections.front();
 
-    TimeConvectionDiffusionPOD<2> tcd_pod(cellCollection, parmoon_db); // TODO add TYPE (i.e. TCD2D)
+    TimeConvectionDiffusionPOD<2> tcd_pod(cellCollection, parmoon_db); // TODO add TYPE (i.e. TCD2D, TNSE2D,...)
 
     tcd_pod.compute_pod_basis();
     //pod_2d.read_basis();

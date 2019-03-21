@@ -122,8 +122,6 @@ void TimeConvectionDiffusionPOD<d>::assemble_gramian()
 {
   Output::print<1>("[pod_inner_product = L2]: "
                    "Assembling the gramian matrix for POD computation...");
-  //LocalAssembling_type type;
-  //type = LocalAssembling_type::TCDMassOnly;
 
   FEFunction *feFunction = &this->fe_function;
   LocalAssembling<d> la(this->db, LocalAssembling_type::TCDMassOnly,
@@ -132,24 +130,22 @@ void TimeConvectionDiffusionPOD<d>::assemble_gramian()
   using SquareMatrixD = typename Template_names<d>::SquareMatrixD;
   int nFESpaces = 1;
   const FESpace *fe_space = &this->fe_space;
+
+  auto block = this->gramian_matrix.get_blocks_uniquely()[0].get();
   /**
      @attention
      we get block [1] because the TCD Mass Matrix functions
      assembles Mass as block[1] (block[0] is reserved for stiffness)
   **/
-  auto block = this->gramian_matrix.get_blocks_uniquely()[0].get();
-
-  const int nsqMat = 1;
+  const int nsqMat = 2;
   SquareMatrixD *sqMat[nsqMat];
-  sqMat[0] = reinterpret_cast<SquareMatrixD*>(block);
-  Output::print("HERE");
-  sqMat[0]->reset();
-  Output::print("HERE");
+  sqMat[0] = nullptr;
+  sqMat[1] = reinterpret_cast<SquareMatrixD*>(block);
+  sqMat[1]->reset();
   int nRhs = 0;
 
   auto * bound_cond = this->fe_space.get_boundary_condition();
   auto * bound_val = this->example.get_bd(0);
-  Output::print("HERE");
 #ifdef __2D__
   Assemble2D(
 #else
@@ -157,8 +153,8 @@ void TimeConvectionDiffusionPOD<d>::assemble_gramian()
 #endif
     nFESpaces, &fe_space, nsqMat, sqMat, 0, nullptr, nRhs, nullptr,
     &fe_space, &bound_cond, &bound_val, la);
-  sqMat[0]->write("test.m");
-
+//  sqMat[1]->write("test.m");
+  Output::print<1>("... assembling done.");
 }
 
 /* ************************************************************************** */
