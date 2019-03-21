@@ -157,10 +157,10 @@ Time_BoundaryControlledOptimization<d>::Time_BoundaryControlledOptimization(
    tnse_adjoint( tnse_primal, get_adjoint_database(param_db)),
    stokes_fe_vector(new BlockVector(tnse_primal.get_solution())),
    stokes_sol(
-     new FEVectFunct(&tnse_primal.get_velocity_space(), "stokes_sol",
-                        "", stokes_fe_vector->get_entries(), 
-                        tnse_primal.get_velocity_space().GetN_DegreesOfFreedom(),
-                        2)),
+     new FEVectFunct(tnse_primal.get_velocity_space(), "stokes_sol", "",
+                     stokes_fe_vector->get_entries(),
+                     tnse_primal.get_velocity_space()->GetN_DegreesOfFreedom(),
+                     2)),
    n_time_steps_(0),
    tnse_primal_solutions_(),
    optimization_info("optimization", true, true, 1), // 1 -> full verbosity
@@ -199,8 +199,8 @@ Time_BoundaryControlledOptimization<d>::Time_BoundaryControlledOptimization(
   // the id of the component on which the control is to be applied
   int controlled_boundary_component = db["controlled_boundary_component"];
   // find the degrees of freedom (dof) which are to be controlled
-  auto& fe_space = tnse_primal.get_velocity_space();
-  auto collection = fe_space.GetCollection();
+  auto fe_space = tnse_primal.get_velocity_space();
+  auto collection = fe_space->GetCollection();
   auto n_cells = collection->GetN_Cells();
   for(int i_cell = 0; i_cell < n_cells; ++i_cell)
   {
@@ -217,13 +217,13 @@ Time_BoundaryControlledOptimization<d>::Time_BoundaryControlledOptimization(
         {
           // found a joint which has is on the boundary where the control is at
 #ifdef __2D__
-          auto fe_descriptor = fe_space.get_fe(i_cell).GetFEDesc2D();
+          auto fe_descriptor = fe_space->get_fe(i_cell).GetFEDesc2D();
 #else
-          auto fe_descriptor = fe_space.get_fe(i_cell).GetFEDesc3D();
+          auto fe_descriptor = fe_space->get_fe(i_cell).GetFEDesc3D();
 #endif
           int n_joint_dof = fe_descriptor->GetN_JointDOF();
           auto local_joint_dofs = fe_descriptor->GetJointDOF(i_joint);
-          auto local_to_global_dof = fe_space.GetGlobalDOF(i_cell);
+          auto local_to_global_dof = fe_space->GetGlobalDOF(i_cell);
           for(int i_joint_dof = 0; i_joint_dof < n_joint_dof; ++i_joint_dof)
           {
             int global_dof = local_to_global_dof[local_joint_dofs[i_joint_dof]];
@@ -249,13 +249,13 @@ Time_BoundaryControlledOptimization<d>::Time_BoundaryControlledOptimization(
         {
           // found a joint which has is on an other boundary
 #ifdef __2D__
-          auto fe_descriptor = fe_space.get_fe(i_cell).GetFEDesc2D();
+          auto fe_descriptor = fe_space->get_fe(i_cell).GetFEDesc2D();
 #else
-          auto fe_descriptor = fe_space.get_fe(i_cell).GetFEDesc3D();
+          auto fe_descriptor = fe_space->get_fe(i_cell).GetFEDesc3D();
 #endif
           int n_joint_dof = fe_descriptor->GetN_JointDOF();
           auto local_joint_dofs = fe_descriptor->GetJointDOF(i_joint);
-          auto local_to_global_dof = fe_space.GetGlobalDOF(i_cell);
+          auto local_to_global_dof = fe_space->GetGlobalDOF(i_cell);
           for(int i_joint_dof = 0; i_joint_dof < n_joint_dof; ++i_joint_dof)
           {
             int global_dof = local_to_global_dof[local_joint_dofs[i_joint_dof]];
