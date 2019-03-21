@@ -6,6 +6,7 @@
 #include <FESpace1D.h>
 #include <FESpace2D.h>
 #include <FESpace3D.h>
+#include "BaseCell.h"
 
 #include <cstring>
 #include <vector>
@@ -25,10 +26,6 @@ TStructure::TStructure(std::shared_ptr<const TFESpace1D> space)
   int N_Inner, NE, nieb_i, nieb_e, nieb_n1;
   int *KColAux;
   int index, oldindex, EdgeIntegrals=space->IsDGSpace();
-
-  TCollection *Coll;
-
-  TBaseCell *cell, *neigh;
   FE1D CurrentElement, CurrentNeighbour;
 
   // all dof are treated as unknowns !!!
@@ -49,18 +46,18 @@ TStructure::TStructure(std::shared_ptr<const TFESpace1D> space)
 
   // loop over all elements
   N_= space->GetN_Cells();
-  Coll = space->GetCollection();
+  auto Coll = space->GetCollection();
   
   // associate each cell with her number in the collection
   for(i=0;i<N_;i++)
   {
-    cell = Coll->GetCell(i);
+    auto cell = Coll->GetCell(i);
     cell->SetClipBoard(i);
   }
 
   for(i=0;i<N_;i++)
   {
-    cell = Coll->GetCell(i);
+    auto cell = Coll->GetCell(i);
     Numbers=GlobalNumbers+BeginIndex[i];
 
     CurrentElement = space->GetFE1D(i, cell);
@@ -77,7 +74,7 @@ TStructure::TStructure(std::shared_ptr<const TFESpace1D> space)
       l=cell->GetN_Edges();                   // # edges
       for(m=0;m<l;m++)                        // for all edges
       {
-       neigh = (cell->GetJoint(m))->GetNeighbour(cell);
+       auto neigh = (cell->GetJoint(m))->GetNeighbour(cell);
 
        if(neigh)
        {
@@ -131,7 +128,7 @@ TStructure::TStructure(std::shared_ptr<const TFESpace1D> space)
   Coll = space->GetCollection();
   for(i=0;i<N_;i++)
   {
-    cell = Coll->GetCell(i);
+    auto cell = Coll->GetCell(i);
     Numbers=GlobalNumbers+BeginIndex[i];
 
     CurrentElement = space->GetFE1D(i, cell);
@@ -166,7 +163,7 @@ TStructure::TStructure(std::shared_ptr<const TFESpace1D> space)
       NE=cell->GetN_Edges();                   // # edges
       for(nieb_e=0;nieb_e<NE;nieb_e++)                        // for all edges
       {
-       neigh = (cell->GetJoint(nieb_e))->GetNeighbour(cell);
+       auto neigh = (cell->GetJoint(nieb_e))->GetNeighbour(cell);
 
        if(neigh)
        {
@@ -301,9 +298,6 @@ TStructure::TStructure(std::shared_ptr<const TFESpace2D> space)
   THangingNode **HangingNodes;
   THangingNode *hn;
 
-  TCollection *Coll;
-
-  TBaseCell *cell, *neigh;
   FE2D CurrentElement, CurrentNeighbour;
 
   ActiveBound = space->GetN_ActiveDegrees();
@@ -345,19 +339,19 @@ TStructure::TStructure(std::shared_ptr<const TFESpace2D> space)
 
   // loop over all elements
   N_ = space->GetN_Cells();
-  Coll = space->GetCollection();
+  auto Coll = space->GetCollection();
 
   // associate each cell with her number in the collection
   for(i=0;i<N_;i++)
   {
-    cell = Coll->GetCell(i);
+    auto cell = Coll->GetCell(i);
     cell->SetClipBoard(i);                        // set clipboard to number of the cell in collection
   }
 
   // loop over the mesh cells
   for(i=0;i<N_;i++)
   {
-    cell = Coll->GetCell(i);
+    auto cell = Coll->GetCell(i);
     Numbers=GlobalNumbers+BeginIndex[i];
 
     CurrentElement = space->GetFE2D(i, cell);
@@ -379,7 +373,7 @@ TStructure::TStructure(std::shared_ptr<const TFESpace2D> space)
           for(m=0;m<l;m++)                        // for all edges
           {
                                                   // neighbour cell
-            neigh = cell->GetJoint(m)->GetNeighbour(cell);
+            auto neigh = cell->GetJoint(m)->GetNeighbour(cell);
             if(neigh)
             {
               n = neigh->GetClipBoard();
@@ -507,7 +501,7 @@ TStructure::TStructure(std::shared_ptr<const TFESpace2D> space)
   Coll = space->GetCollection();
   for(i=0;i<N_;i++)
   {
-    cell = Coll->GetCell(i);
+    auto cell = Coll->GetCell(i);
     Numbers=GlobalNumbers+BeginIndex[i];
 
     CurrentElement = space->GetFE2D(i, cell);
@@ -566,7 +560,7 @@ TStructure::TStructure(std::shared_ptr<const TFESpace2D> space)
         for(p=0;p<r;p++)                          // for all edges
         {
                                                   // neighbour cell
-          neigh=cell->GetJoint(p)->GetNeighbour(cell);
+          auto neigh=cell->GetJoint(p)->GetNeighbour(cell);
           if(neigh)
           {
             q = neigh->GetClipBoard();
@@ -850,9 +844,6 @@ TStructure::TStructure(std::shared_ptr<const TFESpace3D> space)
   THangingNode **HangingNodes;
   THangingNode *hn;
 
-  TCollection *Coll;
-
-  TBaseCell *cell;
   FE3D CurrentElement;
 
   ActiveBound = space->GetN_ActiveDegrees();
@@ -890,10 +881,10 @@ TStructure::TStructure(std::shared_ptr<const TFESpace3D> space)
 
   // loop over all elements 
   N_ = space->GetN_Cells();
-  Coll = space->GetCollection();
+  auto Coll = space->GetCollection();
   for(i=0;i<N_;i++)
   {
-    cell = Coll->GetCell(i);
+    auto cell = Coll->GetCell(i);
     Numbers = space->GetGlobalDOF(i);
 
     CurrentElement = space->GetFE3D(i, cell);
@@ -1026,7 +1017,7 @@ TStructure::TStructure(std::shared_ptr<const TFESpace3D> space)
   Coll = space->GetCollection();
   for(i=0;i<N_;i++)
   {
-    cell = Coll->GetCell(i);
+    auto cell = Coll->GetCell(i);
     Numbers = space->GetGlobalDOF(i);
 
     CurrentElement = space->GetFE3D(i, cell);
@@ -1305,8 +1296,6 @@ TStructure::TStructure(std::shared_ptr<const TFESpace2D> testspace,
     return;
   }
 
-  TCollection *coll;
-  TBaseCell *cell;
   int i,j,k,l,m,n, N_, n1, n2, index, oldindex;
   int TestN_BoundNodeTypes, AnsatzN_BoundNodeTypes;
   int *TestN_BoundNodes, *AnsatzN_BoundNodes;
@@ -1335,7 +1324,7 @@ TStructure::TStructure(std::shared_ptr<const TFESpace2D> testspace,
   }
 
   // get collection of mesh cells
-  coll = testspace->GetCollection();
+  auto coll = testspace->GetCollection();
   
   // test space and ansatz space differ
   // get information from the spaces
@@ -1391,7 +1380,7 @@ TStructure::TStructure(std::shared_ptr<const TFESpace2D> testspace,
   for(i=0;i<N_;i++)
   {
     // get cell i 
-    cell = coll->GetCell(i);
+    auto cell = coll->GetCell(i);
     // get global number of d.o.f. of test and ansatz function 
     // which live on this mesh cell
     TestNumbers = TestGlobalNumbers + TestBeginIndex[i];
@@ -1505,7 +1494,7 @@ TStructure::TStructure(std::shared_ptr<const TFESpace2D> testspace,
     TestNumbers = TestGlobalNumbers + TestBeginIndex[i];
     AnsatzNumbers = AnsatzGlobalNumbers + AnsatzBeginIndex[i];
 
-    cell = coll->GetCell(i);
+    auto cell = coll->GetCell(i);
 
     CurrentElement = testspace->GetFE2D(i, cell);
     n1 = TFEDatabase2D::GetFE2D(CurrentElement)->GetN_DOF();
@@ -1732,8 +1721,6 @@ TStructure::TStructure(std::shared_ptr<const TFESpace3D> testspace,
     return;
   }
 
-  TCollection *coll;
-  TBaseCell *cell;
   int i,j,k,l,m,n, N_, n1, n2, index, oldindex;
   int TestN_BoundNodeTypes, AnsatzN_BoundNodeTypes;
   int *TestN_BoundNodes, *AnsatzN_BoundNodes;
@@ -1749,7 +1736,7 @@ TStructure::TStructure(std::shared_ptr<const TFESpace3D> testspace,
     return;
   }
 
-  coll = testspace->GetCollection();
+  auto coll = testspace->GetCollection();
   
   ActiveBound = testspace->GetN_ActiveDegrees();
 
@@ -1788,7 +1775,7 @@ TStructure::TStructure(std::shared_ptr<const TFESpace3D> testspace,
   N_ = coll->GetN_Cells();
   for(i=0;i<N_;i++)
   {
-    cell = coll->GetCell(i);
+    auto cell = coll->GetCell(i);
     TestNumbers = TestGlobalNumbers + TestBeginIndex[i];
     AnsatzNumbers = AnsatzGlobalNumbers + AnsatzBeginIndex[i];
 
@@ -1835,7 +1822,7 @@ TStructure::TStructure(std::shared_ptr<const TFESpace3D> testspace,
     TestNumbers = TestGlobalNumbers + TestBeginIndex[i];
     AnsatzNumbers = AnsatzGlobalNumbers + AnsatzBeginIndex[i];
 
-    cell = coll->GetCell(i);
+    auto cell = coll->GetCell(i);
 
     CurrentElement = testspace->GetFE3D(i, cell);
     n1 = TFEDatabase3D::GetFE3D(CurrentElement)->GetN_DOF();
@@ -1945,7 +1932,7 @@ TStructure::TStructure(std::shared_ptr<const TFESpace2D> testspace,
                        std::shared_ptr<const TFESpace2D> ansatzspace,
                        int ansatz_level)
 {
-  TCollection *coll_coarse, *coll_fine;
+  const TCollection *coll_coarse, *coll_fine;
   const TBaseCell *cell_coarse, *cell_fine;
   const TBaseCell *cell_child_1, *cell_child_2, *cell_child_3, *cell_child_4, *cell_child_5;
   const TBaseCell *cell_parent, *cell_tmp, *cell_child_6;

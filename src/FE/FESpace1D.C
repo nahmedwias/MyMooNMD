@@ -15,7 +15,7 @@
 #include <Joint.h>
 #include <Database.h>
 #include <FEDatabase2D.h>
-
+#include "BaseCell.h"
 #include <MooNMD_Io.h>
 #include <stdlib.h>
 #include <string.h>

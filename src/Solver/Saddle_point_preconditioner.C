@@ -11,6 +11,7 @@
 #include <MainUtilities.h>
 #include <MooNMD_Io.h>
 #include <algorithm>
+#include "BaseCell.h"
 
 #include <Joint.h>
 #include <BoundEdge.h>

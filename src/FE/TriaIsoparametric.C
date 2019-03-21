@@ -18,6 +18,7 @@
 #include <IsoInterfaceJoint.h>
 #include <IsoJointEqN.h>
 #include <BoundComp.h>
+#include "BaseCell.h"
 #include <string.h>
 #include <stdlib.h>
 

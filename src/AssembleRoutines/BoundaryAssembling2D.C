@@ -21,6 +21,7 @@
 #include <BoundaryAssembling2D.h>
 #include <BoundEdge.h>
 #include <Collection.h>
+#include "BaseCell.h"
 
 
 //========================================================================
@@ -32,7 +33,7 @@ void BoundaryAssembling2D::rhs_g_v_n(BlockVector &rhs,
 {
   // Create a list of those boundary edges that are on the boundary component with given ID
   std::vector<TBoundEdge*> boundaryEdgeList;
-  TCollection *coll = U_Space->GetCollection();
+  const TCollection *coll = U_Space->GetCollection();
   coll->get_edge_list_on_component(boundary_component_id, boundaryEdgeList);
 
   rhs_g_v_n(rhs, U_Space, given_boundary_data, boundaryEdgeList, mult);
@@ -136,7 +137,7 @@ void BoundaryAssembling2D::rhs_uD_v(BlockVector &rhs,
     bool rescale_by_h)
 {
   std::vector<TBoundEdge*> boundaryEdgeList;
-  TCollection *coll = U_Space->GetCollection();
+  const TCollection *coll = U_Space->GetCollection();
   coll->get_edge_list_on_component(boundary_component_id, boundaryEdgeList);
   rhs_uD_v(rhs, U_Space, given_boundary_data1, given_boundary_data2,
       boundaryEdgeList, mult, rescale_by_h);
@@ -265,7 +266,7 @@ void BoundaryAssembling2D::rhs_gradv_n_uD(BlockVector &rhs,
     double mult)
 {
   std::vector<TBoundEdge*> boundaryEdgeList;
-  TCollection *coll = U_Space->GetCollection();
+  const TCollection *coll = U_Space->GetCollection();
   coll->get_edge_list_on_component(boundary_component_id, boundaryEdgeList);
   rhs_gradv_n_uD(rhs, U_Space, given_boundary_data1, given_boundary_data2, boundaryEdgeList, mult);
 }
@@ -384,7 +385,7 @@ void BoundaryAssembling2D::matrix_u_n_v_n(BlockFEMatrix &M,
     bool rescale_by_h)
 {
   std::vector<TBoundEdge*> boundaryEdgeList;
-  TCollection *coll = U_Space->GetCollection();
+  const TCollection *coll = U_Space->GetCollection();
   coll->get_edge_list_on_component(boundary_component_id, boundaryEdgeList);
 
   matrix_u_n_v_n(M, U_Space, boundaryEdgeList, mult, rescale_by_h);
@@ -498,7 +499,7 @@ void BoundaryAssembling2D::rhs_uD_n_v_n(BlockVector &rhs,
     bool rescale_by_h)
 {
   std::vector<TBoundEdge*> boundaryEdgeList;
-  TCollection *coll = U_Space->GetCollection();
+  const TCollection *coll = U_Space->GetCollection();
   coll->get_edge_list_on_component(boundary_component_id, boundaryEdgeList);
 
   rhs_uD_n_v_n(rhs, U_Space, given_boundary_data1, given_boundary_data2,
@@ -657,7 +658,7 @@ void BoundaryAssembling2D::matrix_and_rhs_corner_stabilization(BlockFEMatrix &M,
 { 
 
   std::vector<TBoundEdge*> boundaryEdgeList;
-  TCollection *coll = U_Space->GetCollection();
+  const TCollection *coll = U_Space->GetCollection();
   coll->get_boundary_edge_list(boundaryEdgeList);
   matrix_and_rhs_corner_stabilization(M,rhs, U_Space, given_boundary_data1, given_boundary_data2, boundaryEdgeList, nitsche_id, mult);
 
@@ -915,7 +916,7 @@ void BoundaryAssembling2D::matrix_gradu_n_t_gradv_n_t(BlockFEMatrix &M,
     double mult)
 {
   std::vector<TBoundEdge*> boundaryEdgeList;
-  TCollection *coll = U_Space->GetCollection();
+  const TCollection *coll = U_Space->GetCollection();
   coll->get_edge_list_on_component(boundary_component_id, boundaryEdgeList);
 
   matrix_gradu_n_t_gradv_n_t(M, U_Space, boundaryEdgeList, mult);
@@ -1036,7 +1037,7 @@ void BoundaryAssembling2D::matrix_gradu_n_v(BlockFEMatrix &M,
     double mult)
 {
   std::vector<TBoundEdge*> boundaryEdgeList;
-  TCollection *coll = U_Space->GetCollection();
+  const TCollection *coll = U_Space->GetCollection();
   coll->get_edge_list_on_component(boundary_component_id, boundaryEdgeList);
   matrix_gradu_n_v(M, U_Space, boundaryEdgeList, mult, boundary_component_id);
 }
@@ -1188,7 +1189,7 @@ void BoundaryAssembling2D::matrix_gradv_n_u(BlockFEMatrix &M,
     double mult)
 {
   std::vector<TBoundEdge*> boundaryEdgeList;
-  TCollection *coll = U_Space->GetCollection();
+  const TCollection *coll = U_Space->GetCollection();
   coll->get_edge_list_on_component(boundary_component_id, boundaryEdgeList);
   matrix_gradv_n_u(M, U_Space, boundaryEdgeList, mult);
 }
@@ -1294,7 +1295,7 @@ void BoundaryAssembling2D::matrix_u_v(BlockFEMatrix &M,
     bool rescale_by_h)
 {
   std::vector<TBoundEdge*> boundaryEdgeList;
-  TCollection *coll = U_Space->GetCollection();
+  const TCollection *coll = U_Space->GetCollection();
   coll->get_edge_list_on_component(boundary_component_id, boundaryEdgeList);
   matrix_u_v(M, U_Space, boundaryEdgeList, mult, rescale_by_h);
 }
@@ -1404,7 +1405,7 @@ void BoundaryAssembling2D::matrix_q_u_n(BlockFEMatrix &M,
     double mult)
 {
   std::vector<TBoundEdge*> boundaryEdgeList;
-  TCollection *coll = U_Space->GetCollection();
+  const TCollection *coll = U_Space->GetCollection();
   coll->get_edge_list_on_component(boundary_component_id, boundaryEdgeList);
   matrix_q_u_n(M, U_Space, P_Space, boundaryEdgeList, mult);
 }
@@ -1509,7 +1510,7 @@ void BoundaryAssembling2D::rhs_q_uD_n(BlockVector &rhs,
     double mult)
 {
   std::vector<TBoundEdge*> boundaryEdgeList;
-  TCollection *coll = P_Space->GetCollection();
+  const TCollection *coll = P_Space->GetCollection();
   coll->get_edge_list_on_component(boundary_component_id, boundaryEdgeList);
 
   rhs_q_uD_n(rhs, U_Space, P_Space, given_boundary_data1, given_boundary_data2, boundaryEdgeList, mult);
@@ -1629,7 +1630,7 @@ void BoundaryAssembling2D::matrix_p_v_n(BlockFEMatrix &M,
     double mult)
 {
   std::vector<TBoundEdge*> boundaryEdgeList;
-  TCollection *coll = U_Space->GetCollection();
+  const TCollection *coll = U_Space->GetCollection();
   coll->get_edge_list_on_component(boundary_component_id, boundaryEdgeList);
   matrix_p_v_n(M,U_Space, P_Space, boundaryEdgeList, mult);
 }

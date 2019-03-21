@@ -191,8 +191,6 @@ void GetCdCl(TFEFunction2D *u1fct, TFEFunction2D *u2fct,
   int *PGlobalNumbers, *PBeginIndex;
   int *N_BaseFunct, N_Cells;
   BaseFunct2D BaseFunct, *BaseFuncts;
-  TCollection *Coll;
-  TBaseCell *cell;
   double value, value1, value2, value3, value4, value5;
   double FEFunctValues[MaxN_BaseFunctions2D];
   double FEFunctValues1[MaxN_BaseFunctions2D];
@@ -251,12 +249,12 @@ void GetCdCl(TFEFunction2D *u1fct, TFEFunction2D *u2fct,
 // ########################################################################
 // loop over all cells
 // ########################################################################
-  Coll = USpace->GetCollection(); // all spaces use same Coll
+  auto Coll = USpace->GetCollection(); // all spaces use same Coll
   N_Cells = Coll->GetN_Cells();
  
   for(i=0;i<N_Cells;i++)
   {
-    cell = Coll->GetCell(i);
+    auto cell = Coll->GetCell(i);
     N_Edges=cell->GetN_Edges();
     for(j=0;j<N_Edges;j++)              // loop over all edges of cell
     {
@@ -293,7 +291,7 @@ void GetCdCl(TFEFunction2D *u1fct, TFEFunction2D *u2fct,
   N_Cells = Coll->GetN_Cells();
   for(i=0;i<N_Cells;i++)
   {
-    cell = Coll->GetCell(i);
+    auto cell = Coll->GetCell(i);
 
     // ####################################################################
     // find local used elements on this cell

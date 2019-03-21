@@ -548,7 +548,7 @@ TGridCell *TBaseFunct3D::GenerateRefElement() const
 }
 
 /** change basis functions on cell if needed */
-void TBaseFunct3D::ChangeBF(TCollection *, const TBaseCell *Cell,
+void TBaseFunct3D::ChangeBF(const TCollection *, const TBaseCell *Cell,
                             double *Values) const
 {
   int i, j, k, maptype, *JointArray;
@@ -598,7 +598,7 @@ void TBaseFunct3D::ChangeBF(TCollection *, const TBaseCell *Cell,
 }
 
 /** change basis functions on cell in all points if needed */
-void TBaseFunct3D::ChangeBF(TCollection *, const TBaseCell *Cell,
+void TBaseFunct3D::ChangeBF(const TCollection *, const TBaseCell *Cell,
                             int N_Points, double **Values) const
 {
   int i, j, k, l, maptype, *JointArray;

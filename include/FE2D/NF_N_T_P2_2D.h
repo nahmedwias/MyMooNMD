@@ -43,7 +43,7 @@ static double NF_N_T_P2_2D_CellWeight0[7] =
           0.1333333333333333333333333333333333,
           0.05, 0.05, 0.05 };
 
-void NF_N_T_P2_2D_EvalAll(TCollection *Coll, const TBaseCell *Cell,
+void NF_N_T_P2_2D_EvalAll(const TCollection *Coll, const TBaseCell *Cell,
                           const double *PointValues, double *Functionals)
 {
   int OwnNum, NeighNum;
@@ -119,7 +119,7 @@ void NF_N_T_P2_2D_EvalAll(TCollection *Coll, const TBaseCell *Cell,
   } // endif Cell
 }
 
-void NF_N_T_P2_2D_EvalEdge(TCollection *Coll, const TBaseCell *Cell, int Joint,
+void NF_N_T_P2_2D_EvalEdge(const TCollection *Coll, const TBaseCell *Cell, int Joint,
                            const double *PointValues, double *Functionals)
 {
   int OwnNum, NeighNum;

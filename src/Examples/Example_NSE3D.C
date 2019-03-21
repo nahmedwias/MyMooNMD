@@ -4,6 +4,7 @@
 #include <FEDatabase3D.h>
 #include <Database.h>
 #include <MainUtilities.h>
+#include "BaseCell.h"
 
 #ifdef _MPI
 #include <mpi.h>

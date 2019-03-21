@@ -26,7 +26,7 @@ static double NF_C_Q_UL2_2D_W10[] = {
 .3825168736994979639683223, -.2390730460621862274802019, 0., .2390730460621862274802019
 };
 
-void NF_C_Q_UL2_2D_EvalAll(TCollection *, const TBaseCell *,
+void NF_C_Q_UL2_2D_EvalAll(const TCollection *, const TBaseCell *,
                            const double *PointValues, double *Functionals)
 {
   Functionals[0] = PointValues[0];
@@ -69,7 +69,7 @@ void NF_C_Q_UL2_2D_EvalAll(TCollection *, const TBaseCell *,
                    +NF_C_Q_UL2_2D_W10[8]*PointValues[16];
 }
 
-void NF_C_Q_UL2_2D_EvalEdge(TCollection *, const TBaseCell *, int,
+void NF_C_Q_UL2_2D_EvalEdge(const TCollection *, const TBaseCell *, int,
                             const double *PointValues, double *Functionals)
 {
   Functionals[0] = PointValues[0];

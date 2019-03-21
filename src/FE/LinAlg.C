@@ -15,6 +15,7 @@
 #else
   #include <FEDatabase3D.h>
 #endif  
+#include "BaseCell.h"
 #include <LinAlg.h>
 #include <string.h>
 #include <math.h>
@@ -719,8 +720,6 @@ void IntoL20FEFunction3D(double *v, int Length, TFESpace3D *FESpace)
 //  TFESpace3D *fespace;
   FE3D LocalUsedElements[N_FEs3D], CurrentElement;
   BaseFunct3D BaseFunct, *BaseFuncts;
-  TCollection *Coll;
-  TBaseCell *cell;
 //  TFE3D *ele;
   const double *weights, *xi, *eta, *zeta;
   double X[MaxN_QuadPoints_3D], Y[MaxN_QuadPoints_3D];
@@ -768,11 +767,11 @@ void IntoL20FEFunction3D(double *v, int Length, TFESpace3D *FESpace)
 // ########################################################################
 // loop over all cells
 // ########################################################################
-  Coll = FESpace->GetCollection(); // all spaces use same Coll
+  auto Coll = FESpace->GetCollection(); // all spaces use same Coll
   N_Cells = Coll->GetN_Cells();
   for(i=0;i<N_Cells;i++)
   {
-    cell = Coll->GetCell(i);
+    auto cell = Coll->GetCell(i);
     hK = cell->GetDiameter();
 
     // ####################################################################
@@ -829,7 +828,7 @@ void IntoL20FEFunction3D(double *v, int Length, TFESpace3D *FESpace)
 
   for(i=0;i<N_Cells;i++)
   {
-    cell = Coll->GetCell(i);
+    auto cell = Coll->GetCell(i);
     CurrentElement = FESpace->GetFE3D(i, cell);
     N_ = N_BaseFunct[CurrentElement];
     nf = TFEDatabase3D::GetNodalFunctional3DFromFE3D(CurrentElement);
@@ -858,8 +857,6 @@ void IntoL20FEFunction3D(double *v, int Length, TFESpace3D *FESpace, int, int)
 //  TFESpace3D *fespace;
   FE3D LocalUsedElements[N_FEs3D], CurrentElement;
   BaseFunct3D BaseFunct, *BaseFuncts;
-  TCollection *Coll;
-  TBaseCell *cell;
 //  TFE3D *ele;
   const double *weights, *xi, *eta, *zeta;
   double X[MaxN_QuadPoints_3D], Y[MaxN_QuadPoints_3D], Z[MaxN_QuadPoints_3D];
@@ -910,11 +907,11 @@ void IntoL20FEFunction3D(double *v, int Length, TFESpace3D *FESpace, int, int)
 // ########################################################################
 // loop over all cells
 // ########################################################################
-  Coll = FESpace->GetCollection(); // all spaces use same Coll
+  auto Coll = FESpace->GetCollection(); // all spaces use same Coll
   N_Cells = Coll->GetN_Cells();
   for(i=0;i<N_Cells;i++)
   {
-    cell = Coll->GetCell(i);
+    auto cell = Coll->GetCell(i);
 
 // #ifdef _MPI
 //     ID = cell->GetSubDomainNo();
@@ -978,7 +975,7 @@ void IntoL20FEFunction3D(double *v, int Length, TFESpace3D *FESpace, int, int)
 
   for(i=0;i<N_Cells;i++)
   {
-    cell = Coll->GetCell(i);
+    auto cell = Coll->GetCell(i);
     CurrentElement = FESpace->GetFE3D(i, cell);
     N_ = N_BaseFunct[CurrentElement];
     nf = TFEDatabase3D::GetNodalFunctional3DFromFE3D(CurrentElement);
@@ -1112,8 +1109,6 @@ void IntoL20FEFunction_OLD(double *v, int Length, TFESpace2D *FESpace,
   int *N_BaseFunct;
   FE2D LocalUsedElements[N_FEs2D], CurrentElement;
   BaseFunct2D BaseFunct, *BaseFuncts;
-  TCollection *Coll;
-  TBaseCell *cell;
   const double *weights, *xi, *eta;
   double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D];
   double AbsDetjk[MaxN_QuadPoints_2D];
@@ -1248,6 +1243,7 @@ void IntoL20FEFunction_OLD(double *v, int Length, TFESpace2D *FESpace,
     case 14:
     case 22:
     case 23:
+    {
       BaseFuncts = TFEDatabase2D::GetBaseFunct2D_IDFromFE2D();
       N_BaseFunct = TFEDatabase2D::GetN_BaseFunctFromFE2D();
 
@@ -1265,11 +1261,11 @@ void IntoL20FEFunction_OLD(double *v, int Length, TFESpace2D *FESpace,
     // ########################################################################
     // loop over all cells
     // ########################################################################
-      Coll = FESpace->GetCollection(); // all spaces use same Coll
+      auto Coll = FESpace->GetCollection(); // all spaces use same Coll
       N_Cells = Coll->GetN_Cells();
       for(i=0;i<N_Cells;i++)
       {
-        cell = Coll->GetCell(i);
+        auto cell = Coll->GetCell(i);
 
         hK = cell->GetDiameter();
 
@@ -1320,8 +1316,8 @@ void IntoL20FEFunction_OLD(double *v, int Length, TFESpace2D *FESpace,
       for(i=0;i<Length;i++)
         v[i] -= s;
 
-    break;
-
+      break;
+    }
     default:
       cout << "The L^2_0 projection does not ";
       cout << "work for this type of elements" << endl;
@@ -1343,8 +1339,6 @@ void IntoL20FEFunction(double *v, int Length, const TFESpace2D *FESpace,
   int *N_BaseFunct;
   FE2D LocalUsedElements[N_FEs2D], CurrentElement;
   BaseFunct2D BaseFunct, *BaseFuncts;
-  TCollection *Coll;
-  TBaseCell *cell;
   const double *weights, *xi, *eta;
   double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D];
   double AbsDetjk[MaxN_QuadPoints_2D];
@@ -1388,11 +1382,11 @@ void IntoL20FEFunction(double *v, int Length, const TFESpace2D *FESpace,
 // ########################################################################
 // loop over all cells
 // ########################################################################
-  Coll = FESpace->GetCollection(); // all spaces use same Coll
+  auto Coll = FESpace->GetCollection(); // all spaces use same Coll
   N_Cells = Coll->GetN_Cells();
   for(i=0;i<N_Cells;i++)
   {
-    cell = Coll->GetCell(i);
+    auto cell = Coll->GetCell(i);
     #ifdef _MPI
     ID = cell->GetSubDomainNo();
     if(ID!=rank)
@@ -1453,7 +1447,7 @@ void IntoL20FEFunction(double *v, int Length, const TFESpace2D *FESpace,
 
   for(i=0;i<N_Cells;i++)
   {
-    cell = Coll->GetCell(i);
+    auto cell = Coll->GetCell(i);
     CurrentElement = FESpace->GetFE2D(i, cell);
     N_ = N_BaseFunct[CurrentElement];
     nf = TFEDatabase2D::GetNodalFunctional2DFromFE2D(CurrentElement);

@@ -4,6 +4,7 @@
 #include <FEDatabase2D.h>
 #include "TimeNavierStokes.h"
 #include "AuxParam2D.h" // used in MixingLayerSlipSmallSquares.h
+#include "BaseCell.h"
 #include <string>
 
 namespace bsp1              // case 0

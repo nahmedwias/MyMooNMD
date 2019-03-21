@@ -15,6 +15,7 @@
 #include <FEDatabase3D.h>
 #include <LinAlg.h>
 #include <string.h>
+#include "BaseCell.h"
 #include <stdlib.h>
 #include <MooNMD_Io.h>
 

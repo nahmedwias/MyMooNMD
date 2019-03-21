@@ -7,6 +7,7 @@
 #include <FEFunction2D.h>
 #include <MooNMD_Io.h>
 #include <string.h>
+#include "BaseCell.h"
 
 #include <ConvDiff.h>
 #ifdef __3D__

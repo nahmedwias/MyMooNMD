@@ -1091,7 +1091,7 @@ void TFEDatabase3D::GenerateArrays()
     from reference to original element */
 RefTrans3D TFEDatabase3D::GetOrig(int N_LocalUsedElements, 
                           FE3D *LocalUsedElements,
-                          TCollection *Coll,
+                          const TCollection *Coll,
                           TBaseCell *cell, bool *Needs2ndDer,
                           int &N_Points, const double* &xi, const double* &eta,
                           const double* &zeta, const double* &weights,
@@ -1498,7 +1498,7 @@ void TFEDatabase3D::GetOrigFromRef(RefTrans3D RefTrans, int n_points,
     on the original element */
 void TFEDatabase3D::GetOrigValues(RefTrans3D RefTrans,
                 double xi, double eta, double zeta,
-                TBaseFunct3D *bf, TCollection *Coll, const TBaseCell *cell,
+                TBaseFunct3D *bf, const TCollection *Coll, const TBaseCell *cell,
                 double *uref, double *uxiref, double *uetaref, double *uzetaref,
                 double *uorig, double *uxorig, double *uyorig, double *uzorig)
 {

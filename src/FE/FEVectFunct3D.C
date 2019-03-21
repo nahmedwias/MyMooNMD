@@ -24,6 +24,7 @@
 #include <TetraIsoparametric.h>
 #include <Database.h>
 #include <BoundFace.h>
+#include "BaseCell.h"
 
 #include <fstream>
 #include <stdlib.h>
@@ -63,200 +64,15 @@ TFEVectFunct3D& TFEVectFunct3D::operator=( const TFEVectFunct3D & other)
   return *this;
 }
 
-/** convert current grid to vector-values FE function */
-void TFEVectFunct3D::GridToData()
-{
-  int i,j,k;
-  TBaseCell *cell;
-  TCollection *Coll;
-  FE3D FEId;
-  TFE3D *Element;
-  TNodalFunctional3D *nf;
-  int N_Cells;
-  int N_LocalDOFs;
-  int *BeginIndex, *GlobalNumbers;
-  int N_Points;
-  const double *xi, *eta, *zeta;
-  int *DOF;
-  RefTrans3D F_K;
-  TRefTrans3D *rt;
-  double X[MaxN_PointsForNodal3D], Y[MaxN_PointsForNodal3D];
-  double Z[MaxN_PointsForNodal3D];
-  double AbsDetjk[MaxN_PointsForNodal3D];
-  double FunctionalValuesX[MaxN_PointsForNodal3D];
-  double FunctionalValuesY[MaxN_PointsForNodal3D];
-  double FunctionalValuesZ[MaxN_PointsForNodal3D];
-
-  // begin code
-  
-  Coll = FESpace3D->GetCollection();
-  N_Cells = Coll->GetN_Cells();
-  BeginIndex = FESpace3D->GetBeginIndex();
-  GlobalNumbers = FESpace3D->GetGlobalNumbers();
-
-  for(i=0;i<N_Cells;i++)
-  {
-    // cout << "cell: " << i << endl;
-    cell = Coll->GetCell(i);
-    FEId = FESpace3D->GetFE3D(i, cell);
-    Element = TFEDatabase3D::GetFE3D(FEId);
-    nf = Element->GetNodalFunctional3D();
-    nf->GetPointsForAll(N_Points, xi, eta, zeta);
-    N_LocalDOFs = Element->GetN_DOF();
-
-    F_K = Element->GetRefTransID();
-
-    switch(F_K)
-    {
-      case HexaAffin:
-        rt = TFEDatabase3D::GetRefTrans3D(HexaAffin);
-        ((THexaAffin *)rt)->SetCell(cell);
-        break;
-      case HexaTrilinear:
-        rt = TFEDatabase3D::GetRefTrans3D(HexaTrilinear);
-        ((THexaTrilinear *)rt)->SetCell(cell);
-        break;
-      case HexaIsoparametric:
-        rt = TFEDatabase3D::GetRefTrans3D(HexaIsoparametric);
-        ((THexaIsoparametric *)rt)->SetCell(cell);
-        break;
-      case TetraAffin:
-        rt = TFEDatabase3D::GetRefTrans3D(TetraAffin);
-        ((TTetraAffin *)rt)->SetCell(cell);
-        break;
-      case TetraIsoparametric:
-        rt = TFEDatabase3D::GetRefTrans3D(TetraIsoparametric);
-        ((TTetraIsoparametric *)rt)->SetCell(cell);
-        break;
-    }
-    TFEDatabase3D::GetOrigFromRef(F_K, N_Points, xi, eta, zeta,
-                                X, Y, Z, AbsDetjk);
-
-    nf->GetAllFunctionals(Coll, cell, X, FunctionalValuesX);
-    nf->GetAllFunctionals(Coll, cell, Y, FunctionalValuesY);
-    nf->GetAllFunctionals(Coll, cell, Z, FunctionalValuesZ);
-
-    DOF = GlobalNumbers+BeginIndex[i];
-
-    for(j=0;j<N_LocalDOFs;j++)
-    {
-      k = DOF[j];
-      Values[k] = FunctionalValuesX[j];
-      Values[k+Length] = FunctionalValuesY[j];
-      Values[k+2*Length] = FunctionalValuesZ[j];
-      // cout << k << " " << Values[k] << " " << Values[k+Length] << " ";
-      // cout << Values[k+2*Length] << endl;
-    }
-  } // endfor i
-}
-
-/** use current data for grid replacement */
-void TFEVectFunct3D::DataToGrid()
-{
-  int i,j,k;
-  TBaseCell *cell;
-  TCollection *Coll;
-  FE3D FEId;
-  TFE3D *Element;
-  TBaseFunct3D *bf;
-  int N_Cells, N_Vertices =0;
-  int N_LocalDOFs;
-  int *BeginIndex, *GlobalNumbers;
-  double t1, t2, t3;
-  int *DOF;
-  RefTrans3D F_K;
-  double xi[8], eta[8], zeta[8];
-  double X[8], Y[8], Z[8];
-  double FunctValues[8][MaxN_BaseFunctions3D];
-
-  // begin code
-  
-  Coll = FESpace3D->GetCollection();
-  N_Cells = Coll->GetN_Cells();
-  BeginIndex = FESpace3D->GetBeginIndex();
-  GlobalNumbers = FESpace3D->GetGlobalNumbers();
-
-  for(i=0;i<N_Cells;i++)
-  {
-    cell = Coll->GetCell(i);
-    FEId = FESpace3D->GetFE3D(i, cell);
-    Element = TFEDatabase3D::GetFE3D(FEId);
-    bf = Element->GetBaseFunct3D();
-    N_LocalDOFs = Element->GetN_DOF();
-
-    F_K = Element->GetRefTransID();
-
-    switch(F_K)
-    {
-      case HexaAffin:
-      case HexaTrilinear:
-      case HexaIsoparametric:
-        N_Vertices = 8;
-        xi[0]   = -1; xi[1]   =  1; xi[2]   =  1; xi[3]   = -1;
-        eta[0]  = -1; eta[1]  = -1; eta[2]  =  1; eta[3]  =  1;
-        zeta[0] = -1; zeta[1] = -1; zeta[2] = -1; zeta[3] = -1;
-        X[0] = X[1] = X[2] = X[3] = 0;
-        Y[0] = Y[1] = Y[2] = Y[3] = 0;
-        Z[0] = Z[1] = Z[2] = Z[3] = 0;
-        xi[4]   = -1; xi[5]   =  1; xi[6]   =  1; xi[7]   = -1;
-        eta[4]  = -1; eta[5]  = -1; eta[6]  =  1; eta[7]  =  1;
-        zeta[4] =  1; zeta[5] =  1; zeta[6] =  1; zeta[7] =  1;
-        X[4] = X[5] = X[6] = X[7] = 0;
-        Y[4] = Y[5] = Y[6] = Y[7] = 0;
-        Z[4] = Z[5] = Z[6] = Z[7] = 0;
-      break;
-
-      case TetraAffin:
-      case TetraIsoparametric:
-        N_Vertices = 4;
-        xi[0]   = 0; xi[1]   = 1; xi[2]   = 0; xi[3]   = 0;
-        eta[0]  = 0; eta[1]  = 0; eta[2]  = 1; eta[3]  = 0;
-        zeta[0] = 0; zeta[1] = 0; zeta[2] = 0; zeta[3] = 1;
-        X[0] = X[1] = X[2] = X[3] = 0;
-        Y[0] = Y[1] = Y[2] = Y[3] = 0;
-        Z[0] = Z[1] = Z[2] = Z[3] = 0;
-      break;
-    }
-
-    for(j=0;j<N_Vertices;j++)
-    {
-      bf->GetDerivatives(D000, xi[j], eta[j], zeta[j], FunctValues[j]);
-      bf->ChangeBF(Coll, cell, FunctValues[j]);
-    }
-
-    DOF = GlobalNumbers+BeginIndex[i];
-
-    for(j=0;j<N_LocalDOFs;j++)
-    {
-      k = DOF[j];
-      t1 = Values[k];
-      t2 = Values[k+Length];
-      t3 = Values[k+2*Length];
-      for(k=0;k<N_Vertices;k++)
-      {
-        X[k] += FunctValues[k][j]*t1;
-        Y[k] += FunctValues[k][j]*t2;
-        Z[k] += FunctValues[k][j]*t3;
-      } // endfor k
-    } // endfor j
-
-    for(j=0;j<N_Vertices;j++)
-    {
-      // cout << "j: " << j << " x: " << X[j] << " y: " << Y[j] << endl;
-      cell->GetVertex(j)->SetCoords(X[j], Y[j], Z[j]);
-    }
-  } // endfor i
-}
-
 /** compute integral and measure */
 void TFEVectFunct3D::compute_flux(int surface_id, double& flux) const
 {
   flux = 0.;
 
-  TCollection *coll = FESpace3D->GetCollection();
+  auto coll = FESpace3D->GetCollection();
 
   for(int i=0; i< coll->GetN_Cells(); i++) {
-    TBaseCell* cell = coll->GetCell(i); //boundaryCells[i];
+    auto cell = coll->GetCell(i); //boundaryCells[i];
 
     int *DOF = FESpace3D->GetGlobalDOF(cell->GetCellIndex());
     for(size_t joint_id=0; joint_id< (size_t) cell->GetN_Faces(); joint_id++) {
@@ -381,8 +197,6 @@ void TFEVectFunct3D::GetDeformationTensorErrors(
   TFESpace3D *fespace;
   FE3D LocalUsedElements[N_FEs3D], CurrentElement;
   BaseFunct3D BaseFunct, *BaseFuncts;
-  TCollection *Coll;
-  TBaseCell *cell;
   const double *weights, *xi, *eta, *zeta;
   double X[MaxN_QuadPoints_3D], Y[MaxN_QuadPoints_3D], Z[MaxN_QuadPoints_3D];
   double AbsDetjk[MaxN_QuadPoints_3D];
@@ -438,11 +252,11 @@ void TFEVectFunct3D::GetDeformationTensorErrors(
 // ########################################################################
 // loop over all cells
 // ########################################################################
-  Coll = fespaces[0]->GetCollection(); // all spaces use same Coll
+  auto Coll = fespaces[0]->GetCollection(); // all spaces use same Coll
   N_Cells = Coll->GetN_Cells();
   for(i=0;i<N_Cells;i++)
   {
-    cell = Coll->GetCell(i);
+    auto cell = Coll->GetCell(i);
     hK = cell->GetDiameter();
 
     // ####################################################################
@@ -649,15 +463,12 @@ void TFEVectFunct3D::WriteSol(double t, const std::string& directory,
   MPI_Comm_rank(TDatabase::ParamDB->Comm, &rank);
   #endif
 
-  TCollection *Coll;
-  TBaseCell *cell;
-
   Dquot = 34; //  see ASCII Chart
-  Coll = FESpace3D->GetCollection();
+  auto Coll = FESpace3D->GetCollection();
   N_Cells = Coll->GetN_Cells();
 
   i=0;
-  cell =  Coll->GetCell(i);
+  auto cell =  Coll->GetCell(i);
   N_Joints = cell->GetN_Joints();
 
   std::ostringstream os;
@@ -706,20 +517,17 @@ void TFEVectFunct3D::ReadSol(const std::string& BaseName)
  int i, j, rank, N_Joints, N_Cells, N_cells, N_joints, N_components, length;
  char line[100];
 
- TCollection *Coll;
- TBaseCell *cell;
-
 #ifdef _MPI 
    MPI_Comm_rank(TDatabase::ParamDB->Comm, &rank);
 #else
    rank = 0;
 #endif
 
-  Coll = FESpace3D->GetCollection();
+  auto Coll = FESpace3D->GetCollection();
   N_Cells = Coll->GetN_Cells();
 
   i=0;
-  cell =  Coll->GetCell(i);
+  auto cell =  Coll->GetCell(i);
   N_Joints = cell->GetN_Joints();
 
   std::ifstream dat(BaseName);

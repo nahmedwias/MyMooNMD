@@ -178,8 +178,6 @@ void get_cdrag_clift(TFEFunction3D *u1fct, TFEFunction3D *u2fct,
   int *PGlobalNumbers, *PBeginIndex;
   int *N_BaseFunct, N_Cells;
   BaseFunct3D BaseFunct, *BaseFuncts;
-  TCollection *Coll;
-  TBaseCell *cell;
   double value, value1, value2, value3, value4;
   double FEFunctValues[MaxN_BaseFunctions3D];
   double FEFunctValues1[MaxN_BaseFunctions3D];
@@ -193,8 +191,6 @@ void get_cdrag_clift(TFEFunction3D *u1fct, TFEFunction3D *u2fct,
   double *v;
   double nu = DIMENSIONLESS_VISCOSITY;
   double *Der, *aux;
-  TJoint *joint;
-  TBoundFace *boundface;
   TBoundComp3D *BoundComp;
   TFE3D *eleCell;
   FE3D FEEle;
@@ -231,21 +227,21 @@ void get_cdrag_clift(TFEFunction3D *u1fct, TFEFunction3D *u2fct,
 // ########################################################################
 // loop over all cells
 // ########################################################################
-  Coll = USpace->GetCollection(); // all spaces use same Coll
+  auto Coll = USpace->GetCollection(); // all spaces use same Coll
   N_Cells = Coll->GetN_Cells();
 
   for(i=0;i<N_Cells;i++)
   {
-    cell = Coll->GetCell(i);
+    auto cell = Coll->GetCell(i);
     N_Faces=cell->GetN_Faces();
     for(j=0;j<N_Faces;j++)              // loop over all edges of cell
     {
-      joint=cell->GetJoint(j);
+      auto joint=cell->GetJoint(j);
       if ((joint->GetType() == BoundaryFace))
 //          (joint->GetType() == IsoBoundface)) // boundary edge
       {
 
-        boundface = (TBoundFace *)joint;
+        auto boundface = (const TBoundFace *)joint;
         BoundComp = boundface->GetBoundComp();  // get boundary component
         comp=BoundComp->GetID();              // boundary id
         if ((comp>=4)&&(comp<=7))
@@ -273,7 +269,7 @@ void get_cdrag_clift(TFEFunction3D *u1fct, TFEFunction3D *u2fct,
   N_Cells = Coll->GetN_Cells();
   for(i=0;i<N_Cells;i++)
   {
-    cell = Coll->GetCell(i);
+    auto cell = Coll->GetCell(i);
 
 #ifdef _MPI
     if(cell->IsHaloCell())

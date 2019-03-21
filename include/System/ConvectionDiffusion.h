@@ -18,6 +18,8 @@
 #include <deque>
 #include <array>
 
+class TDomain;
+
 template<int d>
 class ConvectionDiffusion
 {

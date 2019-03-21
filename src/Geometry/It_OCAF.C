@@ -11,6 +11,7 @@
 // =======================================================================
 
 #include <It_OCAF.h>
+#include "BaseCell.h"
 
 // Methods
 int TIt_OCAF::Init(int level)

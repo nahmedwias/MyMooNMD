@@ -19,6 +19,8 @@
 #include "Residuals.h"
 #include "MainUtilities.h" // FixedSizeQueue
 
+class TDomain;
+
 #include <deque>
 #include <array>
 

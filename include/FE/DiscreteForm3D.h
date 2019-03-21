@@ -102,7 +102,7 @@ class TDiscreteForm3D
                         double hK, double *X, double *Y, double *Z,
                         int *N_BaseFuncts, BaseFunct3D *BaseFuncts,
                         double **Parameters, double **AuxArray,
-                        TBaseCell *Cell,
+                        const TBaseCell *Cell,
                         int N_Matrices, int N_Rhs,
                         double ***LocMatrix, double **LocRhs);
 

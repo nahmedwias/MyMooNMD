@@ -16,6 +16,7 @@
   #include <FEDatabase3D.h>
   #include <NodalFunctional3D.h>
 #endif
+#include "BaseCell.h"
 #include <Joint.h>
 #include <LinAlg.h>
 #include <MooNMD_Io.h>
@@ -65,8 +66,6 @@ void  ConvoluteVelocity(TFEVectFunct2D *u, TFEVectFunct2D *uConv)
   TFE2D *Element;
   TNodalFunctional2D *nf;
   BaseFunct2D BaseFunct, *BaseFuncts, BaseFunctNeigh;
-  TCollection *Coll;
-  TBaseCell *cell, *neigh;
   const double *weightsNeigh, *xiNeigh, *etaNeigh;
   double X_orig[MaxN_PointsForNodal2D], Y_orig[MaxN_PointsForNodal2D];
   double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D];
@@ -92,7 +91,6 @@ void  ConvoluteVelocity(TFEVectFunct2D *u, TFEVectFunct2D *uConv)
   int N_UConv, N_DOFConv;
   double *Values, *u_conv,distance_sq,g;
   double *x_conv, *y_conv;
-  TJoint *joint;
 
   // gives an array where the needed derivatives are described
   // defined in NavierStokes.h 
@@ -155,7 +153,7 @@ void  ConvoluteVelocity(TFEVectFunct2D *u, TFEVectFunct2D *uConv)
 // ########################################################################
 
   // get pointer to set of mesh cells which define the fe space
-  Coll = fespace->GetCollection(); 
+  auto Coll = fespace->GetCollection(); 
   // get number of mesh cells
   N_Cells = Coll->GetN_Cells();
 
@@ -169,7 +167,7 @@ void  ConvoluteVelocity(TFEVectFunct2D *u, TFEVectFunct2D *uConv)
   // cells: set ClipBoard to i
   for(i=0;i<N_Cells;i++)                       
   {
-    cell = Coll->GetCell(i);
+    auto cell = Coll->GetCell(i);
     cell->SetClipBoard(i);
   }
 
@@ -178,7 +176,7 @@ void  ConvoluteVelocity(TFEVectFunct2D *u, TFEVectFunct2D *uConv)
   for(i=0;i<N_Cells;i++)
   {
     // get current mesh cell
-    cell = Coll->GetCell(i);        
+    auto cell = Coll->GetCell(i);        
     // get cell diameter (longest distance between to vertices of the cell)
     hK = cell->GetDiameter();       
     delta = CharacteristicFilterWidth(hK);
@@ -321,7 +319,7 @@ void  ConvoluteVelocity(TFEVectFunct2D *u, TFEVectFunct2D *uConv)
       for(ll=0;ll<N_Edges;ll++)                           
       {
         // get pointer to edge[l]
-        joint=cell->GetJoint(ll); 
+        auto joint=cell->GetJoint(ll); 
         
         // if boundary edge continue 
         if ((joint->GetType() == BoundaryEdge)||
@@ -329,7 +327,7 @@ void  ConvoluteVelocity(TFEVectFunct2D *u, TFEVectFunct2D *uConv)
           continue;
         
         // get pointer to neighbour cell
-        neigh=cell->GetJoint(ll)->GetNeighbour(cell);
+        auto neigh=cell->GetJoint(ll)->GetNeighbour(cell);
         
         // get id of neighbour
         neigh_i = neigh->GetClipBoard();
@@ -548,8 +546,6 @@ void  ConvoluteVelocityFull(TFEVectFunct2D *u, TFEVectFunct2D *uConv)
   TFE2D *Element;
   TNodalFunctional2D *nf;
   BaseFunct2D BaseFunct, *BaseFuncts, BaseFunctNeigh;
-  TCollection *Coll;
-  TBaseCell *cell, *neigh;
   const double *weights, *xi, *eta;
   const double *xi_ref, *eta_ref;
   const double *weightsNeigh, *xiNeigh, *etaNeigh;
@@ -616,7 +612,7 @@ void  ConvoluteVelocityFull(TFEVectFunct2D *u, TFEVectFunct2D *uConv)
   //int N_DOF = 2*N_U;
   
   // get pointer to set of mesh cells which define the fe space
-  Coll = fespace->GetCollection();
+  auto Coll = fespace->GetCollection();
  
   // # dof in the new fe space
   N_UConv = fespaceConv->GetN_DegreesOfFreedom();
@@ -663,7 +659,7 @@ void  ConvoluteVelocityFull(TFEVectFunct2D *u, TFEVectFunct2D *uConv)
   // cells: set ClipBoard to i
   for(i=0;i<N_Cells;i++)                       
   {
-    cell = Coll->GetCell(i);
+    auto cell = Coll->GetCell(i);
     cell->SetClipBoard(i);
   }
 
@@ -672,7 +668,7 @@ void  ConvoluteVelocityFull(TFEVectFunct2D *u, TFEVectFunct2D *uConv)
   for(i=0;i<N_Cells;i++)
   {
     // get current mesh cell
-    cell = Coll->GetCell(i);        
+    auto cell = Coll->GetCell(i);        
     // get cell diameter (longest distance between to vertices of the cell)
     hK = cell->GetDiameter();       
     delta =  CharacteristicFilterWidth(hK);
@@ -843,7 +839,7 @@ void  ConvoluteVelocityFull(TFEVectFunct2D *u, TFEVectFunct2D *uConv)
         if (ll==i)
           continue;
         
-        neigh = Coll->GetCell(ll); 
+        auto neigh = Coll->GetCell(ll); 
         // get one vertex of the neigh 
         vertex0 = neigh->GetVertex(0);
         // get coordinates of vertex
@@ -1065,8 +1061,6 @@ void  ConvoluteDuTensor(TFEVectFunct2D *u, TFEVectFunct2D *duTensor)
   TFE2D *Element;
   TNodalFunctional2D *nf;
   BaseFunct2D BaseFunct, *BaseFuncts, BaseFunctNeigh;
-  TCollection *Coll;
-  TBaseCell *cell, *neigh;
   const double *weights, *xi, *eta;
   const double *xi_ref, *eta_ref;
   const double *weightsNeigh, *xiNeigh, *etaNeigh;
@@ -1097,7 +1091,6 @@ void  ConvoluteDuTensor(TFEVectFunct2D *u, TFEVectFunct2D *duTensor)
   int N_UConv, N_DOFConv, index;
   double *Values, *u_conv,distance_sq,g;
   double *x_conv, *y_conv, delta, hK;
-  TJoint *joint;
 
   bool SecondDer[1] = { false };
   int N_Derivatives = 2;
@@ -1127,7 +1120,7 @@ void  ConvoluteDuTensor(TFEVectFunct2D *u, TFEVectFunct2D *duTensor)
   N_DOF = 2*N_U;
   
   // get pointer to set of mesh cells which define the fe space
-  Coll = fespace->GetCollection();
+  auto Coll = fespace->GetCollection();
   // get number of mesh cells
   N_Cells = Coll->GetN_Cells();
  
@@ -1170,7 +1163,7 @@ void  ConvoluteDuTensor(TFEVectFunct2D *u, TFEVectFunct2D *duTensor)
   // cells: set ClipBoard to i
   for(i=0;i<N_Cells;i++)                       
   {
-    cell = Coll->GetCell(i);
+    auto cell = Coll->GetCell(i);
     cell->SetClipBoard(i);
   }
 
@@ -1179,7 +1172,7 @@ void  ConvoluteDuTensor(TFEVectFunct2D *u, TFEVectFunct2D *duTensor)
   for(i=0;i<N_Cells;i++)
   {
     // get current mesh cell
-    cell = Coll->GetCell(i);        
+    auto cell = Coll->GetCell(i);        
     hK = cell->GetDiameter();
     delta =  CharacteristicFilterWidth(hK);
 
@@ -1340,7 +1333,7 @@ void  ConvoluteDuTensor(TFEVectFunct2D *u, TFEVectFunct2D *duTensor)
       for(ll=0;ll<N_Edges;ll++)                           
       {
         // get pointer to edge[l]
-        joint=cell->GetJoint(ll); 
+        auto joint=cell->GetJoint(ll); 
         
         // if boundary edge continue 
         if ((joint->GetType() == BoundaryEdge)||
@@ -1348,7 +1341,7 @@ void  ConvoluteDuTensor(TFEVectFunct2D *u, TFEVectFunct2D *duTensor)
           continue;
         
         // get pointer to neighbour cell
-        neigh=cell->GetJoint(ll)->GetNeighbour(cell);
+        auto neigh = cell->GetJoint(ll)->GetNeighbour(cell);
         
         // get id of neighbour
         neigh_i = neigh->GetClipBoard();
@@ -1577,8 +1570,6 @@ void  ConvoluteSymmetricTensor(TFEVectFunct2D *u, TFEVectFunct2D *duTensor)
   TFE2D *Element;
   TNodalFunctional2D *nf;
   BaseFunct2D BaseFunct, *BaseFuncts, BaseFunctNeigh;
-  TCollection *Coll;
-  TBaseCell *cell, *neigh;
   const double *weights, *xi, *eta, *xi_ref, *eta_ref;
   const double *weightsNeigh, *xiNeigh, *etaNeigh;
   double X_orig[MaxN_PointsForNodal2D], Y_orig[MaxN_PointsForNodal2D];
@@ -1608,7 +1599,6 @@ void  ConvoluteSymmetricTensor(TFEVectFunct2D *u, TFEVectFunct2D *duTensor)
   int N_UConv, N_DOFConv, index;
   double *Values, *u_conv,distance_sq,g;
   double *x_conv, *y_conv, delta, hK;
-  TJoint *joint;
 
   bool SecondDer[1] = { false };
   int N_Derivatives = 2;
@@ -1638,7 +1628,7 @@ void  ConvoluteSymmetricTensor(TFEVectFunct2D *u, TFEVectFunct2D *duTensor)
   //int N_DOF = 2*N_U;
   
   // get pointer to set of mesh cells which define the fe space
-  Coll = fespace->GetCollection();
+  auto Coll = fespace->GetCollection();
   // get number of mesh cells
   N_Cells = Coll->GetN_Cells();
  
@@ -1677,7 +1667,7 @@ void  ConvoluteSymmetricTensor(TFEVectFunct2D *u, TFEVectFunct2D *duTensor)
   // cells: set ClipBoard to i
   for(i=0;i<N_Cells;i++)                       
   {
-    cell = Coll->GetCell(i);
+    auto cell = Coll->GetCell(i);
     cell->SetClipBoard(i);
   }
 
@@ -1686,7 +1676,7 @@ void  ConvoluteSymmetricTensor(TFEVectFunct2D *u, TFEVectFunct2D *duTensor)
   for(i=0;i<N_Cells;i++)
   {
     // get current mesh cell
-    cell = Coll->GetCell(i);        
+    auto cell = Coll->GetCell(i);        
     hK = cell->GetDiameter();
     delta =  CharacteristicFilterWidth(hK);
 
@@ -1843,7 +1833,7 @@ void  ConvoluteSymmetricTensor(TFEVectFunct2D *u, TFEVectFunct2D *duTensor)
       for(ll=0;ll<N_Edges;ll++)                           
       {
         // get pointer to edge[l]
-        joint=cell->GetJoint(ll); 
+        auto joint = cell->GetJoint(ll); 
         
         // if boundary edge continue 
         if ((joint->GetType() == BoundaryEdge)||
@@ -1851,7 +1841,7 @@ void  ConvoluteSymmetricTensor(TFEVectFunct2D *u, TFEVectFunct2D *duTensor)
           continue;
         
         // get pointer to neighbour cell
-        neigh=cell->GetJoint(ll)->GetNeighbour(cell);
+        auto neigh = cell->GetJoint(ll)->GetNeighbour(cell);
         
         // get id of neighbour
         neigh_i = neigh->GetClipBoard();
@@ -2084,8 +2074,6 @@ void  ConvoluteSymmetricTensorFull(TFEVectFunct2D *u, TFEVectFunct2D *duTensor)
   TFE2D *Element;
   TNodalFunctional2D *nf;
   BaseFunct2D BaseFunct, *BaseFuncts, BaseFunctNeigh;
-  TCollection *Coll;
-  TBaseCell *cell, *neigh;
   const double *weights, *xi, *eta;
   const double *xi_ref, *eta_ref;
   const double *weightsNeigh, *xiNeigh, *etaNeigh;
@@ -2147,7 +2135,7 @@ void  ConvoluteSymmetricTensorFull(TFEVectFunct2D *u, TFEVectFunct2D *duTensor)
   //int N_DOF = 2*N_U;
   
   // get pointer to set of mesh cells which define the fe space
-  Coll = fespace->GetCollection();
+  auto Coll = fespace->GetCollection();
   // get number of mesh cells
   N_Cells = Coll->GetN_Cells();
  
@@ -2191,7 +2179,7 @@ void  ConvoluteSymmetricTensorFull(TFEVectFunct2D *u, TFEVectFunct2D *duTensor)
   // cells: set ClipBoard to i
   for(i=0;i<N_Cells;i++)                       
   {
-    cell = Coll->GetCell(i);
+    auto cell = Coll->GetCell(i);
     cell->SetClipBoard(i);
   }
 
@@ -2200,7 +2188,7 @@ void  ConvoluteSymmetricTensorFull(TFEVectFunct2D *u, TFEVectFunct2D *duTensor)
   for(i=0;i<N_Cells;i++)
   {
     // get current mesh cell
-    cell = Coll->GetCell(i);        
+    auto cell = Coll->GetCell(i);        
     hK = cell->GetDiameter();
     delta =  CharacteristicFilterWidth(hK);
 
@@ -2367,7 +2355,7 @@ void  ConvoluteSymmetricTensorFull(TFEVectFunct2D *u, TFEVectFunct2D *duTensor)
         if (ll==i)
           continue;
 
-        neigh = Coll->GetCell(ll); 
+        auto neigh = Coll->GetCell(ll); 
         // get one vertex of the neigh 
         vertex0 = neigh->GetVertex(0);
         // get coordinates of vertex
@@ -3173,8 +3161,6 @@ void  ConvoluteVelocity3D(TFEVectFunct3D *u, TFEVectFunct3D *uConv)
   TFE3D *Element;
   TNodalFunctional3D *nf;
   BaseFunct3D BaseFunct, *BaseFuncts, BaseFunctNeigh;
-  TCollection *Coll;
-  TBaseCell *cell, *neigh;
 //  TFE3D *ele;
   const double *weights, *xi, *eta, *zeta, *xi_ref, *eta_ref, *zeta_ref;
   const double *weightsNeigh, *xiNeigh, *etaNeigh, *zetaNeigh;
@@ -3251,7 +3237,7 @@ void  ConvoluteVelocity3D(TFEVectFunct3D *u, TFEVectFunct3D *uConv)
 //  N_DOF = 3*N_U;
   
   // get pointer to set of mesh cells which define the fe space
-  Coll = fespace->GetCollection();
+  auto Coll = fespace->GetCollection();
  
   // # dof in the new fe space
   N_UConv = fespaceConv->GetN_DegreesOfFreedom();
@@ -3294,7 +3280,7 @@ void  ConvoluteVelocity3D(TFEVectFunct3D *u, TFEVectFunct3D *uConv)
   // cells: set ClipBoard to i
   for(i=0;i<N_Cells;i++)                       
   {
-    cell = Coll->GetCell(i);
+    auto cell = Coll->GetCell(i);
     cell->SetClipBoard(i);
   }
 
@@ -3303,7 +3289,7 @@ void  ConvoluteVelocity3D(TFEVectFunct3D *u, TFEVectFunct3D *uConv)
   for(i=0;i<N_Cells;i++)
   {
     // get current mesh cell
-    cell = Coll->GetCell(i);        
+    auto cell = Coll->GetCell(i);        
     // get cell diameter (longest distance between to vertices of the cell)
     hK = cell->GetDiameter();       
     delta = CharacteristicFilterWidth(hK);
@@ -3467,7 +3453,7 @@ void  ConvoluteVelocity3D(TFEVectFunct3D *u, TFEVectFunct3D *uConv)
           continue;
         
         // get pointer to neighbour cell
-        neigh=cell->GetJoint(ll)->GetNeighbour(cell);
+        auto neigh=cell->GetJoint(ll)->GetNeighbour(cell);
         
         // get id of neighbour
         neigh_i = neigh->GetClipBoard();
@@ -3668,8 +3654,6 @@ void  ConvoluteVelocityFull3D(TFEVectFunct3D *u, TFEVectFunct3D *uConv)
   TFE3D *Element;
   TNodalFunctional3D *nf;
   BaseFunct3D BaseFunct, *BaseFuncts, BaseFunctNeigh;
-  TCollection *Coll;
-  TBaseCell *cell, *neigh;
 //  TFE3D *ele;
   const double *weights, *xi, *eta, *zeta, *xi_ref, *eta_ref, *zeta_ref;
   const double *weightsNeigh, *xiNeigh, *etaNeigh, *zetaNeigh;
@@ -3746,9 +3730,6 @@ void  ConvoluteVelocityFull3D(TFEVectFunct3D *u, TFEVectFunct3D *uConv)
   N_U = u->GetLength();
 //  N_DOF = 3*N_U;
 
-  // get pointer to set of mesh cells which define the fe space
-  Coll = fespace->GetCollection();
- 
   // # dof in the new fe space
   N_UConv = fespaceConv->GetN_DegreesOfFreedom();
    N_DOFConv = 3*N_UConv;
@@ -3781,7 +3762,7 @@ void  ConvoluteVelocityFull3D(TFEVectFunct3D *u, TFEVectFunct3D *uConv)
 // ########################################################################
 
   // get pointer to set of mesh cells which define the fe space
-  Coll = fespace->GetCollection(); 
+  auto Coll = fespace->GetCollection(); 
   // get number of mesh cells
   N_Cells = Coll->GetN_Cells();
 
@@ -3795,7 +3776,7 @@ void  ConvoluteVelocityFull3D(TFEVectFunct3D *u, TFEVectFunct3D *uConv)
   // cells: set ClipBoard to i
   for(i=0;i<N_Cells;i++)                       
   {
-    cell = Coll->GetCell(i);
+    auto cell = Coll->GetCell(i);
     cell->SetClipBoard(i);
   }
 
@@ -3804,7 +3785,7 @@ void  ConvoluteVelocityFull3D(TFEVectFunct3D *u, TFEVectFunct3D *uConv)
   for(i=0;i<N_Cells;i++)
   {
     // get current mesh cell
-    cell = Coll->GetCell(i);        
+    auto cell = Coll->GetCell(i);        
     // get cell diameter (longest distance between to vertices of the cell)
     hK = cell->GetDiameter();       
     delta =  CharacteristicFilterWidth(hK);
@@ -3986,7 +3967,7 @@ void  ConvoluteVelocityFull3D(TFEVectFunct3D *u, TFEVectFunct3D *uConv)
         if (ll==i)
           continue;
         
-        neigh = Coll->GetCell(ll); 
+        auto neigh = Coll->GetCell(ll); 
         // get one vertex of the neigh 
         vertex0 = neigh->GetVertex(0);
         // get coordinates of vertex
@@ -4171,8 +4152,6 @@ void  ConvoluteSymmetricTensor3D(TFEVectFunct3D *u, TFEVectFunct3D *duTensor)
   TFE3D *Element;
   TNodalFunctional3D *nf;
   BaseFunct3D BaseFunct, *BaseFuncts, BaseFunctNeigh;
-  TCollection *Coll;
-  TBaseCell *cell, *neigh;
 //  TFE3D *ele;
   const double *weights, *xi, *eta, *zeta, *xi_ref, *eta_ref, *zeta_ref;
   const double *weightsNeigh, *xiNeigh, *etaNeigh, *zetaNeigh;
@@ -4252,7 +4231,7 @@ void  ConvoluteSymmetricTensor3D(TFEVectFunct3D *u, TFEVectFunct3D *duTensor)
 //  N_DOF = 3*N_U;
   
   // get pointer to set of mesh cells which define the fe space
-  Coll = fespace->GetCollection();
+  auto Coll = fespace->GetCollection();
   // get number of mesh cells
   N_Cells = Coll->GetN_Cells();
  
@@ -4292,7 +4271,7 @@ void  ConvoluteSymmetricTensor3D(TFEVectFunct3D *u, TFEVectFunct3D *duTensor)
   // cells: set ClipBoard to i
   for(i=0;i<N_Cells;i++)                       
   {
-    cell = Coll->GetCell(i);
+    auto cell = Coll->GetCell(i);
     cell->SetClipBoard(i);
   }
  
@@ -4301,7 +4280,7 @@ void  ConvoluteSymmetricTensor3D(TFEVectFunct3D *u, TFEVectFunct3D *duTensor)
   for(i=0;i<N_Cells;i++)
   {
     // get current mesh cell
-    cell = Coll->GetCell(i);        
+    auto cell = Coll->GetCell(i);        
     hK = cell->GetDiameter();
     delta =  CharacteristicFilterWidth(hK);
 
@@ -4501,7 +4480,7 @@ void  ConvoluteSymmetricTensor3D(TFEVectFunct3D *u, TFEVectFunct3D *duTensor)
           continue;
         
         // get pointer to neighbour cell
-        neigh=cell->GetJoint(ll)->GetNeighbour(cell);
+        auto neigh=cell->GetJoint(ll)->GetNeighbour(cell);
         
         // get id of neighbour
         neigh_i = neigh->GetClipBoard();
@@ -4774,8 +4753,6 @@ void  ConvoluteSymmetricTensorFull3D(TFEVectFunct3D *u, TFEVectFunct3D *duTensor
   TFE3D *Element;
   TNodalFunctional3D *nf;
   BaseFunct3D BaseFunct, *BaseFuncts, BaseFunctNeigh;
-  TCollection *Coll;
-  TBaseCell *cell, *neigh;
 //  TFE3D *ele;
   const double *weights, *xi, *eta, *zeta, *xi_ref, *eta_ref, *zeta_ref;
   const double *weightsNeigh, *xiNeigh, *etaNeigh, *zetaNeigh;
@@ -4856,7 +4833,7 @@ void  ConvoluteSymmetricTensorFull3D(TFEVectFunct3D *u, TFEVectFunct3D *duTensor
 //  N_DOF = 3*N_U;
   
   // get pointer to set of mesh cells which define the fe space
-  Coll = fespace->GetCollection();
+  auto Coll = fespace->GetCollection();
   // get number of mesh cells
   N_Cells = Coll->GetN_Cells();
  
@@ -4901,7 +4878,7 @@ void  ConvoluteSymmetricTensorFull3D(TFEVectFunct3D *u, TFEVectFunct3D *duTensor
   // cells: set ClipBoard to i
   for(i=0;i<N_Cells;i++)                       
   {
-    cell = Coll->GetCell(i);
+    auto cell = Coll->GetCell(i);
     cell->SetClipBoard(i);
   }
 
@@ -4910,7 +4887,7 @@ void  ConvoluteSymmetricTensorFull3D(TFEVectFunct3D *u, TFEVectFunct3D *duTensor
   for(i=0;i<N_Cells;i++)
   {
     // get current mesh cell
-    cell = Coll->GetCell(i);        
+    auto cell = Coll->GetCell(i);        
     hK = cell->GetDiameter();
     delta =  CharacteristicFilterWidth(hK);
 
@@ -5112,7 +5089,7 @@ void  ConvoluteSymmetricTensorFull3D(TFEVectFunct3D *u, TFEVectFunct3D *duTensor
         if (ll==i)
           continue;
 
-        neigh = Coll->GetCell(ll); 
+        auto neigh = Coll->GetCell(ll); 
         // get one vertex of the neigh 
         vertex0 = neigh->GetVertex(0);
         // get coordinates of vertex
@@ -5330,8 +5307,6 @@ void  ConvolutePressure3D(TFEFunction3D *u, TFEFunction3D *uConv)
   TFE3D *Element;
   TNodalFunctional3D *nf;
   BaseFunct3D BaseFunct, *BaseFuncts, BaseFunctNeigh;
-  TCollection *Coll;
-  TBaseCell *cell, *neigh;
 //  TFE3D *ele;
   const double *weights, *xi, *eta, *zeta, *xi_ref, *eta_ref, *zeta_ref;
   const double *weightsNeigh, *xiNeigh, *etaNeigh, *zetaNeigh;
@@ -5399,7 +5374,7 @@ void  ConvolutePressure3D(TFEFunction3D *u, TFEFunction3D *uConv)
 //  N_DOF = N_U;
   
   // get pointer to set of mesh cells which define the fe space
-  Coll = fespace->GetCollection();
+  auto Coll = fespace->GetCollection();
  
   // # dof in the new fe space
   N_UConv = fespaceConv->GetN_DegreesOfFreedom();
@@ -5442,7 +5417,7 @@ void  ConvolutePressure3D(TFEFunction3D *u, TFEFunction3D *uConv)
   // cells: set ClipBoard to i
   for(i=0;i<N_Cells;i++)                       
   {
-    cell = Coll->GetCell(i);
+    auto cell = Coll->GetCell(i);
     cell->SetClipBoard(i);
   }
 
@@ -5451,7 +5426,7 @@ void  ConvolutePressure3D(TFEFunction3D *u, TFEFunction3D *uConv)
   for(i=0;i<N_Cells;i++)
   {
     // get current mesh cell
-    cell = Coll->GetCell(i);        
+    auto cell = Coll->GetCell(i);        
     // get cell diameter (longest distance between to vertices of the cell)
     hK = cell->GetDiameter();       
     delta = CharacteristicFilterWidth(hK);
@@ -5598,7 +5573,7 @@ void  ConvolutePressure3D(TFEFunction3D *u, TFEFunction3D *uConv)
           continue;
         
         // get pointer to neighbour cell
-        neigh=cell->GetJoint(ll)->GetNeighbour(cell);
+        auto neigh=cell->GetJoint(ll)->GetNeighbour(cell);
         
         // get id of neighbour
         neigh_i = neigh->GetClipBoard();

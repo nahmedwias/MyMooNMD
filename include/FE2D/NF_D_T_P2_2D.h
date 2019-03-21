@@ -86,7 +86,7 @@ static double NF_D_T_P2_2D_W[7] = {
                 0.0661970763942531, 0.0661970763942531, 
                 0.0661970763942531 };
 
-void NF_D_T_P2_2D_EvalAll(TCollection *, const TBaseCell *,
+void NF_D_T_P2_2D_EvalAll(const TCollection *, const TBaseCell *,
                           const double *PointValues, double *Functionals)
 {
   Functionals[0] = PointValues[0]*NF_D_T_P2_2D_W1[0]*NF_D_T_P2_2D_W[0]
@@ -134,7 +134,7 @@ void NF_D_T_P2_2D_EvalAll(TCollection *, const TBaseCell *,
                   +PointValues[6]*NF_D_T_P2_2D_W6[6]*NF_D_T_P2_2D_W[6];
 }
 
-void NF_D_T_P2_2D_EvalEdge(TCollection *, const TBaseCell *, int,
+void NF_D_T_P2_2D_EvalEdge(const TCollection *, const TBaseCell *, int,
                            const double *, double *)
 {
 }

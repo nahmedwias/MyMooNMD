@@ -327,7 +327,7 @@ static double NF_C_Q_UL5_2D_W37[] = {
 0.1238672550527024714183509e-1
 };
 
-void NF_C_Q_UL5_2D_EvalAll(TCollection *, const TBaseCell *,
+void NF_C_Q_UL5_2D_EvalAll(const TCollection *, const TBaseCell *,
                            const double *PointValues, double *Functionals)
 {
   // boundary functionals
@@ -982,7 +982,7 @@ void NF_C_Q_UL5_2D_EvalAll(TCollection *, const TBaseCell *,
                    +NF_C_Q_UL5_2D_W37[35]*PointValues[55];
 }
 
-void NF_C_Q_UL5_2D_EvalEdge(TCollection *, const TBaseCell *, int,
+void NF_C_Q_UL5_2D_EvalEdge(const TCollection *, const TBaseCell *, int,
                             const double *PointValues, double *Functionals)
 {
   memcpy(Functionals, PointValues, 6*SizeOfDouble);

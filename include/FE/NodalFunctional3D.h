@@ -95,13 +95,13 @@ class TNodalFunctional3D
       const;
 
     /** return values for all nodal functionals */
-    void GetAllFunctionals(TCollection *Coll, TBaseCell *Cell,
+    void GetAllFunctionals(const TCollection *Coll, TBaseCell *Cell,
                            const double *PointValues, double *Functionals)
       const
     { EvalAll(Coll, Cell, PointValues, Functionals); }
 
     /** return values for face nodal functional */
-    void GetFaceFunctionals(TCollection *Coll, TBaseCell *Cell, int Joint,
+    void GetFaceFunctionals(const TCollection *Coll, TBaseCell *Cell, int Joint,
                             const double *PointValues, double *Functionals)
       const
     { EvalFace(Coll, Cell, Joint, PointValues, Functionals); }

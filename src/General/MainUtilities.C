@@ -14,6 +14,7 @@
 #include <Convolution.h>
 #include <LinAlg.h>
 #include <ConvDiff.h>
+#include "BaseCell.h"
 
 #include <AllRefTrans.h>
 
@@ -128,8 +129,6 @@ void StreamFunction(const TFESpace2D *velo, double *u1, double *u2,
                     const TFESpace2D *stream, double *psi)
 {
   int IEH,IEL,k,l, N_Cells, NVE, NVE2, NVT, VertNum, m, l1;
-  TCollection *Coll;
-  TBaseCell *cell, *neigh, **CellList;
   int ListPointer, ListInput;
   int *KVIND;
   FE2D ele;
@@ -149,14 +148,14 @@ void StreamFunction(const TFESpace2D *velo, double *u1, double *u2,
   StreamGlobalNumbers = stream->GetGlobalNumbers();
   StreamBeginIndex = stream->GetBeginIndex();
 
-  Coll = velo->GetCollection();
+  auto Coll = velo->GetCollection();
   N_Cells = Coll->GetN_Cells();
   NVT = stream->GetN_DegreesOfFreedom();
   KVIND = new int [NVT];
   memset(KVIND, 0, SizeOfInt*NVT);
   memset(psi, 0, SizeOfDouble*NVT);
-  CellList = new TBaseCell* [N_Cells];
-  memset(CellList, 0, sizeof(TBaseCell*)*N_Cells);
+  const TBaseCell ** CellList = new const TBaseCell* [N_Cells];
+  memset(CellList, 0, sizeof(const TBaseCell*)*N_Cells);
 
   for(IEH=0;IEH<N_Cells;IEH++)
     Coll->GetCell(IEH)->SetClipBoard(IEH);
@@ -165,7 +164,7 @@ void StreamFunction(const TFESpace2D *velo, double *u1, double *u2,
   psi[l] = 0.0;
   KVIND[l] = 1;
 
-  cell = Coll->GetCell(0);
+  const TBaseCell * cell = Coll->GetCell(0);
   CellList[0] = cell;
   l = -(10+0);
   cell->SetClipBoard(l);
@@ -200,7 +199,7 @@ void StreamFunction(const TFESpace2D *velo, double *u1, double *u2,
 
       for(k=0;k<NVE2;k++)
       {
-        neigh = cell->GetJoint(k)->GetNeighbour(cell);
+        auto neigh = cell->GetJoint(k)->GetNeighbour(cell);
    
         if(neigh)
         {
@@ -461,7 +460,7 @@ void StreamFunction(const TFESpace2D *velo, double *u1, double *u2,
       // cout << "NVE2: " << NVE2 << endl;
       for(k=0;k<NVE2;k++)
       {
-        neigh = cell->GetJoint(k)->GetNeighbour(cell);
+        auto neigh = cell->GetJoint(k)->GetNeighbour(cell);
    
         if(neigh)
         {
@@ -516,8 +515,6 @@ void ComputeVorticityDivergence(const TFESpace2D *, TFEFunction2D *u1,
 {
   int i, j, N_Cells, index, *DOF, N_loc_dofVort, N_Vort;
   int *GlobalNumbersVort, *BeginIndexVort, *N_Found;
-  TCollection *Coll;
-  TBaseCell *cell;
   FE2D CurrentElementVort;
   TFE2D *Element;
   TNodalFunctional2D *nf;
@@ -546,7 +543,7 @@ void ComputeVorticityDivergence(const TFESpace2D *, TFEFunction2D *u1,
   memset(N_Found,0,N_Vort*SizeOfInt);
 
   // get pointer to set of mesh cells which define the fe space
-  Coll = vorticity_space->GetCollection();
+  auto Coll = vorticity_space->GetCollection();
   // get number of mesh cells
   N_Cells = Coll->GetN_Cells();
 
@@ -554,7 +551,7 @@ void ComputeVorticityDivergence(const TFESpace2D *, TFEFunction2D *u1,
   for(i=0;i<N_Cells;i++)
   {
     // get current mesh cell
-    cell = Coll->GetCell(i);        
+    auto cell = Coll->GetCell(i);        
     
     // compute geometric positions of the fe nodes
     // get id of finite element in current mesh cell
@@ -1490,8 +1487,6 @@ void ComputeVorticityDivergence(TFESpace3D *, TFEFunction3D *u1,
 {
   int i, j, N_Cells, index, *DOF, N_loc_dofVort, N_Vort;
   int *GlobalNumbersVort, *BeginIndexVort, *N_Found;
-  TCollection *Coll;
-  TBaseCell *cell;
   FE3D CurrentElementVort;
   TFE3D *Element;
   TNodalFunctional3D *nf;
@@ -1519,7 +1514,7 @@ void ComputeVorticityDivergence(TFESpace3D *, TFEFunction3D *u1,
   memset(N_Found,0,N_Vort*SizeOfInt);
 
   // get pointer to set of mesh cells which define the fe space
-  Coll = vorticity_space->GetCollection();
+  auto Coll = vorticity_space->GetCollection();
   // get number of mesh cells
   N_Cells = Coll->GetN_Cells();
 
@@ -1527,7 +1522,7 @@ void ComputeVorticityDivergence(TFESpace3D *, TFEFunction3D *u1,
   for(i=0;i<N_Cells;i++)
   {
     // get current mesh cell
-    cell = Coll->GetCell(i);        
+    auto cell = Coll->GetCell(i);        
     
     // compute geometric positions of the fe nodes
     // get id of finite element in current mesh cell

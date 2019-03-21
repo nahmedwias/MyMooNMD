@@ -19,6 +19,7 @@
 #include <Upwind.h>
 #include <IsoBoundEdge.h>
 #include <BoundComp.h>
+#include "BaseCell.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -59,8 +60,6 @@ TFEFunction2D *u1, TFEFunction2D *u2)
   double UPWIND_ORDER=TDatabase::ParamDB->UPWIND_ORDER;
   double UPWIND_FLUX_DAMP=TDatabase::ParamDB->UPWIND_FLUX_DAMP;
   int  UPW_APPL = TDatabase::ParamDB->UPWIND_APPLICATION;
-  TBaseCell *cell;
-  TCollection *coll;
   int i,j,k,l,m,n, N_Cells, N_Vertices;
   double *u1vect, *u2vect;
   int *GlobalNumbers, *BeginIndex, *DOF;
@@ -160,14 +159,14 @@ TFEFunction2D *u1, TFEFunction2D *u2)
   u2vect = u2->GetValues();
 
   // get collection and number of cells
-  coll = fespace->GetCollection();
+  auto coll = fespace->GetCollection();
   N_Cells = coll->GetN_Cells();
 
   // loop over all cells for computing the upwind stabilization
   for(i=0;i<N_Cells;i++)
   {
     // next cell
-    cell = coll->GetCell(i);
+    auto cell = coll->GetCell(i);
     // pointer to global indices of dof connected with this cell
     DOF = GlobalNumbers + BeginIndex[i];
     // # of vertices
@@ -329,8 +328,6 @@ void UpwindForConvDiff(const CoeffFct2D& Coeff, TSquareMatrix2D *sqmatrix,
   double UPWIND_ORDER=TDatabase::ParamDB->UPWIND_ORDER;
   double UPWIND_FLUX_DAMP=TDatabase::ParamDB->UPWIND_FLUX_DAMP;
   int  UPW_APPL = TDatabase::ParamDB->UPWIND_APPLICATION;
-  TBaseCell *cell;
-  TCollection *coll;
   int i,j,k,l,m,n, N_Cells, N_Vertices;
   int n_mat, m_mat;
   int *GlobalNumbers, *BeginIndex, *DOF;
@@ -363,14 +360,14 @@ void UpwindForConvDiff(const CoeffFct2D& Coeff, TSquareMatrix2D *sqmatrix,
   DirichletBound = fespace->GetHangingBound();
 
   // get collection and number of cells
-  coll = fespace->GetCollection();
+  auto coll = fespace->GetCollection();
   N_Cells = coll->GetN_Cells();
 
   // loop over all cells for computing the upwind stabilization
   for(i=0;i<N_Cells;i++)
   {
     // next cell
-    cell = coll->GetCell(i);
+    auto cell = coll->GetCell(i);
     // pointer to global indices of dof connected with this cell
     DOF = GlobalNumbers + BeginIndex[i];
     // # of vertices
@@ -1179,8 +1176,6 @@ TFEFunction2D *u,
 const CoeffFct2D& Coeffs,
 BoundCondFunct2D *BoundaryCondition)
 {
-  TBaseCell *cell;
-  TCollection *coll;
   int i,k,l,m,n, N_Cells, N_Vertices;
   int *GlobalNumbers, *BeginIndex, *DOF;
   double matrix[3][3];
@@ -1216,14 +1211,14 @@ BoundCondFunct2D *BoundaryCondition)
 //  N_BaseFunct = TFEDatabase2D::GetN_BaseFunctFromFE2D();
 
   // get collection and number of cells
-  coll = fespace->GetCollection();
+  auto coll = fespace->GetCollection();
   N_Cells = coll->GetN_Cells();
 
   // loop over all cells for computing the upwind stabilization
   for(i=0;i<N_Cells;i++)
   {
     // next cell
-    cell = coll->GetCell(i);
+    auto cell = coll->GetCell(i);
     // pointer to global indices of dof connected with this cell
     DOF = GlobalNumbers + BeginIndex[i];
     // check if P1 fe

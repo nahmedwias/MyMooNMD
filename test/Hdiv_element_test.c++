@@ -12,13 +12,14 @@
 #ifdef __3D__
 #include <FEDatabase3D.h>
 #endif // 3D
+#include "BaseCell.h"
 #include <list>
 
 // =======================================================================
 // main program
 // =======================================================================
 
-bool CheckFEOnCell(const TFE2D &hdiv_fe, TBaseCell & cell, 
+bool CheckFEOnCell(const TFE2D &hdiv_fe, const TBaseCell & cell, 
                    TCollection & coll)
 {
   // get the points on the reference element, at which we have to evaluate the 
@@ -50,7 +51,7 @@ bool CheckFEOnCell(const TFE2D &hdiv_fe, TBaseCell & cell,
     bf->GetDerivatives(D00, xi[k], eta[k], AllPointValues[k]);
     // Piola transform
     TFEDatabase2D::GetOrigValues(refTransID, xi[k], eta[k], bf, &coll, 
-                                 (TGridCell *) &cell, AllPointValues[k], 
+                                 (const TGridCell *) &cell, AllPointValues[k], 
                                  nullptr, nullptr, uorig[k], nullptr, nullptr);
   }
   
