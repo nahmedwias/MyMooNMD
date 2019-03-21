@@ -30,6 +30,13 @@ class TimeNavierStokes_Adjoint : public TimeNavierStokes<d>
     /// This is essentially a call to Time_NSE2D::solve, however afterwards scaling
     /// on the diagonal in the Dirichlet rows is reversed
     void solve();
+    
+  protected: 
+    /// @brief assemble all terms in the matrix and right-hand side which
+    /// contain the primal solutions u or p.
+    void assemble_adjoint_terms(const FEVectFunct& u,
+                               const FEFunction& p);
+    
 };
 
 #endif // __SYSTEM_TIMENAVIERSTOKES_ADJOINT_H__
