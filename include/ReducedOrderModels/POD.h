@@ -158,6 +158,11 @@ class POD
       return snaps_mean;
     }
 
+    const double* get_pod_eigs() const
+    {
+      return eigs;
+    }
+
   protected:
     // memeber variables
 
