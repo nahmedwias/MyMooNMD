@@ -69,8 +69,8 @@ void check_cd2d(TDomain & domain, ParameterDatabase& db, int element_code,
   TDatabase::ParamDB->ANSATZ_ORDER = element_code;
   
   CD2D cd2d(domain, db);
-  cd2d.assemble(0);
-  cd2d.solve(0);
+  cd2d.assemble();
+  cd2d.solve();
   cd2d.output();
   // compare computed with given errors
   compareErrors(cd2d, errors); // throws upon a difference
@@ -272,58 +272,6 @@ int main(int argc, char* argv[])
   time.restart_and_print("all tests, fgmres solver and multigrid "
                          "preconditioner");
   
-  
-  // Old test using algebraic flux correction
-  /** Program 1
-   *  This program tests direct solve with galerkin discretization and
-   *  fem-tvd-type algebraic flux correction.
-   */
-  {
-    Output::print("\ntesting with algebraic flux correction");
-    ParameterDatabase db = ParameterDatabase::parmoon_default_database();
-    db.merge(Example2D::default_example_database());
-    db["problem_type"] = 1;
-    db["example"] = 3; //Sharp Boundary Layer Example
-
-    db.add("solver_type", std::string("direct"), "");
-    db.add("refinement_n_initial_steps", (size_t) 3,"");
-    db.add("multigrid_n_levels", (size_t) 0, "");
-
-    db.merge(AlgebraicFluxCorrection::default_afc_database(), true);
-    db["algebraic_flux_correction"].set("afc");
-
-    // default construct a domain object
-    db.add("boundary_file", "Default_UnitSquare", "");
-    db.add("geo_file", "UnitSquare", "", {"UnitSquare", "TwoTriangles"});
-    TDomain domain(db);
-
-    TDatabase::ParamDB->ANSATZ_ORDER = 1; //P1 elements
-    db["space_discretization_type"] = "galerkin"; //Galerkin Desicreitzation
-    TDatabase::ParamDB->DELTA0 = 0.3;
-    TDatabase::ParamDB->DELTA1 = 0.;
-    TDatabase::ParamDB->SDFEM_TYPE = 0;
-    TDatabase::ParamDB->LP_FULL_GRADIENT = 1;
-    TDatabase::ParamDB->LP_FULL_GRADIENT_COEFF = 0.5;
-    TDatabase::ParamDB->LP_FULL_GRADIENT_EXPONENT = 1;
-    
-    // refine grid up to the coarsest level
-    size_t n_ref = domain.get_n_initial_refinement_steps();
-    for(unsigned int i=0; i < n_ref; i++)
-    {
-      domain.RegRefineAll();
-    }
-
-    //Here the actual computations take place
-    //=========================================================================
-    CD2D cd2d(domain, db);
-    cd2d.assemble(0);
-    cd2d.solve(0);
-    cd2d.output();
-    std::array<double,4> errors = {{0.45135188860678, 2.5108133471501,
-                                    0.44554697431225, 1.1509707646783}};
-    compareErrors(cd2d, errors); // throws in case of a difference
-    //=========================================================================
-  } // end program 1
   
   return 0;
 }

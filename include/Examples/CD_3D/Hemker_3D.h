@@ -21,7 +21,7 @@
  * where they are set to 1.
  */
 double PECLET_NUMBER;
-double tolerance = 1e-6; // to check coordinates on boundary
+double tolerance = 1e-5; // to check coordinates on boundary
 bool dirichlet_on_sides = false;
 
 void ExampleFile()
@@ -51,6 +51,8 @@ bool on_cylinder(double x, double y, double z)
 // kind of boundary condition (needed for FE space)
 void BoundCondition(double x, double y, double z, BoundCond &cond)
 {
+  cond = NEUMANN;
+
   // Dirichlet at the inflow boundary and on cylinder
   bool inflow = (std::abs(3.0 + x) < tolerance);
   if(inflow || on_cylinder(x, y, z))
@@ -58,8 +60,6 @@ void BoundCondition(double x, double y, double z, BoundCond &cond)
   else if(dirichlet_on_sides && 
           (std::abs(y-3.0) < tolerance || std::abs(y+3.0) < tolerance))
     cond = DIRICHLET;
-  else
-    cond = NEUMANN;
 }
 
 // value of boundary condition

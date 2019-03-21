@@ -32,6 +32,7 @@
 #include <FEFunction3D.h>
 #include <Example_CD3D.h>
 #include <anderson.h>
+#include <PostProcessing3D.h>
 
 #include <vector>
 #include <deque>
@@ -153,6 +154,9 @@ class CD3D
     
     /** @brief write some information (number of cells, dofs, ...) */
     void output_problem_size_info() const;
+    
+     /** @brief an interpolant of the exact solution onto the fe space */
+    std::vector<double> exact_interpolant;
 
   public:
 
@@ -198,14 +202,14 @@ class CD3D
      * assembling routines are supposed to be used - so far only standard
      * "galerkin" ("1") is supported.
      */
-    void assemble(const int iteration);
+    void assemble();
     
     /** @brief Solve the system.
      *
      * Have a look at the code to see which solvers are already enabled.
      * More are to come.
      */
-    bool solve(const int iteration);
+    void solve();
     
     /** 
      * @brief Measure errors and write nice pictures.
@@ -328,79 +332,13 @@ class CD3D
     /** Delete move assignment. This class may not be moved yet. */
     CD3D& operator=(CD3D&&) = delete;
     
-    //Dynamic Damping from [JK08]
-    void dynamic_damping(const int iteration);
-    
-    void anderson_acceleration_damping(int N_Unknowns, int iteration, 
-     std::list<std::vector<double>> & solAnderson,
-     std::list<std::vector<double>> & deltaAnderson);
+    int global_space_type;
 
     //! Default destructor. Does most likely cause memory leaks.
     ~CD3D() = default;
 
   private:
-    /**
-     * Scramble together the parameters which Assemble3D needs and call it.
-     * Is only put here to keep the code of assemble() slender.
-     * assemble() should take care of the right choice of the LocalAssembling
-     * object and whether it fits the system matrix' block structure
-     * (which should always be the case in CD3D...).
-     * @param s The sytem where rhs and stiffness matrix are to be assembled.
-     * @param la_stiff The local assembling object of choice.
-     */
-    /* residual: norm of current residual r_k+1
-     * residual_old: norm of previous residue r_k */
-     double residual, residual_old; 
-   
-    /* t: time taken to complete one iteration */
-     double t;
-    /*
-     * rhs_flag: Use to denote when one it takes one iteration of Newton as well as one iteration of Fixed_point_RHS more than 2 seconds
-     * newton_flag: Use to denote when iteration moves from Newton to Fixed_point_RHS and hence increase the tolerance
-     * up_param: The tolerance taken to change fron one schem to another
-     * 
-     */
-    void do_algebraic_flux_correction(const int iteration, const int check_fpr);
-    /*
-     * time_total: time taken to compute solve the problem
-     * time_rhs: Time taken to compute one Fixed_point_RHS iteration
-     */    
-    double time_total, time_rhs, time_newton;
-    
-    /*
-     * rejected_steps: rejected iteration steps
-     */
-    int rejected_steps;
-        
-    /*
-     * rhs_flag, newton_flag: Used for finding if time taken by one step of Newton as well as one step of Fixed_point_RHS is same
-     * newton_iterate: Count the number of Newton iteration
-     *rhs_iterate: Count the number of Fixed_point_RHS iteration     
-     */
-    int rhs_flag, newton_flag;
-    int newton_iterate, rhs_iterate;
-    /*
-     * up_param: Tolerance limit of the residual which decides when to switch the iteration technique
-     */
-    double up_param;
-     
-    BlockVector alphas_x_i;
-    BlockVector old_solution;
-    //Copy the RHS after the first iteration is done so that it can be used for Fixed_point_RHS
-    BlockVector rhs_copy;
-    //checks whether we have Fixed_point_RHS and iteration>1
-    int is_not_afc_fixed_point_rhs;
-    //copy for the AFC steady state function
-    BlockFEMatrix matrix_copy;   
-    
-    //storage of anderson previous updates
-    std::list<std::vector<double>>  solAnderson;
-    std::list<std::vector<double>>  deltaAnderson;
-    
-    //number of steps in anderson acceleration
-    int kAnderson;
-    
-    int global_space_type;
+
     
     void call_assembling_routine(SystemPerGrid& s, LocalAssembling3D& la);
 

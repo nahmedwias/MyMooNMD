@@ -144,6 +144,12 @@ if(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL OR ${PARMOON_PARALLEL_TYPE} STRE
   target_link_libraries(ParMooN_test_cd2d parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
   add_test(cd2d ParMooN_test_cd2d)
   list(APPEND parmoon_tests ParMooN_test_cd2d)
+  
+  #cd2d algebraic flux correction(afc) test
+  add_executable(ParMooN_test_cd2d_afc cd2d_afc_test.c++)
+  target_link_libraries(ParMooN_test_cd2d_afc parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
+  add_test(cd2d_afc ParMooN_test_cd2d_afc)
+  list(APPEND parmoon_tests ParMooN_test_cd2d_afc)
 	
   #tcd2d test
   add_executable(ParMooN_test_tcd2d tcd2d_test.c++)
@@ -205,6 +211,12 @@ if(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL OR ${PARMOON_PARALLEL_TYPE} STRE
   add_test(NAME cd3d_seq_mg COMMAND ParMooN_test_cd3d_solver_seq multigrid)
   # petsc
   add_test(NAME cd3d_seq_petsc COMMAND ParMooN_test_cd3d_solver_seq petsc)
+  
+  #cd3d algebraic flux correction(afc) test
+  add_executable(ParMooN_test_cd3d_afc cd3d_afc_test.c++)
+  target_link_libraries(ParMooN_test_cd3d_afc parmoon_3d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
+  add_test(cd3d_afc ParMooN_test_cd3d_afc)
+  list(APPEND parmoon_tests ParMooN_test_cd3d_afc)
   
   #tcd3d solver tests
   set(_EXEC_NAME ParMooN_test_tcd3d_solver_seq)
