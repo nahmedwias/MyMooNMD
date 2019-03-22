@@ -66,7 +66,7 @@ class SnapshotsCollector
     *                  the solution (snapshot)
     * @param time_step count of the time step from the time loop (main program)
     */
-    void write_data(const BlockVector &solution, size_t time_step=0);
+    void write_data(const BlockVector& solution, size_t time_step=0);
 
   private:
 

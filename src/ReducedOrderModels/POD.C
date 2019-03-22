@@ -89,7 +89,7 @@ void POD::read_snapshots()
   snap_filename += "/";
   snap_filename += this->db["snaps_basename"].get<std::string>();
 
-  Output::print<1>("Reading snapshots from file: ", snap_filename, " ...");
+  Output::print<1>("Reading snapshots from file: ", snap_filename, "...");
 //Add check warning
   std::vector < std::vector<double> > tmp_snaps;
   read_data( snap_filename, tmp_snaps);
@@ -108,7 +108,7 @@ void POD::read_snapshots()
     }
   }
 
-  Output::print<1>("... done.");
+  Output::print<1>("... snapshots read.");
   Output::print<1>("  * Length of snapshots : ", this->length_snaps);
   Output::print<1>("  * Number of snapshots : ", this->number_snaps);
 }
@@ -202,8 +202,10 @@ void POD::compute_basis()
 
   if(this->rank > this->valid_eigs)
   {
-    ErrThrow("ERROR: rank of POD basis can't be greater than ",
-             this->valid_eigs, "! Check parameter 'pod_rank'.");
+    Output::warn<1>("POD basis", "rank of POD basis can't be greater than ",
+                    this->valid_eigs, "! Parameter 'pod_rank' has been reset ",
+                    "from ", this->rank, " to ", this->valid_eigs, ".");
+    this->rank = this->valid_eigs;
   }
 
   Output::print<1>("Number of valid POD eigenvalues: ", this->valid_eigs);
