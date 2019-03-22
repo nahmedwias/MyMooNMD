@@ -21,6 +21,7 @@ class TRefTrans3D;
 #include <FEDesc3D.h>
 #include <FE3D.h>
 #include <FE3DMapper1Reg.h>
+#include "RefDesc.h"
 
 #include <QuadFormula1D.h>
 #include <QuadFormulaHexa.h>
@@ -512,7 +513,7 @@ class TFEDatabase3D
      /** calculate base functions with derivatives and coordinates
          from reference to original element */
      static RefTrans3D GetOrig(int N_LocalUsedElements, FE3D *LocalUsedElements,
-                         TCollection *Coll, TBaseCell *cell,
+                         const TCollection *Coll, TBaseCell *cell,
                          bool *Needs2ndDer,
                          int &N_Points, const double* &xi, const double* &eta,
                          const double* &zeta, const double* &weights,
@@ -601,7 +602,7 @@ class TFEDatabase3D
         to original element */
     static void GetOrigValues(RefTrans3D RefTrans,
                 double xi, double eta, double zeta,
-                TBaseFunct3D *bf, TCollection *Coll, const TBaseCell *cell,
+                TBaseFunct3D *bf, const TCollection *Coll, const TBaseCell *cell,
                 double *uref, double *uxiref, double *uetaref, double *uzetaref,
                 double *uorig, double *uxorig, double *uyorig, double *uzorig);
 

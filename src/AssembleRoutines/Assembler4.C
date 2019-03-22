@@ -22,6 +22,7 @@
 #include <MooNMD_Io.h>
 #include <Database.h>
 #include <Convolution.h>
+#include "BaseCell.h"
 
 #include <string.h>
 #include <stdlib.h>

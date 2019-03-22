@@ -23,7 +23,7 @@ void BoundaryAssembling3D::rhs_g_v_n(BlockVector &rhs,
 {
   if (boundaryFaceList.empty())
   {
-    TCollection* coll = U_Space->GetCollection();
+    auto coll = U_Space->GetCollection();
     coll->get_face_list_on_component(componentID, boundaryFaceList);
   }
 
@@ -96,7 +96,7 @@ void BoundaryAssembling3D::rhs_g_v_n(BlockVector &rhs,
 				     double mult)
 {  
   // now we loop always over the whole collection: inefficient!
-  TCollection* coll = U_Space->GetCollection();
+  auto coll = U_Space->GetCollection();
 
   for(int i = 0; i < coll->GetN_Cells(); i++)
   {
@@ -193,7 +193,7 @@ void BoundaryAssembling3D::matrix_u_v(BlockFEMatrix &M,
 {
   if (boundaryFaceList.empty())
   {
-    TCollection* coll = U_Space->GetCollection();
+    auto coll = U_Space->GetCollection();
     coll->get_face_list_on_component(componentID, boundaryFaceList);
   }
 
@@ -277,7 +277,7 @@ void BoundaryAssembling3D::matrix_p_v_n(BlockFEMatrix &M,
 {
   if (boundaryFaceList.empty())
   {
-    TCollection* coll = U_Space->GetCollection();
+    auto coll = U_Space->GetCollection();
     coll->get_face_list_on_component(componentID, boundaryFaceList);
   }
 
@@ -376,7 +376,7 @@ void BoundaryAssembling3D::matrix_q_u_n(BlockFEMatrix &M,
 
   if (boundaryFaceList.empty())
   {
-    TCollection* coll = U_Space->GetCollection();
+    auto coll = U_Space->GetCollection();
     coll->get_face_list_on_component(componentID, boundaryFaceList);
   }
 
@@ -495,7 +495,7 @@ void BoundaryAssembling3D::rhs_q_uD_n(BlockVector &rhs,
 
   if (boundaryFaceList.empty())
   {
-    TCollection *coll = U_Space->GetCollection();
+    auto coll = U_Space->GetCollection();
     coll->get_face_list_on_component(componentID, boundaryFaceList);
   }
 
@@ -596,7 +596,7 @@ void BoundaryAssembling3D::matrix_gradu_n_v(BlockFEMatrix &M,
 
   if (boundaryFaceList.empty())
   {
-    TCollection* coll = U_Space->GetCollection();
+    auto coll = U_Space->GetCollection();
     coll->get_face_list_on_component(componentID, boundaryFaceList);
   }
 
@@ -705,7 +705,7 @@ void BoundaryAssembling3D::matrix_gradv_n_u(BlockFEMatrix &M,
 
   if (boundaryFaceList.empty())
   {
-    TCollection* coll = U_Space->GetCollection();
+    auto coll = U_Space->GetCollection();
     coll->get_face_list_on_component(componentID, boundaryFaceList);
   }
 
@@ -804,7 +804,7 @@ void BoundaryAssembling3D::rhs_gradv_n_uD(BlockVector &rhs,
 {
   if (boundaryFaceList.empty())
   {
-    TCollection *coll = U_Space->GetCollection();
+    auto coll = U_Space->GetCollection();
     coll->get_face_list_on_component(componentID, boundaryFaceList);
   }
 
@@ -929,7 +929,7 @@ void BoundaryAssembling3D::rhs_uD_v(BlockVector &rhs,
 {
   if (boundaryFaceList.empty())
   {
-    TCollection *coll = U_Space->GetCollection();
+    auto coll = U_Space->GetCollection();
     coll->get_face_list_on_component(componentID, boundaryFaceList);
   }
 

@@ -3,6 +3,7 @@
 #include <FEDatabase3D.h>
 #include <MooNMD_Io.h>
 #include <ParameterDatabase.h>
+#include "BaseCell.h"
 
 #include <mpi.h>
 #include <stdio.h>
@@ -65,15 +66,15 @@ int main(int argc, char **argv)
   }
   for(unsigned int i = 0; i < n_cells; ++i)
   {
-    TBaseCell* c_orig = grids.back()->GetCell(i);
-    TBaseCell* c_copy = grids_copy.back()->GetCell(i);
+    const TBaseCell* c_orig = grids.back()->GetCell(i);
+    const TBaseCell* c_copy = grids_copy.back()->GetCell(i);
     // in 3D there are only either tetrahedra or hexahedra
     // so we can assume that the number of vertices in the two cell is equal
     auto n_vert = c_orig->GetN_Vertices();
     for(unsigned int v = 0; v < n_vert; ++v)
     {
-      TVertex* v_orig = c_orig->GetVertex(v);
-      TVertex* v_copy = c_copy->GetVertex(v);
+      const TVertex* v_orig = c_orig->GetVertex(v);
+      const TVertex* v_copy = c_copy->GetVertex(v);
       if(  v_orig->GetX() != v_copy->GetX()
         || v_orig->GetY() != v_copy->GetY()
         || v_orig->GetZ() != v_copy->GetZ() )

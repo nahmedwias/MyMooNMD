@@ -64,13 +64,13 @@ static double *NF_C_T_P2_3D_ZetaArray[4] = {
 static double NF_C_T_P2_3D_T[6] = { 0, 0.5, 1,   0, 0.5, 0 };
 static double NF_C_T_P2_3D_S[6] = { 0,   0, 0, 0.5, 0.5, 1 };
 
-void NF_C_T_P2_3D_EvalAll(TCollection *, const TBaseCell *,
+void NF_C_T_P2_3D_EvalAll(const TCollection *, const TBaseCell *,
                           const double *PointValues, double *Functionals)
 {
   memcpy(Functionals, PointValues, 10*SizeOfDouble);
 }
 
-void NF_C_T_P2_3D_EvalFace(TCollection *, const TBaseCell *, int,
+void NF_C_T_P2_3D_EvalFace(const TCollection *, const TBaseCell *, int,
                            const double *PointValues, double *Functionals)
 {
   memcpy(Functionals, PointValues, 6*SizeOfDouble);

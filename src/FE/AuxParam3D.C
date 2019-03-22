@@ -13,6 +13,7 @@
 #include <AuxParam3D.h>
 #include <FEDatabase3D.h>
 #include <stdlib.h>
+#include "BaseCell.h"
 
 /** constructor */
 TAuxParam3D::TAuxParam3D(

@@ -19,6 +19,7 @@
 #ifdef __2D__
   #include <FEFunction2D.h>
 #endif
+#include "BaseCell.h"
 
 #include <stdlib.h>
 // #include <malloc.h>
@@ -1327,7 +1328,6 @@ void EdgeStabilization(TFESpace2D *fespace, TFEFunction2D *u,
   double phi0_x, phi0_y, phi1_x, phi1_y, phi2_x, phi2_y, n1, n2, maxjump;
   double sx, sy, meas, area, rho = 2.0; //tmp
   TBaseCell *cell, *neigh;
-  TCollection *coll;
   FE2D CurrentElement;
   TJoint *joint;
   const TRefDesc *refdesc;
@@ -1343,7 +1343,7 @@ void EdgeStabilization(TFESpace2D *fespace, TFEFunction2D *u,
   // get start of dirichlet nodes in dof array
   ActiveBound = fespace->GetActiveBound();
   // get collection and number of cells
-  coll = fespace->GetCollection();
+  auto coll = fespace->GetCollection();
   N_Cells = coll->GetN_Cells();
 
   // assign a numbering to the cells

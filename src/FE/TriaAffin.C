@@ -13,6 +13,7 @@
 
 #include <TriaAffin.h>
 #include <FEDatabase2D.h>
+#include "BaseCell.h"
 #include <LinAlg.h>
 #include <string.h>
 #include <stdlib.h>

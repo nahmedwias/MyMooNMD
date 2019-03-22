@@ -10,6 +10,7 @@
 // =======================================================================
 
 #include <It_EQ.h>
+#include "BaseCell.h"
 
 // Methods
 TBaseCell *TIt_EQ::Next(int &info)

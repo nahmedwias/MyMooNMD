@@ -4,6 +4,7 @@
 #include <FEFunction2D.h>
 #include <FEDatabase2D.h>
 #include <SquareMatrix2D.h>
+#include "BaseCell.h"
 #include <string.h>
 
 //===========================================================

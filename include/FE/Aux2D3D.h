@@ -20,7 +20,7 @@ class TAux2D3D
 {
   protected:
     /** collection of 3d cells */
-    TCollection *Coll;
+    const TCollection *Coll;
 
     /** 3d cell number */
     int *CellNumbers;

@@ -5,7 +5,7 @@
 #include <FEVectFunct3D.h>
 #endif
 #include <Vertex.h>
-
+#include "BaseCell.h"
 #include <algorithm>
 #include <sys/stat.h>
 #include <type_traits>
@@ -61,7 +61,7 @@ DataWriter<d>::DataWriter(const ParameterDatabase& param_db)
       output_initial_index, ". It is assumed that both 'time_step_length' "
       "and 'n_steps_per_output' are the same in the previous and current simulations.");
   }
-};
+}
 
 template <int d>
 void DataWriter<d>::add_fe_function(const FEFunction* fefunction)
@@ -1726,7 +1726,7 @@ void DataWriter<d>::computeNodeValues(const T* function,
                                       unsigned int& dimension)
 {
   auto FESpace = function->GetFESpace();
-  TCollection* coll = FESpace->GetCollection();
+  auto coll = FESpace->GetCollection();
   int nPoints = coll->GetN_Vertices();
 
   // get function type of T

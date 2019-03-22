@@ -16,6 +16,7 @@
 #include <Database.h>
 #include <FEDatabase2D.h>
 #include <DiscreteForm2D.h>
+#include "BaseCell.h"
 #include <string.h>
 #include <stdlib.h>
 

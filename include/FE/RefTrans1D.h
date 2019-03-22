@@ -8,7 +8,7 @@ class TBaseCell;
 class TRefTrans1D
 {
   protected:
-    TBaseCell *Cell;
+    const TBaseCell *Cell;
 
   public:
     /** @brief constuctor */
@@ -29,10 +29,10 @@ class TRefTrans1D
 
     /** @brief calculate functions and derivatives from reference element
         to original element */
-    void GetOrigValues(TBaseCell *cell);
+    void GetOrigValues(const TBaseCell *cell);
 
     /** @brief set original element to cell */
-    virtual void SetCell(TBaseCell *cell)
+    virtual void SetCell(const TBaseCell *cell)
     {  Cell = cell; }
 
     /** @brief return volume of cell according to reference transformation */

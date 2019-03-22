@@ -22,7 +22,7 @@
 #include <BoundEdge.h>
 #include <BoundComp2D.h>
 #include <FEDatabase2D.h>
-
+#include "BaseCell.h"
 
 #include <Database.h>
 #include <InterfaceJoint.h>

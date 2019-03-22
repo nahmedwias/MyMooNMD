@@ -44,7 +44,7 @@ static const double NF_N_T_RT1_2D_iw[7] =
 
 
 
-void NF_N_T_RT1_2D_EvalAll(TCollection *, const TBaseCell *Cell,
+void NF_N_T_RT1_2D_EvalAll(const TCollection *, const TBaseCell *Cell,
                            const double *PointValues, double *Functionals)
 {
   // short names
@@ -154,7 +154,7 @@ void NF_N_T_RT1_2D_EvalAll(TCollection *, const TBaseCell *Cell,
   }
 }
 
-void NF_N_T_RT1_2D_EvalEdge(TCollection *, const TBaseCell *Cell, int Joint,
+void NF_N_T_RT1_2D_EvalEdge(const TCollection *, const TBaseCell *Cell, int Joint,
                             const double *PointValues, double *Functionals)
 {
   // this is needed for setting boundary conditions

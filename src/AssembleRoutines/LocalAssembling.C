@@ -7,6 +7,7 @@
 #include <FEFunction2D.h>
 #include <MooNMD_Io.h>
 #include <string.h>
+#include "BaseCell.h"
 
 #include <ConvDiff.h>
 #ifdef __3D__
@@ -483,7 +484,7 @@ LocalAssembling<d>::LocalAssembling(
   int myN_Terms, MultiIndex_vector myDerivatives,
   std::vector<int> myFESpaceNumber, std::vector<int> myRowSpace,
   std::vector<int> myColumnSpace, std::vector<int> myRhsSpace,
-  CoeffFct myCoeffs, AssembleFctParam myAssembleParam,
+  CoeffFct myCoeffs, std::vector<AssembleFctParam> myAssembleParam,
   ManipulateFct* myManipulate, int myN_Matrices, int myN_Rhs,
   int myN_ParamFct, std::vector<ParamFct*> myParameterFct,
   std::vector<int> myBeginParameter, int myN_Parameters,
@@ -495,7 +496,7 @@ LocalAssembling<d>::LocalAssembling(
    discretization_type{discretization_type_in}, N_Terms(myN_Terms),
    Derivatives(myDerivatives), FESpaceNumber(myFESpaceNumber),
    RowSpace(myRowSpace), ColumnSpace(myColumnSpace), RhsSpace(myRhsSpace),
-   Coeffs(myCoeffs), local_assemblings_routines({myAssembleParam}),
+   Coeffs(myCoeffs), local_assemblings_routines(myAssembleParam),
    Manipulate(myManipulate),
    N_Matrices(myN_Matrices), N_Rhs(myN_Rhs), N_ParamFct(myN_ParamFct),
    ParameterFct(myParameterFct), BeginParameter(myBeginParameter),

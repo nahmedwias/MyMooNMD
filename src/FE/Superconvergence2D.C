@@ -4,6 +4,7 @@
 //*****************************************************
 //
 #include <Superconvergence2D.h>
+#include "BaseCell.h"
 
 void Transform_NQ1P2_2D(double *fine_values, double *coarse_values)
 {
@@ -308,7 +309,6 @@ void Superconvergence_Q1Q2_2D(TFEFunction2D *q1_function,
 /* build the Q2 space */  
   double *q1_values, *q2_values;
 //  int q1_ndof, q2_ndof;   // set but unused variables
-  TCollection *q1_coll, *q2_coll;
   const TBaseCell *coarse_cell,*child_cell0,*child_cell1;
   const TBaseCell *child_cell2,*child_cell3;
   double coarse_values[9];
@@ -324,8 +324,8 @@ void Superconvergence_Q1Q2_2D(TFEFunction2D *q1_function,
   auto q1_space = q1_function->GetFESpace2D();
   auto q2_space = q2_function->GetFESpace2D();
   
-  q2_coll=q2_space->GetCollection();
-  q1_coll=q1_space->GetCollection();
+  auto q2_coll = q2_space->GetCollection();
+  auto q1_coll = q1_space->GetCollection();
   
 //  q1_ndof=q1_space->GetN_DegreesOfFreedom();   // it is not used in the rest of this function
   q1_values=q1_function->GetValues();
@@ -394,7 +394,6 @@ void Superconvergence_Q2Q3_2D(TFEFunction2D *q2_function,
   double *q2_values,*q3_values;
 //  int q2_ndof,q3_ndof;   // set but unused variables
   
-  TCollection *q3_coll, *q2_coll;
   const TBaseCell *coarse_cell,*child_cell0,*child_cell1;
   const TBaseCell *child_cell2,*child_cell3;
   double coarse_values[16];
@@ -410,8 +409,8 @@ void Superconvergence_Q2Q3_2D(TFEFunction2D *q2_function,
   auto q2_space = q2_function->GetFESpace2D();
   auto q3_space = q3_function->GetFESpace2D();
   
-  q2_coll=q2_space->GetCollection();
-  q3_coll=q3_space->GetCollection();
+  auto q2_coll = q2_space->GetCollection();
+  auto q3_coll = q3_space->GetCollection();
   
 //  q2_ndof=q2_space->GetN_DegreesOfFreedom();  // not used in the rest of this function
   q2_values=q2_function->GetValues();
@@ -478,8 +477,6 @@ void Superconvergence_Q2Q4_2D(TFEFunction2D *q2_function,
 {
   double *q2_values,*q4_values;
 //  int q2_ndof,q4_ndof;   // set but unused
-  
-  TCollection *q4_coll, *q2_coll;
   const TBaseCell *coarse_cell;
   const TBaseCell *child_cell0,*child_cell1,*child_cell2,*child_cell3;
   double coarse_values[25];
@@ -495,8 +492,8 @@ void Superconvergence_Q2Q4_2D(TFEFunction2D *q2_function,
   auto q2_space = q2_function->GetFESpace2D();
   auto q4_space = q4_function->GetFESpace2D();
   
-  q2_coll=q2_space->GetCollection();
-  q4_coll=q4_space->GetCollection();
+  auto q2_coll = q2_space->GetCollection();
+  auto q4_coll = q4_space->GetCollection();
   
 //  q2_ndof=q2_space->GetN_DegreesOfFreedom();   // not used in the rest of this function
   q2_values=q2_function->GetValues();
@@ -563,7 +560,6 @@ void Superconvergence_P1P2_2D(int version, TFEFunction2D *p1_function,
 {
   double *p1_values, *p2_values;
 //  int p1_ndof, p2_ndof;   // set but unused
-  TCollection *p1_coll, *p2_coll;
   const TBaseCell *coarse_cell,*child_cell0,*child_cell1;
   const TBaseCell *child_cell2,*child_cell3;
   double coarse_values[6];
@@ -579,8 +575,8 @@ void Superconvergence_P1P2_2D(int version, TFEFunction2D *p1_function,
   auto p1_space = p1_function->GetFESpace2D();
   auto p2_space = p2_function->GetFESpace2D();
   
-  p2_coll=p2_space->GetCollection();
-  p1_coll=p1_space->GetCollection();
+  auto p2_coll = p2_space->GetCollection();
+  auto p1_coll = p1_space->GetCollection();
   
 //  p1_ndof=p1_space->GetN_DegreesOfFreedom();   // not used in the rest of this function
   p1_values=p1_function->GetValues();
@@ -649,8 +645,6 @@ void Superconvergence_NQ1P2_2D(TFEFunction2D *q1n_function,
 {
   double *q1n_values,*p2_values;
 //  int q1n_ndof,p2_ndof;   // set but unused
-  
-  TCollection *p2_coll, *q1n_coll;
   const TBaseCell *coarse_cell,*child_cell0,*child_cell1;
   const TBaseCell *child_cell2,*child_cell3;
   double coarse_values[6];
@@ -666,8 +660,8 @@ void Superconvergence_NQ1P2_2D(TFEFunction2D *q1n_function,
   auto q1n_space = q1n_function->GetFESpace2D();
   auto p2_space = p2_function->GetFESpace2D();
   
-  q1n_coll=q1n_space->GetCollection();
-  p2_coll=p2_space->GetCollection();
+  auto q1n_coll = q1n_space->GetCollection();
+  auto p2_coll = p2_space->GetCollection();
   
 //  q1n_ndof=q1n_space->GetN_DegreesOfFreedom();  // not used in the rest of this function
   q1n_values=q1n_function->GetValues();

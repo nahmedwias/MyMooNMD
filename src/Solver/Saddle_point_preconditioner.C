@@ -11,6 +11,7 @@
 #include <MainUtilities.h>
 #include <MooNMD_Io.h>
 #include <algorithm>
+#include "BaseCell.h"
 
 #include <Joint.h>
 #include <BoundEdge.h>
@@ -800,7 +801,7 @@ void Saddle_point_preconditioner::fill_pressure_mass_matrix()
     
     LocalAssembling la(n_terms, derivatives, fe_space_numbers, row_space, 
         column_space, rhs_space, coeff, 
-        local_assembling_function, manipulate, n_matrices,
+        {local_assembling_function}, manipulate, n_matrices,
         n_rhs, n_parameter, parameter_functions, 
         begin_parameter, n_parameters, fe_functions, 
         n_fe_values, fe_value_function_index, 
@@ -930,7 +931,7 @@ void Saddle_point_preconditioner::fill_inverse_diagonal()
     std::vector<MultiIndex> fe_value_multi_index; // not needed
     LocalAssembling la(n_terms, derivatives, fe_space_numbers, row_space, 
                        column_space, rhs_space, coeff, 
-                       local_assembling_function, manipulate, n_matrices,
+                       {local_assembling_function}, manipulate, n_matrices,
                        n_rhs, n_parameter, parameter_functions, 
                        begin_parameter, n_parameters, fe_functions, 
                        n_fe_values, fe_value_function_index, 

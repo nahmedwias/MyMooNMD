@@ -11,6 +11,7 @@
 // =======================================================================
 
 #include <It_Finest.h>
+#include "BaseCell.h"
 
 // Methods
 int TIt_Finest::Init(int level)

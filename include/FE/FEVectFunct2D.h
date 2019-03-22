@@ -54,12 +54,6 @@ class TFEVectFunct2D : public TFEFunction2D
           Values+i*Length, Length);
     }
 
-    /** convert current grid to vector-values FE function */
-    void GridToData();
-
-    /** use current data for grid replacement */
-    void DataToGrid();
-
     /** calculate errors to given vector function */
     void GetDeformationTensorErrors( 
         DoubleFunct2D *Exact, DoubleFunct2D *Exact1,

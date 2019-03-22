@@ -143,8 +143,6 @@ void GetCdCl(TFEFunction2D *u1fct, TFEFunction2D *u2fct,
   int *PGlobalNumbers, *PBeginIndex;
   int *N_BaseFunct, N_Cells;
   BaseFunct2D BaseFunct, *BaseFuncts;
-  TCollection *Coll;
-  TBaseCell *cell;
   double value, value1, value2, value3;
   double FEFunctValues[MaxN_BaseFunctions2D];
   double FEFunctValues1[MaxN_BaseFunctions2D];
@@ -155,8 +153,6 @@ void GetCdCl(TFEFunction2D *u1fct, TFEFunction2D *u2fct,
   MultiIndex2D NeededDerivatives[3] = { D00, D10, D01 };
   double *v, nu = DIMENSIONLESS_VISCOSITY;
   double *Der, *aux;
-  TJoint *joint;
-  TBoundEdge *boundedge;
   const TBoundComp *BoundComp;
   TFE2D *eleCell;
   FE2D FEEle;
@@ -190,21 +186,21 @@ void GetCdCl(TFEFunction2D *u1fct, TFEFunction2D *u2fct,
 // ########################################################################
 // loop over all cells
 // ########################################################################
-  Coll = USpace->GetCollection(); // all spaces use same Coll
+  auto Coll = USpace->GetCollection(); // all spaces use same Coll
   N_Cells = Coll->GetN_Cells();
 
   for(i=0;i<N_Cells;i++)
   {
-    cell = Coll->GetCell(i);
+    auto cell = Coll->GetCell(i);
     N_Edges=cell->GetN_Edges();
     for(j=0;j<N_Edges;j++)              // loop over all edges of cell
     {
-      joint=cell->GetJoint(j);
+      auto joint=cell->GetJoint(j);
       if ((joint->GetType() == BoundaryEdge)||
           (joint->GetType() == IsoBoundEdge)) // boundary edge
       {
 
-        boundedge=(TBoundEdge *)joint;
+        auto boundedge=(const TBoundEdge *)joint;
         BoundComp=boundedge->GetBoundComp();  // get boundary component
         comp=BoundComp->GetID();              // boundary id
         if (comp==4)
@@ -232,7 +228,7 @@ void GetCdCl(TFEFunction2D *u1fct, TFEFunction2D *u2fct,
   N_Cells = Coll->GetN_Cells();
   for(i=0;i<N_Cells;i++)
   {
-    cell = Coll->GetCell(i);
+    auto cell = Coll->GetCell(i);
 
     // ####################################################################
     // find local used elements on this cell

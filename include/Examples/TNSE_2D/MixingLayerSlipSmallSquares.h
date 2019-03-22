@@ -110,8 +110,6 @@ void LinCoeffs(int n_points, double *, double *, double **, double **coeffs)
 void ComputeVorticiyThickness(const TFEFunction2D *Vorticity, double &thickness)
 {
   int i,j,k,l,found,max_lines,N_Cells,N_Edges,N_Vort;
-  TCollection *Coll;
-  TBaseCell *cell;
   double x0,x1,x,y0,y1,val[3],max;
   double *global_y_coord, *aver_vort;
 
@@ -121,7 +119,7 @@ void ComputeVorticiyThickness(const TFEFunction2D *Vorticity, double &thickness)
   aver_vort =  new double[N_Vort];
 
   // get pointer to set of mesh cells which define the fe space
-  Coll = vorticity_space->GetCollection();
+  auto Coll = vorticity_space->GetCollection();
   // get number of mesh cells
   N_Cells = Coll->GetN_Cells();
 
@@ -130,7 +128,7 @@ void ComputeVorticiyThickness(const TFEFunction2D *Vorticity, double &thickness)
   for(i=0;i<N_Cells;i++)
   {
     // get current mesh cell
-    cell = Coll->GetCell(i);
+    auto cell = Coll->GetCell(i);
     // get number of edges
     N_Edges = cell->GetN_Edges();
     // for all vertices

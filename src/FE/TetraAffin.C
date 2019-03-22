@@ -15,6 +15,7 @@
 #include <FEDatabase3D.h>
 #include <TetraAffin.h>
 #include <LinAlg.h>
+#include "BaseCell.h"
 #include <string.h>
 #include <stdlib.h>
 

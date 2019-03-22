@@ -19,6 +19,7 @@
 
 template <int d>
 class LineEval;
+class TDomain;
 
 /**
  * @brief define all lines used for evaluation

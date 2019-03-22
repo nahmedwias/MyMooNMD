@@ -6,6 +6,7 @@
 #include <SquareMatrix2D.h>
 #include <string.h>
 #include <MainUtilities.h>
+#include "BaseCell.h"
 
 /* examples */
 
