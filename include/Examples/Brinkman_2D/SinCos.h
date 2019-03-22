@@ -3,6 +3,9 @@
 // u(x,y) = (sin(Pi*x) , -Pi*y*cos(Pi*x)) = (u1,u2)
 // p(x,y) = sin(Pi*x)*cos(Pi*y)
 
+double viscosity = -1;
+double effective_viscosity = -1;
+double permeability = -1;
 
 void ExampleFile()
 {
@@ -12,7 +15,7 @@ void ExampleFile()
 // ========================================================================
 // exact solution
 // ========================================================================
-void ExactU1(double x, double y, double *values)
+void ExactU1(double x, double, double *values)
 {
     values[0] = sin(Pi*x);          //u1
     values[1] = Pi*cos(Pi*x);       //u1_x
@@ -41,7 +44,7 @@ void ExactP(double x, double y, double *values)
 // boundary conditions (Parametrisierung des Randes); Param \in [0,1]
 // ========================================================================
 
-void BoundCondition(int i, double Param, BoundCond &cond)
+void BoundCondition(int i, double, BoundCond &cond)
 {
     cond = DIRICHLET; // default
     
@@ -250,8 +253,7 @@ void U2BoundValue(int BdComp, double Param, double &value)
 // ========================================================================
 // coefficients for Stokes form: A, B1, B2, f1, f2
 // ========================================================================
-void LinCoeffs(int n_points, double *X, double *Y,
-               double **parameters, double **coeffs)
+void LinCoeffs(int n_points, double *X, double *Y, double **, double **coeffs)
 {
   double val1[4];
   double val2[4];
@@ -259,9 +261,9 @@ void LinCoeffs(int n_points, double *X, double *Y,
     
   for(int i = 0; i < n_points; i++)
   {
-   coeffs[i][4]= TDatabase::ParamDB->VISCOSITY;
-    coeffs[i][5]= TDatabase::ParamDB->EFFECTIVE_VISCOSITY;  
-    coeffs[i][6]= TDatabase::ParamDB->PERMEABILITY;
+   coeffs[i][4] = viscosity;
+    coeffs[i][5] = effective_viscosity;
+    coeffs[i][6] = permeability;
     
     ExactU1(X[i], Y[i], val1);
     ExactU2(X[i], Y[i], val2);

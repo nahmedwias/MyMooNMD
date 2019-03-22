@@ -30,7 +30,8 @@ void TTriaAffin::GetOrigFromRef(double xi, double eta, double &X, double &Y)
 }
 
 /** transfer a set of points from reference to original element */
-void TTriaAffin::GetOrigFromRef(int N_Points, double *xi, double *eta,
+void TTriaAffin::GetOrigFromRef(int N_Points, const double *xi,
+                                const double *eta,
                                 double *X, double *Y, double *absdetjk)
 {
   int i;
@@ -48,7 +49,7 @@ void TTriaAffin::GetOrigFromRef(int N_Points, double *xi, double *eta,
 }
 
 /** transfer from reference element to original element */
-void TTriaAffin::GetOrigFromRef(double *ref, double *orig)
+void TTriaAffin::GetOrigFromRef(const double *ref, double *orig)
 {
   orig[0]=xc0 + xc1*ref[0] + xc2*ref[1];
   orig[1]=yc0 + yc1*ref[0] + yc2*ref[1];
@@ -65,7 +66,7 @@ void TTriaAffin::GetRefFromOrig(double X, double Y, double &xi, double &eta)
 }
 
 /** transfer from original element to reference element */
-void TTriaAffin::GetRefFromOrig(double *orig, double *ref)
+void TTriaAffin::GetRefFromOrig(const double *orig, double *ref)
 {
   double xt=(orig[0] - xc0)/detjk;
   double yt=(orig[1] - yc0)/detjk;
@@ -76,8 +77,8 @@ void TTriaAffin::GetRefFromOrig(double *orig, double *ref)
 
 /** calculate functions and derivatives from reference element
     to original element */
-void TTriaAffin::GetOrigValues(BaseFunct2D BaseFunct,
-                               int N_Points, double *xi, double *eta,
+void TTriaAffin::GetOrigValues(BaseFunct2D BaseFunct, int N_Points,
+                               const double *xi, const double *eta,
                                int N_Functs, QuadFormula2D QuadFormula)
 {
   int i,j,BaseVectDim;
@@ -191,13 +192,14 @@ void TTriaAffin::GetOrigValues(BaseFunct2D BaseFunct,
     {
       refD00 = refvaluesD00[i];
       origD00 = origvaluesD00[i];
-      this->PiolaMapOrigFromRef(N_Functs, refD00, origD00);
+      this->PiolaMapOrigFromRef(xi[i], eta[i], N_Functs, refD00, origD00);
     }
   }
 
   // D10 and D01
   for(i=0;i<N_Points;i++)
   {
+    refD00 = refvaluesD00[i];
     refD10 = refvaluesD10[i];
     origD10 = origvaluesD10[i];
 
@@ -218,7 +220,8 @@ void TTriaAffin::GetOrigValues(BaseFunct2D BaseFunct,
     }
     else // vector valued functions, do piola transformation
     {
-      this->PiolaMapOrigFromRef(N_Functs, refD10, refD01, origD10, origD01);
+      this->PiolaMapOrigFromRef(xi[i], eta[i], N_Functs, refD00, refD10, refD01,
+                                origD10, origD01);
     }
 
     // cout << "----------" << endl;
@@ -228,8 +231,8 @@ void TTriaAffin::GetOrigValues(BaseFunct2D BaseFunct,
 /** calculate functions and derivatives from reference element
     to original element, for all given elements */
 void TTriaAffin::GetOrigValues(int N_Sets, BaseFunct2D *BaseFuncts,
-                               int N_Points, double *xi, double *eta,
-                               QuadFormula2D QuadFormula,
+                               int N_Points, const double *xi,
+                               const double *eta, QuadFormula2D QuadFormula,
                                bool *Needs2ndDer)
 {
   int i,j,k,BaseVectDim;
@@ -289,7 +292,7 @@ void TTriaAffin::GetOrigValues(int N_Sets, BaseFunct2D *BaseFuncts,
       }
       else // piola transformation
       {
-        this->PiolaMapOrigFromRef(N_Functs, refD00, origD00);
+        this->PiolaMapOrigFromRef(xi[j], eta[j], N_Functs, refD00, origD00);
       }
 
     } // endfor j
@@ -370,6 +373,7 @@ void TTriaAffin::GetOrigValues(int N_Sets, BaseFunct2D *BaseFuncts,
 
     for(j=0;j<N_Points;j++)
     {
+      refD00 = refvaluesD00[j];
       refD10 = refvaluesD10[j];
       origD10 = origvaluesD10[j];
   
@@ -386,7 +390,8 @@ void TTriaAffin::GetOrigValues(int N_Sets, BaseFunct2D *BaseFuncts,
       }
       else // vector valued basis function, do piola transformation
       {
-        this->PiolaMapOrigFromRef(N_Functs, refD10, refD01, origD10, origD01);
+        this->PiolaMapOrigFromRef(xi[j], eta[j], N_Functs, refD00, refD10,
+                                  refD01, origD10, origD01);
       }
     } // endfor j
   } // endfor i
@@ -474,7 +479,8 @@ void TTriaAffin::GetOrigValues(int N_Sets, BaseFunct2D *BaseFuncts,
     to original element */
 void TTriaAffin::GetOrigValues(double xi, double eta, 
                 int N_BaseFunct,
-                double *uref, double *uxiref, double *uetaref,
+                const double *uref, const double *uxiref,
+                const double *uetaref,
                 double *uorig, double *uxorig, double *uyorig,
                 int _BaseVectDim)
 {
@@ -487,7 +493,7 @@ void TTriaAffin::GetOrigValues(double xi, double eta,
   }
   else
   {
-    this->PiolaMapOrigFromRef(N_BaseFunct, uref, uorig);
+    this->PiolaMapOrigFromRef(xi, eta, N_BaseFunct, uref, uorig);
   }
 
   // D10 and D01
@@ -503,7 +509,8 @@ void TTriaAffin::GetOrigValues(double xi, double eta,
     }
     else
     {
-      this->PiolaMapOrigFromRef(N_BaseFunct, uxiref, uetaref, uxorig, uyorig);
+      this->PiolaMapOrigFromRef(xi, eta, N_BaseFunct, uref, uxiref, uetaref,
+                                uxorig, uyorig);
     }
   }
 }
@@ -514,7 +521,7 @@ void TTriaAffin::GetOrigValues(double xi, double eta,
     to original element */
 void TTriaAffin::GetOrigValues(int joint, double zeta,
             int N_BaseFunct,
-            double *uref, double *uxiref, double *uetaref,
+            const double *uref, const double *uxiref, const double *uetaref,
             double *uorig, double *uxorig, double *uyorig,
             int _BaseVectDim)
 {
@@ -533,6 +540,9 @@ void TTriaAffin::GetOrigValues(int joint, double zeta,
     case 2:
       xi = 0; eta = 0.5*(1-zeta);
     break;
+    default:
+      ErrThrow("wrong joint number ", joint, " in TTriaAffin::GetOrigValues.");
+      break;
   }
 
   this->GetOrigValues(xi, eta, N_BaseFunct, uref, uxiref, uetaref, 
@@ -547,7 +557,7 @@ void TTriaAffin::GetOrigValues(int joint, double zeta,
 }
 
 
-void TTriaAffin::SetCell(TBaseCell *cell)
+void TTriaAffin::SetCell(const TBaseCell *cell)
 {
 
 #ifdef __3D__
@@ -584,7 +594,8 @@ void TTriaAffin::SetCell(TBaseCell *cell)
 }
 
 /** return outer normal vector */
-void TTriaAffin::GetOuterNormal(int j, double zeta, double &n1, double &n2)
+void TTriaAffin::GetOuterNormal(int j, double, double &n1, double &n2)
+  const
 {
   double len;
 
@@ -618,7 +629,7 @@ void TTriaAffin::GetOuterNormal(int j, double zeta, double &n1, double &n2)
 }
 
 /** return tangent */
-void TTriaAffin::GetTangent(int j, double zeta, double &t1, double &t2)
+void TTriaAffin::GetTangent(int j, double, double &t1, double &t2) const
 {
   // factor 0.5 since edge parameter runs from -1 to +1
   switch(j)
@@ -648,7 +659,7 @@ void TTriaAffin::GetTangent(int j, double zeta, double &t1, double &t2)
 }
 
 /** return volume of cell */
-double TTriaAffin::GetVolume()
+double TTriaAffin::GetVolume() const
 {
   return 0.5*detjk;  
 }
@@ -688,8 +699,8 @@ void TTriaAffin::GetOrigBoundFromRef(int joint, int N_Points, double *zeta, doub
 
 
 /** Piola transformation for vectorial basis functions */
-void TTriaAffin::PiolaMapOrigFromRef(int N_Functs, double *refD00, 
-                                     double *origD00)
+void TTriaAffin::PiolaMapOrigFromRef(double, double, int N_Functs,
+                                     const double *refD00, double *origD00)
 {
   double a11 = xc1*rec_detjk;
   double a12 = xc2*rec_detjk;
@@ -706,8 +717,9 @@ void TTriaAffin::PiolaMapOrigFromRef(int N_Functs, double *refD00,
   }
 }
    
-void TTriaAffin::PiolaMapOrigFromRef(int N_Functs, double *refD10,
-                                     double *refD01, double *origD10,
+void TTriaAffin::PiolaMapOrigFromRef(double, double, int N_Functs,
+                                     const double *, const double *refD10,
+                                     const double *refD01, double *origD10,
                                      double *origD01)
 {
   double a11 = xc1*rec_detjk;

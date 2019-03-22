@@ -45,7 +45,7 @@ TFE3D::TFE3D(BaseFunct3D basefunct_id, NodalFunctional3D nodalfunctional_id,
 void TFE3D::CheckNFandBF() const
 {
   int i, k,l, N_Points;
-  double *xi, *eta, *zeta;
+  const double *xi, *eta, *zeta;
   
   NodalFunctional->GetPointsForAll(N_Points, xi, eta, zeta);
   

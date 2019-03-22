@@ -19,7 +19,7 @@ MultiIndex3D TimeNSAllDerivatives[4] = { D000, D100, D010, D001 };
 // ========================================================================
 // parameters: u1old, u2old, u3old
 // ========================================================================
-void TimeNSParamsVelo3D(double *in, double *out);
+void TimeNSParamsVelo3D(const double *in, double *out);
 
 int TimeNSN_FESpacesVelo = 1;
 int TimeNSN_FctVelo = 3;
@@ -34,7 +34,7 @@ int TimeNSBeginParamVelo[1] = { 0 };
 // ========================================================================
 // parameters: u1old, u2old, gradient(u1), gradient(u2)
 // ========================================================================
-void TimeNSParamsVelo_GradVelo3D(double *in, double *out);
+void TimeNSParamsVelo_GradVelo3D(const double *in, double *out);
 
 int TimeNSN_FESpacesVelo_GradVelo = 1;
 int TimeNSN_FctVelo_GradVelo = 3;
@@ -54,7 +54,7 @@ int TimeNSBeginParamVelo_GradVelo[1] = { 0 };
 // all partial derivatives
 // convolution of u1old, u2old, u3old
 // ========================================================================
-void TimeNSParamsVelo_GradVelo_ConvVelo3D(double *in, double *out);
+void TimeNSParamsVelo_GradVelo_ConvVelo3D(const double *in, double *out);
 
 int TimeNSN_FESpacesVelo_GradVelo_ConvVelo = 2;
 int TimeNSN_FctVelo_GradVelo_ConvVelo = 6;
@@ -104,7 +104,7 @@ int TimeNSBeginParamGL00AuxProblemPaper2[1] = { 0 };
 // ========================================================================
 // parameters: u, grad u, G^H
 // ========================================================================
-void TimeNSParamsVelo_GradVelo_LargeScale3D(double *in, double *out);
+void TimeNSParamsVelo_GradVelo_LargeScale3D(const double *in, double *out);
 
 int TimeNSN_FESpacesVelo_GradVelo_LargeScale = 4;
 int TimeNSN_FctVelo_GradVelo_LargeScale = 10;
@@ -127,7 +127,7 @@ int TimeNSBeginParamVelo_GradVelo_LargeScale[1] = { 0 };
 // ========================================================================
 // parameters for VMS
 // ========================================================================
-void TimeNSParams_VMS_SmallRhs3D(double *in, double *out);
+void TimeNSParams_VMS_SmallRhs3D(const double *in, double *out);
 
 int TimeNSN_FESpaces_VMS_SmallRhs = 4;
 int TimeNSN_Fct_VMS_SmallRhs  = 7;
@@ -153,12 +153,12 @@ int TimeNSBeginParam_VMS_SmallRhs[1] = { 0 };
 // boundary values for higher order fe in VMS
 // ========================================================================
 
-void ho_BoundCondition(double x, double y, double z, BoundCond &cond)
+void ho_BoundCondition(double, double, double, BoundCond &cond)
 {
   cond = DIRICHLET;
 }
 
-void ho_BoundValue(double x, double y, double z, double &value)
+void ho_BoundValue(double, double, double, double &value)
 {
   value = 0;
 }

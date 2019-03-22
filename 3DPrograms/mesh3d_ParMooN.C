@@ -20,17 +20,15 @@
 // =======================================================================
 // main program
 // =======================================================================
-int main(int argc, char* argv[])
+int main(int, char* argv[])
 {
     
   //  declaration of database, you need this in every program
-  TDatabase Database;
+  TDatabase Database(argv[1]);
   TFEDatabase3D FEDatabase;
 
   // read input file 
   ParameterDatabase parmoon_db = ParameterDatabase::parmoon_default_database();
-  // merge with default tetgen parameters
-  parmoon_db.merge(ParameterDatabase::default_tetgen_database(), true);
   std::ifstream fs(argv[1]);
   parmoon_db.read(fs);
   fs.close();
@@ -38,7 +36,7 @@ int main(int argc, char* argv[])
   Output::set_outfile(parmoon_db["outfile"]);
   Output::setVerbosity(parmoon_db["verbosity"]);
 
-  TDomain domain(parmoon_db, argv[1]);
+  TDomain domain(parmoon_db);
 
   //Output::print(" ... writing 3d mesh ... ");
   //TCollection *coll = domain.GetCollection(It_Finest, 0);

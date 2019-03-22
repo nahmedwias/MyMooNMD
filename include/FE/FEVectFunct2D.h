@@ -32,8 +32,9 @@ class TFEVectFunct2D : public TFEFunction2D
     TFEVectFunct2D();
 
     /** constructor with vector initialization */
-    TFEVectFunct2D(const TFESpace2D *fespace2D, std::string name, std::string description,
-        double *values, int length, int n_components);
+    TFEVectFunct2D(std::shared_ptr<const TFESpace2D> fespace2D, const std::string& name,
+                   const std::string& description, double *values, int length,
+                   int n_components);
 
     /// Copy assignment operator. Shallow copy, as the
     /// FEFunction does not take any memory responsibility.
@@ -64,8 +65,8 @@ class TFEVectFunct2D : public TFEFunction2D
         DoubleFunct2D *Exact, DoubleFunct2D *Exact1,
         int N_Derivatives,
         MultiIndex2D *NeededDerivatives,
-        int N_Errors, ErrorMethod2D *ErrorMeth, 
-        CoeffFct2D Coeff, TAuxParam2D *Aux,
+        int N_Errors, TFEFunction2D::ErrorMethod *ErrorMeth, 
+        const CoeffFct2D& Coeff, TAuxParam2D *Aux,
         int n_fespaces, TFESpace2D **fespaces,
         double *errors);
 
@@ -87,7 +88,7 @@ class TFEVectFunct2D : public TFEFunction2D
     /// Check the implementation of TFEVectFunct2D::get_L2_norm_divergence_curl
     /// to see an example.
     void get_functional_value(std::vector<double>& values,
-                              std::function<void(std::vector<double>&, std::array<double, 8>)> functional) const;
+                              const std::function<void(std::vector<double>&, std::array<double, 8>)>& functional) const;
 
     /** calculate L2-norm of divergence error */
     double GetL2NormDivergenceError(DoubleFunct2D *Exact_u1, DoubleFunct2D *Exact_u2);
@@ -95,13 +96,16 @@ class TFEVectFunct2D : public TFEFunction2D
     /** calculate L2-norm of (u \cdot n)-error at the boundary */
     double GetL2NormNormalComponentError(BoundValueFunct2D *Exact_u1, BoundValueFunct2D *Exact_u2, bool rescale_by_h_E = false);
 
+    /** calculate L2-norm of (u \cdot n)-error at the boundary */
+    double GetL2NormNormalComponentError(BoundValueFunct2D *Exact_u1, BoundValueFunct2D *Exact_u2,  int boundary_component_id, bool rescale_by_h_E = false);
+
     /** write the solution into a data file **/
     void WriteSol(double t,
-        std::string directory=std::string("."),
-        std::string basename=std::string("parmoon_solution"));
+        const std::string& directory=std::string("."),
+        const std::string& basename=std::string("parmoon_solution"));
 
     /** Read the solution from a given data file - written by Sashi **/
-    void ReadSol(std::string BaseName);
+    void ReadSol(const std::string& BaseName);
 
     /** determine the value of a vect function and its first derivatives at
       the given point */
@@ -112,7 +116,7 @@ class TFEVectFunct2D : public TFEFunction2D
     
     /** determine the value of function at
     the given point componentwise */
-    void FindValueLocal(TBaseCell *cell, int cell_no, double x, double y, 
+    void FindValueLocal(const TBaseCell *cell, int cell_no, double x, double y, 
         double *values) const;
 
     /** @brief multiply function with a scalar alpha. Only non-Dirichlet dofs are 

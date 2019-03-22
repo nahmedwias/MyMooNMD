@@ -105,7 +105,7 @@ void TEdge::InitSubDomainInfo(int rank)
 }
 
 
-void TEdge::SetAsNotCrossEdgeFor(int rank, int Neib_ID)
+void TEdge::SetAsNotCrossEdgeFor(int, int Neib_ID)
 {
  int i;
 
@@ -145,11 +145,13 @@ void TEdge::SetCrossNeibInfo(TVertex *Vert_a)
      // if two neibs from same rank ID contain this edge, then the edge will be assigned to 
      // neib with max. global cell no
      for(j=0; j<N_Neibs; j++)
+     {
       if((ID==Neighbs[j]->GetSubDomainNo()) && (Max < Neighbs[j]->GetGlobalCellNo()) )
        {
         Max=Neighbs[j]->GetGlobalCellNo();
         Max_Index = j;
        }
+     }
 
       NeibCell = Neighbs[Max_Index];
       // find neibs local edge number

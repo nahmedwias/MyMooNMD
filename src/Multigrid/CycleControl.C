@@ -14,7 +14,7 @@ CycleControl:: CycleControl()
 {
    ;
 }
-CycleControl::CycleControl(std::string type_str, size_t n_levels)
+CycleControl::CycleControl(const std::string& type_str, size_t n_levels)
 {
   cycle_ = string_to_cycle_code(type_str);
   n_levels_ = n_levels;
@@ -62,7 +62,7 @@ void CycleControl::print_cycle_control() const
   }
 }
 
-MGCycle CycleControl::string_to_cycle_code(std::string code)
+MGCycle CycleControl::string_to_cycle_code(const std::string& code)
 {
   if(code == std::string("V"))
     return MGCycle::V;

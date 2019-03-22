@@ -95,7 +95,8 @@ class BlockMatrix
      * @param cell_row_numbers holds the number of rows for all matrices in one cell row
      * @param cell_column_numbers holds the number of columns for all matrices in one cell column
      */
-    BlockMatrix(std::vector<size_t> cell_row_numbers, std::vector<size_t> cell_column_numbers);
+    BlockMatrix(const std::vector<size_t>& cell_row_numbers,
+                const std::vector<size_t>& cell_column_numbers);
 
     
     /**
@@ -114,7 +115,7 @@ class BlockMatrix
      * @param blocks - the given blocks, must be of length nRows*nCols
      */
     BlockMatrix(int nRows, int nCols, 
-                std::vector<std::shared_ptr<TMatrix>> blocks);
+                const std::vector<std::shared_ptr<TMatrix>>& blocks);
 
     /**
      * Add a given TMatrix to the blocks in a bunch of given cells at once.
@@ -308,8 +309,8 @@ class BlockMatrix
      * @return
      */
     BlockMatrix get_sub_blockmatrix(
-        std::pair<size_t,size_t> upper_left,
-        std::pair<size_t,size_t> lower_right) const;
+        const std::pair<size_t,size_t>& upper_left,
+        const std::pair<size_t,size_t>& lower_right) const;
 
     /**
      * Prints matrix coloring pattern and color_count_,
@@ -317,7 +318,7 @@ class BlockMatrix
      *
      * @param[in] matrix_name A name for the matrix. Will be printed in the heading.
      */
-    void print_and_check(std::string matrix_name = "unnamed") const;
+    void print_and_check(const std::string& matrix_name = "unnamed") const;
 
     /**
      * Print out the current color count of the matrix.
@@ -325,7 +326,7 @@ class BlockMatrix
      *
      * @param[in] matrix_name A name for the matrix. Will be printed in the heading.
      */
-    void print_coloring_count(std::string matrix_name = "unnamed") const;
+    void print_coloring_count(const std::string& matrix_name = "unnamed") const;
 
     /**
      * Print out a little picture of the current coloring pattern of the matrix.
@@ -335,7 +336,7 @@ class BlockMatrix
      *
      * @param[in] matrix_name A name for the matrix. Will be printed in the heading.
      */
-    void print_coloring_pattern(std::string matrix_name = "unnamed",
+    void print_coloring_pattern(const std::string& matrix_name = "unnamed",
                                 bool print_adress = false) const;
 
     /**
@@ -611,7 +612,7 @@ class BlockMatrix
      * vector and throw if so.
      */
     void check_indices(
-             std::vector<grid_place_and_mode>& row_column_transpose_tuples
+             const std::vector<grid_place_and_mode>& row_column_transpose_tuples
          ) const;
 
     /**
@@ -673,8 +674,8 @@ class BlockMatrix
      * mark_for_color_split and then to split_color
      */
     bool does_modification_require_color_split(
-        size_t& color_to_split,
-        std::vector<grid_place_and_mode> row_column_transposed_tuples) const;
+      size_t& color_to_split,
+      const std::vector<grid_place_and_mode> row_column_transposed_tuples) const;
 
     /**
      * @return True if a block emplacement leads to the merging of at least two colors.
@@ -762,8 +763,9 @@ class BlockMatrix
      * @param[in] row_column_transposed_tuples Cells of color color_to_mark are marked when their
      * position belongs to row_column_tuples.
      */
-    void mark_for_color_split(size_t color_to_mark,
-                              std::vector<grid_place_and_mode> row_column_transposed_tuples);
+    void mark_for_color_split(
+      size_t color_to_mark,
+      const std::vector<grid_place_and_mode>& row_column_transposed_tuples);
 
     /**
      * Merges two colors marked with ReColoringFlag::MERGE into one.

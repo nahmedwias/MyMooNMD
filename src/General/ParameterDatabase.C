@@ -16,20 +16,20 @@
 // helper functions to find a parameter or database by their name in a list 
 template<class T>
 typename std::list<T>::const_iterator 
-find_in_list(std::string name, const std::list<T>& search_list)
+find_in_list(const std::string& name, const std::list<T>& search_list)
 {
   auto search_lambda = [=](const T& p){ return p.get_name() == name; };
   return std::find_if(search_list.begin(), search_list.end(), search_lambda);
 }
 template<class T>
 typename std::list<T>::iterator 
-find_in_list(std::string name, std::list<T>& search_list)
+find_in_list(const std::string& name, std::list<T>& search_list)
 {
   auto search_lambda = [=](const T& p){ return p.get_name() == name; };
   return std::find_if(search_list.begin(), search_list.end(), search_lambda);
 }
 
-bool ParameterDatabase::contains(std::string param_name) const
+bool ParameterDatabase::contains(const std::string& param_name) const
 {
   if(find_in_list(param_name, this->parameters) == this->parameters.end())
     return false;
@@ -281,7 +281,7 @@ std::string ParameterDatabase::get_name() const
 }
 
 /* ************************************************************************** */
-void ParameterDatabase::set_name(std::string new_name)
+void ParameterDatabase::set_name(const std::string& new_name)
 {
   this->name = new_name;
 }
@@ -307,7 +307,7 @@ void ParameterDatabase::add_nested_database(ParameterDatabase db)
 }
 
 /* ************************************************************************** */
-bool ParameterDatabase::has_nested_database(std::string name) const
+bool ParameterDatabase::has_nested_database(const std::string& name) const
 {
   auto it = find_in_list(name, this->databases);
   if(it == this->databases.end())
@@ -318,7 +318,7 @@ bool ParameterDatabase::has_nested_database(std::string name) const
 
 /* ************************************************************************** */
 const ParameterDatabase & ParameterDatabase::get_nested_database(
-  std::string name) const
+  const std::string& name) const
 {
   auto it = find_in_list(name, this->databases);
   if(it == this->databases.end())
@@ -327,7 +327,8 @@ const ParameterDatabase & ParameterDatabase::get_nested_database(
 }
 
 /* ************************************************************************** */
-ParameterDatabase & ParameterDatabase::get_nested_database(std::string name)
+ParameterDatabase & ParameterDatabase::get_nested_database(
+  const std::string& name)
 {
   auto it = find_in_list(name, this->databases);
   if(it == this->databases.end())
@@ -404,7 +405,7 @@ void ParameterDatabase::write(std::ostream& os, bool verbose, bool root) const
 }
 
 /* ************************************************************************** */
-void ParameterDatabase::write(std::string filename, bool verbose) const
+void ParameterDatabase::write(const std::string& filename, bool verbose) const
 {
   std::ofstream os(filename);
   this->write(os, verbose);
@@ -493,7 +494,7 @@ std::list<std::string> get_lines_of_database(std::istream& is,
 // one of the other parameters are updated accordingly. The value_string must 
 // not be a vector-valued parameter. This is only for a single value (possibly 
 // within a vector).
-Parameter::types get_parameter_and_type(std::string value_string,
+Parameter::types get_parameter_and_type(const std::string& value_string,
                                         bool & bool_ret,
                                         int & int_ret, size_t & size_t_ret, 
                                         double & double_ret,
@@ -560,7 +561,7 @@ Parameter::types get_parameter_and_type(std::string value_string,
 // helper function to identify the type of a variable in `value_string`. 
 // Depending on the returned type the respective other parameter is filled.
 // The other parameters might be used as well, but should then be discarded.
-Parameter::types get_parameter_and_type(std::string value_string,
+Parameter::types get_parameter_and_type(const std::string& value_string,
                                         bool & bool_ret,
                                         int & int_ret, size_t & size_t_ret, 
                                         double & double_ret,
@@ -760,7 +761,7 @@ void adjust_type(Parameter::types& type,
 }
 
 // the bool is true in case of an interval and false otherwise
-std::pair<bool,std::set<std::string>> get_range_list(std::string range)
+std::pair<bool,std::set<std::string>> get_range_list(const std::string& range)
 {
   std::pair<bool, std::set<std::string>> ret; // to be returned
   if(range.empty())
@@ -825,8 +826,8 @@ std::pair<bool,std::set<std::string>> get_range_list(std::string range)
 }
 
 // helper function to call set_range on the parameter with the right type
-void add_range_to_parameter(Parameter& p, 
-                            std::pair<bool,std::set<std::string>> range_list)
+void add_range_to_parameter(
+  Parameter& p, const std::pair<bool, std::set<std::string>>& range_list)
 {
   if(range_list.second.empty())
     return; // nothing we can do here
@@ -837,7 +838,7 @@ void add_range_to_parameter(Parameter& p,
     {
       if(range_list.first)
         ErrThrow("unable to set an interval range for a boolean parameter");
-      auto rl = range_list.second;
+      auto& rl = range_list.second;
       if(rl.count("true") == 1 || rl.count("True") == 1)
       {
         if(rl.count("false") == 1 || rl.count("False") == 1)
@@ -959,8 +960,10 @@ void add_range_to_parameter(Parameter& p,
 }
 
 // helper function to create a new parameter where the type is to be determined
-Parameter create_parameter(std::string name, std::string value_string, 
-                           std::string description, std::string range_string)
+Parameter create_parameter(const std::string& name,
+                           const std::string& value_string,
+                           const std::string& description,
+                           const std::string& range_string)
 {
   bool bool_val;
   int int_val;
@@ -1150,7 +1153,7 @@ void ParameterDatabase::read(std::istream& is, bool root)
 }
 
 /* ************************************************************************** */
-void ParameterDatabase::read(std::string filename)
+void ParameterDatabase::read(const std::string& filename)
 {
   std::ifstream ifs(filename);
   this->read(ifs);
@@ -1245,8 +1248,8 @@ ParameterDatabase ParameterDatabase::parmoon_default_database()
          "1: stationary convection-diffusion,  2: time-dependent "
          "convection-diffusion,  3: stationary Stokes,  4: time-dependent "
          "Stokes,  5: stationary Navier-Stokes,  6: time-dependent "
-         "Navier-Stokes.",
-         0u, 6u);
+         "Navier-Stokes 7: Brinkman.",
+         0u, 7u);
 
   db.add("output_write_ps", false,
 	 "Draw a postscript file of the domain. This only works in two space "
@@ -1260,59 +1263,16 @@ ParameterDatabase ParameterDatabase::parmoon_default_database()
   
   db.add("script_mode", false, "Set ParMooN into script mode. This means all "
          "output is written to the outfile and not to console.");
-  
-  db.add("space_discretization_type", "galerkin",
-         "Replaces the global parameter DISCTYPE.",
-         {"galerkin",      // = old global DISCTYPE = GALERKIN = 1
-          "supg","sdfem",  // = old global DISCTYPE = SUPG/SDFEM = 2
-          "upwind",        // = old global DISCTYPE = UPWIND = 3
-          "smagorinsky",   // = old global DISCTYPE = SMAGORINSKY = 4
-          "cip",           // = old global DISCTYPE = CIP = 4
-          "dg",           // = old global DISCTYPE = DG  = 5
-          "gls",           // = old global DISCTYPE = GLS = 6
-          "vms_projection",     // = old global DISCTYPE = VMS_PROJECTION = 9
-          "vms_projection_expl",// = old global DISCTYPE = VMS_PROJECTION_EXPL = 10
-          "local_projection",   // = old global DISCTYPE = LOCAL_PROJECTION = 14
-          "local_projection_2_level", // = old global DISCTYPE = LOCAL_PROJECTION_2_LEVEL = 15
-         "residual_based_vms"}); 
+
+  db.add("write_snaps", false,
+	 "Write Snapshots. If set to true, snapshots of the numerical solution will "
+	 " be written into a file.",
+	 {true,false});
 
   return db;
 }
 
 /* ************************************************************************** */
-// set default parameters for time discretization
-ParameterDatabase ParameterDatabase::default_time_database()
-{
-  // TODO: Remove this database. It's already exists in the TimeDiscretization class
-  ParameterDatabase db("default ParMooN time parameters database");
-  
-//   db.add("time_start", 0.,
-//          "This is the start time of the simulation. The total simulated time "
-//          "interval is [start_time, end_time].", -1000.,1000.);
-//   
-//   db.add("time_end", 1.,
-//          "This is the end time of the simulation. The total simulated time "
-//          "interval is [start_time, end_time].", -1000.,1000.);
-//   
-//   db.add("time_step_length", 0.05,
-//          "This is the time step length. Without time adaptivity, it "
-//          "is the same constant value for all time steps, whereas for "
-//          "time adaptivity, it only corresponds to the initial value.",
-//          0., 0.5);
-//   
-//   db.add("time_discretization", 2u,
-//          "This is the time discretization scheme. The following values are "
-//          "implemented :"
-//          "0 -> Forward Euler, "
-//          "1 -> Backward Euler, "
-//          "2 -> Crank-Nicholson, "
-//          "3 -> Fractional step."
-//          "4 -> Extrapolated Crank_Nicholson (or IMplicit-EXplicit, IMEX)",
-//          0u , 4u );
-  
-  return db;
-}
-
 ParameterDatabase ParameterDatabase::default_nonlinit_database()
 {
   ParameterDatabase db("default ParMooN nonlinear iteration parameters database");
@@ -1362,11 +1322,16 @@ ParameterDatabase ParameterDatabase::default_nonlinit_database()
 
 ParameterDatabase ParameterDatabase::default_output_database()
 {
-	  ParameterDatabase db("default ParMooN output control parameters database");
+  ParameterDatabase db("default ParMooN output control parameters database");
 
-	  db.add("output_write_vtk", false,
+  db.add("output_write_vtk", false,
+	 "This parameter can control, whether an output method"
+	 "of a system class will produce VTK output or not.",
+	 {true,false});
+    
+  db.add("output_write_vtu", false,
 			  "This parameter can control, whether an output method"
-			  "of a system class will produce VTK output or not.",
+	 "of a system class will produce VTU output or not.",
 			  {true,false});
 
 	  db.add("output_write_case", false,
@@ -1393,7 +1358,35 @@ ParameterDatabase ParameterDatabase::default_output_database()
 	  db.add("steps_per_output", (size_t)1,
 	         "This integer specifies how many (time) steps are performed "
 		 "before writing the results ");
+	  
+	  db.add("continue_output_after_restart", false,
+		"This parameter, when true, allows the output numbering "
+		"to continue after a simulation restart, which is often a "
+		"desirable behavior. Otherwise, it behaves as if the "
+		"initial time was 0, and starts the numbering at 0, leading "
+		"sometimes to overwritting existing files.", 
+		 {true,false});
+	 
+          db.add("output_compute_time_average", false,
+                 "Do or do not compute time average of the solution.",
+                 {true,false});
 
+          db.add("output_along_line", false,
+                 "Do or do not write the solution along lines, "
+                 "according to the lines defined in the nested database used "
+                 "by the class LinesEval, see EvalTools.h",
+                 {true,false});
+
+          db.add("start_time_averaging_at", 0.,
+                 "Time at which the time averaging will start.",
+                 0., std::numeric_limits<double>::max());
+
+	  db.add("output_write_exact_solution", false,
+		 " If set to true, this parameter allows to write the exact solution "
+		 " into the vtk or case output file. "
+		 " Note: the exact solution must be specified in the example file",
+		 {true,false});
+	  
 	  return db;
 }
 
@@ -1427,7 +1420,7 @@ ParameterDatabase ParameterDatabase::default_solution_in_out_database()
       "will be written into the file each 0.1s.", 1u, 1000000u);
 
   // into which file to write
-  db.add("write_solution_binary_file", "my_solution_out.txt", "If "
+  db.add("write_solution_binary_file", "parmoon_solution_binary", "If "
       "'write_solution_binary' is set to 'true', this parameter sets the name"
       " (and path) of the file to write the solution into.");
 
@@ -1439,29 +1432,71 @@ ParameterDatabase ParameterDatabase::default_solution_in_out_database()
   return db;
 }
 
-ParameterDatabase ParameterDatabase::default_tetgen_database()
+ParameterDatabase ParameterDatabase::get_default_snapshots_database()
 {
-  ParameterDatabase db("default ParMooN mesh generation using TetGen "
-                        "parameters database");
+  Output::print<5>("Creating a default parameter database for managing snapshots...");
+  ParameterDatabase db("Default ParMooN parameter database for storing snapshots");
 
-  // maximum can be infnity
-  db.add("tetgen_quality", 1.4, " This value is for the aspect ratio", 
-         1.0, 1000.);
   
-  db.add("tetgen_steiner", 0u,
-         "this parameter 'preserve the mesh on the exterior boundary' ", 
-         0u, 1u);
-  
-  // maximum can be anything depending on geometry
-  db.add("tetgen_volume", 1.0, "this parameter is for the maximum volume "
-          "that depends on the geometry", 0.0, 1000.);
-  
-  db.add("tetgen_merge_colplaner", 0u, 
-         "This parameter is for the coplanar facets to be merge "
-         "or very close vertices", 0u, 1u);
-  
-  db.add("tetgen_quiet", 1u, "Quiet: No terminal output except errors ",
-         0u, 1u);
+
+  db.add("snaps_directory", ".",
+    	         "This directory is where the snapshots will written. This "
+    	         "directory will be created, if it does not exist already. Files in "
+    	         "this directory will be overwritten without any warning.");
+
+  db.add("snaps_basename", "parmoon_snapshots",
+  		  "Basename for file where the snapshots are stored. The basename should end with a dot.");
+
+  db.add("steps_per_snap", (size_t) 5,
+    	     "This integer specifies how many time steps are performed "
+    		 "before a snapshot has to be written into file. ");
   return db;
 }
 
+
+
+ParameterDatabase ParameterDatabase::get_default_pod_database()
+{
+  Output::print<5>("Creating a default POD-ROM parameter database...");
+  ParameterDatabase db("Default ParMooN parameter database for POD-based ROM problems");
+
+  db.add("pod_directory", ".",
+      	         "This directory is where the POD basis and Co. are written. This "
+      	         "directory will be created, if it does not exist already. Files in "
+      	         "this directory will be overwritten without any warning.");
+  
+  db.add("pod_basename", "parmoon_pod",
+	 "Basename for pod basis and related files."
+	 " When writing the POD basis, the basis elements will be written into pod_basename.pod, "
+	 " the average (if needed) into pod_basename.mean"
+	 " When reading the basis, the program expect to find files ending with .pod and .mean");
+
+  db.add("pod_rank", (size_t) 0,
+      	         "This integer specifies the dimension of the POD space to be computed. "
+      		 "If pod_rank <= 0, then all possible POD modes will be computed. ");
+
+  db.add("pod_fluctuations_only", true,
+	 "This is the flag whether the POD basis should be computed only "
+	 " fluctuation part (without average) of the snapshots "
+	 " (also central trajectory method).",
+	 {true,false});
+
+  db.add("pod_inner_product", "euclidean",
+               "Specification of the inner product which is used to compute POD basis."
+  		  "Besides default value, only 'l2' is possible at the moment.",
+  		  {"euclidean", "L2"});
+
+  db.add("rom_init_regularized", false,
+	 "This is the flag whether the the ROM initial condition should be regularized.",
+	 {true,false});
+
+  db.add("differential_filter_width", 1.0,
+           "Filter width for the differential filter (Helmoltz equation) for the computation "
+           "of of the regularized ROM initial condition.",
+             0., 10.);
+
+  // Merge with other databases
+  db.merge(ParameterDatabase::default_output_database(), true);
+
+  return db;
+}

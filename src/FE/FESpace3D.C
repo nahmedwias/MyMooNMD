@@ -10,8 +10,6 @@
 //
 // =======================================================================
 
-#include <DefineParams.h>
-
 #include <Constants.h>
 #include <FESpace3D.h>
 #include <Joint.h>
@@ -40,19 +38,15 @@
 #endif
 
 /** Constructor */
-TFESpace3D::TFESpace3D(TCollection *coll, std::string name, std::string description) :
-     TFESpace(coll, name, description)
+TFESpace3D::TFESpace3D(TCollection *coll, const std::string& name,
+                       const std::string& description)
+ : TFESpace(coll, name, description)
 {
   N_ActiveDegrees = 0;
   N_SlaveDegrees = 0;
   UsedElements = nullptr;
   AllElements = nullptr;
   ElementForShape = nullptr;
-
-# ifdef _MPI
- MaxSubDomainPerDof = -1;
-# endif
-
 }
 
 // =====================================================================
@@ -61,9 +55,10 @@ TFESpace3D::TFESpace3D(TCollection *coll, std::string name, std::string descript
 // =====================================================================
 
 /** constructor for building a space with elements of order k */
-TFESpace3D::TFESpace3D(TCollection *coll, std::string name, std::string description,
-                       BoundCondFunct3D *BoundaryCondition, int ord) :
-     TFESpace(coll, name, description)
+TFESpace3D::TFESpace3D(TCollection *coll, const std::string& name,
+                       const std::string& description,
+                       BoundCondFunct3D *BoundaryCondition, int ord)
+ : TFESpace(coll, name, description)
 {
   N_ActiveDegrees = 0;
   N_SlaveDegrees = 0;
@@ -225,12 +220,19 @@ TFESpace3D::TFESpace3D(TCollection *coll, std::string name, std::string descript
 
   // construct space
   ConstructSpace(BoundaryCondition);
+  
+#ifdef _MPI
+  // initialize the mapper and communicator for MPI communications
+  mapper_.reset(new TParFEMapper3D(1, this));
+  comm_ .reset(new TParFECommunicator3D(mapper_.get()));
+#endif // _MPI
 }
 
 /** constructor for building a space with the given elements */
-TFESpace3D::TFESpace3D(TCollection *coll, std::string name, std::string description,
-               BoundCondFunct3D *BoundaryCondition,
-               FE3D *fes) : TFESpace(coll, name, description)
+TFESpace3D::TFESpace3D(TCollection *coll, const std::string& name,
+                       const std::string& description,
+                       BoundCondFunct3D *BoundaryCondition, FE3D *fes)
+ : TFESpace(coll, name, description)
 {
   N_ActiveDegrees = 0;
   N_SlaveDegrees = 0;
@@ -245,13 +247,20 @@ TFESpace3D::TFESpace3D(TCollection *coll, std::string name, std::string descript
 
   // construct space
   ConstructSpace(BoundaryCondition);
+
+#ifdef _MPI
+  // initialize the mapper and communicator for MPI communications
+  mapper_.reset(new TParFEMapper3D(1, this));
+  comm_ .reset(new TParFECommunicator3D(mapper_.get()));
+#endif // _MPI
 }
 
 /** constructor for building a space with elements of order k */
-TFESpace3D::TFESpace3D(TCollection *coll, std::string name, std::string description,
+TFESpace3D::TFESpace3D(TCollection *coll, const std::string& name,
+                       const std::string& description,
                        BoundCondFunct3D *BoundaryCondition, SpaceType type,
-                       int ord) :
-     TFESpace(coll, name, description)
+                       int ord)
+ : TFESpace(coll, name, description)
 {
   N_ActiveDegrees = 0;
   N_SlaveDegrees = 0;
@@ -423,10 +432,16 @@ TFESpace3D::TFESpace3D(TCollection *coll, std::string name, std::string descript
 
   // construct space
   ConstructSpace(BoundaryCondition);
+  
+#ifdef _MPI
+  // initialize the mapper and communicator for MPI communications
+  mapper_.reset(new TParFEMapper3D(1, this));
+  comm_ .reset(new TParFECommunicator3D(mapper_.get()));
+#endif // _MPI
 }
 
 /** return the FE Id for element i, corresponding to cell */
-FE3D TFESpace3D::GetFE3D(int i, TBaseCell *cell) const
+FE3D TFESpace3D::GetFE3D(int i, const TBaseCell *cell) const
 {
   FE3D ret;
 
@@ -444,7 +459,7 @@ const TFE3D& TFESpace3D::get_fe(unsigned int cell_number) const
   if((int)cell_number >= this->N_Cells)
     ErrThrow("unable to find the finite element for cell ", cell_number, 
              ". There are only ", this->N_Cells, " cells");
-  TBaseCell * cell = this->Collection->GetCell(cell_number);
+  const TBaseCell * cell = this->Collection->GetCell(cell_number);
   // find finite element id
   FE3D fe_id = this->GetFE3D(cell_number, cell);
   // get the finite element from the database
@@ -455,7 +470,7 @@ const TFE3D& TFESpace3D::get_fe(unsigned int cell_number) const
 
 void TFESpace3D::FindUsedElements()
 {
-  TBaseCell *cell;
+  const TBaseCell *cell;
   int i, j, N_;
   int Used[N_FEs3D];
 
@@ -492,8 +507,8 @@ void TFESpace3D::ConstructSpace(BoundCondFunct3D *BoundaryCondition)
 {
   int i, j, k, l, m, n, N_Faces, NFaces;
   int *v;
-  TBaseCell *cell, *neigh, *child1, *child2, *child3, *child4;
-  TJoint *joint;
+  const TBaseCell *cell, *neigh, *child1, *child2, *child3, *child4;
+  const TJoint *joint;
   TBoundComp3D *BoundComp;
   TBoundFace *BoundFace;
   double t0;
@@ -505,7 +520,7 @@ void TFESpace3D::ConstructSpace(BoundCondFunct3D *BoundaryCondition)
   const int *TmpoFnF, *TmpLen1, *TmpFC, *TmpLen2, *TmpoFnlF;
   const int *TmpCTI;
   int MaxLen1, MaxLen2;
-  TRefDesc *refdesc;
+  const TRefDesc *refdesc;
 
   int SumLocDOF;
   int count, *BoundaryUpperBound, DirichletUpperBound;
@@ -541,9 +556,9 @@ void TFESpace3D::ConstructSpace(BoundCondFunct3D *BoundaryCondition)
   int N_Edges, N_EdgeNeibs, N_EdgeDOF, *EdgeDof, *NeibEdgeDof;
   int N_VertDof, N_VertInCell, N_VertNeibs;
   int neibdof, maptype, w, w0, w1, v0, v1, e;
-  TEdge *edge;
-  TBaseCell **EdgeNeibs, **VertNeibs;
-  TVertex *Vert;
+  const TEdge *edge;
+  const TBaseCell * const *EdgeNeibs, * const *VertNeibs;
+  const TVertex *Vert;
   const int *EdgeVertex, *NeibEdgeVertex;
 #endif
 
@@ -624,11 +639,15 @@ void TFESpace3D::ConstructSpace(BoundCondFunct3D *BoundaryCondition)
 
      N_Edges=cell->GetN_Edges();      
      for(j=0;j<N_Edges;j++)
+     {
       (cell->GetEdge(j))->SetClipBoard(-1);
+     }
      
       N_VertInCell = cell->GetN_Vertices();
       for(j=0;j<N_VertInCell;j++)
+      {
        (cell->GetVertex(j))->SetClipBoard(-1);    
+      }
       
       /** set dept. vert neib cells to -1, especiall to use own_FEspace and FEspace with (own + Hallo) cells */
       if(cell->IsDependentCell())
@@ -1086,21 +1105,11 @@ void TFESpace3D::ConstructSpace(BoundCondFunct3D *BoundaryCondition)
       {
         // no boundary joint
          neigh = joint->GetNeighbour(cell);
-        if (!neigh || joint->GetType() == MortarJoint ||
-            joint->GetType() == MortarBaseJoint)
+        if (!neigh)
         {
           // there is no neighbour
-          // => either mortar joint
-          //    or finer cell in 1 regular grid
+          // => finer cell in 1 regular grid
           //    will be handle from coarser cell
-          if(joint->GetType() == MortarJoint ||
-             joint->GetType() == MortarBaseJoint)
-          {
-            // do mortar mapping
-            mapper=TFEDatabase3D::GetFE3DMapper(FEDesc0, FEDesc0);
-            mapper->MapBound(GlobalNumbers, I_K0, Indices0, Counter,
-                             VHN, HNNumbers);
-          }
         } // !neigh
         else
         {
@@ -2082,6 +2091,13 @@ void TFESpace3D::ConstructSpace(BoundCondFunct3D *BoundaryCondition)
 //   #endif
 }
 
+int TFESpace3D::GetBaseVectDim() const
+{
+  // the desired information is stored in the BasisFunction2D object. We take 
+  // the one on the first cell, on all other cells it should be the same
+  return this->get_fe(0).GetBaseFunct3D()->GetBaseVectDim();
+}
+
 TFESpace3D::~TFESpace3D()
 {
   if (UsedElements)
@@ -2100,14 +2116,14 @@ TFESpace3D::~TFESpace3D()
 void TFESpace3D::GetDOFPosition(double *x, double *y, double *z) const 
 {
   int i,j,k;
-  TBaseCell *cell;
+  const TBaseCell *cell;
   int N_Joints;
-  TJoint *joint;
+  const TJoint *joint;
   JointType jointtype;
   FE3D FEid;
   int *DOF;
   TNodalFunctional3D *nf;
-  double *xi, *eta, *zeta;
+  const double *xi, *eta, *zeta;
   int N_Points;
   RefTrans3D RefTrans, *RefTransArray;
   int IsIsoparametric;
@@ -2227,14 +2243,14 @@ void TFESpace3D::GetDOFPosition(double *x, double *y, double *z) const
 void TFESpace3D::GetDOFPosition(int dof, double &x, double &y, double &z) const
 {
   int i,j,k;
-  TBaseCell *cell;
+  const TBaseCell *cell;
   int N_Joints;
-  TJoint *joint;
+  const TJoint *joint;
   JointType jointtype;
   FE3D FEid;
   int *DOF;
   TNodalFunctional3D *nf;
-  double *xi, *eta, *zeta;
+  const double *xi, *eta, *zeta;
   int N_Points;
   RefTrans3D RefTrans, *RefTransArray;
   int IsIsoparametric;
@@ -2368,7 +2384,7 @@ void TFESpace3D::GetDOFPosition(int dof, double &x, double &y, double &z) const
 bool TFESpace3D::CheckMesh() const
 {
   int N_DOF, *DOF=nullptr, found;
-  TBaseCell *Cell;
+  const TBaseCell *Cell;
   FE3D feid;
   TFE3D *fe=nullptr;
 
@@ -2407,14 +2423,154 @@ bool TFESpace3D::CheckMesh() const
   return true;
 } 
 
-#ifdef _MPI
-void TFESpace3D::initialize_parallel(int maxSubDomainPerDof)
+// polynomial degree of FE space on a given cell
+int TFESpace3D::getFEDegree(TBaseCell *cell) const
 {
-  MaxSubDomainPerDof = maxSubDomainPerDof;
-
-  // initialize the mapper and communicator for MPI communications
-  mapper_.reset(new TParFEMapper3D(1, this));
-  comm_ .reset(new TParFECommunicator3D(mapper_.get()));
+  FE3D FEId = this->GetFE3D(cell->GetCellIndex(),cell);
+  return TFEDatabase3D::GetPolynomialDegreeFromFE3D(FEId);
 }
-#endif
+
+QuadFormula2D TFESpace3D::getFaceQuadratureFormula(TBaseCell *cell, int m, int _degree) const
+{
+
+  // set the desired quadrature degree (if = -1 -> 2*fe_degree is taken)
+  int quad_degree = _degree;
+  if (quad_degree == -1)
+    quad_degree = 2*this->getFEDegree(cell);
+         
+  QuadFormula2D FaceQuadFormula; 
+  switch(cell->getNumberOfFaceVertices(m)) {
+  case 3:
+    // triangular face
+    FaceQuadFormula = TFEDatabase3D::GetQFTriaFromDegree(quad_degree);
+    FaceQuadFormula = Gauss3Tria;
+    break;
+  case 4:
+    // quadrilateral face
+    FaceQuadFormula = TFEDatabase3D::GetQFQuadFromDegree(quad_degree);
+    break;
+  }
+  return FaceQuadFormula;
+}
+// ===========================================================================
+void TFESpace3D::getFaceQuadratureData(TBaseCell *cell, int m, 
+				       std::vector<double>& qWeights,
+				       std::vector<double>& qPointsT,
+				       std::vector<double>& qPointsS,
+				       std::vector< std::vector<double> >& basisFunctionsValues,
+				       int _degree) const
+{
+  int nFaceVertices = cell->getNumberOfFaceVertices(m);
+  
+  // set quadrature formula and compute quadrature info
+  FE3D FEId = this->GetFE3D(cell->GetCellIndex(),cell);
+  int fe_degree = _degree;
+  if (fe_degree == -1) {
+    fe_degree = 2*TFEDatabase3D::GetPolynomialDegreeFromFE3D(FEId);
+  }
+                        
+  QuadFormula2D FaceQuadFormula; //=BaryCenterTria;
+  switch(nFaceVertices) {
+  case 3:
+    // triangular face
+    FaceQuadFormula = TFEDatabase3D::GetQFTriaFromDegree(fe_degree);
+    FaceQuadFormula = Gauss3Tria;
+    break;
+  case 4:
+    // quadrilateral face
+    FaceQuadFormula = TFEDatabase3D::GetQFQuadFromDegree(fe_degree);
+    break;
+  default:
+    ErrThrow("wrong number of face vertices ", nFaceVertices);
+    break;
+  }
+  
+  int N_Points;
+  const double* faceWeights;
+  const double *t,*s;
+  // get a quadrature formula good enough for the velocity FE space
+  TQuadFormula2D *qf2 = TFEDatabase3D::GetQuadFormula2D(FaceQuadFormula);
+  qf2->GetFormulaData(N_Points, faceWeights, t, s);
+
+  // ====================================
+  // generate data on reference mesh cell for the 2d face of 3d cell
+  TFEDatabase3D::GetBaseFunct3DFromFE3D(FEId)
+    ->MakeRefElementData(FaceQuadFormula);
+                        
+  BaseFunct3D *BaseFuncts = TFEDatabase3D::GetBaseFunct3D_IDFromFE3D();
+  int* N_BaseFunct = TFEDatabase3D::GetN_BaseFunctFromFE3D();
+                        
+  // values of base functions in all quadrature points on face
+  double **JointValues = TFEDatabase3D::GetJointValues3D
+    (BaseFuncts[FEId], FaceQuadFormula, m);
+                        
+  TFEDatabase3D::GetBaseFunct3D(BaseFuncts[FEId])->ChangeBF(this->GetCollection(),
+							    cell, N_Points, JointValues);
+
+  // ====================================
+  // convert the double* to vectors
+  
+  qWeights.resize(N_Points);
+  qPointsT.resize(N_Points);
+  qPointsS.resize(N_Points);
+  for (size_t k=0; k<(size_t)N_Points; k++) {
+    qWeights[k] = faceWeights[k];
+    qPointsT[k] = t[k];
+    qPointsS[k] = s[k];
+  }
+
+  
+  basisFunctionsValues.resize(qWeights.size());                       
+  for (unsigned int l=0; l<qWeights.size(); l++) {
+    basisFunctionsValues[l].resize(N_BaseFunct[FEId]);                          
+    for (unsigned int k=0; k<basisFunctionsValues[l].size(); k++) {
+      basisFunctionsValues[l][k]=JointValues[l][k];
+    }
+  }
+  // ====================================
+  
+}
+
+
+// ===========================================================================
+// analogous to getFaceQuadratureData, but taking as input the quad. points
+void TFESpace3D::getFaceQuadratureValue(TBaseCell *cell, int m, QuadFormula2D FaceQuadFormula,
+				  std::vector< std::vector<double> >& basisFunctionsValues) const
+{                       
+  int N_Points;
+  const double* faceWeights;
+  const double *t,*s;
+  // get a quadrature formula good enough for the velocity FE space
+  TQuadFormula2D *qf2 = TFEDatabase3D::GetQuadFormula2D(FaceQuadFormula);
+  qf2->GetFormulaData(N_Points, faceWeights, t, s);
+ 
+  // ====================================
+  // generate data on reference mesh cell for the 2d face of 3d cell
+  // set quadrature formula and compute quadrature info
+  FE3D FEId = this->GetFE3D(cell->GetCellIndex(),cell);
+  TFEDatabase3D::GetBaseFunct3DFromFE3D(FEId)
+    ->MakeRefElementData(FaceQuadFormula);
+                        
+  BaseFunct3D *BaseFuncts = TFEDatabase3D::GetBaseFunct3D_IDFromFE3D();
+  int* N_BaseFunct = TFEDatabase3D::GetN_BaseFunctFromFE3D();
+                        
+  // values of base functions in all quadrature points on face
+  double **JointValues = TFEDatabase3D::GetJointValues3D
+    (BaseFuncts[FEId], FaceQuadFormula, m);
+                        
+  TFEDatabase3D::GetBaseFunct3D(BaseFuncts[FEId])->ChangeBF(this->GetCollection(),
+							    cell, N_Points, JointValues);
+  
+  basisFunctionsValues.resize(N_Points);                       
+  for (int l=0; l<N_Points; l++) {
+    basisFunctionsValues[l].resize(N_BaseFunct[FEId]);                          
+    for (unsigned int k=0; k<basisFunctionsValues[l].size(); k++) {
+      basisFunctionsValues[l][k]=JointValues[l][k];
+    }
+  }
+  // ====================================
+  
+}
+
+
 

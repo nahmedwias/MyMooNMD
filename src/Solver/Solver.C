@@ -95,7 +95,8 @@ ParameterDatabase Solver<L, V>::default_solver_database()
          {"no_preconditioner", "jacobi", "sor", "ssor", "multigrid", 
           "semi_implicit_method_for_pressure_linked_equations",
           "least_squares_commutator", "least_squares_commutator_boundary",
-          "vanka_cell", "vanka_nodal", "vanka_cell_jacobi"}); //TODO maybe these vanka preconditioner types should be controlled by another db parameter
+          "vanka_cell", "vanka_nodal", "vanka_cell_jacobi",
+					"augmented_Lagrangian_based",	"modified_augmented_Lagrangian_based"}); //TODO maybe these vanka preconditioner types should be controlled by another db parameter
   
   db.add("sor_omega", 1.5, "The overrelaxation parameter (typically called "
          "omega). This is only used for the (symmetric) successive "
@@ -106,7 +107,12 @@ ParameterDatabase Solver<L, V>::default_solver_database()
          "smaller values make iterations slower. This can still be necessary "
          "in cases where the iterations does not converge at all with larger "
          "values.", 0.0, 1.0);
+
+  db.add("gamma", 1.0, "This is the augmentation factor (scalar) for the augmented Lagrangian based preconditioner."
+         "0.0 means no augmentation."
+         "values.", -1.0e10, 1.0e10);
   
+
   return db;
 }
 
@@ -114,7 +120,8 @@ ParameterDatabase Solver<L, V>::default_solver_database()
 // L - LinearOperator, V - Vector
 template <class L, class V>
 std::shared_ptr<Preconditioner<V>> get_preconditioner(
-  std::string preconditioner_name, const L& matrix, const ParameterDatabase& db)
+  const std::string& preconditioner_name, const L& matrix,
+  const ParameterDatabase& db)
 {
   if(preconditioner_name == "no_preconditioner")
   {
@@ -163,6 +170,16 @@ std::shared_ptr<Preconditioner<V>> get_preconditioner(
     return std::make_shared<Preconditioner_vanka<V>>(
         matrix, VankaType::CELL_JACOBI, 0.8);
   }
+  else if(preconditioner_name == "augmented_Lagrangian_based")
+  {
+      return std::make_shared<Saddle_point_preconditioner>(
+      matrix, Saddle_point_preconditioner::type::AL, db);
+  }
+  else if(preconditioner_name == "modified_augmented_Lagrangian_based")
+   {
+       return std::make_shared<Saddle_point_preconditioner>(
+       matrix, Saddle_point_preconditioner::type::mod_AL, db);
+   }
   else
   {
     ErrThrow("preconditioner ", preconditioner_name, " not yet implemented");
@@ -173,8 +190,8 @@ std::shared_ptr<Preconditioner<V>> get_preconditioner(
 // L - LinearOperator, V - Vector
 template <class L, class V>
 std::shared_ptr<IterativeMethod<L, V>> get_iterative_method(
-  std::string iterative_solver_type, const ParameterDatabase& db,
-  const L& matrix, std::shared_ptr<Preconditioner<V>> p)
+  const std::string& iterative_solver_type, const ParameterDatabase& db,
+  const L& matrix, const std::shared_ptr<Preconditioner<V>>& p)
 {
   std::shared_ptr<IterativeMethod<L, V>> ret;
   if(iterative_solver_type == "jacobi")
@@ -231,8 +248,10 @@ Solver<L, V>::Solver(const ParameterDatabase& param_db)
    direct_solver(nullptr), iterative_method(nullptr), preconditioner(nullptr),
    multigrid(nullptr), petsc_solver(nullptr)
 {
-  this->db.merge(param_db, false, true);
-  if(this->is_using_multigrid())
+
+this->db.merge(param_db, false, true);
+
+ if(this->is_using_multigrid())
     multigrid = std::make_shared<Multigrid>(param_db);
 }
 
@@ -249,7 +268,7 @@ void Solver<L, V>::update_matrix(const L& matrix)
     else if(db["direct_solver_type"].is("pardiso"))
       t = DirectSolver::DirectSolverTypes::pardiso;
     else //if(db["direct_solver_type"].is("mumps"))
-      ErrThrow("currently the DirectSolver class only supports umfack and "
+      ErrThrow("currently the DirectSolver class only supports umfpack and "
                "pardiso");
     this->direct_solver.reset(new DirectSolver(matrix, t));
   }
@@ -306,6 +325,90 @@ void Solver<L, V>::update_matrix(const L& matrix)
   this->linear_operator = &matrix;
 }
 
+
+/* NEW LB FOR AUGM LAGR PREC ************************************************************************** */
+// L - LinearOperator, V - Vector
+template <class L, class V>
+void Solver<L, V>::solve_augmented(const V& rhs, V& solution)
+{
+  // lambda function to compute the residual, you can use it e.g. during debug
+  // note that this changes the consistency level of the solution to 2
+  auto compute_residual = [&]()
+  {
+    //compute the absolute residual by hand again.
+#ifdef _MPI
+    // update to consistency level 2, needed to properly call apply_scaled_add
+    auto comms = linear_operator->get_communicators();
+    for (size_t bl = 0; bl < comms.size() ; ++bl)
+    {
+      comms[bl]->consistency_update(solution.block(bl), 2);
+    }
+#endif
+    V r(rhs);
+    linear_operator->apply_scaled_add(solution, r, -1.);
+#ifndef _MPI
+    Output::info<4>("Iterative solver", "Absolute residual in Solver class, ",
+                    setprecision(16), r.norm());
+#elif _MPI
+    int my_rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+    double norm = r.norm(comms);
+    if(my_rank == 0)
+      Output::info<4>("Iterative solver", "Absolute residual in Solver class, ",
+                      setprecision(16), norm);
+#endif
+  };
+  (void)compute_residual; // silence the unused variable warning when not used
+
+  // compute_residual();
+
+  if(this->linear_operator == nullptr)
+	  ErrThrow("in order to use Solver::solve(rhs, solution), you have to call "
+			  "Solver::update_matrix first. Otherwise it's not clear which "
+			  "system is supposed to be solved");
+  if(db["solver_type"].is("direct"))
+  {
+	  this->direct_solver->solve(rhs, solution);
+
+	 /* //New LB 11.07.18 start
+	  // augmented Lagrangian stuff:
+	  		 		  auto p = std::dynamic_pointer_cast <  Saddle_point_preconditioner > ( this->preconditioner );
+	  		      std::shared_ptr<IterativeMethod<BlockMatrix, BlockVector>> iterative_method = get_iterative_method<BlockMatrix, BlockVector>( db["iterative_solver_type"] ,
+	  				  this->db,  *this->linear_operator,  this->preconditioner);
+	  		  //use augmented matrix and rhs in case of AL
+	  		  iterative_method->iterate(p->get_augmented_matrix(), p->get_augmented_blockvector(rhs), solution);
+	   //New LB 11.07.18 end
+	 */
+  }
+  else if(db["solver_type"].is("iterative")) // ParMooN internal iterative
+  {
+#ifndef _MPI
+    // augmented Lagrangian stuff:
+    auto p = std::dynamic_pointer_cast<Saddle_point_preconditioner>(
+      this->preconditioner);
+    std::shared_ptr<IterativeMethod<BlockMatrix, BlockVector>> 
+    iterative_method = get_iterative_method<BlockMatrix, BlockVector>(
+      db["iterative_solver_type"], this->db, *this->linear_operator,
+      this->preconditioner);
+    //use augmented matrix and rhs in case of AL
+    iterative_method->iterate(p->get_augmented_matrix(),
+                              p->get_augmented_blockvector(rhs), solution);
+    this->iterative_method->iterate(*this->linear_operator, rhs, solution);
+#else
+    ErrThrow("no augmented Lagrangian implemented in parallel mode yet.");
+#endif
+  }
+  else if(db["solver_type"].is("petsc"))
+  {
+	  this->petsc_solver->solve(rhs, solution);
+  }
+  else
+  {
+	  ErrThrow("unknown solver type ", db["solver_type"]);
+  }
+  compute_residual();
+}
+
 /* ************************************************************************** */
 // L - LinearOperator, V - Vector
 template <class L, class V>
@@ -332,35 +435,54 @@ void Solver<L, V>::solve(const V& rhs, V& solution)
 #elif _MPI
     int my_rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-    double norm = r.norm_global(comms);
+    double norm = r.norm(comms);
     if(my_rank == 0)
       Output::info<4>("Iterative solver", "Absolute residual in Solver class, ",
                       setprecision(16), norm);
 #endif
   };
   (void)compute_residual; // silence the unused variable warning when not used
- 
- // compute_residual();
+
+  // compute_residual();
 
   if(this->linear_operator == nullptr)
-    ErrThrow("in order to use Solver::solve(rhs, solution), you have to call "
-             "Solver::update_matrix first. Otherwise it's not clear which "
-             "system is supposed to be solved");
+	  ErrThrow("in order to use Solver::solve(rhs, solution), you have to call "
+			  "Solver::update_matrix first. Otherwise it's not clear which "
+			  "system is supposed to be solved");
   if(db["solver_type"].is("direct"))
   {
-    this->direct_solver->solve(rhs, solution);
+	  this->direct_solver->solve(rhs, solution);
   }
   else if(db["solver_type"].is("iterative")) // ParMooN internal iterative 
   {
-    this->iterative_method->iterate(*this->linear_operator, rhs, solution);
+  	if (db["preconditioner"].is("augmented_Lagrangian_based"))
+	  {
+#ifndef _MPI
+		 		  auto p = std::dynamic_pointer_cast <  Saddle_point_preconditioner > ( this->preconditioner );
+		  //this->iterative_method->iterate(p->get_augmented_matrix(), p->get_augmented_blockvector(rhs), solution);
+		 		  std::shared_ptr<IterativeMethod<BlockMatrix, BlockVector>> iterative_method = get_iterative_method<BlockMatrix, BlockVector>( db["iterative_solver_type"] ,
+		 		  		this->db,  *this->linear_operator,  this->preconditioner);
+		 		  //use augmented matrix and rhs in case of AL
+		 		  iterative_method->iterate(p->get_augmented_matrix(), p->get_augmented_blockvector(rhs), solution);
+
+		 		  this->iterative_method->iterate(*this->linear_operator, rhs, solution);
+#else
+          ErrThrow("augmented Lagrangian not available in parallel mode yet.")
+#endif // not MPI
+	  }
+  	else
+  	{
+  		this->iterative_method->iterate(*this->linear_operator, rhs, solution);
+  	}
+
   }
   else if(db["solver_type"].is("petsc"))
   {
-    this->petsc_solver->solve(rhs, solution);
+	  this->petsc_solver->solve(rhs, solution);
   }
   else
   {
-    ErrThrow("unknown solver type ", db["solver_type"]);
+	  ErrThrow("unknown solver type ", db["solver_type"]);
   }
   compute_residual();
 }

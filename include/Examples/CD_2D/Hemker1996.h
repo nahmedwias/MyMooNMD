@@ -9,7 +9,7 @@ void ExampleFile()
 }
 
 // exact solution
-void Exact(double x, double y, double *values)
+void Exact(double, double, double *values)
 {
   values[0] = 0;
   values[1] = 0;
@@ -17,7 +17,7 @@ void Exact(double x, double y, double *values)
   values[3] = 0;
 }
 
-void BoundCondition(int BdComp, double t, BoundCond &cond)
+void BoundCondition(int BdComp, double, BoundCond &cond)
 {
     switch(BdComp)
     {
@@ -33,7 +33,7 @@ void BoundCondition(int BdComp, double t, BoundCond &cond)
 
 
 // value of boundary condition
-void BoundValue(int BdComp, double Param, double &value)
+void BoundValue(int BdComp, double, double &value)
 {
   switch(BdComp)
   {
@@ -49,12 +49,12 @@ void BoundValue(int BdComp, double Param, double &value)
 }
 
 // initial conditon
-void InitialCondition(double x,  double y, double *values)
+void InitialCondition(double, double, double *values)
 {
   values[0] = 0;
 }
 
-void BoundConditionAdjoint(int BdComp, double t, BoundCond &cond)
+void BoundConditionAdjoint(int BdComp, double, BoundCond &cond)
 {
     switch(BdComp)
     {
@@ -70,13 +70,13 @@ void BoundConditionAdjoint(int BdComp, double t, BoundCond &cond)
 
 
 // value of boundary condition
-void BoundValueAdjoint(int BdComp, double Param, double &value)
+void BoundValueAdjoint(int, double, double &value)
 {
     value = 0;
 }
 
-void BilinearCoeffs(int n_points, double *x, double *y,
-        double **parameters, double **coeffs)
+void BilinearCoeffs(int n_points, double *, double *, double **,
+                    double **coeffs)
 {
   double eps=1/TDatabase::ParamDB->RE_NR;
   double angle = 0, v1, v2;
@@ -120,7 +120,7 @@ void ComputeExtremalValues(int N, const double *sol, double  *values)
 }
  
 /** compute curve of the outflow boundary */
-void ComputeOutflowBoundary(int level, TFEFunction2D *ufct)
+void ComputeOutflowBoundary(int , TFEFunction2D *ufct)
 {
   double h, x=4,values[3],y;
   int i, bound_points = 401;
@@ -148,7 +148,6 @@ void ComputeLocalExtrema(TFEFunction2D *ufct, double *values)
 {
   TBaseCell *cell;
   TCollection *Coll;
-  const TFESpace2D *FESpace2D;
   RefTrans2D RefTrans;
   TBaseFunct2D *bf;
   FE2D FE_ID;
@@ -166,7 +165,7 @@ void ComputeLocalExtrema(TFEFunction2D *ufct, double *values)
   extr[2] = -1;
   extr[3] = 0;
 
-  FESpace2D = ufct->GetFESpace2D();
+  auto FESpace2D = ufct->GetFESpace2D();
   BeginIndex = FESpace2D->GetBeginIndex();
   GlobalNumbers = FESpace2D->GetGlobalNumbers();
   Values = ufct->GetValues();  
@@ -655,7 +654,7 @@ void ComputeDifferenceToCoarseLevel(TCollection *Coll_fine,
     int i, j, k, N_Cells, N_Edges, coarse_no;
     double x, y, x_c, y_c, val_fine[4], val_coarse[4], c1err = -1, c1err_coarse = -1;
     double x_err, y_err, x_err_c, y_err_c;
-    TBaseCell *cell, *parent;
+    const TBaseCell *cell, *parent;
     
     // number of cells
     N_Cells = Coll_fine->GetN_Cells();
@@ -667,7 +666,7 @@ void ComputeDifferenceToCoarseLevel(TCollection *Coll_fine,
 	cell = Coll_fine->GetCell(i);
 	// parent cell
 	parent = cell->GetParent();
-	coarse_no = Coll_coarse->GetIndex(parent);
+	coarse_no = Coll_coarse->get_cell_index(parent);
 	//OutPut(coarse_no << " ");
 	// number of edges
 	N_Edges=cell->GetN_Edges();
@@ -1032,7 +1031,7 @@ void ComputeDataForEvaluationOfSolution(const TFEFunction2D *u)
               << errors[3] << " width " << -errors[4]);
 }
 
-void hemker_postprocessing(CD2D & cd2d)
+void hemker_postprocessing(ConvectionDiffusion<2> & cd2d)
 {
   auto & u = cd2d.get_function();
   //auto coll = u.GetFESpace2D()->GetCollection();

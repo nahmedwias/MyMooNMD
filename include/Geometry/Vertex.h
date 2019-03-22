@@ -23,13 +23,11 @@ class TVertex
     double X;
     /** second coordinate */
     double Y;
-#ifdef __3D__
-      /** third coordinate (3D) */
-      double Z;
-#endif
+    /** third coordinate (3D) */
+    double Z = 0;
 
-    /** an integer for storing clipboard information*/
-    int ClipBoard;
+    /** an integer for storing clipboard information, Bad style*/
+    mutable int ClipBoard;
 
 #ifdef _MPI
 
@@ -100,24 +98,24 @@ class TVertex
     /** return the y coordinate */
     double GetY() const
     { return Y; }
-#ifdef __3D__
-      /** return the z coordinate (3D) */
-      double GetZ() const
-      { return Z; }
-      /** return all three coordinates */
-      void GetCoords(double& x, double& y, double& z) const
-      {
-        x = X;
-        y = Y;
-        z = Z;
-      }
-#else
-      /** return all two coordinates */
-      void GetCoords(double& x, double& y) const
-      {
-        x = X;
-        y = Y;
-      }
+
+    /** return the z coordinate (3D) */
+    double GetZ() const
+    { return Z; }
+    /** return all three coordinates */
+    void GetCoords(double& x, double& y, double& z) const
+    {
+      x = X;
+      y = Y;
+      z = Z; // 0 in 2D
+    }
+#ifdef __2D__
+    /** return all two coordinates */
+    void GetCoords(double& x, double& y) const
+    {
+      x = X;
+      y = Y;
+    }
 #endif
 
     /** write some information of the vertex in stream s */
@@ -131,7 +129,7 @@ class TVertex
     friend bool operator < (const TVertex& V, const TVertex& W);
 
     /** set value in ClipBoard */
-    void SetClipBoard(int value)
+    void SetClipBoard(int value) const
     { ClipBoard=value; }
     /** get value from ClipBoard */
     int GetClipBoard() const
@@ -181,13 +179,13 @@ class TVertex
        LocVertNo = SubDomainLocVertNo;
       }
 
-     void GetNeibs(int &n_Neibs, TBaseCell **&neighbs)
+     void GetNeibs(int &n_Neibs, const TBaseCell * const *&neighbs) const
       {
        n_Neibs = N_Cells;
        neighbs = Cells;
       }
       
-      int GetNNeibs()
+      int GetNNeibs() const
       {  return N_Cells; }     
 #endif
 };

@@ -16,7 +16,7 @@
 #include <ParFECommunicator3D.h>
 #endif
 
-SmootherCode string_to_smoother_code(std::string code)
+SmootherCode string_to_smoother_code(const std::string& code)
 {
   if(code == std::string("direct_solve"))
     return SmootherCode::DIRECT_SOLVE;
@@ -50,7 +50,7 @@ SmootherCode string_to_smoother_code(std::string code)
 
 }
 
-MultigridType string_to_multigrid_type(std::string code)
+MultigridType string_to_multigrid_type(const std::string& code)
 {
   if(code == std::string("standard"))
       return MultigridType::STANDARD;
@@ -103,7 +103,7 @@ Multigrid::Multigrid(const ParameterDatabase& param_db)
 
 }
 
-void Multigrid::initialize(std::list<BlockFEMatrix*> matrices)
+void Multigrid::initialize(const std::list<BlockFEMatrix*>& matrices)
 {
   // Create the levels and collect them in a list
   if(matrices.size() != n_algebraic_levels_)
@@ -321,13 +321,13 @@ void Multigrid::update_rhs_in_coarser_grid(size_t lvl)
   for(size_t i = 0 ; i < matrix_current.get_n_cell_rows() ; ++i)
   {
 #ifdef __2D__
-    const TFESpace2D& space_current = matrix_current.get_row_space(i);
-    const TFESpace2D& space_coarse = matrix_coarse.get_row_space(i);
+    const TFESpace2D& space_current = *matrix_current.get_row_space(i);
+    const TFESpace2D& space_coarse = *matrix_coarse.get_row_space(i);
 
 #endif
 #ifdef __3D__
-    const TFESpace3D& space_current = matrix_current.get_row_space(i);
-    const TFESpace3D& space_coarse = matrix_coarse.get_row_space(i);
+    const TFESpace3D& space_current = *matrix_current.get_row_space(i);
+    const TFESpace3D& space_coarse = *matrix_coarse.get_row_space(i);
 #endif
     double* defect_current_entries = defect_current.block(i);
     int size_current_defect = defect_current.length(i);
@@ -370,12 +370,12 @@ void Multigrid::update_solution_in_finer_grid(size_t lvl)
   for(size_t i = 0 ; i < matrix_current.get_n_cell_rows() ; ++i)
   {
 #ifdef __2D__
-    const TFESpace2D& space_fine = matrix_fine.get_row_space(i);
-    const TFESpace2D& space_current = matrix_current.get_row_space(i);
+    const TFESpace2D& space_fine = *matrix_fine.get_row_space(i);
+    const TFESpace2D& space_current = *matrix_current.get_row_space(i);
 #endif
 #ifdef __3D__
-    const TFESpace3D& space_fine = matrix_fine.get_row_space(i);
-    const TFESpace3D& space_current = matrix_current.get_row_space(i);
+    const TFESpace3D& space_fine = *matrix_fine.get_row_space(i);
+    const TFESpace3D& space_current = *matrix_current.get_row_space(i);
 #endif
 
     double* solution_prolongation = copy_sol_fine.block(i);

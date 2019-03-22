@@ -15,7 +15,7 @@
 #ifndef __FEFUNCTION3D__
 #define __FEFUNCTION3D__
 
-#include <AllClasses.h>
+class TAuxParam3D;
 #include <FESpace3D.h>
 #include <AuxParam3D.h>
 #include <Constants.h>
@@ -24,6 +24,10 @@
 /** a function from a finite element space */
 class TFEFunction3D
 {
+  public:
+    typedef void ErrorMethod(int, std::array<double*, 3>, double *,
+                             const double *, double, double **, double **,
+                             double **, double *);
   protected:
     /** name of the function */
     std::string Name;
@@ -32,7 +36,7 @@ class TFEFunction3D
     std::string Description;
 
     /** space to which this function belongs to */
-    const TFESpace3D *FESpace3D;
+    std::shared_ptr<const TFESpace3D> FESpace3D;
 
     /** double vector according to FE isomorphism */
     double *Values;
@@ -45,8 +49,8 @@ class TFEFunction3D
     TFEFunction3D();
 
     /** constructor with vector initialization */
-    TFEFunction3D(const TFESpace3D *fespace3D,
-                  std::string name, std::string description,
+    TFEFunction3D(std::shared_ptr<const TFESpace3D> fespace3D,
+                  const std::string& name, const std::string& description,
                   double *values, int length);
 
     /// Copy assignment operator. Shallow copy, as the
@@ -65,11 +69,11 @@ class TFEFunction3D
     { return Description; }
 
     /** return fe space */
-    const TFESpace3D *GetFESpace3D()
+    std::shared_ptr<const TFESpace3D> GetFESpace3D() const
     { return FESpace3D; }
-
+    
     /** return fe space */
-    const TFESpace3D *GetFESpace3D() const
+    std::shared_ptr<const TFESpace> GetFESpace() const
     { return FESpace3D; }
 
     /** return length */
@@ -91,19 +95,19 @@ class TFEFunction3D
      */
     void GetErrors(DoubleFunct3D *Exact, int N_Derivatives,
                    MultiIndex3D *NeededDerivatives,
-                   int N_Errors, ErrorMethod3D *ErrorMeth, 
+                   int N_Errors, ErrorMethod *ErrorMeth, 
                    CoeffFct3D Coeff, TAuxParam3D *Aux,
                    int n_fespaces, const TFESpace3D **fespaces,
                    double *errors) const;
     
-    void GetErrorsForVectorValuedFunction(DoubleFunct3D ** const Exact,
-                                          ErrorMethod3D * const ErrMeth,
+    void GetErrorsForVectorValuedFunction(DoubleFunct3D * const * const Exact,
+                                          ErrorMethod * const ErrMeth,
                                           double * const errors);
 
     /** calculate errors to given function */
     void GetMeshCellParams(DoubleFunct3D *Exact, int N_Derivatives,
                    MultiIndex3D *NeededDerivatives,
-                   int N_Errors, ErrorMethod3D *ErrorMeth, 
+                   int N_Errors, ErrorMethod *ErrorMeth, 
                    CoeffFct3D Coeff, TAuxParam3D *Aux,
                    int n_fespaces, const TFESpace3D **fespaces,
                    double *errors, double *cell_parameters);
@@ -130,15 +134,15 @@ class TFEFunction3D
 
     /** determine the value of function and its first derivatives at
         the given point */
-    void FindGradientLocal(TBaseCell *cell, int cell_no, 
+    void FindGradientLocal(const TBaseCell *cell, int cell_no, 
                            double x, double y, double z, 
                            double *values);
 
     /** determine the value of function
         the given point */
-    void FindValueLocal(TBaseCell *cell, int cell_no, 
-                           double x, double y, double z, 
-                           double *values) const;
+    void FindValueLocal(const TBaseCell *cell, int cell_no, 
+                        double x, double y, double z, 
+                        double *values) const;
 
     /** calculate the interpolation of an exact function */
     void Interpolate(DoubleFunct3D *Exact);
@@ -155,7 +159,22 @@ class TFEFunction3D
      * @param[in] Exact must be of length 3 (= space dimension)
      * @warning EvalAll must be correctly implemented for the used finite element
      */
-    void Interpolate_vector_valued_function(std::vector<DoubleFunct3D*> Exact);
+    void Interpolate_vector_valued_function(
+      const std::vector<DoubleFunct3D*>& Exact);
+    
+    typedef std::function<double(const TBaseCell* cell, int cell_index,
+                                 std::array<double, 3> xyz)> AnalyticFunction;
+    /**
+     * @brief add a given function f to this fe function
+     * 
+     * The cell and cell_index are from the collection of this TFEFunction3D
+     * and the point (x,y,z) is in that cell.
+     * 
+     * Note that this is similar to creating a second TFEFunction3D, 
+     * interpolating f on it and then adding it via operator+=. Here, no second
+     * TFEFunction3D is required.
+     */
+    void add(AnalyticFunction f);
     
     /**
      * @brief project this functions into the space L20 (having zero mean value)
@@ -180,6 +199,8 @@ class TFEFunction3D
      */
     void compute_integral_and_measure(double& integral, double& measure) const;
 
+    
+    
   /** @brief Set Dirichlet values according to boundary conditions */
     void SetDirichletBC(BoundCondFunct3D *BoundaryCondition,
                                    BoundValueFunct3D *BoudaryValue);
@@ -206,7 +227,7 @@ class TFEFunction3D
     * together with the minimum and maximum value. If the string is empty 
     * (default) the used name will be TFEFunction2D::Name.
     */
-   void PrintMinMax(std::string name = "") const;
+   void PrintMinMax(const std::string& name = "") const;
 };
 
 #endif

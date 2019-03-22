@@ -36,7 +36,7 @@ void ExactP(double x, double y, double *values)
 // ========================================================================
 // boundary conditions
 // ========================================================================
-void BoundCondition(int bdComp, double t, BoundCond &cond)  
+void BoundCondition(int bdComp, double, BoundCond &cond)  
 {
   cond = (bdComp == 0 || bdComp == 3) ? NEUMANN : DIRICHLET;
 }
@@ -81,7 +81,7 @@ void FluxBoundValue(int bdComp, double t, double &value)
 // coefficients for Stokes form: A, B1, B2, f1, f2
 // ========================================================================
 void LinCoeffs(int n_points, double *X, double *Y,
-               double **parameters, double **coeffs)
+               double **, double **coeffs)
 {
   const double eps = 1.0/TDatabase::ParamDB->SIGMA_PERM;
   for(int i = 0; i < n_points; i++)

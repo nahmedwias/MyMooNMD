@@ -216,8 +216,7 @@ Example_NonStationary Example_NonStationary::Time_ConvDiff(
       // the coefficient function
       lhs_depends_on_time = false;
       rhs_depends_on_time = false;
-      f = [diffusion](const Point& point, double time,
-                      std::vector<double>& coeffs)
+      f = [diffusion](const Point& point, double, std::vector<double>& coeffs)
       {
         const double x = point.x();
         const double y = point.y();

@@ -10,7 +10,7 @@
 #include <BdPlane.h>
 #include <BdWall.h>
 
-int main(int argc, char **argv)
+int main(int, char**)
 {
   double tol = 1.e-13;
   // at first we create a few joints in 2D and 3D to have object on which we 

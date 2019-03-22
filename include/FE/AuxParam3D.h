@@ -13,6 +13,7 @@
 #ifndef __AUXPARAM3D__
 #define __AUXPARAM3D__
 
+class TFEFunction3D;
 #include <Constants.h>
 #include <FESpace3D.h>
 #include <FEFunction3D.h>
@@ -91,8 +92,9 @@ class TAuxParam3D
      * choose this constructor. This is equivalent to calling 
      * TAuxParam3D(0, 0, 0, 0, nullptr, nullptr, nullptr, nullptr, nullptr, 0, nullptr);
      */
+    TAuxParam3D();
 
-    TAuxParam3D(std::string name, TFEFunction3D **fefunctions3d);
+    TAuxParam3D(const std::string& name, TFEFunction3D **fefunctions3d);
     
 
     /** destructor */
@@ -100,7 +102,7 @@ class TAuxParam3D
 
     /** return all parameters at all quadrature points */
     void GetParameters(int n_points, TBaseCell *cell, int cellnum,
-                       double *xi, double *eta, double *zeta,
+                       const double *xi, const double *eta, const double *zeta,
                        double *x, double *y, double *z,
                        double **Parameters);
 
@@ -210,6 +212,6 @@ class TAuxParam3D
 };
 
 // standard function to use for Navier-Stokes
-void Velocity_Fct(double *inputList, double *outputValues);
+void Velocity_Fct(const double *inputList, double *outputValues);
 
 #endif // __AUXPARAM3D__

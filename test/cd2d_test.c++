@@ -26,16 +26,17 @@
 #include <Domain.h>
 #include <Database.h>
 #include <FEDatabase2D.h>
-#include <CD2D.h>
+#include "ConvectionDiffusion.h"
 #include <Multigrid.h>
 
 #include <Chrono.h>
-#include <LocalAssembling2D.h>
+#include "LocalAssembling.h"
 #include <MainUtilities.h> //for error measuring
 
 // compare the computed errors in the Darcy2D object with the given ones in 
 // the array
-void compareErrors(const CD2D& cd2d, std::array<double, 4> errors)
+void compareErrors(const ConvectionDiffusion<2>& cd2d,
+                   std::array<double, 4> errors)
 {
   const double eps = 1e-11;
   
@@ -68,7 +69,7 @@ void check_cd2d(TDomain & domain, ParameterDatabase& db, int element_code,
 {
   TDatabase::ParamDB->ANSATZ_ORDER = element_code;
   
-  CD2D cd2d(domain, db);
+  ConvectionDiffusion<2> cd2d(domain, db);
   cd2d.assemble();
   cd2d.solve();
   cd2d.output();
@@ -76,16 +77,12 @@ void check_cd2d(TDomain & domain, ParameterDatabase& db, int element_code,
   compareErrors(cd2d, errors); // throws upon a difference
 }
 
-void tests_on_quads(unsigned int nRefinements, ParameterDatabase& db)
+void tests_on_quads(ParameterDatabase& db)
 {
   // default construct a domain object
   TDomain domain(db);
-
-  // refine grid up to the coarsest level
-  for(unsigned int i = 0; i < nRefinements; i++)
-  {
-    domain.RegRefineAll();
-  }
+  // refine grid
+  domain.refine_and_get_hierarchy_of_collections(db);
 
   std::array<double, 4> errors;
     
@@ -143,17 +140,13 @@ void tests_on_quads(unsigned int nRefinements, ParameterDatabase& db)
   check_cd2d(domain, db, 8, errors);
 }
 
-void tests_on_triangles(unsigned int nRefinements, ParameterDatabase& db)
+void tests_on_triangles(ParameterDatabase& db)
 {
   // default construct a domain object
   TDomain domain(db);
-
-  // refine grid up to the coarsest level
-  for(unsigned int i = 0; i < nRefinements; i++)
-  {
-    domain.RegRefineAll();
-  }
-
+  // refine grid
+  domain.refine_and_get_hierarchy_of_collections(db);
+  
   std::array<double, 4> errors;
 
   Output::print("\nstarting with P1");
@@ -162,8 +155,8 @@ void tests_on_triangles(unsigned int nRefinements, ParameterDatabase& db)
   check_cd2d(domain, db, 1, errors);
   
   Output::print("\nstarting with P2");
-  errors = {{ 0.0036538021235418, 0.12682169595806, 0.12682169595806,
-              0.010487232211906 }};
+  errors = {{ 0.00421775248811, 0.12664905657584, 0.12664905657584,
+              0.013686550806003 }};
   check_cd2d(domain, db, 2, errors);
   
   Output::print("\nstarting with P3");
@@ -198,14 +191,14 @@ void tests_on_triangles(unsigned int nRefinements, ParameterDatabase& db)
 // =======================================================================
 // main program
 // =======================================================================
-int main(int argc, char* argv[])
+int main(int, char**)
 {
   Output::setVerbosity(2);
   //  declaration of databases
   TDatabase Database;
   TFEDatabase2D FEDatabase;
   
-  unsigned int nRefinements = 2;
+  size_t nRefinements = 2;
   
   ParameterDatabase db = ParameterDatabase::parmoon_default_database();
   db.merge(Solver<>::default_solver_database());
@@ -220,24 +213,25 @@ int main(int argc, char* argv[])
   
   db.add("boundary_file", "Default_UnitSquare", "");
   db.add("geo_file", "UnitSquare", "", {"UnitSquare", "TwoTriangles"});
+  db.add("refinement_n_initial_steps", (size_t) nRefinements,"");
   
   Chrono time; // measure the time spent for each solver
   
   Output::print("\n\n ----------- direct solver -----------\n");
   db["solver_type"] = "direct";
   db["geo_file"] = "UnitSquare";
-  tests_on_quads(nRefinements, db);
+  tests_on_quads(db);
   db["geo_file"] = "TwoTriangles";
-  tests_on_triangles(nRefinements, db);
+  tests_on_triangles(db);
   time.restart_and_print("all tests, direct solver");
   
   
   Output::print("\n\n ----------- petsc solver -----------\n");
   db["solver_type"] = "petsc";
   db["geo_file"] = "UnitSquare";
-  tests_on_quads(nRefinements, db);
+  tests_on_quads(db);
   db["geo_file"] = "TwoTriangles";
-  tests_on_triangles(nRefinements, db);
+  tests_on_triangles(db);
   time.restart_and_print("all tests, petsc solver");
   
   
@@ -248,9 +242,9 @@ int main(int argc, char* argv[])
   db["max_n_iterations"] = 1000;
   db["preconditioner"] = "ssor";
   db["geo_file"] = "UnitSquare";
-  tests_on_quads(nRefinements, db);
+  tests_on_quads(db);
   db["geo_file"] = "TwoTriangles";
-  tests_on_triangles(nRefinements, db);
+  tests_on_triangles(db);
   time.restart_and_print("all tests, fgmres solver and ssor preconditioner");
   
   
@@ -266,9 +260,9 @@ int main(int argc, char* argv[])
   db["multigrid_n_pre_smooth"] = 2;
   db["multigrid_n_post_smooth"] = 2;
   db["geo_file"] = "UnitSquare";
-  tests_on_quads(nRefinements, db);
+  tests_on_quads(db);
   db["geo_file"] = "TwoTriangles";
-  tests_on_triangles(nRefinements, db);
+  tests_on_triangles(db);
   time.restart_and_print("all tests, fgmres solver and multigrid "
                          "preconditioner");
   

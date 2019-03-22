@@ -32,7 +32,7 @@ TQuadrangle::TQuadrangle()
 }
 
 // Methods
-double TQuadrangle::GetDiameter(TVertex **Verts)
+double TQuadrangle::GetDiameter(TVertex **Verts) const
 {
   double diffX1 = Verts[0]->GetX() - Verts[2]->GetX();
   double diffY1 = Verts[0]->GetY() - Verts[2]->GetY();
@@ -43,7 +43,7 @@ double TQuadrangle::GetDiameter(TVertex **Verts)
                   diffX2*diffX2 + diffY2*diffY2));
 }
 
-double TQuadrangle::GetShortestEdge(TVertex **Verts)
+double TQuadrangle::GetShortestEdge(TVertex **Verts) const
 {
   double diffX1 = Verts[0]->GetX() - Verts[1]->GetX();
   double diffY1 = Verts[0]->GetY() - Verts[1]->GetY();
@@ -68,7 +68,7 @@ double TQuadrangle::GetShortestEdge(TVertex **Verts)
 }
 
 // approximation with affine map of vertices 0,1 and 3
-double TQuadrangle::GetLengthWithReferenceMap(TVertex **Verts)
+double TQuadrangle::GetLengthWithReferenceMap(TVertex **Verts) const
 {
     double x0, x1, x3, y0, y1, y3;
     double xc1, xc2, yc1, yc2;
@@ -107,7 +107,7 @@ double TQuadrangle::GetLengthWithReferenceMap(TVertex **Verts)
     return 2*sqrt(fabs(detjk));
 }
 
-double TQuadrangle::GetMeasure(TVertex **Verts)
+double TQuadrangle::GetMeasure(TVertex **Verts) const
 {
   double x1,x2,x3,x4,y1,y2,y3,y4;
 
@@ -124,7 +124,7 @@ double TQuadrangle::GetMeasure(TVertex **Verts)
     0.5*fabs(x4*y3-x3*y4-x1*y3+x3*y1+x1*y4-x4*y1);
 }
 
-Shapes TQuadrangle::CheckQuad(TVertex **Vertices)
+Shapes TQuadrangle::CheckQuad(const TVertex * const * Vertices) const
 {
   double test1, test2;
 

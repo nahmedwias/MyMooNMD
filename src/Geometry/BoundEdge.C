@@ -21,8 +21,7 @@ TBoundEdge::TBoundEdge(TBoundComp2D *bdcomp, double t_0, double t_1)
 }
 
 // Methods
-int TBoundEdge::CheckMatchingRef(TBaseCell *Me, int J_i,
-                  struct StoreGeom &Tmp)
+int TBoundEdge::CheckMatchingRef(TBaseCell *, int, struct StoreGeom &Tmp)
 {
   Tmp.Filled = false;
   return 0;
@@ -30,7 +29,7 @@ int TBoundEdge::CheckMatchingRef(TBaseCell *Me, int J_i,
 
 #ifdef __2D__
 /** update parameters according to the new vertex positions */
-void TBoundEdge::UpdateParameters(TVertex *Begin, TVertex *End)
+void TBoundEdge::UpdateParameters(const TVertex *Begin, const TVertex *End)
 {
   double x1, y1, x2, y2;
   double t1, t2;
@@ -52,19 +51,8 @@ void TBoundEdge::UpdateParameters(TVertex *Begin, TVertex *End)
 }
 #endif
 
-#ifdef __MORTAR__
-
-int TBoundEdge::CheckMatchingRef(TBaseCell *Me, int J_i,
-                  StoreGeomMortar &Tmp)
-{
-  Tmp.Filled = false;
-  return 0;
-}
-
-#endif
-
 // create a new instance of this class
-TJoint *TBoundEdge::NewInst(double newT_0, double newT_1, TBaseCell *Me)
+TJoint *TBoundEdge::NewInst(double newT_0, double newT_1, TBaseCell *)
 {
   return new TBoundEdge(BoundComp, T_0 + newT_0*(T_1 - T_0),
                         T_0 + newT_1*(T_1 - T_0));
@@ -85,7 +73,7 @@ void TBoundEdge::set_index_in_neighbour(TBaseCell *neigh, int index)
         IndexInNeighbor[0] = index;
     else
     {
-        ErrMsg("ERROR, TInnerInterfaceJoint::SetIndexInNeighbor !!!!!!!!");
+        ErrMsg("ERROR in TBoundEdge::set_index_in_neighbour");
         exit(-4711);
     }
 }
@@ -98,7 +86,7 @@ int TBoundEdge::get_index_in_neighbour(const TBaseCell*const neigh) const
         return IndexInNeighbor[0];
     else
     {
-        ErrMsg("ERROR, TBoundEdge::GetIndexInNeighbor !!!!!!!!");
+        ErrMsg("ERROR in TBoundEdge::get_index_in_neighbour");
         exit(-4711);
     }
 }

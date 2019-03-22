@@ -35,17 +35,17 @@ class TQuadFormula
 
   public:
     /** return number of quadrature points */
-    int GetN_QuadPoints()
+    int GetN_QuadPoints() const
     { return N_QuadPoints; }
 
     /** return weights of the formula */
-    double *GetWeights()
+    const double *GetWeights() const
     { return Weights; }
     /** return coordinates of the formula */
-    virtual double *GetCoords(int i);
+    virtual const double *GetCoords(int i) const;
 
     /** print information on this formula */
-    friend std::ostream & operator << (std::ostream &s, TQuadFormula *qf);
+    friend std::ostream & operator << (std::ostream &s, const TQuadFormula *qf);
 };
 
 #endif

@@ -7,7 +7,7 @@
 
 #include <MooNMD_Io.h>
 
-void TimeNSType1Galerkin(double Mult, double *coeff, double *param, double hK,
+void TimeNSType1Galerkin(double Mult, double *coeff, double *param, double,
     double **OrigValues, int *N_BaseFuncts, double ***LocMatrices, double **LocRhs)
 {
   double **MatrixA, **MatrixB1, **MatrixB2, **MatrixM;
@@ -31,10 +31,10 @@ void TimeNSType1Galerkin(double Mult, double *coeff, double *param, double hK,
   N_U = N_BaseFuncts[0];
   N_P = N_BaseFuncts[1];
 
-  Orig0 = OrigValues[0];         // u_x
-  Orig1 = OrigValues[1];         // u_y
-  Orig2 = OrigValues[2];         // u
-  Orig3 = OrigValues[3];         // p
+  Orig0 = OrigValues[0];         // u
+  Orig1 = OrigValues[1];         // p
+  Orig2 = OrigValues[2];         // u_x
+  Orig3 = OrigValues[3];         // u_y
 
   c0 = coeff[0];                 // nu
   c1 = coeff[1];                 // f1
@@ -47,18 +47,18 @@ void TimeNSType1Galerkin(double Mult, double *coeff, double *param, double hK,
   {
     MatrixRow = MatrixA[i];
     MatrixMRow = MatrixM[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    test00 = Orig0[i];
 
     Rhs1[i] += Mult*test00*c1;
     Rhs2[i] += Mult*test00*c2;
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
-      ansatz00 = Orig2[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
+      ansatz00 = Orig0[j];
 
       val  = c0*(test10*ansatz10+test01*ansatz01);
       //HOTFIX: Check the documentation!
@@ -76,12 +76,12 @@ void TimeNSType1Galerkin(double Mult, double *coeff, double *param, double hK,
     MatrixRow1 = MatrixB1[i];
     MatrixRow2 = MatrixB2[i];
 
-    test00 = Orig3[i];
+    test00 = Orig1[i];
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
 
       val = -Mult*test00*ansatz10;
       MatrixRow1[j] += val;
@@ -93,7 +93,7 @@ void TimeNSType1Galerkin(double Mult, double *coeff, double *param, double hK,
 }
 
 void TimeNSType2Galerkin(double Mult, double *coeff,
-double *param, double hK,
+double *param, double,
 double **OrigValues, int *N_BaseFuncts,
 double ***LocMatrices, double **LocRhs)
 {
@@ -121,10 +121,10 @@ double ***LocMatrices, double **LocRhs)
   N_U = N_BaseFuncts[0];
   N_P = N_BaseFuncts[1];
 
-  Orig0 = OrigValues[0];         // u_x
-  Orig1 = OrigValues[1];         // u_y
-  Orig2 = OrigValues[2];         // u
-  Orig3 = OrigValues[3];         // p
+  Orig0 = OrigValues[0];         // u
+  Orig1 = OrigValues[1];         // p
+  Orig2 = OrigValues[2];         // u_x
+  Orig3 = OrigValues[3];         // u_y
 
   c0 = coeff[0];                 // nu
   c1 = coeff[1];                 // f1
@@ -137,18 +137,18 @@ double ***LocMatrices, double **LocRhs)
   {
     MatrixRow = MatrixA[i];
     MatrixMRow = MatrixM[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    test00 = Orig0[i];
 
     Rhs1[i] += Mult*test00*c1;
     Rhs2[i] += Mult*test00*c2;
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
-      ansatz00 = Orig2[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
+      ansatz00 = Orig0[j];
 
       val  = c0*(test10*ansatz10+test01*ansatz01);
       //HOTFIX: Check the documentation!
@@ -164,7 +164,7 @@ double ***LocMatrices, double **LocRhs)
     MatrixRow2 = MatrixB2T[i];
     for(j=0;j<N_P;j++)
     {
-      ansatz00 = Orig3[j];
+      ansatz00 = Orig1[j];
 
       val = -Mult*ansatz00*test10;
       MatrixRow1[j] += val;
@@ -179,12 +179,12 @@ double ***LocMatrices, double **LocRhs)
     MatrixRow1 = MatrixB1[i];
     MatrixRow2 = MatrixB2[i];
 
-    test00 = Orig3[i];
+    test00 = Orig1[i];
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
 
       val = -Mult*test00*ansatz10;
       MatrixRow1[j] += val;
@@ -197,7 +197,7 @@ double ***LocMatrices, double **LocRhs)
 }
 // ======================================================================
 void TimeNSType3Galerkin(double Mult, double *coeff,
-double *param, double hK,
+double *param, double,
 double **OrigValues, int *N_BaseFuncts,
 double ***LocMatrices, double **LocRhs)
 {
@@ -228,10 +228,10 @@ double ***LocMatrices, double **LocRhs)
   N_U = N_BaseFuncts[0];
   N_P = N_BaseFuncts[1];
 
-  Orig0 = OrigValues[0];         // u_x
-  Orig1 = OrigValues[1];         // u_y
-  Orig2 = OrigValues[2];         // u
-  Orig3 = OrigValues[3];         // p
+  Orig0 = OrigValues[0];         // u
+  Orig1 = OrigValues[1];         // p
+  Orig2 = OrigValues[2];         // u_x
+  Orig3 = OrigValues[3];         // u_y
 
   c0 = coeff[0];                 // nu
   c1 = coeff[1];                 // f1
@@ -247,18 +247,18 @@ double ***LocMatrices, double **LocRhs)
     MatrixM11Row  = MatrixM11[i];
     MatrixM22Row  = MatrixM22[i];
 
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    test00 = Orig0[i];
 
     Rhs1[i] += Mult*test00*c1;
     Rhs2[i] += Mult*test00*c2;
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
-      ansatz00 = Orig2[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
+      ansatz00 = Orig0[j];
 
       val  = c0*(test10*ansatz10+test01*ansatz01);
       //HOTFIX: Check the documentation!
@@ -278,12 +278,12 @@ double ***LocMatrices, double **LocRhs)
     MatrixRow1 = MatrixB1[i];
     MatrixRow2 = MatrixB2[i];
 
-    test00 = Orig3[i];
+    test00 = Orig1[i];
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
 
       val = -Mult*test00*ansatz10;
       MatrixRow1[j] += val;
@@ -296,7 +296,7 @@ double ***LocMatrices, double **LocRhs)
 }
 // ======================================================================
 void TimeNSType3GalerkinDD(double Mult, double *coeff,
-double *param, double hK,
+double *param, double,
 double **OrigValues, int *N_BaseFuncts,
 double ***LocMatrices, double **LocRhs)
 {
@@ -315,10 +315,10 @@ double ***LocMatrices, double **LocRhs)
   int N_U = N_BaseFuncts[0];
   int N_P = N_BaseFuncts[1];
 
-  double *Orig0 = OrigValues[0];         // u_x
-  double *Orig1 = OrigValues[1];         // u_y
-  double *Orig2 = OrigValues[2];         // u
-  double *Orig3 = OrigValues[3];         // p
+  double *Orig0 = OrigValues[0];         // u
+  double *Orig1 = OrigValues[1];         // p
+  double *Orig2 = OrigValues[2];         // u_x
+  double *Orig3 = OrigValues[3];         // u_y
 
   double c0 = coeff[0];                 // nu
   double c1 = coeff[1];                 // f1
@@ -345,18 +345,18 @@ double ***LocMatrices, double **LocRhs)
     MatrixM11Row  = MatrixM11[i];
     MatrixM22Row  = MatrixM22[i];
     
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    test00 = Orig0[i];
 
     Rhs1[i] += Mult*test00*c1;
     Rhs2[i] += Mult*test00*c2;
 
     for(int j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
-      ansatz00 = Orig2[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
+      ansatz00 = Orig0[j];
       
       //HOTFIX: Check the documentation!
       if(assemble_nse == Hotfixglobal_AssembleNSE::WITH_CONVECTION)
@@ -386,12 +386,12 @@ double ***LocMatrices, double **LocRhs)
     MatrixRow1 = MatrixB1[i];
     MatrixRow2 = MatrixB2[i];
 
-    test00 = Orig3[i];
+    test00 = Orig1[i];
 
     for(int j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
 
       val = -Mult*test00*ansatz10;
       MatrixRow1[j] += val;
@@ -405,7 +405,7 @@ double ***LocMatrices, double **LocRhs)
 
 // ======================================================================
 void TimeNSType4Galerkin(double Mult, double *coeff,
-double *param, double hK,
+double *param, double,
 double **OrigValues, int *N_BaseFuncts,
 double ***LocMatrices, double **LocRhs)
 {
@@ -441,10 +441,10 @@ double ***LocMatrices, double **LocRhs)
   N_U = N_BaseFuncts[0];
   N_P = N_BaseFuncts[1];
 
-  Orig0 = OrigValues[0];         // u_x
-  Orig1 = OrigValues[1];         // u_y
-  Orig2 = OrigValues[2];         // u
-  Orig3 = OrigValues[3];         // p
+  Orig0 = OrigValues[0];         // u
+  Orig1 = OrigValues[1];         // p
+  Orig2 = OrigValues[2];         // u_x
+  Orig3 = OrigValues[3];         // u_y
 
   c0 = coeff[0];                 // nu
   c1 = coeff[1];                 // f1
@@ -459,18 +459,18 @@ double ***LocMatrices, double **LocRhs)
     Matrix22Row = MatrixA22[i];
     MatrixM11Row  = MatrixM11[i];
     MatrixM22Row  = MatrixM22[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    test00 = Orig0[i];
 
     Rhs1[i] += Mult*test00*c1;
     Rhs2[i] += Mult*test00*c2;
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
-      ansatz00 = Orig2[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
+      ansatz00 = Orig0[j];
 
       val  = c0*(test10*ansatz10+test01*ansatz01);
       //HOTFIX: Check the documentation!
@@ -493,7 +493,7 @@ double ***LocMatrices, double **LocRhs)
     MatrixRow2 = MatrixB2T[i];
     for(j=0;j<N_P;j++)
     {
-      ansatz00 = Orig3[j];
+      ansatz00 = Orig1[j];
 
       val = -Mult*ansatz00*test10;
       MatrixRow1[j] += val;
@@ -508,12 +508,12 @@ double ***LocMatrices, double **LocRhs)
     MatrixRow1 = MatrixB1[i];
     MatrixRow2 = MatrixB2[i];
 
-    test00 = Orig3[i];
+    test00 = Orig1[i];
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
 
       val = -Mult*test00*ansatz10;
       MatrixRow1[j] += val;
@@ -527,7 +527,7 @@ double ***LocMatrices, double **LocRhs)
 
 // ======================================================================
 void TimeNSType4GalerkinDD(double Mult, double *coeff,
-double *param, double hK,
+double *param, double,
 double **OrigValues, int *N_BaseFuncts,
 double ***LocMatrices, double **LocRhs)
 {
@@ -563,10 +563,10 @@ double ***LocMatrices, double **LocRhs)
   N_U = N_BaseFuncts[0];
   N_P = N_BaseFuncts[1];
 
-  Orig0 = OrigValues[0];         // u_x
-  Orig1 = OrigValues[1];         // u_y
-  Orig2 = OrigValues[2];         // u
-  Orig3 = OrigValues[3];         // p
+  Orig0 = OrigValues[0];         // u
+  Orig1 = OrigValues[1];         // p
+  Orig2 = OrigValues[2];         // u_x
+  Orig3 = OrigValues[3];         // u_y
 
   c0 = coeff[0];                 // nu
   c1 = coeff[1];                 // f1
@@ -586,18 +586,18 @@ double ***LocMatrices, double **LocRhs)
     MatrixM11Row  = MatrixM11[i];
     MatrixM22Row  = MatrixM22[i];
    
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    test00 = Orig0[i];
 
     Rhs1[i] += Mult*test00*c1;
     Rhs2[i] += Mult*test00*c2;
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
-      ansatz00 = Orig2[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
+      ansatz00 = Orig0[j];
 
       val  = c0*(2*test10*ansatz10+test01*ansatz01);
       //HOTFIX: Check the documentation!
@@ -626,7 +626,7 @@ double ***LocMatrices, double **LocRhs)
     MatrixRow2 = MatrixB2T[i];
     for(j=0;j<N_P;j++)
     {
-      ansatz00 = Orig3[j];
+      ansatz00 = Orig1[j];
 
       val = -Mult*ansatz00*test10;
       MatrixRow1[j] += val;
@@ -641,12 +641,12 @@ double ***LocMatrices, double **LocRhs)
     MatrixRow1 = MatrixB1[i];
     MatrixRow2 = MatrixB2[i];
 
-    test00 = Orig3[i];
+    test00 = Orig1[i];
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
 
       val = -Mult*test00*ansatz10;
       MatrixRow1[j] += val;
@@ -659,16 +659,16 @@ double ***LocMatrices, double **LocRhs)
 }
 
 void TimeNSType1_2NLGalerkin(double Mult, double *coeff,
-double *param, double hK,
+double *param, double,
 double **OrigValues, int *N_BaseFuncts,
-double ***LocMatrices, double **LocRhs)
+double ***LocMatrices, double **)
 {
   double **MatrixA;
   double val;
   double *MatrixRow;
   double ansatz10, ansatz01;
   double test00, test10, test01;
-  double *Orig0, *Orig1, *Orig2;
+  double *Orig0, *Orig2, *Orig3;
   int i,j,N_U;
   double c0;
   double u1, u2;
@@ -677,9 +677,9 @@ double ***LocMatrices, double **LocRhs)
 
   N_U = N_BaseFuncts[0];
 
-  Orig0 = OrigValues[0];         // u_x
-  Orig1 = OrigValues[1];         // u_y
-  Orig2 = OrigValues[2];         // u
+  Orig0 = OrigValues[0];         // u
+  Orig2 = OrigValues[2];         // u_x
+  Orig3 = OrigValues[3];         // u_y
 
   c0 = coeff[0];                 // nu
 
@@ -689,14 +689,14 @@ double ***LocMatrices, double **LocRhs)
   for(i=0;i<N_U;i++)
   {
     MatrixRow = MatrixA[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    test00 = Orig0[i];
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
 
       val  = c0*(test10*ansatz10+test01*ansatz01);
       //HOTFIX: Check the documentation!
@@ -709,16 +709,16 @@ double ***LocMatrices, double **LocRhs)
 }
 
 void TimeNSType3_4NLGalerkin(double Mult, double *coeff,
-double *param, double hK,
+double *param, double,
 double **OrigValues, int *N_BaseFuncts,
-double ***LocMatrices, double **LocRhs)
+double ***LocMatrices, double **)
 {
   double **MatrixA11, **MatrixA22;
   double val;
   double *Matrix11Row, *Matrix22Row;
   double ansatz10, ansatz01;
   double test00, test10, test01;
-  double *Orig0, *Orig1, *Orig2;
+  double *Orig0, *Orig2, *Orig3;
   int i,j, N_U;
   double c0;
   double u1, u2;
@@ -728,9 +728,9 @@ double ***LocMatrices, double **LocRhs)
 
   N_U = N_BaseFuncts[0];
 
-  Orig0 = OrigValues[0];         // u_x
-  Orig1 = OrigValues[1];         // u_y
-  Orig2 = OrigValues[2];         // u
+  Orig0 = OrigValues[0];         // u
+  Orig2 = OrigValues[2];         // u_x
+  Orig3 = OrigValues[3];         // u_y
 
   c0 = coeff[0];                 // nu
 
@@ -741,14 +741,14 @@ double ***LocMatrices, double **LocRhs)
   {
     Matrix11Row = MatrixA11[i];
     Matrix22Row = MatrixA22[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    test00 = Orig0[i];
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
 
       val  = c0*(test10*ansatz10+test01*ansatz01);
       //HOTFIX: Check the documentation!
@@ -762,16 +762,16 @@ double ***LocMatrices, double **LocRhs)
 }
 
 void TimeNSType3_4NLGalerkinDD(double Mult, double *coeff,
-double *param, double hK,
+double *param, double,
 double **OrigValues, int *N_BaseFuncts,
-double ***LocMatrices, double **LocRhs)
+double ***LocMatrices, double **)
 {
   double **MatrixA11, **MatrixA22;
   double val, val1;
   double *Matrix11Row, *Matrix22Row;
   double ansatz10, ansatz01;
   double test00, test10, test01;
-  double *Orig0, *Orig1, *Orig2;
+  double *Orig0, *Orig2, *Orig3;
   int i,j, N_U;
   double c0;
   double u1, u2;
@@ -781,9 +781,9 @@ double ***LocMatrices, double **LocRhs)
 
   N_U = N_BaseFuncts[0];
 
-  Orig0 = OrigValues[0];         // u_x
-  Orig1 = OrigValues[1];         // u_y
-  Orig2 = OrigValues[2];         // u
+  Orig0 = OrigValues[0];         // u
+  Orig2 = OrigValues[2];         // u_x
+  Orig3 = OrigValues[3];         // u_y
 
   c0 = coeff[0];                 // nu
 
@@ -793,14 +793,14 @@ double ***LocMatrices, double **LocRhs)
   {
     Matrix11Row = MatrixA11[i];
     Matrix22Row = MatrixA22[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
+    test10 = Orig2[i];
+    test01 = Orig3[i];
+    test00 = Orig0[i];
 
     for(j=0;j<N_U;j++)
     {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
+      ansatz10 = Orig2[j];
+      ansatz01 = Orig3[j];
 
       val1 = (u1*ansatz10+u2*ansatz01)*test00;
       val  = c0*(2*test10*ansatz10+test01*ansatz01);
@@ -812,5 +812,40 @@ double ***LocMatrices, double **LocRhs)
       Matrix22Row[j] += Mult * val;
 
     }                            // endfor j
+  }                              // endfor i
+}
+
+
+// ======================================================================
+// right-hand side ONLY, for NSE
+// ======================================================================
+void TimeNSRHS(double Mult, double *coeff,
+double *, double,
+double **OrigValues, int *N_BaseFuncts,
+double ***, double **LocRhs)
+{
+  double *Rhs1, *Rhs2;
+  double test00;
+  double *Orig0;
+  int i, N_U;
+  double c1, c2;
+
+  Rhs1 = LocRhs[0];
+  Rhs2 = LocRhs[1];
+
+  N_U = N_BaseFuncts[0];
+
+  Orig0 = OrigValues[0];         // u
+
+  c1 = coeff[1];                 // f1
+  c2 = coeff[2];                 // f2
+
+  for(i=0;i<N_U;i++)
+  {
+    test00 = Orig0[i];
+
+    Rhs1[i] += Mult*test00*c1;
+    Rhs2[i] += Mult*test00*c2;
+    //cout <<  Rhs1[i] << " " <<  Rhs2[i] << " ";
   }                              // endfor i
 }

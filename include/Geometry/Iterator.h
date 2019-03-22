@@ -18,7 +18,7 @@ class TIterator;
 #define N_ITERATORS   9
 
 enum Iterators {It_EQ, It_LE, It_Finest, It_EQLevel, It_LELevel,
-                It_Between, It_OCAF, It_Mortar1, It_Mortar2};
+                It_Between, It_OCAF};
 
 #include <Domain.h>
 

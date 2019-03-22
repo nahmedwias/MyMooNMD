@@ -164,22 +164,37 @@ if(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL OR ${PARMOON_PARALLEL_TYPE} STRE
   list(APPEND parmoon_tests ParMooN_test_tcd2d_femfct)
 	
   #darcy2d test
-  add_executable(ParMooN_test_darcy2d darcy2d_test.c++)
+  add_executable(ParMooN_test_darcy2d darcy_test.c++)
   target_link_libraries(ParMooN_test_darcy2d parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
   add_test(darcy2d ParMooN_test_darcy2d)
   list(APPEND parmoon_tests ParMooN_test_darcy2d)
+  add_executable(ParMooN_test_darcy3d darcy_test.c++)
+  target_link_libraries(ParMooN_test_darcy3d parmoon_3d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
+  add_test(darcy3d ParMooN_test_darcy3d)
+  list(APPEND parmoon_tests ParMooN_test_darcy3d)
 
   #brinkman2d test
-  add_executable(ParMooN_test_brinkman2d brinkman2d_test.c++)
-  target_link_libraries(ParMooN_test_brinkman2d parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
-  add_test(brinkman2d ParMooN_test_brinkman2d)
-  list(APPEND parmoon_tests ParMooN_test_brinkman2d)
-  
+#   add_executable(ParMooN_test_brinkman2d brinkman2d_test.c++)
+#   target_link_libraries(ParMooN_test_brinkman2d parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
+#   add_test(brinkman2d ParMooN_test_brinkman2d)
+#   list(APPEND parmoon_tests ParMooN_test_brinkman2d)
+
   #nse2d test
   add_executable(ParMooN_test_nse2d nse2d_test.c++)
   target_link_libraries(ParMooN_test_nse2d parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
   add_test(nse2d ParMooN_test_nse2d)
+  add_test(NAME nse2d_all COMMAND ParMooN_test_nse2d testall)
   list(APPEND parmoon_tests ParMooN_test_nse2d)
+  
+  #stokes equal order test
+  add_executable(ParMooN_test_stokes_equal_order2d stokes_equal_order_test.c++)
+  target_link_libraries(ParMooN_test_stokes_equal_order2d parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
+  add_test(stokes_equal_order2d ParMooN_test_stokes_equal_order2d)
+  list(APPEND parmoon_tests ParMooN_test_stokes_equal_order2d)
+  add_executable(ParMooN_test_stokes_equal_order3d stokes_equal_order_test.c++)
+  target_link_libraries(ParMooN_test_stokes_equal_order3d parmoon_3d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
+  add_test(stokes_equal_order3d ParMooN_test_stokes_equal_order3d)
+  list(APPEND parmoon_tests ParMooN_test_stokes_equal_order3d)
   
   #lsc / (bc-lsc!) test
   add_executable(ParMooN_test_lsc lsc_test.c++)
@@ -187,17 +202,26 @@ if(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL OR ${PARMOON_PARALLEL_TYPE} STRE
   add_test(lsc2d ParMooN_test_lsc)
   list(APPEND parmoon_tests ParMooN_test_lsc)
    
-  #tnse2d test (direct solver)
+  #tnse2d test (umfpack and lsc, multigrid's parameters are not set up in the test yet)
   add_executable(ParMooN_test_tnse2d tnse2d_test.c++)
-  target_link_libraries(ParMooN_test_tnse2d parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
-  add_test(tnse2d ParMooN_test_tnse2d)
+  target_link_libraries(ParMooN_test_tnse2d parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})  
+  #umfpack
+  add_test(NAME tnse2d_umfpack COMMAND ParMooN_test_tnse2d umfpack)
+  #lsc 
+  add_test(NAME tnse2d_lsc COMMAND ParMooN_test_tnse2d lsc)
   list(APPEND parmoon_tests ParMooN_test_tnse2d)
 	
   # test for hdiv elements
-  add_executable(ParMooN_test_hdiv Hdiv_element_test.c++)
-  target_link_libraries(ParMooN_test_hdiv parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
-  add_test(hdiv ParMooN_test_hdiv)
-  list(APPEND parmoon_tests ParMooN_test_hdiv)
+  add_executable(ParMooN_test_hdiv_2d Hdiv_element_test.c++)
+  target_link_libraries(ParMooN_test_hdiv_2d parmoon_2d_${PARMOON_PARALLEL_TYPE}
+                        ${_EXTERN_LIBRARIES})
+  add_test(hdiv_2d ParMooN_test_hdiv_2d)
+  list(APPEND parmoon_tests ParMooN_test_hdiv_2d)
+  add_executable(ParMooN_test_hdiv_3d Hdiv_element_test.c++)
+  target_link_libraries(ParMooN_test_hdiv_3d parmoon_3d_${PARMOON_PARALLEL_TYPE}
+                        ${_EXTERN_LIBRARIES})
+  add_test(hdiv_3d ParMooN_test_hdiv_3d)
+  list(APPEND parmoon_tests ParMooN_test_hdiv_3d)
   
   #cd3d solver tests
   set(_EXEC_NAME ParMooN_test_cd3d_solver_seq)
@@ -270,10 +294,13 @@ if(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL OR ${PARMOON_PARALLEL_TYPE} STRE
   register_executable(${_EXEC_NAME} ${_FILE_NAME})
   #umfpack
   add_test(NAME tnse3d_seq_umfpack COMMAND ParMooN_test_tnse3d_seq umfpack)
+  add_test(NAME tnse3d_seq_umfpack_all COMMAND ParMooN_test_tnse3d_seq umfpack testall)
   #multigrid
   add_test(NAME tnse3d_seq_multigrid COMMAND ParMooN_test_tnse3d_seq multigrid)
+  add_test(NAME tnse3d_seq_multigrid_all COMMAND ParMooN_test_tnse3d_seq multigrid testall)
   #lsc 
   add_test(NAME tnse3d_seq_lsc COMMAND ParMooN_test_tnse3d_seq lsc)
+  add_test(NAME tnse3d_seq_lsc_all COMMAND ParMooN_test_tnse3d_seq lsc testall)
   
     
   #multigrid tests
@@ -300,6 +327,33 @@ if(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL OR ${PARMOON_PARALLEL_TYPE} STRE
   add_test(sandwich ParMooN_test_sandwich)
   list(APPEND parmoon_tests ParMooN_test_sandwich)
   
+  #lineseval tests 2d and 3d
+  add_executable(ParMooN_test_linesEval2d linesEval_test.c++)
+  target_link_libraries(ParMooN_test_linesEval2d
+                        parmoon_2d_${PARMOON_PARALLEL_TYPE}
+                        ${_EXTERN_LIBRARIES})
+  add_test(lineseval2d ParMooN_test_linesEval2d)
+  list(APPEND parmoon_tests ParMooN_test_linesEval2d)
+  add_executable(ParMooN_test_linesEval3d linesEval_test.c++)
+  target_link_libraries(ParMooN_test_linesEval3d
+                        parmoon_3d_${PARMOON_PARALLEL_TYPE}
+                        ${_EXTERN_LIBRARIES})
+  add_test(lineseval3d ParMooN_test_linesEval3d)
+  list(APPEND parmoon_tests ParMooN_test_linesEval3d)
+  
+  # collection tests 2d and 3d
+  add_executable(ParMooN_test_collection_2d collection_test.c++)
+  target_link_libraries(ParMooN_test_collection_2d
+                        parmoon_2d_${PARMOON_PARALLEL_TYPE}
+                        ${_EXTERN_LIBRARIES})
+  add_test(collection2d ParMooN_test_collection_2d)
+  list(APPEND parmoon_tests ParMooN_test_collection_2d)
+  add_executable(ParMooN_test_collection_3d collection_test.c++)
+  target_link_libraries(ParMooN_test_collection_3d
+                        parmoon_3d_${PARMOON_PARALLEL_TYPE}
+                        ${_EXTERN_LIBRARIES})
+  add_test(collection3d ParMooN_test_collection_3d)
+  list(APPEND parmoon_tests ParMooN_test_collection_3d)
 
 elseif(${PARMOON_PARALLEL_TYPE} STREQUAL MPI)	
   
@@ -397,8 +451,10 @@ elseif(${PARMOON_PARALLEL_TYPE} STREQUAL MPI)
   register_executable(${_EXEC_NAME} ${_FILE_NAME})
   #mumps
   add_test(NAME tnse3d_mpi_mumps COMMAND ${PETSC_MPIEXEC} -n 2 ParMooN_test_tnse3d_mpi mumps)
-  #mumps
+  add_test(NAME tnse3d_mpi_mumps_all COMMAND ${PETSC_MPIEXEC} -n 2 ParMooN_test_tnse3d_mpi mumps testall)
+  #lsc
   add_test(NAME tnse3d_mpi_lsc COMMAND ${PETSC_MPIEXEC} -n 3 ParMooN_test_tnse3d_mpi lsc)
+  add_test(NAME tnse3d_mpi_lsc_all COMMAND ${PETSC_MPIEXEC} -n 3 ParMooN_test_tnse3d_mpi lsc testall)
   
   
   #read_write_fe_function_mpi test
@@ -406,6 +462,14 @@ elseif(${PARMOON_PARALLEL_TYPE} STREQUAL MPI)
   set(_FILE_NAME read_write_fe_function_test.c++)
   register_executable(${_EXEC_NAME} ${_FILE_NAME})
   add_test(NAME read_write_fe_function_mpi COMMAND ${PETSC_MPIEXEC} -n 2 ParMooN_test_read_write_fe_function_mpi)
+  
+  #lineseval (2d and 3d) mpi tests (run with 4 processes)
+  add_executable(ParMooN_test_linesEval3d linesEval_test.c++)
+  target_link_libraries(ParMooN_test_linesEval3d
+                        parmoon_3d_MPI ${_EXTERN_LIBRARIES})
+  add_test(NAME lineseval3d_mpi COMMAND ${PETSC_MPIEXEC} -n 4
+           ParMooN_test_linesEval3d)
+  list(APPEND parmoon_tests ParMooN_test_linesEval3d)
 
 endif(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL OR ${PARMOON_PARALLEL_TYPE} STREQUAL OMPONLY)
 

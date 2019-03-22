@@ -37,19 +37,18 @@ class TBdSpline : public TBoundComp2D
     //double *GetBoundPoints(QuadFormula *formula, int &N_NewPt);
 
     /** return the coordinates of parameter value T */
-    virtual int GetXYofT(double T, double &X, double &Y);
+    virtual int GetXYofT(double T, double &X, double &Y) const override;
 
     /** return the parameter value T of coordinates (X, Y) */
-    virtual int GetTofXY(double X, double Y, double &T);
+    virtual int GetTofXY(double X, double Y, double &T) const override;
 
     /** read parameter from input file */
-    virtual int ReadIn(std::istream &dat);
+    virtual int ReadIn(std::istream &dat) override;
 
     /** get number of initial vertices on this component */
-    virtual int GetN_InitVerts()
+    virtual int GetN_InitVerts() override
     { return 4; }
-    virtual int GenInitVerts(double *&points, int I_points,
-                             int *&edges, int I_edges)
+    virtual int GenInitVerts(double *&, int, int *&, int) override
     { return -1; }
 };
 

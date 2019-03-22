@@ -14,7 +14,7 @@ void ExampleFile()
 // ========================================================================
 // exact solution
 // ========================================================================
-void ExactU1(double x, double y, double *values)
+void ExactU1(double, double, double *values)
 {
   values[0] = 0;
   values[1] = 0;
@@ -22,7 +22,7 @@ void ExactU1(double x, double y, double *values)
   values[3] = 0;
 }
 
-void ExactU2(double x, double y, double *values)
+void ExactU2(double, double, double *values)
 {
   values[0] = 0;
   values[1] = 0;
@@ -30,7 +30,7 @@ void ExactU2(double x, double y, double *values)
   values[3] = 0;
 }
 
-void ExactP(double x, double y, double *values)
+void ExactP(double, double, double *values)
 {
   values[0] = 0;
   values[1] = 0;
@@ -41,7 +41,7 @@ void ExactP(double x, double y, double *values)
 // ========================================================================
 // boundary conditions
 // ========================================================================
-void BoundCondition(int i, double t, BoundCond &cond)
+void BoundCondition(int, double, BoundCond &cond)
 {
   cond = DIRICHLET;
 }
@@ -65,7 +65,7 @@ void U1BoundValue(int BdComp, double Param, double &value)
   }
 }
 
-void U2BoundValue(int BdComp, double Param, double &value)
+void U2BoundValue(int BdComp, double, double &value)
 {
   value = 0;
   if(BdComp>3) cout << "wrong boundary part number" << endl;
@@ -74,8 +74,7 @@ void U2BoundValue(int BdComp, double Param, double &value)
 // ========================================================================
 // coefficients for Stokes form: A, B1, B2, f1, f2
 // ========================================================================
-void LinCoeffs(int n_points, double *x, double *y,
-               double **parameters, double **coeffs)
+void LinCoeffs(int n_points, double *, double *, double **, double **coeffs)
 {
   double eps = DIMENSIONLESS_VISCOSITY;
   int i;
@@ -88,6 +87,9 @@ void LinCoeffs(int n_points, double *x, double *y,
     coeff[0] = eps;
     coeff[1] = 0; // f1
     coeff[2] = 0; // f2
+    coeff[3] = 0; // divergence
+    // additional coefficient (used only in the Brinkman problem)
+    coeff[4] = 0.;
   }
 }
 

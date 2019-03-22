@@ -29,8 +29,9 @@ class TFEVectFunct3D : public TFEFunction3D
     TFEVectFunct3D();
 
     /** constructor with vector initialization */
-    TFEVectFunct3D(TFESpace3D *fespace3D, std::string name, std::string description,
-                  double *values, int length, int n_components);
+    TFEVectFunct3D(std::shared_ptr<const TFESpace3D> fespace3D,
+                   const std::string& name, const std::string& description,
+                   double *values, int length, int n_components);
 
     /// Copy assignment operator. Shallow copy, as the
     /// FEFunction does not take any memory responsibility.
@@ -56,14 +57,29 @@ class TFEVectFunct3D : public TFEFunction3D
     /** use current data for grid replacement */
     void DataToGrid();
 
+    /**
+     * @brief compute the integral \int_{Gamma_i} u.n (flux) over a given surface
+     *
+     * In MPI case it returns the global flux, summed up over
+     * the own domains of all processes.
+     * To use this function it is necessary to mark the surface cell first 
+     * (e.g., reading a .mesh file)
+     * @todo give a list of boundary faces as input (instead of an int)
+     *
+     * @param[in] flux through surface i of this TFEFunction3D
+     * @param[out] flux through surface i of this TFEFunction3D
+     */
+    void compute_flux(int surface_id, double& flux) const;
+
+    
     /** calculate errors to given vector function */
     void GetDeformationTensorErrors( 
         DoubleFunct3D *Exact, DoubleFunct3D *Exact1,
         DoubleFunct3D *Exact2,
         int N_Derivatives,
         MultiIndex3D *NeededDerivatives,
-        int N_Errors, ErrorMethod3D *ErrorMeth, 
-        CoeffFct3D Coeff, TAuxParam3D *Aux,
+        int N_Errors, TFEFunction3D::ErrorMethod *ErrorMeth, 
+        const CoeffFct3D& Coeff, TAuxParam3D *Aux,
         int n_fespaces, TFESpace3D **fespaces,
         double *errors);
     
@@ -74,17 +90,17 @@ class TFEVectFunct3D : public TFEFunction3D
     
         /** determine the value of function
         the given point */
-    void FindValueLocal(TBaseCell *cell, int cell_no, 
-                           double x, double y, double z, 
-                           double *values) const;
+    void FindValueLocal(const TBaseCell *cell, int cell_no, 
+                        double x, double y, double z, 
+                        double *values) const;
         
     /** write the solution into a data file **/
     void WriteSol(double t,
-    		std::string directory=std::string("."),
-    		std::string basename=std::string("parmoon_solution"));
+                  const std::string& directory=std::string("."),
+                  const std::string& basename=std::string("parmoon_solution"));
 
     /** Read the solution from a given data file **/
-    void ReadSol(std::string BaseName);
+    void ReadSol(const std::string& BaseName);
    
 };
 

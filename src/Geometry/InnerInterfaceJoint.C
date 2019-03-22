@@ -88,7 +88,7 @@ TInnerInterfaceJoint::TInnerInterfaceJoint(TBaseCell *neighb0):
 
 
 // Methods
-TJoint *TInnerInterfaceJoint::NewInst(double newT_0, double newT_1, TBaseCell *Me)
+TJoint *TInnerInterfaceJoint::NewInst(double, double, TBaseCell *Me)
 {
   return new TInnerInterfaceJoint(Me);
 }

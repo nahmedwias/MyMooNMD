@@ -30,6 +30,13 @@
  */
 
 
+// physical parameter
+// These should be reset when constructing the Example class
+
+double viscosity = -1;
+double effective_viscosity = -1;
+double permeability = -1;
+
 void ExampleFile()
 {
   Output::print<1>("Example: Poiseuille_Hannukainen.h");
@@ -39,11 +46,11 @@ void ExampleFile()
 // exact solution
 // ========================================================================
 
-void ExactU1(double x, double y, double *values)
+void ExactU1(double, double y, double *values)
 {
-  double K = TDatabase::ParamDB->PERMEABILITY;
-  double mu = TDatabase::ParamDB->VISCOSITY;
-  double mu_eff = TDatabase::ParamDB->EFFECTIVE_VISCOSITY;
+  double K = permeability; // OLD: = TDatabase::ParamDB->PERMEABILITY;
+  double mu = viscosity; // OLD: = TDatabase::ParamDB->VISCOSITY;
+  double mu_eff = effective_viscosity; // OLD = TDatabase::ParamDB->EFFECTIVE_VISCOSITY;
   double t = fabs(sqrt((mu_eff/mu) * K));
 
   if (K == 0)
@@ -71,7 +78,7 @@ void ExactU1(double x, double y, double *values)
   }
 }
 
-void ExactU2(double x, double y, double *values)
+void ExactU2(double, double, double *values)
 {
   values[0] = 0;            //u2
   values[1] = 0;            //u2_x
@@ -79,7 +86,7 @@ void ExactU2(double x, double y, double *values)
   values[3] = 0;            //Delta u2
 }
 
-void ExactP(double x, double y, double *values)
+void ExactP(double x, double, double *values)
 {
   values[0] = 0.5-x;                      //p
   values[1] = -1;                         //p_x
@@ -91,7 +98,7 @@ void ExactP(double x, double y, double *values)
 // boundary conditions
 // ========================================================================
 
-void BoundCondition(int i, double Param, BoundCond &cond)
+void BoundCondition(int i, double, BoundCond &cond)
 {
   cond = DIRICHLET; // default
 
@@ -116,9 +123,9 @@ void BoundCondition(int i, double Param, BoundCond &cond)
 
 void U1BoundValue(int BdComp, double Param, double &value)
 {
-  double K = TDatabase::ParamDB->PERMEABILITY;
-  double mu = TDatabase::ParamDB->VISCOSITY;
-  double mu_eff = TDatabase::ParamDB->EFFECTIVE_VISCOSITY;
+  double K = permeability;
+  double mu = viscosity;
+  double mu_eff = effective_viscosity;
   double t = fabs(sqrt((mu_eff/mu) * K));
 
   // loop to impose Neumann boundary conditions
@@ -150,17 +157,19 @@ void U1BoundValue(int BdComp, double Param, double &value)
     case 0: value = 0;
             break;
     case 1: value = K/mu * (1+exp(1/t)-exp((1-Param)/t) - exp(Param/t)) / (1+exp(1/t));
+            //value = 0; // TEST:sources/sinks,
             break;
-    case 2: value= 0;
+    case 2: value = 0;
             break;
     case 3: value = K/mu * (1+exp(1/t)-exp((Param)/t) - exp((1-Param)/t)) / (1+exp(1/t));
+            //value = 0; // TEST: sources/sinks,
             break;
     default: cout << "No boundary component with this number." << endl;
              break;
   }
 }
 
-void U2BoundValue(int BdComp, double Param, double &value)
+void U2BoundValue(int, double, double &value)
 {
   value = 0;
 }
@@ -168,34 +177,70 @@ void U2BoundValue(int BdComp, double Param, double &value)
 
 // ========================================================================
 // coefficients for Brinkman problem: viscosity, effective viscosity, permeability, f1, f2, g
-// (the lhs of the Brinkman problem computed at quadrature points - for the error norms)
+// (lhs and rhs of the Brinkman problem computed at quadrature points - for the error norms)
 // ========================================================================
 void LinCoeffs(int n_points, double *x, double *y,
     double **parameters, double **coeffs)
 {
+
   double val_u1[4];
   double val_u2[4];
   double val_p[4];
 
-  double *coeff;
-
   for(int i = 0; i < n_points; i++)
   {
+
+    // physical parameters
+    coeffs[i][4] = viscosity; //TDatabase::ParamDB->VISCOSITY;
+    coeffs[i][5] = effective_viscosity; //TDatabase::ParamDB->EFFECTIVE_VISCOSITY;
+    coeffs[i][6] = permeability; //TDatabase::ParamDB->PERMEABILITY;
+
+    /*
+       if (x[i] < 0.5 && y[i] < 0.5)
+       {
+       coeffs[i][6] = 0.001;
+       }
+     */
+    /* ****************************************** */
+    // Use an analytic_coefficient_function or input sol+mesh for the permeability field
+    if (permeability == -1) 
+    { 
+      coeffs[i][6] = parameters[i][0];
+    }
+
+    /* ***************************************** */
+    // if sources and sinks via analytic_coefficient_function (delta distr.), then \neq 0
+    coeffs[i][9]=0;
+    /*
+       double use_source_term = 1;
+       if (use_source_term == 1)
+       {
+       coeffs[i][9]= parameters[i][0];
+       }
+     */
+
+
+    // Adimensional parameter t^2 = mue/mu*K
+    coeffs[i][0] = (coeffs[i][5] / coeffs[i][4]) * coeffs[i][6];
+
+
+    // (f1,f2)(x,y): RHS for momentum equation
     ExactU1(x[i], y[i], val_u1);
     ExactU2(x[i], y[i], val_u2);
     ExactP(x[i], y[i], val_p);
 
-    coeff = coeffs[i];
+    coeffs[i][1] = 0;
+    //-coeff[5] * val_u1[3] - val_p[1] + (coeff[4]/coeff[6]) * val_u1[0];
+    //(coeff[4]/coeff[6])-1;   // f1 (rhs of Brinkman problem for u1)
 
-    coeff[4] = TDatabase::ParamDB->VISCOSITY;
-    coeff[5] = TDatabase::ParamDB->EFFECTIVE_VISCOSITY;
-    coeff[6] = TDatabase::ParamDB->PERMEABILITY;
-    coeff[0] = (coeff[5] / coeff[4]) * coeff[6];
-    coeff[1] = 0;//-coeff[5] * val_u1[3] - val_p[1] + (coeff[4]/coeff[6]) * val_u1[0];  //(coeff[4]/coeff[6])-1;   // f1 (rhs of Brinkman problem for u1)
-    coeff[2] = 0;                                                                        // f2 (rhs of Brinkman problem for u2)
-    coeff[3] = val_u1[1] + val_u2[2]; //0;                                               // g (divergence term=u1_x+u2_y)
-    coeff[7] = TDatabase::ParamDB->equal_order_stab_weight_PkPk;
-    coeff[8] = TDatabase::ParamDB->grad_div_stab_weight;
+    coeffs[i][2] = 0;
+
+    //g(x,y):  RHS for mass conservation equation
+    coeffs[i][3] = val_u1[1] + val_u2[2]; //0;
+
+    // stabilization parameters
+    coeffs[i][7] = TDatabase::ParamDB->equal_order_stab_weight_PkPk;
+    coeffs[i][8] = TDatabase::ParamDB->grad_div_stab_weight;
   }
 }
 

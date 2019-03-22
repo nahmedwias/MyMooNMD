@@ -42,7 +42,7 @@ void ExactU3(double x, double y,  double z, double *values)
   values[4] = 6*Pi*Pi*sin(Pi*x)*sin(Pi*y)*cos(Pi*z); //Laplacien
 }
 
-void ExactP(double x, double y,  double z, double *values)
+void ExactP(double, double, double, double *values)
 {
   values[0] = 0;
   values[1] = 0;
@@ -52,7 +52,7 @@ void ExactP(double x, double y,  double z, double *values)
 }
 
 // kind of boundary condition (for FE space needed)
-void BoundCondition(double x, double y, double z, BoundCond &cond)
+void BoundCondition(double, double, double, BoundCond &cond)
 {
   cond = DIRICHLET;
 }
@@ -76,8 +76,8 @@ void U3BoundValue(double x, double y, double z, double &value)
   value = diri[0]; //Dirichlet value
 }
 
-void LinCoeffs(int n_points, double * X, double * Y, double * Z,
-               double **parameters, double **coeffs)
+void LinCoeffs(int n_points, double * X, double * Y, double * Z, double **,
+               double **coeffs)
 {
   const double eps = DIMENSIONLESS_VISCOSITY;
   double u1[5], u2[5], u3[5], p[5];
@@ -100,6 +100,7 @@ void LinCoeffs(int n_points, double * X, double * Y, double * Z,
       coeffs[i][3] += u1[0]*u3[1] + u2[0]*u3[2] + u3[0]*u3[3];
     }
     coeffs[i][4] = 0; // g
+    coeffs[i][5] = 0; // sigma
   }
 }
 

@@ -40,6 +40,7 @@ struct Residuals
     Residuals(double imR, double maR);
 };
 
+/// @brief Write out the three numbers to a stream.
 std::ostream& operator<<(std::ostream& s, const Residuals& n);
 
 

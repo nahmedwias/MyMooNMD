@@ -32,7 +32,7 @@ class TAux2D3D
     TFEFunction3D *FEFunct;
 
     /** 3d finite element space */
-    const TFESpace3D *FESpace;
+    std::shared_ptr<const TFESpace3D> FESpace;
 
     /** BeginIndex */
     int *BeginIndex;
@@ -53,8 +53,8 @@ class TAux2D3D
 
     /** calculate gradient for local coordinates (xi,eta) on face
         JointNumbers[num] of cell CellNumbers[num] */
-    void GetGradient(int num, int N_Points, double *xi, double *eta,
-                     double **Param);
+    void GetGradient(int num, int N_Points, const double *xi,
+                     const double *eta, double **Param);
 };
 
 #endif

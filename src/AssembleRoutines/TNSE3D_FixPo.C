@@ -14,6 +14,10 @@
 
 #include "../../include/AssembleRoutines/ConvDiff.h"
 #include <CommonRoutineTNSE3D.h>
+
+Hotfixglobal_AssembleNSE assemble_nse(Hotfixglobal_AssembleNSE::WITHOUT_CONVECTION);
+
+
 // ======================================================================
 // compute turbulent viscosity for LES 
 // ======================================================================
@@ -299,11 +303,11 @@ double TurbulentViscosity3D(double delta, double* gradU, double* u,
       // hk is just the value if the filter width would be zero (this should not happen)
       
       hk = delta/2.0;
-      delta_x = Mesh_size_in_convection_direction(hk,1,0,0);
+      delta_x = Mesh_size_in_convection_direction<3>(hk, {{1,0,0}});
       delta_x *=delta_x;
-      delta_y = Mesh_size_in_convection_direction(hk,0,1,0);
+      delta_y = Mesh_size_in_convection_direction<3>(hk, {{0,1,0}});
       delta_y *=delta_y;
-      delta_z = Mesh_size_in_convection_direction(hk,0,0,1);
+      delta_z = Mesh_size_in_convection_direction<3>(hk, {{0,0,1}});
       delta_z *=delta_z;
 
       // compute second invariant of gradient of velocity, scaled with filter widht in coordinate directions
@@ -397,11 +401,11 @@ double TurbulentViscosity3D(double delta, double* gradU, double* u,
       // compute filter width in coordinate directions
       // hk is just the value if the filter width would be zero (this should not happen)
       hk = delta/2.0;
-      delta_x = Mesh_size_in_convection_direction(hk,1,0,0);
+      delta_x = Mesh_size_in_convection_direction<3>(hk, {{1,0,0}});
       delta_x *= delta_x;
-      delta_y = Mesh_size_in_convection_direction(hk,0,1,0);
+      delta_y = Mesh_size_in_convection_direction<3>(hk, {{0,1,0}});
       delta_y *= delta_y;
-      delta_z = Mesh_size_in_convection_direction(hk,0,0,1);
+      delta_z = Mesh_size_in_convection_direction<3>(hk, {{0,0,1}});
       delta_z *= delta_z;
       
       mu_max = 4 * ( 1./delta_x + 1./delta_y + 1./delta_z );
@@ -436,9 +440,9 @@ double TurbulentViscosity3D(double delta, double* gradU, double* u,
       // compute filter width in coordinate directions
       // hk is just the value if the filter width would be zero (this should not happen)
       hk = delta/2.0;
-      delta_x = Mesh_size_in_convection_direction(hk,1,0,0);
-      delta_y = Mesh_size_in_convection_direction(hk,0,1,0);
-      delta_z = Mesh_size_in_convection_direction(hk,0,0,1);
+      delta_x = Mesh_size_in_convection_direction<3>(hk, {{1,0,0}});
+      delta_y = Mesh_size_in_convection_direction<3>(hk, {{0,1,0}});
+      delta_z = Mesh_size_in_convection_direction<3>(hk, {{0,0,1}});
       
       /* TODO: change cell width hk using CELL_MEASURE (more elegant), now too slow! */
       
@@ -627,7 +631,7 @@ double LerayAlpha_Param3D(double hK)
 // Type 1, GL00Convolution
 // ======================================================================
 void TimeNSType1Galerkin3D(double Mult, double *coeff, 
-                double *param, double hK, 
+                double *param, double,
                 double **OrigValues, int *N_BaseFuncts,
                 double ***LocMatrices, double **LocRhs)
 {
@@ -738,7 +742,7 @@ void TimeNSType1Galerkin3D(double Mult, double *coeff,
 // Type 1, for upwind (only laplacian in A block)
 // ======================================================================
 void TimeNSType1Upwind3D(double Mult, double *coeff, 
-                double *param, double hK, 
+                double *, double,
                 double **OrigValues, int *N_BaseFuncts,
                 double ***LocMatrices, double **LocRhs)
 {
@@ -963,7 +967,7 @@ void TimeNSType1GL00AuxProblem3D(double Mult, double *coeff,
 // Type 2, GL00Convolution
 // ======================================================================
 void TimeNSType2Galerkin3D(double Mult, double *coeff, 
-                double *param, double hK, 
+                double *param, double,
                 double **OrigValues, int *N_BaseFuncts,
                 double ***LocMatrices, double **LocRhs)
 {
@@ -1091,7 +1095,7 @@ void TimeNSType2Galerkin3D(double Mult, double *coeff,
 // Type 2, Upwind (only Laplacian in A block)
 // ======================================================================
 void TimeNSType2Upwind3D(double Mult, double *coeff, 
-                double *param, double hK, 
+                double *, double,
                 double **OrigValues, int *N_BaseFuncts,
                 double ***LocMatrices, double **LocRhs)
 {
@@ -1347,7 +1351,7 @@ void TimeNSType2GL00AuxProblem3D(double Mult, double *coeff,
 // Type 3, GL00Convolution, (grad u, grad v)`
 // ======================================================================
 void TimeNSType3Galerkin3D(double Mult, double *coeff, 
-                double *param, double hK, 
+                double *param, double,
                 double **OrigValues, int *N_BaseFuncts,
                 double ***LocMatrices, double **LocRhs)
 {
@@ -1472,7 +1476,7 @@ void TimeNSType3Galerkin3D(double Mult, double *coeff,
 // Type 3, GL00Convolution, D(u):D(v)
 // ======================================================================
 void TimeNSType3GalerkinDD3D(double Mult, double *coeff, 
-                double *param, double hK, 
+                double *param, double,
                 double **OrigValues, int *N_BaseFuncts,
                 double ***LocMatrices, double **LocRhs)
 {
@@ -1641,7 +1645,7 @@ void TimeNSType3GalerkinDD3D(double Mult, double *coeff,
 // Type 3, Upwind (no convection term), (grad u, grad v)
 // ======================================================================
 void TimeNSType3Upwind3D(double Mult, double *coeff, 
-                double *param, double hK, 
+                double *, double,
                 double **OrigValues, int *N_BaseFuncts,
                 double ***LocMatrices, double **LocRhs)
 {
@@ -1755,7 +1759,7 @@ void TimeNSType3Upwind3D(double Mult, double *coeff,
 // Type 3, Upwind (no convection term), D(u):D(v)
 // ======================================================================
 void TimeNSType3UpwindDD3D(double Mult, double *coeff, 
-                double *param, double hK, 
+                double *, double,
                 double **OrigValues, int *N_BaseFuncts,
                 double ***LocMatrices, double **LocRhs)
 {
@@ -2233,7 +2237,7 @@ void TimeNSType3GL00AuxProblemDD3D(double Mult, double *coeff,
 // Type 4, GL00Convolution, (grad u, grad v)
 // ======================================================================
 void TimeNSType4Galerkin3D(double Mult, double *coeff, 
-                double *param, double hK, 
+                double *param, double,
                 double **OrigValues, int *N_BaseFuncts,
                 double ***LocMatrices, double **LocRhs)
 {
@@ -2376,7 +2380,7 @@ void TimeNSType4Galerkin3D(double Mult, double *coeff,
 // Type 4, GL00Convolution, D(u):D(v)
 // ======================================================================
 void TimeNSType4GalerkinDD3D(double Mult, double *coeff, 
-                double *param, double hK, 
+                double *param, double,
                 double **OrigValues, int *N_BaseFuncts,
                 double ***LocMatrices, double **LocRhs)
 {
@@ -2569,7 +2573,7 @@ void TimeNSType4GalerkinDD3D(double Mult, double *coeff,
 // Type 4, Upwind (no convection terms), (grad u, grad v)
 // ======================================================================
 void TimeNSType4Upwind3D(double Mult, double *coeff, 
-                double *param, double hK, 
+                double *, double,
                 double **OrigValues, int *N_BaseFuncts,
                 double ***LocMatrices, double **LocRhs)
 {
@@ -2701,7 +2705,7 @@ void TimeNSType4Upwind3D(double Mult, double *coeff,
 // Type 4, Upwind (no convection terms), D(u):D(v)
 // ======================================================================
 void TimeNSType4UpwindDD3D(double Mult, double *coeff, 
-                double *param, double hK, 
+                double *, double,
                 double **OrigValues, int *N_BaseFuncts,
                 double ***LocMatrices, double **LocRhs)
 {
@@ -3933,10 +3937,10 @@ void TimeNSType4LerayAlphaDD3D(double Mult, double *coeff,
 // assemble matrix for auxiliary problem
 // ======================================================================
 
-void MatrixAuxiliaryProblem(double Mult, double *coeff, 
-                            double *param, double hK, 
+void MatrixAuxiliaryProblem(double Mult, double *,
+                            double *, double hK, 
                             double **OrigValues, int *N_BaseFuncts,
-                            double ***LocMatrices, double **LocRhs)
+                            double ***LocMatrices, double **)
 {
   double *AuxMatrixRow, **AuxMatrix;;
   double ansatz000, ansatz100, ansatz010, ansatz001;
@@ -3992,9 +3996,9 @@ void MatrixAuxiliaryProblem(double Mult, double *coeff,
 // Type 2, Standard Galerkin, only nonlinear part
 // ======================================================================
 void TimeNSType1_2NLGalerkin3D(double Mult, double *coeff, 
-                double *param, double hK, 
+                double *param, double,
                 double **OrigValues, int *N_BaseFuncts,
-                double ***LocMatrices, double **LocRhs)
+                double ***LocMatrices, double **)
 {
   double **MatrixA;
   double val;
@@ -4051,9 +4055,9 @@ void TimeNSType1_2NLGalerkin3D(double Mult, double *coeff,
 // Type 2, for upwind (only laplacian in A block)
 // ======================================================================
 void TimeNSType1_2NLUpwind3D(double Mult, double *coeff, 
-                double *param, double hK, 
+                double *, double,
                 double **OrigValues, int *N_BaseFuncts,
-                double ***LocMatrices, double **LocRhs)
+                double ***LocMatrices, double **)
 {
   double **MatrixA;
   double val;
@@ -4099,9 +4103,9 @@ void TimeNSType1_2NLUpwind3D(double Mult, double *coeff,
 // Type 4, Standard Galerkin, (grad u, grad v), only nonlinear part
 // ======================================================================
 void TimeNSType3_4NLGalerkin3D(double Mult, double *coeff, 
-                double *param, double hK, 
+                double *param, double,
                 double **OrigValues, int *N_BaseFuncts,
-                double ***LocMatrices, double **LocRhs)
+                double ***LocMatrices, double **)
 {
   double **MatrixA11, **MatrixA22, **MatrixA33;
   double val;
@@ -4165,9 +4169,9 @@ void TimeNSType3_4NLGalerkin3D(double Mult, double *coeff,
 // Type 4, Standard Galerkin, D(u):D(v), only nonlinear diagonal blocks
 // ======================================================================
 void TimeNSType3_4NLGalerkinDD3D(double Mult, double *coeff, 
-                double *param, double hK, 
+                double *param, double,
                 double **OrigValues, int *N_BaseFuncts,
-                double ***LocMatrices, double **LocRhs)
+                double ***LocMatrices, double **)
 {
   double **MatrixA11, **MatrixA22, **MatrixA33;
   double val1;
@@ -4226,9 +4230,9 @@ void TimeNSType3_4NLGalerkinDD3D(double Mult, double *coeff,
 // Type 4, Upwind (no convection term), (grad u, grad v)
 // ======================================================================
 void TimeNSType3_4NLUpwind3D(double Mult, double *coeff, 
-                double *param, double hK, 
+                double *, double,
                 double **OrigValues, int *N_BaseFuncts,
-                double ***LocMatrices, double **LocRhs)
+                double ***LocMatrices, double **)
 {
   double **MatrixA11, **MatrixA22, **MatrixA33;
   double val;
@@ -4280,9 +4284,9 @@ void TimeNSType3_4NLUpwind3D(double Mult, double *coeff,
 // Type 4, Upwind (no convection term), D(u):D(v)
 // ======================================================================
 void TimeNSType3_4NLUpwindDD3D(double Mult, double *coeff, 
-                double *param, double hK, 
+                double *, double,
                 double **OrigValues, int *N_BaseFuncts,
-                double ***LocMatrices, double **LocRhs)
+                double ***LocMatrices, double **)
 {
   double **MatrixA11, **MatrixA22, **MatrixA33;
   double val;
@@ -4341,7 +4345,7 @@ void TimeNSType3_4NLUpwindDD3D(double Mult, double *coeff,
 void TimeNSType3_4NLVMS_ProjectionDD3D(double Mult, double *coeff, 
                 double *param, double hK, 
                 double **OrigValues, int *N_BaseFuncts,
-                double ***LocMatrices, double **LocRhs)
+                double ***LocMatrices, double **)
 {
   double **MatrixA11, **MatrixA12, **MatrixA13, **MatrixA21;
   double **MatrixA22, **MatrixA23, **MatrixA31, **MatrixA32;
@@ -4466,7 +4470,7 @@ Output::print("Please adjust 'TurbulentViscosity3D to the turbulentViscosity3D'"
 void TimeNSType3_4NL_Adap_VMS_ProjectionDD3D(double Mult, double *coeff, 
                 double *param, double hK, 
                 double **OrigValues, int *N_BaseFuncts,
-                double ***LocMatrices, double **LocRhs)
+                double ***LocMatrices, double **)
 {
   double **MatrixA11, **MatrixA12, **MatrixA13, **MatrixA21;
   double **MatrixA22, **MatrixA23, **MatrixA31, **MatrixA32;
@@ -4639,10 +4643,10 @@ Output::print("Please adjust 'TurbulentViscosity3D to the turbulentViscosity3D'"
 // Type 3, VMS_Projection explicit, only Matrix_tilde_G??
 // Type 4, VMS_Projection explicit, only Matrix_tilde_G??
 // ======================================================================
-void TimeNSType3_4VMS_ProjectionExpl3D(double Mult, double *coeff, 
+void TimeNSType3_4VMS_ProjectionExpl3D(double Mult, double *,
                 double *param, double hK, 
                 double **OrigValues, int *N_BaseFuncts,
-                double ***LocMatrices, double **LocRhs)
+                double ***LocMatrices, double **)
 {
   double val1;
   double **Matrix_tilde_G11, **Matrix_tilde_G22, **Matrix_tilde_G33; 
@@ -4702,7 +4706,7 @@ void TimeNSType3_4VMS_ProjectionExpl3D(double Mult, double *coeff,
 void TimeNSType3_4NLVMS_ProjectionStreamlineDD3D(double Mult, double *coeff, 
                 double *param, double hK, 
                 double **OrigValues, int *N_BaseFuncts,
-                double ***LocMatrices, double **LocRhs)
+                double ***LocMatrices, double **)
 {
   double **MatrixA11, **MatrixA12, **MatrixA13, **MatrixA21;
   double **MatrixA22, **MatrixA23, **MatrixA31, **MatrixA32;
@@ -4826,7 +4830,7 @@ Output::print("Please adjust 'TurbulentViscosity3D to the turbulentViscosity3D'"
 void TimeNSType3_4NLDivDivDD3D(double Mult, double *coeff, 
                 double *param, double hK, 
                 double **OrigValues, int *N_BaseFuncts,
-                double ***LocMatrices, double **LocRhs)
+                double ***LocMatrices, double **)
 {
   double **MatrixA11, **MatrixA12, **MatrixA13, **MatrixA21;
   double **MatrixA22, **MatrixA23, **MatrixA31, **MatrixA32;
@@ -5762,7 +5766,7 @@ supg_params[1] = 0.0;
 //         div-div, SUPG
 // ======================================================================
 void TimeNSType4VMS_SUPGDD3D(double Mult, double *coeff,
-              double *param, double hK,
+              double *param, double,
               double **OrigValues, int *N_BaseFuncts,
               double ***LocMatrices, double **LocRhs)
 {
@@ -6073,7 +6077,7 @@ void TimeNSType4VMS_SUPGDD3D(double Mult, double *coeff,
 }
 
 void TimeNSType4VMS_SUPGDD3D_old(double Mult, double *coeff,
-              double *param, double hK,
+              double *param, double,
               double **OrigValues, int *N_BaseFuncts,
               double ***LocMatrices, double **LocRhs)
 {
@@ -6392,9 +6396,9 @@ void TimeNSType4VMS_SUPGDD3D_old(double Mult, double *coeff,
 //         div-div, SUPG
 // ======================================================================
 void TimeNSType4VMS_Rhs_SUPGDD3D(double Mult, double *coeff,
-              double *param, double hK,
+              double *param, double,
               double **OrigValues, int *N_BaseFuncts,
-              double ***LocMatrices, double **LocRhs)
+              double ***, double **LocRhs)
 {
   Output::print("Nothing has been tested yer: !! :( ");
   ErrThrow("not tested and/or adjusted yet: ");
@@ -6459,9 +6463,9 @@ void TimeNSType4VMS_Rhs_SUPGDD3D(double Mult, double *coeff,
 }
 
 void TimeNSType4VMS_Rhs_SUPGDD3D_old(double Mult, double *coeff,
-              double *param, double hK,
+              double *param, double,
               double **OrigValues, int *N_BaseFuncts,
-              double ***LocMatrices, double **LocRhs)
+              double ***, double **LocRhs)
 {
   Output::print("Nothing has been tested yer: !! :( ");
   ErrThrow("not tested and/or adjusted yet: ");
@@ -6581,9 +6585,9 @@ void TimeNSType4VMS_Rhs_SUPGDD3D_old(double Mult, double *coeff,
 //         div-div, SUPG
 // ======================================================================
 void TimeNSType4NLVMS_SUPGDD3D(double Mult, double *coeff,
-              double *param, double hK,
+              double *param, double,
               double **OrigValues, int *N_BaseFuncts,
-              double ***LocMatrices, double **LocRhs)
+              double ***LocMatrices, double **)
 {
   Output::print("Nothing has been tested yer: !! :( ");
   ErrThrow("not tested and/or adjusted yet: ");
@@ -6791,9 +6795,9 @@ void TimeNSType4NLVMS_SUPGDD3D(double Mult, double *coeff,
 }
 
 void TimeNSType4NLVMS_SUPGDD3D_old(double Mult, double *coeff,
-              double *param, double hK,
+              double *param, double,
               double **OrigValues, int *N_BaseFuncts,
-              double ***LocMatrices, double **LocRhs)
+              double ***LocMatrices, double **)
 {
   Output::print("Nothing has been tested yer: !! :( ");
   ErrThrow("not tested and/or adjusted yet: ");
@@ -7061,9 +7065,9 @@ void TimeNSType4NLVMS_SUPGDD3D_old(double Mult, double *coeff,
 // ROSENBROCK
 // ======================================================================
 void TimeNSType1GalerkinJ3D(double Mult, double *coeff, 
-                double *param, double hK, 
+                double *param, double,
                 double **OrigValues, int *N_BaseFuncts,
-                double ***LocMatrices, double **LocRhs)
+                double ***LocMatrices, double **)
 {
   Output::print("Nothing has been tested yer: !! :( ");
   ErrThrow("not tested and/or adjusted yet: ");
@@ -7117,9 +7121,9 @@ void TimeNSType1GalerkinJ3D(double Mult, double *coeff,
 }
 
 void TimeNSGalerkinC3D(double Mult, double *coeff, 
-                double *param, double hK, 
+                double *, double ,
                 double **OrigValues, int *N_BaseFuncts,
-                double ***LocMatrices, double **LocRhs)
+                double ***, double **LocRhs)
 {
   Output::print("Nothing has been tested yer: !! :( ");
   ErrThrow("not tested and/or adjusted yet: ");
@@ -7154,9 +7158,9 @@ void TimeNSGalerkinC3D(double Mult, double *coeff,
   } 
 }
 void TimeNSType3GalerkinJ3D(double Mult, double *coeff, 
-                double *param, double hK, 
+                double *param, double, 
                 double **OrigValues, int *N_BaseFuncts,
-                double ***LocMatrices, double **LocRhs)
+                double ***LocMatrices, double **)
 {
   Output::print("Nothing has been tested yer: !! :( ");
   ErrThrow("not tested and/or adjusted yet: ");
@@ -7280,9 +7284,9 @@ void TimeNSType3GalerkinJ3D(double Mult, double *coeff,
 // right-hand side for NSE ONLY
 // ======================================================================
 void TimeNSRHS3D(double Mult, double *coeff, 
-               double *param, double hK, 
+               double *, double,
                double **OrigValues, int *N_BaseFuncts,
-               double ***LocMatrices, double **LocRhs)
+               double ***, double **LocRhs)
 {
   double *Rhs1, *Rhs2, *Rhs3;
   double test000;
@@ -7317,10 +7321,10 @@ void TimeNSRHS3D(double Mult, double *coeff,
 // right-hand side for NSE ONLY 
 // ClassicalLES model
 // ======================================================================
-void TimeNSRHSClassicalLES3D(double Mult, double *coeff,
+void TimeNSRHSClassicalLES3D(double Mult, double *,
                double *param, double hK,
                double **OrigValues, int *N_BaseFuncts,
-               double ***LocMatrices, double **LocRhs)
+               double ***, double **LocRhs)
 {
   Output::print("Nothing has been tested yer: !! :( ");
   ErrThrow("not tested and/or adjusted yet: ");
@@ -7394,10 +7398,10 @@ void TimeNSRHSClassicalLES3D(double Mult, double *coeff,
 // right-hand side for NSE ONLY
 // Galdi-Layton model with convolution and auxiliary problem
 // ======================================================================
-void TimeNSRHSLESModel3D(double Mult, double *coeff,
+void TimeNSRHSLESModel3D(double Mult, double *,
                          double *param, double hK,
                          double **OrigValues, int *N_BaseFuncts,
-                         double ***LocMatrices, double **LocRhs)
+                         double ***, double **LocRhs)
 {
   Output::print("Nothing has been tested yer: !! :( ");
   ErrThrow("not tested and/or adjusted yet: ");
@@ -7450,10 +7454,10 @@ void TimeNSRHSLESModel3D(double Mult, double *coeff,
 // right-hand side for auxiliary problem 
 // Galdi-Layton model with auxiliary problem
 // ======================================================================
-void TimeNSGL00AuxProblemRHS3D(double Mult, double *coeff,
-               double *param, double hK,
+void TimeNSGL00AuxProblemRHS3D(double Mult, double *,
+               double *param, double,
                double **OrigValues, int *N_BaseFuncts,
-               double ***LocMatrices, double **LocRhs)
+               double ***, double **LocRhs)
 {
   Output::print("Nothing has been tested yer: !! :( ");
   ErrThrow("not tested and/or adjusted yet: ");
@@ -7512,10 +7516,10 @@ void TimeNSGL00AuxProblemRHS3D(double Mult, double *coeff,
 // ======================================================================
 // right-hand side ONLY for auxiliary problem applied to velocity
 // ======================================================================
-void TimeNSRHSAuxProblemU(double Mult, double *coeff, 
-               double *param, double hK, 
+void TimeNSRHSAuxProblemU(double Mult, double *, 
+               double *param, double,
                double **OrigValues, int *N_BaseFuncts,
-               double ***LocMatrices, double **LocRhs)
+               double ***, double **LocRhs)
 {
   Output::print("Nothing has been tested yer: !! :( ");
   ErrThrow("not tested and/or adjusted yet: ");
@@ -7554,9 +7558,9 @@ void TimeNSRHSAuxProblemU(double Mult, double *coeff,
 // for VMS
 // ======================================================================
 void TimeNS_VMS_SmallRhs3D(double Mult, double *coeff, 
-                           double *param, double hK, 
+                           double *param, double, 
                            double **OrigValues, int *N_BaseFuncts,
-                           double ***LocMatrices, double **LocRhs)
+                           double ***, double **LocRhs)
 {
   Output::print("Nothing has been tested yer: !! :( ");
   ErrThrow("not tested and/or adjusted yet: ");
@@ -7649,7 +7653,7 @@ void TimeNS_VMS_SmallRhs3D(double Mult, double *coeff,
 // used for : GALERKIN
 //            COLETTI (non linear steps)
 // ========================================================================
-void TimeNSParamsVelo3D(double *in, double *out)
+void TimeNSParamsVelo3D(const double *in, double *out)
 {
   out[0] = in[3]; // u1old
   out[1] = in[4]; // u2old
@@ -7660,7 +7664,7 @@ void TimeNSParamsVelo3D(double *in, double *out)
 // parameters: u1old, u2old,
 // used for : COLETTI, Smagorinsky
 // ========================================================================
-void TimeNSParamsVelo_GradVelo3D(double *in, double *out)
+void TimeNSParamsVelo_GradVelo3D(const double *in, double *out)
 {
   out[0] = in[3]; // u1old
   out[1] = in[4]; // u2old
@@ -7704,7 +7708,7 @@ void TimeNSParamsGradVelo3D(double *in, double *out)
 // all partial derivatives
 // convolution of u1old, u2old, u3old
 // ========================================================================
-void TimeNSParamsVelo_GradVelo_ConvVelo3D(double *in, double *out)
+void TimeNSParamsVelo_GradVelo_ConvVelo3D(const double *in, double *out)
 {
   out[0] = in[3]; // u1old
   out[1] = in[4]; // u2old
@@ -7837,7 +7841,7 @@ void TimeNSParamsGL00AuxProblemNuT4_3D(double *in, double *out)
 // ========================================================================
 // used for VMS, assembling of rhs for small scale equation 
 // ========================================================================
-void TimeNSParams_VMS_SmallRhs3D(double *in, double *out)
+void TimeNSParams_VMS_SmallRhs3D(const double *in, double *out)
 {
   // large scales
   out[0] = in[3]; // u1old
@@ -7875,7 +7879,7 @@ void TimeNSParams_VMS_SmallRhs3D(double *in, double *out)
 // parameters: u1old, u2old, G^H
 // used for : projection-based VMS
 // ========================================================================
-void TimeNSParamsVelo_GradVelo_LargeScale3D(double *in, double *out)
+void TimeNSParamsVelo_GradVelo_LargeScale3D(const double *in, double *out)
 {
   out[0] = in[3]; // u1old
   out[1] = in[4]; // u2old

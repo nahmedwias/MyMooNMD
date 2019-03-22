@@ -12,20 +12,12 @@
 #ifndef __ASSEMBLE3D__
 #define __ASSEMBLE3D__
 
-#include <AllClasses.h>
+class TFESpace3D;
+class TSquareMatrix3D;
+class TMatrix3D;
 #include <Constants.h>
 
-#include "LocalAssembling3D.h"
-
-/** a function from a finite element space */
-[[deprecated]] void Assemble3D(int n_fespaces, const TFESpace3D **fespaces,
-                int n_sqmatrices, TSquareMatrix3D **sqmatrices,
-                int n_matrices, TMatrix3D **matrices,
-                int n_rhs, double **rhs, const TFESpace3D **ferhs,
-                TDiscreteForm3D *DiscreteForm,
-                BoundCondFunct3D **BoundaryConditions,
-                BoundValueFunct3D **BoundaryValues,
-                TAuxParam3D *parameters);
+#include "LocalAssembling.h"
 
 /**
  * @brief Assembling method which takes a LocalAssembling3D object replacing the deprecated
@@ -40,7 +32,7 @@ void Assemble3D(int n_fespaces, const TFESpace3D** fespaces,
 				int n_rhs, double** rhs,  const TFESpace3D** ferhs,
 				BoundCondFunct3D** BoundaryConditions,
                 BoundValueFunct3D** BoundaryValues,
-				const LocalAssembling3D& la);
+				LocalAssembling3D& la);
 
 
 /** a function from a finite element space */
@@ -48,10 +40,8 @@ void Assemble3DSlipBC(int n_fespaces, const TFESpace3D **fespaces,
                 int n_sqmatrices, TSquareMatrix3D **sqmatrices,
                 int n_matrices, TMatrix3D **matrices,
                 int n_rhs, double **rhs, const TFESpace3D **ferhs,
-                TDiscreteForm3D *DiscreteForm,
                 BoundCondFunct3D **BoundaryConditions,
-                BoundValueFunct3D **BoundaryValues,
-                TAuxParam3D *parameters);
+                BoundValueFunct3D **BoundaryValues);
 
 void ModifyMatrixSlipBC(TSquareMatrix3D **sqmatrices, TMatrix3D **matrices,
 			int N_U, double *rhs);
@@ -59,14 +49,13 @@ void ModifyMatrixSlipBC(TSquareMatrix3D **sqmatrices, TMatrix3D **matrices,
 /** assemble mixed finite elements such as Raviart-Thomas or
  * Brezzi-Douglas-Marini.
  */
-void Assemble3D_mixed(int n_fespaces, const TFESpace3D **fespaces,
-int n_sqmatrices, TSquareMatrix3D **sqmatrices,
-int n_matrices, TMatrix3D **matrices,
-int n_rhs, double **rhs, const TFESpace3D **ferhs,
-TDiscreteForm3D *DiscreteForm3D,
-BoundCondFunct3D **BoundaryConditions,
-BoundValueFunct3D **BoundaryValues,
-TAuxParam3D *Parameters);
+void Assemble3D_mixed(int n_fespaces, const TFESpace3D** fespaces,
+                      int n_sqmatrices, TSquareMatrix3D** sqmatrices,
+                      int n_matrices, TMatrix3D** matrices, int n_rhs,
+                      double** rhs, const TFESpace3D** ferhs,
+                      LocalAssembling3D& la,
+                      BoundCondFunct3D** BoundaryConditions,
+                      BoundValueFunct3D** BoundaryValues);
 
 
 

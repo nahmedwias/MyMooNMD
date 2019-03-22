@@ -8,9 +8,7 @@
 // Author:      Sashikumaar Ganesan
 // History:      start of implementation  07/09/09 (Sashikumaar Ganesan)
 // =======================================================================
-#ifdef _MPI
-#  include "mpi.h"
-#endif
+#include "mpi.h"
 
 #ifdef _OPENMP
 #  include <omp.h>
@@ -36,14 +34,12 @@
   #include <FEDatabase2D.h>
 #endif
 
-#ifdef _MPI
 extern "C"
 {
   #include <metis.h>
   #include <parmetis.h>
 }
 #include <MeshPartitionInOut.h>
-#endif
 
 #include<algorithm>
 #include<vector>
@@ -128,8 +124,6 @@ int MeshPartitionAuxFunctions::GetIndex(TVertex **Array, int Length, TVertex *El
   return m;
 }
 
-#ifdef _MPI
-
 #ifdef __2D__
 
 
@@ -163,7 +157,7 @@ int Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
  TBaseCell **CellDel;
  TJoint *Joint, *NewJoint;
  TEdge *edge, **EdgeDel;
- TShapeDesc *ShapeDesc;
+ const TShapeDesc *ShapeDesc;
  TVertex *CurrVert, *NeibCurrVert;
  
  MPI_Status status;
@@ -267,7 +261,9 @@ int Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
 //    exit(0);
    eptr[0] = 0;  
    for(i=1;i<=N_Cells;i++)
+   {
     eptr[i] = eptr[i-1] + N_VertInCell;
+   }
    
 
     MetisVertexNumbers= new idx_t[N_AllLocVert];
@@ -698,10 +694,14 @@ int Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
        {
         N_Edges=cell->GetN_Edges();
         for(j=0;j<N_Edges;j++)
+        {
           EdgeDel[N_EdgeDel++] = cell->GetEdge(j);
+        }
 
         for(j=0;j<N_VertInCell;j++)
+        {
          VertexDel[N_VertexDel++] = cell->GetVertex(j);
+        }
 
          CellDel[N_CellDel++] = cell;
        }
@@ -1115,8 +1115,6 @@ int Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
 
 void Domain_Crop(MPI_Comm comm, TDomain *Domain)
 {
-  
-#if 1
   //Variable list
   
  idx_t *Cell_Rank;
@@ -1142,7 +1140,7 @@ void Domain_Crop(MPI_Comm comm, TDomain *Domain)
  TBaseCell **CellDel;
  TJoint *Joint, *NewJoint;
  TEdge *edge, **EdgeDel;
- TShapeDesc *ShapeDesc;
+ const TShapeDesc *ShapeDesc;
  TVertex *CurrVert, *NeibCurrVert;
 
   MPI_Comm_rank(comm, &rank);
@@ -1166,8 +1164,6 @@ void Domain_Crop(MPI_Comm comm, TDomain *Domain)
   CellDel = new TBaseCell*[N_Cells];
 
    TVertex **Vertices;
-   
-#endif
 
     NumberVertex=new int[N_AllLocVert];
     Vertices=new TVertex*[N_AllLocVert];
@@ -1276,15 +1272,16 @@ void Domain_Crop(MPI_Comm comm, TDomain *Domain)
   int Nchildren,childn,parentglobalno;
 
  
-  Nchildren = coll->GetCell(0)->GetParent()->GetN_Children();
+  Nchildren = static_cast<const TBaseCell*>(coll->GetCell(0))->GetParent()->GetN_Children();
 
   /** copy the parent MPI_ID and global cell_no to children */
   for(i=0;i<N_Cells;i++)
      {
-      cell = coll->GetCell(i);	
-      cell->SetSubDomainNo((cell->GetParent())->GetSubDomainNo());
-      childn = (cell->GetParent())->GetChildNumber(cell);	
-      parentglobalno = (cell->GetParent())->GetGlobalCellNo();	
+      cell = coll->GetCell(i);
+      auto parent_cell = static_cast<const TBaseCell*>(cell)->GetParent();
+      cell->SetSubDomainNo(parent_cell->GetSubDomainNo());
+      childn = parent_cell->GetChildNumber(cell);	
+      parentglobalno = parent_cell->GetGlobalCellNo();	
       cell->SetGlobalCellNo(parentglobalno*Nchildren+childn);
       cell->SetLocalCellNo(i);
       Cell_Rank[i] = cell->GetSubDomainNo();
@@ -1953,5 +1950,4 @@ void Domain_Crop(MPI_Comm comm, TDomain *Domain)
    MPI_Barrier(comm);
 } // Partition_Mesh2D()
 
-#endif //mpi
 #endif

@@ -8,7 +8,7 @@ class TSquareMatrix1D : public TSquareMatrix
 {
   public:
     /** generate the matrix */
-    TSquareMatrix1D(const TFESpace1D * space);
+    explicit TSquareMatrix1D(std::shared_ptr<const TFESpace1D> space);
 
     /** destructor: free Entries array */
     ~TSquareMatrix1D() = default;

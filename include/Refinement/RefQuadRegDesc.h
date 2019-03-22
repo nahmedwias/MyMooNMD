@@ -30,7 +30,7 @@ class TRefQuadRegDesc : public TRefDesc
   public:
     // Constructor
     /** build a descriptor for regular refinement of a quadrangle */
-    TRefQuadRegDesc(TShapeDesc *shape);
+    explicit TRefQuadRegDesc(TShapeDesc *shape);
 
     // Methods
 };

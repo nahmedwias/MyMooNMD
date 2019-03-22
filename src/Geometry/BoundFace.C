@@ -45,15 +45,14 @@ TBoundFace::TBoundFace(TBoundComp3D *bdcomp) : TJoint()
 }
 
 // Methods
-int TBoundFace::CheckMatchingRef(TBaseCell *Me, int J_i,
-                  struct StoreGeom &Tmp)
+int TBoundFace::CheckMatchingRef(TBaseCell *, int, struct StoreGeom &Tmp)
 {
   Tmp.Filled = false;
   return 0;
 }
 
 // create a new instance of this class
-TJoint *TBoundFace::NewInst(double newT_0, double newT_1, TBaseCell *Me)
+TJoint *TBoundFace::NewInst(double, double, TBaseCell *)
 {
   return new TBoundFace(BoundComp);
 }
@@ -85,3 +84,31 @@ void TBoundFace::GetParameters(double *param1, double *param2)
   }
 }
 
+//NEW LB 11.10.18
+/**
+ @brief set the local index of this joint in given neighbor
+ @todo write a more general function that does not take index as input
+ */
+void TBoundFace::set_index_in_neighbour(TBaseCell *neigh, int index)
+{
+    if(neigh == Neighb0)
+        IndexInNeighbor[0] = index;
+    else
+    {
+        ErrMsg("ERROR in TBoundFace::set_index_in_neighbour");
+        exit(-4711);
+    }
+}
+
+
+/** get the index of this joint in given neighbor */
+int TBoundFace::get_index_in_neighbour(const TBaseCell*const neigh) const
+{
+    if(neigh == Neighb0)
+        return IndexInNeighbor[0];
+    else
+    {
+        ErrMsg("ERROR in TBoundFace::get_index_in_neighbour");
+        exit(-4711);
+    }
+}

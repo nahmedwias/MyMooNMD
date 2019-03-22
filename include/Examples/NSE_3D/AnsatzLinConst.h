@@ -16,7 +16,7 @@ void ExampleFile()
 // ========================================================================
 // exact solution
 // ========================================================================
-void ExactU1(double x, double y,  double z, double *values)
+void ExactU1(double, double y,  double z, double *values)
 {
   values[0] = y+z;
   values[1] = 0;
@@ -25,7 +25,7 @@ void ExactU1(double x, double y,  double z, double *values)
   values[4] = 0;
 }
 
-void ExactU2(double x, double y,  double z, double *values)
+void ExactU2(double x, double, double z, double *values)
 {
   values[0] = 5*x-3*z;
   values[1] = 5;
@@ -34,7 +34,7 @@ void ExactU2(double x, double y,  double z, double *values)
   values[4] = 0;
 }
 
-void ExactU3(double x, double y,  double z, double *values)
+void ExactU3(double x, double y, double, double *values)
 {
   values[0] = -x-2*y;
   values[1] = -1;
@@ -43,7 +43,7 @@ void ExactU3(double x, double y,  double z, double *values)
   values[4] = 0;
 }
 
-void ExactP(double x, double y,  double z, double *values)
+void ExactP(double, double, double, double *values)
 {
   values[0] = 0;
   values[1] = 0;
@@ -61,25 +61,25 @@ void ExactP(double x, double y,  double z, double *values)
 // }
 
 // kind of boundary condition (for FE space needed)
-void BoundCondition(double x, double y, double z, BoundCond &cond)
+void BoundCondition(double, double, double, BoundCond &cond)
 {
   cond = DIRICHLET;
 }
 
 // value of boundary condition
-void U1BoundValue(double x, double y, double z, double &value)
+void U1BoundValue(double, double y, double z, double &value)
 {
   value = y+z;
 }
 
 // value of boundary condition
-void U2BoundValue(double x, double y, double z, double &value)
+void U2BoundValue(double x, double, double z, double &value)
 {
   value = 5*x-3*z;
 }
 
 // value of boundary condition
-void U3BoundValue(double x, double y, double z, double &value)
+void U3BoundValue(double x, double y, double, double &value)
 {
     value = -x-2*y ;     
 }
@@ -87,8 +87,8 @@ void U3BoundValue(double x, double y, double z, double &value)
 // ========================================================================
 // coefficients for Stokes form: A, B1, B2, f1, f2
 // ========================================================================
-void LinCoeffs(int n_points, double *X, double *Y, double *Z,
-               double **parameters, double **coeffs)
+void LinCoeffs(int n_points, double *, double *, double *, double **,
+               double **coeffs)
 {
   static double eps = DIMENSIONLESS_VISCOSITY;
   int i;
@@ -118,7 +118,8 @@ void LinCoeffs(int n_points, double *X, double *Y, double *Z,
         /*coeff[1] = 4*x-2*y-3*z; // f1
       coeff[2] = 3*x+11*y+5*z; // f2
       coeff[3] = -10*x-y+5*z; // f3*/
+      coeff[4] = 0; // g
+      coeff[5] = 0; // sigma
     }
   }
-    
 }

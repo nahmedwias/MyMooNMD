@@ -60,22 +60,22 @@ class TFESpace2D : public TFESpace
 
   public:
     /** constructor */
-    TFESpace2D(TCollection *coll, std::string name, std::string description);
+    TFESpace2D(TCollection *coll, const std::string& name,
+               const std::string& description);
 
     /** constructor for building a space with elements of order k */
-    // if no mortar is used, the last argument can be set to nullptr
-    TFESpace2D(TCollection *coll, std::string name, std::string description,
-               BoundCondFunct2D *BoundaryCondition, int k,
-               TCollection *mortarcoll);
+    TFESpace2D(TCollection *coll, const std::string& name,
+               const std::string& description,
+               BoundCondFunct2D *BoundaryCondition, int k);
 
-    TFESpace2D(TCollection *coll, std::string name, std::string description,
-               BoundCondFunct2D *BoundaryCondition, SpaceType type,
-               int k, TCollection *mortarcoll);
+    TFESpace2D(TCollection *coll, const std::string& name,
+               const std::string& description,
+               BoundCondFunct2D *BoundaryCondition, SpaceType type, int k);
 
     /** constructor for building a space with the given elements */
-    TFESpace2D(TCollection *coll, std::string name, std::string description,
-               BoundCondFunct2D *BoundaryCondition,
-               FE2D *fes, TCollection *mortarcoll);
+    TFESpace2D(TCollection *coll, const std::string& name,
+               const std::string& description,
+               BoundCondFunct2D *BoundaryCondition, FE2D *fes);
 
     TFESpace2D(const  TFESpace2D&)=delete;
     TFESpace2D& operator=(TFESpace2D) = delete;
@@ -87,6 +87,9 @@ class TFESpace2D : public TFESpace
 
     /** construct space */
     void ConstructSpace(BoundCondFunct2D *BoundaryCondition);
+    
+    /** @brief get dimension of the vector basis function */
+    virtual int GetBaseVectDim() const;  
 
     /** return number of active degrees of freedom */
     int GetN_ActiveDegrees() const
@@ -113,7 +116,7 @@ class TFESpace2D : public TFESpace
     { return HangingNodeArray; }
 
     /** return the FE Id for element i, corresponding to cell */
-    FE2D GetFE2D( int i, TBaseCell* cell ) const;
+    FE2D GetFE2D( int i, const TBaseCell* cell ) const;
     
     /** @brief return the Finite Element on a given cell */
     const TFE2D& get_fe(unsigned int cell_number) const;
@@ -140,7 +143,7 @@ class TFESpace2D : public TFESpace
       */
      void info() const;
      /** return boundary condition */
-    BoundCondFunct2D *GetBoundCondition() const
+    BoundCondFunct2D *get_boundary_condition() const
     { return BoundCondition; }
     
     friend  bool operator== (const TFESpace2D &lhs, const TFESpace2D &rhs);

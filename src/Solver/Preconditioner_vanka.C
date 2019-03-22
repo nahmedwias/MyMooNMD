@@ -24,9 +24,10 @@ Preconditioner_vanka<Vector>::Preconditioner_vanka(const BlockFEMatrix& matrix,
 
 // Constructor for compatibility with solver class. Not to be used.
 template <class Vector>
-Preconditioner_vanka<Vector>::Preconditioner_vanka(const BlockMatrix & matrix,
-                     VankaType type, double damp_factor)
-                     : vanka_object_(type, damp_factor, false), matrix_(BlockFEMatrix())
+Preconditioner_vanka<Vector>::Preconditioner_vanka(const BlockMatrix&,
+                                                   VankaType type,
+                                                   double damp_factor)
+ : vanka_object_(type, damp_factor, false), matrix_(BlockFEMatrix())
 {
   ErrThrow("Creating a Preconditioner_vanka with a BlockMatrix is not "
            "possible, you need a BlockFEMatrix.");

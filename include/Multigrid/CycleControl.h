@@ -21,7 +21,7 @@ class CycleControl
   public:
     CycleControl();
 
-    CycleControl(std::string control, size_t n_levels_);
+    CycleControl(const std::string& control, size_t n_levels_);
 
     void print_cycle_control() const;
 
@@ -46,7 +46,7 @@ class CycleControl
     /// This vector visibly controls moving up and down in the grid hierarchy.
     std::vector<MGDirection> cycle_control_;
 
-    MGCycle string_to_cycle_code(std::string code);
+    MGCycle string_to_cycle_code(const std::string& code);
 
     void fill_recursively(std::vector<int>& mg_recursions, int level);
 };

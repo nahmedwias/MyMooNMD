@@ -29,7 +29,7 @@ MultigridLevel::MultigridLevel(BlockFEMatrix* matrix,
   Output::info<5>("MultigridLevel", "Constructed a MultigridLevel object. matrix "
                "dimensions: (", matrix->get_n_total_rows(), ",",
                matrix->get_n_total_columns(), "), n_cells ",
-               matrix->get_ansatz_space(0,0).GetCollection()->GetN_Cells());
+               matrix->get_ansatz_space(0,0)->GetCollection()->GetN_Cells());
 
   //Determine which smoother to use and construct the object.
   switch(sm)
@@ -143,7 +143,7 @@ void MultigridLevel::calculate_defect()
   matrix_->apply_scaled_add(solution_, defect_, -1.0);
 
 #ifdef _MPI
-  residual_ = defect_.norm_global(comms);
+  residual_ = defect_.norm(comms);
 #else
   residual_ = sqrt(dot(defect_,defect_));
 #endif

@@ -21,7 +21,8 @@
 #include<Example3D.h>
 #include <functional> // std::function
 
-class CD3D; //forward declaration
+//class CD3D; //forward declaration
+template<int d> class ConvectionDiffusion; // forward declaration
 
 class Example_CD3D : public Example3D 
 {
@@ -31,19 +32,20 @@ class Example_CD3D : public Example3D
      * This intializes a convection-diffusion example in 3D.
      * It is chosen according to the given example_code.
      */
-    Example_CD3D(const ParameterDatabase& user_input_parameter_db);
+    explicit Example_CD3D(const ParameterDatabase& user_input_parameter_db);
     
     /** @brief initialize your own example
      * 
      * Create an example with all vectors already defined.
      */
-    Example_CD3D(std::vector <DoubleFunct3D*> exact,
-                 std::vector <BoundCondFunct3D*> bc,
-                 std::vector <BoundValueFunct3D*> bd, CoeffFct3D coeffs)
+    Example_CD3D(const std::vector<DoubleFunct3D*>& exact,
+                 const std::vector<BoundCondFunct3D*>& bc,
+                 const std::vector<BoundValueFunct3D*>& bd,
+                 const CoeffFct3D& coeffs)
     : Example3D(exact, bc, bd, coeffs) {};
 
     /// Apply the function stored as post processing routine.
-    void do_post_processing(CD3D& cd3d) const;
+    void do_post_processing(ConvectionDiffusion<3>& cd3d) const;
 
     /// Return kinematic viscosity, if set.
     double get_nu() const;
@@ -68,7 +70,7 @@ class Example_CD3D : public Example3D
   private:
     /// Function doing the post processing for a stationary example.
     /// TODO put CD3D argument const as soon as FEFunctions can be copied properly!
-    std::function<void(CD3D &)> post_processing_stat;
+    std::function<void(ConvectionDiffusion<3> &)> post_processing_stat;
     /// TODO Function doing the post processing for a time dependent example.
 
 };

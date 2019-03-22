@@ -60,13 +60,6 @@
 #include <MooNMD_Io.h>
 #include <string.h>
 
-#ifdef __MORTAR__
-  #include <It_Mortar.h>
-  #include <RefMortar0Desc.h>
-  #include <RefMortar1Desc.h>
-  #include <RefMortarLineDesc.h>
-#endif
-
 #ifdef __3D__
   #include <Tetrahedron.h>
   #include <Hexahedron.h>
@@ -116,12 +109,2293 @@
   #include <RefHexaRegDesc.h>
 #endif
 
+
+void TParamDB::read_parameters(const char* ParamFile)
+{
+  int rank = 0;
+#ifdef _MPI
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+#endif
+
+  // if the max_line_length is too short, the program simply hangs
+  size_t max_line_length = 1000;
+  char line[max_line_length], *aux_char;
+  int N_Param = 0;
+  std::ifstream dat(ParamFile);
+
+  if (!dat)
+  {
+    if(rank == 0)
+      cerr << "cannot open '" << ParamFile << "' for input" << endl;
+    exit(-1);
+  }
+  while (!dat.eof())
+  {
+    dat >> line;
+
+    if (!strcmp(line, "VERSION:"))
+    {
+      dat >> VERSION;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "MAPFILE:"))
+    {
+      dat >> line;
+      aux_char = new char[strlen(line) + 1];
+      strcpy(aux_char, line);
+      delete [] MAPFILE;
+      MAPFILE = aux_char;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "OUTFILE:"))
+    {
+      dat >> line;
+      aux_char = new char[strlen(line) + 1];
+      strcpy(aux_char, line);
+      delete [] OUTFILE;
+      OUTFILE = aux_char;
+      N_Param++;
+    }
+    if (!strcmp(line, "SAVESOL:"))
+    {
+      dat >> SAVESOL;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "MESHGEN_ALLOW_EDGE_REF:"))
+    {
+      dat >> MESHGEN_ALLOW_EDGE_REF;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "MESHGEN_REF_QUALITY:"))
+    {
+      dat >> MESHGEN_REF_QUALITY;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "ANSATZ_ORDER:"))
+    {
+      dat >> ANSATZ_ORDER;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "TEST_ORDER:"))
+    {
+      dat >> TEST_ORDER;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "VELOCITY_SPACE:"))
+    {
+      dat >> VELOCITY_SPACE;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "PRESSURE_SPACE:"))
+    {
+      dat >> PRESSURE_SPACE;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "PRESSURE_SEPARATION:"))
+    {
+      dat >> PRESSURE_SEPARATION;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "REFINEMENT:"))
+    {
+      dat >> REFINEMENT;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "GRID_TYPE:"))
+    {
+      dat >> GRID_TYPE;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "ADAPTIVE_REFINEMENT_CRITERION:"))
+    {
+      dat >> ADAPTIVE_REFINEMENT_CRITERION;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "ERROR_CONTROL:"))
+    {
+      dat >> ERROR_CONTROL;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "REFINE_STRATEGY:"))
+    {
+      dat >> REFINE_STRATEGY;
+      N_Param++;
+    }
+    if (!strcmp(line, "REFTOL:"))
+    {
+      dat >> REFTOL;
+      N_Param++;
+    }
+    if (!strcmp(line, "COARSETOL:"))
+    {
+      dat >> COARSETOL;
+      N_Param++;
+    }
+    if (!strcmp(line, "MIN_FRACTION_TO_CHANGE:"))
+    {
+      dat >> MIN_FRACTION_TO_CHANGE;
+      N_Param++;
+    }
+    if (!strcmp(line, "DECREASE_REFTOL_FACTOR:"))
+    {
+      dat >> DECREASE_REFTOL_FACTOR;
+      N_Param++;
+    }
+    if (!strcmp(line, "INCREASE_COARSETOL_FACTOR:"))
+    {
+      dat >> INCREASE_COARSETOL_FACTOR;
+      N_Param++;
+    }
+    if (!strcmp(line, "FRACTION_OF_ERROR:"))
+    {
+      dat >> FRACTION_OF_ERROR;
+      N_Param++;
+    }
+    if (!strcmp(line, "MAX_CELL_LEVEL:"))
+    {
+      dat >> MAX_CELL_LEVEL;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "CONVERT_QUAD_TO_TRI:"))
+    {
+      dat >> CONVERT_QUAD_TO_TRI;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "N_CELL_LAYERS:"))
+    {
+      dat >> N_CELL_LAYERS;
+      N_Param++;
+    }
+    if (!strcmp(line, "CHANNEL_GRID_STRETCH:"))
+    {
+      dat >> CHANNEL_GRID_STRETCH;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "INTL_DISCTYPE:"))
+    {
+      dat >> INTL_DISCTYPE;
+      N_Param++;
+    }   
+
+    if (!strcmp(line, "NSTYPE:"))
+    {
+      dat >> NSTYPE;
+      N_Param++;
+    }
+    if (!strcmp(line, "LAPLACETYPE:"))
+    {
+      dat >> LAPLACETYPE;
+      N_Param++;
+    }
+    if (!strcmp(line, "DARCYTYPE:"))
+    {
+      dat >> DARCYTYPE;
+      N_Param++;
+    }
+    if (!strcmp(line, "SIGMA_PERM:"))
+    {
+      dat >> SIGMA_PERM;
+      N_Param++;  
+    }
+
+    if (!strcmp(line, "equal_order_stab_weight_PkPk:"))
+    {
+      dat >> equal_order_stab_weight_PkPk;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "grad_div_stab_weight:"))
+    {
+      dat >> grad_div_stab_weight;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "L_0:"))
+    {
+      dat >> L_0;
+      N_Param++;
+    }
+  
+    if (!strcmp(line, "USE_ISOPARAMETRIC:"))
+    {
+      dat >> USE_ISOPARAMETRIC;
+      N_Param++;
+    }
+    if (!strcmp(line, "VMM_COARSE_LEVEL:"))
+    {
+      dat >> VMM_COARSE_LEVEL;
+      N_Param++;
+    }
+    if (!strcmp(line, "VMM_COARSE_SPACE_ORDER:"))
+    {
+      dat >> VMM_COARSE_SPACE_ORDER;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "UPWIND_ORDER:"))
+    {
+      dat >> UPWIND_ORDER;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "RFB_SUBMESH_LAYERS:"))
+    {
+      dat >> RFB_SUBMESH_LAYERS;
+      N_Param++;
+    }
+    if (!strcmp(line, "DEFECT_CORRECTION_TYPE:"))
+    {
+      dat >> DEFECT_CORRECTION_TYPE;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "CELL_MEASURE:"))
+    {
+      dat >> CELL_MEASURE;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "SAMARSKI_DAMP:"))
+    {
+      dat >> UPWIND_FLUX_DAMP; 
+      N_Param++;
+    }
+
+    if (!strcmp(line, "UPWIND_APPLICATION:"))
+    {
+      dat >> UPWIND_APPLICATION;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "SHISHKIN_MESH:"))
+    {
+      dat >> SHISHKIN_MESH;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "SHISHKIN_DIAM:"))
+    {
+      dat >> SHISHKIN_DIAM;
+      N_Param++;
+    }
+    if (!strcmp(line, "RE_NR:"))
+    {
+      dat >> RE_NR;
+      N_Param++;
+    }
+    if (!strcmp(line, "RA_NR:"))
+    {
+      dat >> RA_NR;
+      N_Param++;
+    }
+    if (!strcmp(line, "ROSSBY_NR:"))
+    {
+      dat >> ROSSBY_NR;
+      N_Param++;
+    }
+    if (!strcmp(line, "START_RE_NR:"))
+    {
+      dat >> START_RE_NR;
+      N_Param++;
+    }
+    if (!strcmp(line, "RE_NR_INCREMENT:"))
+    {
+      dat >> RE_NR_INCREMENT;
+      N_Param++;
+    }
+    if (!strcmp(line, "FLOW_PROBLEM_TYPE:"))
+    {
+      dat >> FLOW_PROBLEM_TYPE;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "FACE_SIGMA:"))
+    {
+      dat >> FACE_SIGMA;
+      N_Param++;
+    }
+    if (!strcmp(line, "WEAK_BC_SIGMA:"))
+    {
+      dat >> WEAK_BC_SIGMA;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "WEAK_BC:"))
+    {
+      dat >> WEAK_BC;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "FR_NR:"))
+    {
+      dat >> FR_NR;
+      N_Param++;
+    }
+    if (!strcmp(line, "WB_NR:"))
+    {
+      dat >> WB_NR;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "PR_NR:"))
+    {
+      dat >> PR_NR;
+      N_Param++;
+    }
+    if (!strcmp(line, "PE_NR:"))
+    {
+      dat >> PE_NR;
+      N_Param++;
+    }   
+
+    if (!strcmp(line, "BI_NR:"))
+    {
+      dat >> BI_NR;
+      N_Param++;
+    }
+    if (!strcmp(line, "Axial3D:"))
+    {
+      dat >> Axial3D;
+      N_Param++;
+    }
+    if (!strcmp(line, "Axial3DAxis:"))
+    {
+      dat >> Axial3DAxis;
+      N_Param++;
+    }
+
+
+    if (!strcmp(line, "TAU:"))
+    {
+      dat >> TAU;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "DELTA1:"))
+    {
+      dat >> DELTA1;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "DELTA0:"))
+    {
+      dat >> DELTA0;
+      N_Param++;
+    }
+    if (!strcmp(line, "SDFEM_POWER0:"))
+    {
+      dat >> SDFEM_POWER0;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "SDFEM_TYPE:"))
+    {
+      dat >> SDFEM_TYPE;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "SDFEM_NORM_B:"))
+    {
+      dat >> SDFEM_NORM_B;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "FILTER_WIDTH_CONSTANT:"))
+    {
+      dat >> FILTER_WIDTH_CONSTANT;
+      N_Param++;
+    }
+    if (!strcmp(line, "FILTER_WIDTH_POWER:"))
+    {
+      dat >> FILTER_WIDTH_POWER;
+      N_Param++;
+    }
+    if (!strcmp(line, "GAUSSIAN_GAMMA:"))
+    {
+      dat >> GAUSSIAN_GAMMA;
+      N_Param++;
+    }
+    if (!strcmp(line, "CONVOLUTE_SOLUTION:"))
+    {
+      dat >> CONVOLUTE_SOLUTION;
+      N_Param++;
+    }
+    if (!strcmp(line, "TURBULENT_VISCOSITY_TYPE:"))
+    {
+      dat >> TURBULENT_VISCOSITY_TYPE;
+      N_Param++;
+    }
+    if (!strcmp(line, "TURBULENT_VISCOSITY_TENSOR:"))
+    {
+      dat >> TURBULENT_VISCOSITY_TENSOR;
+      N_Param++;
+    }
+    if (!strcmp(line, "TURBULENT_VISCOSITY_CONSTANT:"))
+    {
+      dat >> TURBULENT_VISCOSITY_CONSTANT;
+      N_Param++;
+    }
+    if (!strcmp(line, "TURBULENT_VISCOSITY_POWER:"))
+    {
+      dat >> TURBULENT_VISCOSITY_POWER;
+      N_Param++;
+    }
+    if (!strcmp(line, "TURBULENT_VISCOSITY_SIGMA:"))
+    {
+      dat >> TURBULENT_VISCOSITY_SIGMA;
+      N_Param++;
+    }
+    if (!strcmp(line, "ARTIFICIAL_VISCOSITY_CONSTANT:"))
+    {
+      dat >> ARTIFICIAL_VISCOSITY_CONSTANT;
+      N_Param++;
+    }
+    if (!strcmp(line, "ARTIFICIAL_VISCOSITY_POWER:"))
+    {
+      dat >> ARTIFICIAL_VISCOSITY_POWER;
+      N_Param++;
+    }
+    if (!strcmp(line, "FRICTION_CONSTANT:"))
+    {
+      dat >> FRICTION_CONSTANT;
+      N_Param++;
+    }
+    if (!strcmp(line, "FRICTION_POWER:"))
+    {
+      dat >> FRICTION_POWER;
+      N_Param++;
+    }
+    if (!strcmp(line, "FRICTION_U0:"))
+    {
+      dat >> FRICTION_U0;
+      N_Param++;
+    }
+    if (!strcmp(line, "FRICTION_TYPE:"))
+    {
+      dat >> FRICTION_TYPE;
+      N_Param++;
+    }
+    if (!strcmp(line, "PENETRATION_CONSTANT:"))
+    {
+      dat >> PENETRATION_CONSTANT;
+      N_Param++;
+    }
+    if (!strcmp(line, "PENETRATION_POWER:"))
+    {
+      dat >> PENETRATION_POWER;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "OSEEN_ZERO_ORDER_COEFF:"))
+    {
+      dat >> OSEEN_ZERO_ORDER_COEFF;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "DIV_DIV_STAB_TYPE:"))
+    {
+      dat >> DIV_DIV_STAB_TYPE;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "DIV_DIV_STAB_C1:"))
+    {
+      dat >> DIV_DIV_STAB_C1;
+      N_Param++;
+    }
+    if (!strcmp(line, "DIV_DIV_STAB_C2:"))
+    {
+      dat >> DIV_DIV_STAB_C2;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "LP_FULL_GRADIENT:"))
+    {
+      dat >> LP_FULL_GRADIENT;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "LP_STREAMLINE:"))
+    {
+      dat >> LP_STREAMLINE;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "LP_DIVERGENCE:"))
+    {
+      dat >> LP_DIVERGENCE;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "LP_PRESSURE:"))
+    {
+      dat >> LP_PRESSURE;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "LP_COEFF_TYPE:"))
+    {
+      dat >> LP_COEFF_TYPE;
+      N_Param++;
+    }
+    if (!strcmp(line, "LP_FULL_GRADIENT_COEFF:"))
+    {
+      dat >> LP_FULL_GRADIENT_COEFF;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "LP_STREAMLINE_COEFF:"))
+    {
+      dat >> LP_STREAMLINE_COEFF;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "LP_DIVERGENCE_COEFF:"))
+    {
+      dat >> LP_DIVERGENCE_COEFF;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "LP_PRESSURE_COEFF:"))
+    {
+      dat >> LP_PRESSURE_COEFF;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "LP_FULL_GRADIENT_EXPONENT:"))
+    {
+      dat >> LP_FULL_GRADIENT_EXPONENT;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "LP_STREAMLINE_EXPONENT:"))
+    {
+      dat >> LP_STREAMLINE_EXPONENT;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "LP_DIVERGENCE_EXPONENT:"))
+    {
+      dat >> LP_DIVERGENCE_EXPONENT;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "LP_PRESSURE_EXPONENT:"))
+    {
+      dat >> LP_PRESSURE_EXPONENT;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "LP_ORDER_DIFFERENCE:"))
+    {
+      dat >> LP_ORDER_DIFFERENCE;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "LP_FULL_GRADIENT_ORDER_DIFFERENCE:"))
+    {
+      dat >> LP_FULL_GRADIENT_ORDER_DIFFERENCE;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "LP_STREAMLINE_ORDER_DIFFERENCE:"))
+    {
+      dat >> LP_STREAMLINE_ORDER_DIFFERENCE;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "LP_DIVERGENCE_ORDER_DIFFERENCE:"))
+    {
+      dat >> LP_DIVERGENCE_ORDER_DIFFERENCE;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "LP_PRESSURE_ORDER_DIFFERENCE:"))
+    {
+      dat >> LP_PRESSURE_ORDER_DIFFERENCE;
+      N_Param++;
+    }
+    if (!strcmp(line, "LP_CROSSWIND:"))
+    {
+      dat >> LP_CROSSWIND;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "LP_CROSSWIND_COEFF_TYPE:"))
+    {
+      dat >> LP_CROSSWIND_COEFF_TYPE;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "LP_CROSSWIND_COEFF:"))
+    {
+      dat >> LP_CROSSWIND_COEFF;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "LP_CROSSWIND_EXPONENT:"))
+    {
+      dat >> LP_CROSSWIND_EXPONENT;
+      N_Param++;
+    }
+
+
+    if (!strcmp(line, "SMESHFILE:"))                                                                            
+    {                                                                                                           
+      dat >> line;                                                                                              
+      aux_char = new char[strlen(line) + 1];                                                                    
+      strcpy(aux_char, line);                                                                                   
+      delete [] SMESHFILE;
+      SMESHFILE = aux_char;                                                                 
+      N_Param++;                                                                                                
+    }
+
+    if (!strcmp(line, "SAVE_DATA_FILENAME:"))
+    {
+      dat >> line;
+      aux_char = new char[strlen(line) + 1];
+      strcpy(aux_char, line);
+      delete [] SAVE_DATA_FILENAME;
+      SAVE_DATA_FILENAME = aux_char;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "READ_DATA_FILENAME:"))
+    {
+      dat >> line;
+      aux_char = new char[strlen(line) + 1];
+      strcpy(aux_char, line);
+      delete [] READ_DATA_FILENAME;
+      READ_DATA_FILENAME = aux_char;
+      N_Param++;
+    }
+    if (!strcmp(line, "POD_FILENAME:"))
+    {
+      dat >> line;
+      aux_char = new char[strlen(line) + 1];
+      strcpy(aux_char, line);
+      delete [] POD_FILENAME;
+      POD_FILENAME = aux_char;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "SNAP_FILENAME:"))
+    {
+      dat >> line;
+      aux_char = new char[strlen(line) + 1];
+      strcpy(aux_char, line);
+      delete [] SNAP_FILENAME;
+      SNAP_FILENAME = aux_char;
+      N_Param++;
+    }
+
+
+    if (!strcmp(line, "SOLD_TYPE:"))
+    {
+      dat >> SOLD_TYPE;
+      N_Param++;
+    }
+    if (!strcmp(line, "SOLD_PARAMETER_TYPE:"))
+    {
+      dat >> SOLD_PARAMETER_TYPE;
+      N_Param++;
+    }
+    if (!strcmp(line, "SOLD_CONST:"))
+    {
+      dat >> SOLD_CONST;
+      N_Param++;
+    }
+    if (!strcmp(line, "SOLD_POWER:"))
+    {
+      dat >> SOLD_POWER;
+      N_Param++;
+    }
+    if (!strcmp(line, "SOLD_S:"))
+    {
+      dat >> SOLD_S;
+      N_Param++;
+    }
+    if (!strcmp(line, "SOLD_U0:"))
+    {
+      dat >> SOLD_U0;
+      N_Param++;
+    }
+    if (!strcmp(line, "SOLD_PARAMETER_SCALING:"))
+    {
+      dat >> SOLD_PARAMETER_SCALING;
+      N_Param++;
+    }
+    if (!strcmp(line, "SOLD_PARAMETER_SCALING_FACTOR:"))
+    {
+      dat >> SOLD_PARAMETER_SCALING_FACTOR;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "PRECOND_LS:"))
+    {
+      dat >> PRECOND_LS;
+      N_Param++;
+    }
+    if (!strcmp(line, "WRITE_GRAPE:"))
+    {
+      dat >> WRITE_GRAPE;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "WRITE_GMV:"))
+    {
+      dat >> WRITE_GMV;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "WRITE_CASE:"))
+    {
+      dat >> WRITE_CASE;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "WRITE_AMIRA:"))
+    {
+      dat >> WRITE_AMIRA;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "WRITE_SNAPSHOTS:"))
+    {
+      dat >> WRITE_SNAPSHOTS;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "DO_ROM:"))
+    {
+      dat >> DO_ROM;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "DO_ROM_P:"))
+    {
+      dat >> DO_ROM_P;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "RANK_OF_BASIS:"))
+    {
+      dat >> RANK_OF_BASIS;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "RANK_OF_BASIS_P:"))
+    {
+      dat >> RANK_OF_BASIS_P;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "POD_INNER_PRODUCT:"))
+    {
+      dat >> POD_INNER_PRODUCT;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "POD_INNER_PRODUCT_P:"))
+    {
+      dat >> POD_INNER_PRODUCT_P;
+      N_Param++;
+    }
+
+    if( !strcmp(line, "PODFILE:" ))
+    {
+      dat >> line;
+      aux_char = new char[strlen(line) + 1];
+      strcpy(aux_char, line);
+      delete [] PODFILE;
+      PODFILE = aux_char;
+
+      N_Param++;
+    }
+    if( !strcmp(line, "BUILD_PODFILE:" ))
+    {
+      dat >> BUILD_PODFILE;
+      N_Param++;
+    }
+
+    if( !strcmp(line, "POD_FLUCT_FIELD:" ))
+    {
+      dat >> POD_FLUCT_FIELD;
+      N_Param++;
+    }
+
+    if( !strcmp(line, "POD_FLUCT_FIELD_P:" ))
+    {
+      dat >> POD_FLUCT_FIELD_P;
+      N_Param++;
+    }
+
+    if( !strcmp(line, "P_ROM_METHOD:" ))
+    {
+      dat >> P_ROM_METHOD;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "PROJECTION_METHOD:"))
+    {
+      dat >> PROJECTION_METHOD;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "SAVE_DATA:"))
+    {
+      dat >> SAVE_DATA;
+      N_Param++;
+    }
+    if (!strcmp(line, "READ_DATA:"))
+    {
+      dat >> READ_DATA;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "READ_GRAPE_FILE:"))
+    {
+      dat >> READ_GRAPE_FILE;
+      N_Param++;
+    }
+    if (!strcmp(line, "WRITE_GNU:"))
+    {
+      dat >> WRITE_GNU;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "ESTIMATE_ERRORS:"))
+    {
+      dat >> ESTIMATE_ERRORS;
+      N_Param++;
+    }
+    if (!strcmp(line, "SOLVE_ADJOINT_PROBLEM:"))
+    {
+      dat >> SOLVE_ADJOINT_PROBLEM;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "COMPUTE_VORTICITY_DIVERGENCE:"))
+    {
+      dat >> COMPUTE_VORTICITY_DIVERGENCE;
+      N_Param++;
+    }
+    if (!strcmp(line, "P0:"))
+    {
+      dat >> P0;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "P1:"))
+    {
+      dat >> P1;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "P2:"))
+    {
+      dat >> P2;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "P3:"))
+    {
+      dat >> P3;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "P4:"))
+    {
+      dat >> P4;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "P5:"))
+    {
+      dat >> P5;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "P6:"))
+    {
+      dat >> P6;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "P7:"))
+    {
+      dat >> P7;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "P8:"))
+    {
+      dat >> P8;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "P9:"))
+    {
+      dat >> P9;
+      N_Param++;
+    }
+    if (!strcmp(line, "P10:"))
+    {
+      dat >> P10;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "P11:"))
+    {
+      dat >> P11;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "P12:"))
+    {
+      dat >> P12;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "P13:"))
+    {
+      dat >> P13;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "P14:"))
+    {
+      dat >> P14;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "P15:"))
+    {
+      dat >> P15;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "CHAR_L0:"))
+    {
+      dat >> CHAR_L0;
+      N_Param++;
+    }
+    if (!strcmp(line, "D_VISCOSITY:"))
+    {
+      dat >> D_VISCOSITY;
+      N_Param++;
+    }
+    if (!strcmp(line, "SURF_TENSION:"))
+    {
+      dat >> SURF_TENSION;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "IMPACT_ANGLE:"))
+    {
+      dat >> IMPACT_ANGLE;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "Area:"))
+    {
+      dat >> Area;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "CIP_TYPE:"))
+    {
+      dat >> CIP_TYPE;
+      N_Param++;
+    }
+    if (!strcmp(line, "SOLD_ADJOINT:"))
+    {
+      dat >> SOLD_ADJOINT;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "N_STAGES_ADJOINT:"))
+    {
+      dat >> N_STAGES_ADJOINT;
+      N_Param++;
+    }
+
+
+    if (!strcmp(line, "SC_NONLIN_ITE_ADJOINT:"))
+    {
+      dat >> SC_NONLIN_ITE_ADJOINT;
+      N_Param++;
+    }
+    if (!strcmp(line, "ADJOINT_FACTOR_4_OMEGA_EQ_0:"))
+    {
+      dat >> ADJOINT_FACTOR_4_OMEGA_EQ_0;
+      N_Param++;
+    }
+    if (!strcmp(line, "OPTIMIZATION_ITE_TYPE_ADJOINT:"))
+    {
+      dat >> OPTIMIZATION_ITE_TYPE_ADJOINT;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "BFGS_VECTORS_ADJOINT:"))
+    {
+      dat >> BFGS_VECTORS_ADJOINT;
+      N_Param++;
+    }
+    if (!strcmp(line, "PENALTY_ADJOINT:"))
+    {
+      dat >> PENALTY_ADJOINT;
+      N_Param++;
+    }
+    if (!strcmp(line, "PENALTY_VALUE_AT_ZERO_ADJOINT:"))
+    {
+      dat >> PENALTY_VALUE_AT_ZERO_ADJOINT;
+      N_Param++;
+    }
+    if (!strcmp(line, "PENALTY_SMALLEST_PARAM_FAC_ADJOINT:"))
+    {
+      dat >> PENALTY_SMALLEST_PARAM_FAC_ADJOINT;
+      N_Param++;
+    }
+    if (!strcmp(line, "PENALTY_LARGEST_PARAM_FAC_ADJOINT:"))
+    {
+      dat >> PENALTY_LARGEST_PARAM_FAC_ADJOINT;
+      N_Param++;
+    }
+    if (!strcmp(line, "RELATIVE_DECREASE_ADJOINT:"))
+    {
+      dat >> RELATIVE_DECREASE_ADJOINT;
+      N_Param++;
+    }
+    if (!strcmp(line, "WEIGHT_RESIDUAL_L1_ADJOINT:"))
+    {
+      dat >> WEIGHT_RESIDUAL_L1_ADJOINT;
+      N_Param++;
+    }
+    if (!strcmp(line, "WEIGHT_RESIDUAL_L2_ADJOINT:"))
+    {
+      dat >> WEIGHT_RESIDUAL_L2_ADJOINT;
+      N_Param++;
+    }
+    if (!strcmp(line, "WEIGHT_GRADIENT_L1_ADJOINT:"))
+    {
+      dat >> WEIGHT_GRADIENT_L1_ADJOINT;
+      N_Param++;
+    }
+    if (!strcmp(line, "WEIGHT_GRADIENT_L2_ADJOINT:"))
+    {
+      dat >> WEIGHT_GRADIENT_L2_ADJOINT;
+      N_Param++;
+    }
+    if (!strcmp(line, "WEIGHT_STREAM_DER_L1_ADJOINT:"))
+    {
+      dat >> WEIGHT_STREAM_DER_L1_ADJOINT;
+      N_Param++;
+    }
+    if (!strcmp(line, "WEIGHT_STREAM_DER_ORTHO_L1_ADJOINT:"))
+    {
+      dat >> WEIGHT_STREAM_DER_ORTHO_L1_ADJOINT;
+      N_Param++;
+    }
+    if (!strcmp(line, "WEIGHT_STREAM_DER_ORTHO_L1_SQRT_ADJOINT:"))
+    {
+      dat >> WEIGHT_STREAM_DER_ORTHO_L1_SQRT_ADJOINT;
+      N_Param++;
+    }
+    if (!strcmp(line, "REG_POINT_STREAM_DER_ORTHO_L1_SQRT_ADJOINT:"))
+    {
+      dat >> REG_POINT_STREAM_DER_ORTHO_L1_SQRT_ADJOINT;
+      N_Param++;
+    }
+    if (!strcmp(line, "MIN_MAX_EXPONENT_ONE_ADJOINT:"))
+    {
+      dat >> MIN_MAX_EXPONENT_ONE_ADJOINT;
+      N_Param++;
+    }
+    if (!strcmp(line, "MIN_MAX_EXPONENT_TWO_ADJOINT:"))
+    {
+      dat >> MIN_MAX_EXPONENT_TWO_ADJOINT;
+      N_Param++;
+    }
+    if (!strcmp(line, "MIN_MAX_FACTOR_ONE_ADJOINT:"))
+    {
+      dat >> MIN_MAX_FACTOR_ONE_ADJOINT;
+      N_Param++;
+    }
+    if (!strcmp(line, "MIN_MAX_FACTOR_TWO_ADJOINT:"))
+    {
+      dat >> MIN_MAX_FACTOR_TWO_ADJOINT;
+      N_Param++;
+    }
+    if (!strcmp(line, "MIN_MAX_ADJOINT:"))
+    {
+      dat >> MIN_MAX_ADJOINT;
+      N_Param++;
+    }
+    if (!strcmp(line, "MIN_VAL_ADJOINT:"))
+    {
+      dat >> MIN_VAL_ADJOINT;
+      N_Param++;
+    }
+    if (!strcmp(line, "MAX_VAL_ADJOINT:"))
+    {
+      dat >> MAX_VAL_ADJOINT;
+      N_Param++;
+    }
+    if (!strcmp(line, "WEIGHT_RESIDUAL_LP_ADJOINT:"))
+    {
+      dat >> WEIGHT_RESIDUAL_LP_ADJOINT;
+      N_Param++;
+    }
+    if (!strcmp(line, "WEIGHT_RESIDUAL_EXP_LP_ADJOINT:"))
+    {
+      dat >> WEIGHT_RESIDUAL_EXP_LP_ADJOINT;
+      N_Param++;
+    }
+    if (!strcmp(line, "RESIDUAL_LP_ADJOINT:"))
+    {
+      dat >> RESIDUAL_LP_ADJOINT;
+      N_Param++;
+    }
+    if (!strcmp(line, "WEIGHT_RESIDUAL_CW_ADJOINT:"))
+    {
+      dat >> WEIGHT_RESIDUAL_CW_ADJOINT;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "OMPNUMTHREADS:"))
+    {
+      dat >> OMPNUMTHREADS;
+      N_Param++;
+    } 
+
+    // *********** PARAMETERS FOR SADDLE POINT SOLVER ***********
+
+    if (!strcmp(line, "SC_NONLIN_ITE_TYPE_SADDLE:"))
+    {
+      dat >> SC_NONLIN_ITE_TYPE_SADDLE;
+      N_Param++;
+    }
+
+    // read in parameter for surface calculations
+    if (!strcmp(line, "FS_MAGNETLAW:"))
+    {
+      dat >> FS_MAGNETLAW;
+      N_Param++;
+    }
+    if (!strcmp(line, "FS_ETA:"))
+    {
+      dat >> FS_ETA;
+      N_Param++;
+    }
+    if (!strcmp(line, "FS_RHO:"))
+    {
+      dat >> FS_RHO;
+      N_Param++;
+    }
+    if (!strcmp(line, "FS_ALPHA:"))
+    {
+      dat >> FS_ALPHA;
+      N_Param++;
+    }
+    if (!strcmp(line, "FS_G:"))
+    {
+      dat >> FS_G;
+      N_Param++;
+    }
+    if (!strcmp(line, "FS_T:"))
+    {
+      dat >> FS_T;
+      N_Param++;
+    }
+    if (!strcmp(line, "FS_HM:"))
+    {
+      dat >> FS_HM;
+      N_Param++;
+    }
+    if (!strcmp(line, "FS_DELTA_H:"))
+    {
+      dat >> FS_DELTA_H;
+      N_Param++;
+    }
+    if (!strcmp(line, "FS_F:"))
+    {
+      dat >> FS_F;
+      N_Param++;
+    }
+    if (!strcmp(line, "FS_LH:"))
+    {
+      dat >> FS_LH;
+      N_Param++;
+    }
+    if (!strcmp(line, "FS_MS:"))
+    {
+      dat >> FS_MS;
+      N_Param++;
+    }
+    if (!strcmp(line, "FS_CHI0:"))
+    {
+      dat >> FS_CHI0;
+      N_Param++;
+    }
+    if (!strcmp(line, "FS_WRITE:"))
+    {
+      dat >> FS_WRITE;
+      N_Param++;
+    }
+    if (!strcmp(line, "FS_READ:"))
+    {
+      dat >> FS_READ;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "FS_INNAME:"))
+    {
+      dat >> line;
+      aux_char = new char[strlen(line) + 1];
+      strcpy(aux_char, line);
+      delete [] FS_INNAME;
+      FS_INNAME = aux_char;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "FS_OUTNAME:"))
+    {
+      dat >> line;
+      aux_char = new char[strlen(line) + 1];
+      strcpy(aux_char, line);
+      delete [] FS_OUTNAME;
+      FS_OUTNAME = aux_char;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "HEAT_TANGENTIAL_STRESS_FACTOR:"))
+    {
+      dat >> HEAT_TANGENTIAL_STRESS_FACTOR;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "HEAT_SOLID_SURFACE_FACTOR:"))
+    {
+      dat >> HEAT_SOLID_SURFACE_FACTOR;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "EQ_CONTACT_ANGLE:"))
+    {
+      dat >> EQ_CONTACT_ANGLE;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "AD_CONTACT_ANGLE:"))
+    {
+      dat >> AD_CONTACT_ANGLE;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "RE_CONTACT_ANGLE:"))
+    {
+      dat >> RE_CONTACT_ANGLE;
+      N_Param++;
+    }
+
+
+    if (!strcmp(line, "DY_CONTACT_ANGLE:"))
+    {
+      dat >> DY_CONTACT_ANGLE;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "CONTACT_ANGLE_TYPE:"))
+    {
+      dat >> CONTACT_ANGLE_TYPE;
+      N_Param++;
+    }   
+
+    if (!strcmp(line, "VMS_SMALL_VELOCITY_SPACE:"))
+    {
+      dat >> VMS_LARGE_VELOCITY_SPACE;
+      if(rank==0)
+        OutPut("The name of this parameter is now VMS_LARGE_VELOCITY_SPACE !!!" << endl);
+      N_Param++;
+    }
+
+    if (!strcmp(line, "VMS_LARGE_VELOCITY_SPACE:"))
+    {
+      dat >> VMS_LARGE_VELOCITY_SPACE;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "VMS_COARSE_MG_SMAGO:"))
+    {
+      dat >> VMS_COARSE_MG_SMAGO;
+      N_Param++;
+    }
+    if (!strcmp(line, "VMS_ADAPT_LOWER:"))
+    {
+      dat >> VMS_ADAPT_LOWER;
+      N_Param++;
+    }
+    if (!strcmp(line, "VMS_ADAPT_MIDDLE:"))
+    {
+      dat >> VMS_ADAPT_MIDDLE;
+      N_Param++;
+    }
+    if (!strcmp(line, "VMS_ADAPT_UPPER:"))
+    {
+      dat >> VMS_ADAPT_UPPER;
+      N_Param++;
+    }
+    if (!strcmp(line, "VMS_ADAPT_STEPS:"))
+    {
+      dat >> VMS_ADAPT_STEPS;
+      N_Param++;
+    }
+    if (!strcmp(line, "VMS_ADAPT_COMP:"))
+    {
+      dat >> VMS_ADAPT_COMP;
+      N_Param++;
+    }
+    if (!strcmp(line, "SUPERCONVERGENCE_ORDER:"))
+    {
+      dat >> SUPERCONVERGENCE_ORDER;
+      N_Param++;
+    }
+    if (!strcmp(line, "REACTOR_P0:"))
+    {
+      dat >> REACTOR_P0;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "REACTOR_P1:"))
+    {
+      dat >> REACTOR_P1;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "REACTOR_P2:"))
+    {
+      dat >> REACTOR_P2;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "REACTOR_P3:"))
+    {
+      dat >> REACTOR_P3;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "REACTOR_P4:"))
+    {
+      dat >> REACTOR_P4;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "REACTOR_P5:"))
+    {
+      dat >> REACTOR_P5;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "REACTOR_P6:"))
+    {
+      dat >> REACTOR_P6;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "REACTOR_P7:"))
+    {
+      dat >> REACTOR_P7;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "REACTOR_P8:"))
+    {
+      dat >> REACTOR_P8;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "REACTOR_P9:"))
+    {
+      dat >> REACTOR_P9;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "REACTOR_P10:"))
+    {
+      dat >> REACTOR_P10;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "REACTOR_P11:"))
+    {
+      dat >> REACTOR_P11;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "REACTOR_P12:"))
+    {
+      dat >> REACTOR_P12;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "REACTOR_P13:"))
+    {
+      dat >> REACTOR_P13;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "REACTOR_P14:"))
+    {
+      dat >> REACTOR_P14;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "REACTOR_P15:"))
+    {
+      dat >> REACTOR_P15;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "REACTOR_P16:"))
+    {
+      dat >> REACTOR_P16;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "REACTOR_P17:"))
+    {
+      dat >> REACTOR_P17;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "REACTOR_P18:"))
+    {
+      dat >> REACTOR_P18;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "REACTOR_P19:"))
+    {
+      dat >> REACTOR_P19;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "REACTOR_P20:"))
+    {
+      dat >> REACTOR_P20;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "REACTOR_P21:"))
+    {
+      dat >> REACTOR_P21;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "REACTOR_P22:"))
+    {
+      dat >> REACTOR_P22;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "REACTOR_P23:"))
+    {
+      dat >> REACTOR_P23;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "REACTOR_P24:"))
+    {
+      dat >> REACTOR_P24;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "REACTOR_P25:"))
+    {
+      dat >> REACTOR_P25;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "REACTOR_P26:"))
+    {
+      dat >> REACTOR_P26;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "REACTOR_P27:"))
+    {
+      dat >> REACTOR_P27;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "REACTOR_P28:"))
+    {
+      dat >> REACTOR_P28;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "REACTOR_P29:"))
+    {
+      dat >> REACTOR_P29;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "REACTOR_P30:"))
+    {
+      dat >> REACTOR_P30;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "WENO_TYPE:"))
+    {
+      dat >> WENO_TYPE;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "CHANNEL_STATISTICS2_WITH_MODEL:"))
+    {
+      dat >> CHANNEL_STATISTICS2_WITH_MODEL;
+      N_Param++;
+    }
+    if (!strcmp(line, "CYLINDER_22000_YPLUS_SIDES:"))
+    {
+      dat >> CYLINDER_22000_YPLUS_SIDES;
+      N_Param++;
+    }
+    if (!strcmp(line, "CYLINDER_22000_YPLUS_FRONT:"))
+    {
+      dat >> CYLINDER_22000_YPLUS_FRONT;
+      N_Param++;
+    }
+    if (!strcmp(line, "CYLINDER_22000_YPLUS_BACK:"))
+    {
+      dat >> CYLINDER_22000_YPLUS_BACK;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "BULK_REACTION_DISC:"))
+    {
+      dat >> BULK_REACTION_DISC;
+      N_Param++;
+    }
+    if (!strcmp(line, "BULK_SOLD_PARAMETER_TYPE:"))
+    {
+      dat >> BULK_SOLD_PARAMETER_TYPE;
+      N_Param++;
+    }
+    if (!strcmp(line, "BULK_REACTION_MASS_LUMPING:"))
+    {
+      dat >> BULK_REACTION_MASS_LUMPING;
+      N_Param++;
+    }
+    if (!strcmp(line, "BULK_METHODS_OF_MOMENTS:"))
+    {
+      dat >> BULK_METHODS_OF_MOMENTS;
+      N_Param++;
+    }
+    if (!strcmp(line, "BULK_MOM_DISC:"))
+    {
+      dat >> BULK_MOM_DISC;
+      N_Param++;
+    }
+    if (!strcmp(line, "BULK_REACTION_C_CUT:"))
+    {
+      dat >> BULK_REACTION_C_CUT;
+      N_Param++;
+    }
+    if (!strcmp(line, "BULK_PB_DISC:"))
+    {
+      dat >> BULK_PB_DISC;
+      N_Param++;
+    }
+    if (!strcmp(line, "BULK_GROWTH_RATE:"))
+    {
+      dat >> BULK_GROWTH_RATE;
+      N_Param++;
+    }
+    if (!strcmp(line, "BULK_PB_DISC_STAB:"))
+    {
+      dat >> BULK_PB_DISC_STAB;
+      N_Param++;
+    }
+    if (!strcmp(line, "BULK_PB_DISC_FCT_GROUP:"))
+    {
+      dat >> BULK_PB_DISC_FCT_GROUP;
+      N_Param++;
+    }
+    if (!strcmp(line, "N_CELL_LAYERS_PSD:"))
+    {
+      dat >> N_CELL_LAYERS_PSD;
+      N_Param++;
+    }
+    if (!strcmp(line, "N_CELL_LAYERS_PSD_2:"))
+    {
+      dat >> N_CELL_LAYERS_PSD_2;
+      N_Param++;
+    }
+    if (!strcmp(line, "OUTPUT_NODE_LAYER_PSD:"))
+    {
+      dat >> OUTPUT_NODE_LAYER_PSD;
+      N_Param++;
+    }
+    if (!strcmp(line, "BULK_D_P_0:"))
+    {
+      dat >> BULK_D_P_0;
+      N_Param++;
+    }
+    if (!strcmp(line, "BULK_D_P_MAX:"))
+    {
+      dat >> BULK_D_P_MAX;
+      N_Param++;
+    }
+    if (!strcmp(line, "BULK_k_g:"))
+    {
+      dat >> BULK_k_g;
+      N_Param++;
+    }
+    if (!strcmp(line, "BULK_C_g:"))
+    {
+      dat >> BULK_C_g;
+      N_Param++;
+    }
+    if (!strcmp(line, "BULK_c_C_infty_sat:"))
+    {
+      dat >> BULK_c_C_infty_sat;
+      N_Param++;
+    }
+    if (!strcmp(line, "BULK_l_infty:"))
+    {
+      dat >> BULK_l_infty;
+      N_Param++;
+    }
+    if (!strcmp(line, "BULK_u_infty:"))
+    {
+      dat >> BULK_u_infty;
+      N_Param++;
+    }
+    if (!strcmp(line, "BULK_k_nuc:"))
+    {
+      dat >> BULK_k_nuc;
+      N_Param++;
+    }
+    if (!strcmp(line, "BULK_C_2:"))
+    {
+      dat >> BULK_C_2;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "SSMUM_MP_X:"))
+    {
+      dat >> SSMUM_MP_X;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "SSMUM_MP_Y:"))
+    {
+      dat >> SSMUM_MP_Y;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "SSMUM_OUTER_RADIUS:"))
+    {
+      dat >> SSMUM_OUTER_RADIUS;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "SSMUM_INNER_RADIUS:"))
+    {
+      dat >> SSMUM_INNER_RADIUS;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "SSMUM_ROT_PER_SECOND:"))
+    {
+      dat >> SSMUM_ROT_PER_SECOND;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "SSMUM_INTERPOLATION:"))
+    {
+      dat >> SSMUM_INTERPOLATION;
+      N_Param++;
+    }
+    if (!strcmp(line, "PB_DISC_TYPE:"))
+    {
+      dat >> PB_DISC_TYPE;
+      N_Param++;
+    }
+    if (!strcmp(line, "PB_TIME_DISC:"))
+    {
+      dat >> PB_TIME_DISC;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "MATLAB_MATRIX:"))
+    {
+      dat >> line;
+      aux_char = new char[strlen(line) + 1];
+      strcpy(aux_char, line);
+      delete [] MATLAB_MATRIX;
+      MATLAB_MATRIX = aux_char;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "WRITE_MATLAB:"))
+    {
+      dat >> WRITE_MATLAB;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "WRITE_MATLAB_MATRIX:"))
+    {
+      dat >> WRITE_MATLAB_MATRIX;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "NC_TYPE:"))
+    {
+      dat >> NC_TYPE;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "INPUT_QUAD_RULE:"))
+    {
+      dat >> INPUT_QUAD_RULE;
+      N_Param++;
+    }
+
+
+
+    if (!strcmp(line, "Par_P0:"))
+    {
+      dat >> Par_P0;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "Par_P1:"))
+    {
+      dat >> Par_P1;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "Par_P2:"))
+    {
+      dat >> Par_P2;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "Par_P3:"))
+    {
+      dat >> Par_P3;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "Par_P4:"))
+    {
+      dat >> Par_P4;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "Par_P5:"))
+    {
+      dat >> Par_P5;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "Par_P6:"))
+    {
+      dat >> Par_P6;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "Par_P7:"))
+    {
+      dat >> Par_P7;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "Par_P8:"))
+    {
+      dat >> Par_P8;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "Par_P9:"))
+    {
+      dat >> Par_P9;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "Par_P10:"))
+    {
+      dat >> Par_P10;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "Par_P11:"))
+    {
+      dat >> Par_P11;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "Par_P12:"))
+    {
+      dat >> Par_P12;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "Par_P13:"))
+    {
+      dat >> Par_P13;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "Par_P14:"))
+    {
+      dat >> Par_P14;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "Par_P15:"))
+    {
+      dat >> Par_P15;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "Par_P16:"))
+    {
+      dat >> Par_P16;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "Par_P17:"))
+    {
+      dat >> Par_P17;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "Par_P18:"))
+    {
+      dat >> Par_P18;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "Par_P19:"))
+    {
+      dat >> Par_P19;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "Par_P20:"))
+    {
+      dat >> Par_P20;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "PBE_P0:"))
+    {
+      dat >> PBE_P0;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "PBE_P1:"))
+    {
+      dat >> PBE_P1;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "PBE_P2:"))
+    {
+      dat >> PBE_P2;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "PBE_P3:"))
+    {
+      dat >> PBE_P3;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "PBE_P4:"))
+    {
+      dat >> PBE_P4;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "PBE_P5:"))
+    {
+      dat >> PBE_P5;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "PBE_P6:"))
+    {
+      dat >> PBE_P6;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "PBE_P7:"))
+    {
+      dat >> PBE_P7;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "PBE_P8:"))
+    {
+      dat >> PBE_P8;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "PBE_P9:"))
+    {
+      dat >> PBE_P9;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "DG_P0:"))
+    {
+      dat >> DG_P0;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "DG_P1:"))
+    {
+      dat >> DG_P1;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "DG_P2:"))
+    {
+      dat >> DG_P2;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "DG_P3:"))
+    {
+      dat >> DG_P3;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "DG_P4:"))
+    {
+      dat >> DG_P4;
+      N_Param++;
+    }
+    if (!strcmp(line, "DG_P5:"))
+    {
+      dat >> DG_P5;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "DG_P6:"))
+    {
+      dat >> DG_P6;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "DG_P7:"))
+    {
+      dat >> DG_P7;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "DG_P8:"))
+    {
+      dat >> DG_P8;
+      N_Param++;
+    } 
+
+    if (!strcmp(line, "DG_P9:"))
+    {
+      dat >> DG_P9;
+      N_Param++;
+    }    
+
+    if (!strcmp(line, "MOVING_BOUNDARY:"))
+    {
+      dat >> MOVING_BOUNDARY;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "DEPENDENT_BASIS:"))
+    {
+      dat >> DEPENDENT_BASIS;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "DEPENDENT_BASIS_Q1:"))
+    {
+      dat >> DEPENDENT_BASIS_Q1;
+      N_Param++;
+    }
+
+    if (!strcmp(line, ""))
+    {
+      dat >> DEPENDENT_BASIS_Q2;
+      N_Param++;
+    }
+
+    // parameters for weakly imposing boundary/interface conditions
+    if (!strcmp(line, "n_neumann_boundary:"))
+    {
+      dat >>  n_neumann_boundary;
+      N_Param++;
+      neumann_boundary_id.resize(n_neumann_boundary);
+      neumann_boundary_value.resize(n_neumann_boundary);
+      //parameters for weakly imposing boundary/interface conditions
+      std::fill(neumann_boundary_id.begin(),
+          neumann_boundary_id.end(), -1);
+
+      std::fill(neumann_boundary_value.begin(),
+          neumann_boundary_value.end(), 0.);
+    }
+
+    if (!strcmp(line, "neumann_boundary_id:")) {
+      for (int ib=0; ib< n_neumann_boundary; ib++) {
+        dat >> neumann_boundary_id[ib];
+	}
+    }
+
+    if (!strcmp(line, "neumann_boundary_value:")) {
+      for (int ib=0; ib< n_neumann_boundary; ib++) {
+        dat >> neumann_boundary_value[ib];
+      }
+    }
+
+
+    if (!strcmp(line, "n_unvn_boundary:"))
+    {
+      dat >>  n_unvn_boundary;
+      N_Param++;
+      unvn_boundary_id.resize(n_unvn_boundary);
+      unvn_boundary_value.resize(n_unvn_boundary);
+      //parameters for weakly imposing boundary/interface conditions
+      std::fill(unvn_boundary_id.begin(),
+          unvn_boundary_id.end(), -1);
+
+      std::fill(unvn_boundary_value.begin(),
+          unvn_boundary_value.end(), 0.);
+    }
+
+    if (!strcmp(line, "unvn_boundary_id:")) {
+      for (int ib=0; ib< n_unvn_boundary; ib++) {
+        dat >> unvn_boundary_id[ib];
+      }
+    }
+
+    if (!strcmp(line, "unvn_boundary_value:")) {
+      for (int ib=0; ib< n_unvn_boundary; ib++) {
+        dat >> unvn_boundary_value[ib];
+      }
+    }
+
+
+    if (!strcmp(line, "n_gradunv_boundary:"))
+    {
+      dat >>  n_gradunv_boundary;
+      N_Param++;
+      gradunv_boundary_id.resize(n_gradunv_boundary);
+      gradunv_boundary_value.resize(n_gradunv_boundary);
+      //parameters for weakly imposing boundary/interface conditions
+      std::fill(gradunv_boundary_id.begin(),
+          gradunv_boundary_id.end(), -1);
+
+      std::fill(gradunv_boundary_value.begin(),
+          gradunv_boundary_value.end(), 0.);
+    }
+
+    if (!strcmp(line, "gradunv_boundary_id:")) {
+      for (int ib=0; ib< n_gradunv_boundary; ib++) {
+        dat >> gradunv_boundary_id[ib];
+      }
+    }
+
+    if (!strcmp(line, "gradunv_boundary_value:")) {
+      for (int ib=0; ib< n_gradunv_boundary; ib++) {
+        dat >> gradunv_boundary_value[ib];
+      }
+    }
+
+
+    if (!strcmp(line, "n_u_v_boundary:"))
+    {
+      dat >>  n_u_v_boundary;
+      N_Param++;
+      u_v_boundary_id.resize(n_u_v_boundary);
+      u_v_boundary_value.resize(n_u_v_boundary);
+      //parameters for weakly imposing boundary/interface conditions
+      std::fill(u_v_boundary_id.begin(),
+          u_v_boundary_id.end(), -1);
+
+      std::fill(u_v_boundary_value.begin(),
+          u_v_boundary_value.end(), 0.);
+    }
+
+    if (!strcmp(line, "u_v_boundary_id:")) {
+      for (int ib=0; ib< n_u_v_boundary; ib++) {
+        dat >> u_v_boundary_id[ib];
+      }
+    }
+
+    if (!strcmp(line, "u_v_boundary_value:")) {
+      for (int ib=0; ib< n_u_v_boundary; ib++) {
+        dat >> u_v_boundary_value[ib];
+      }
+    }
+
+
+    if (!strcmp(line, "n_g_v_boundary:"))
+    {
+      dat >>  n_g_v_boundary;
+      N_Param++;
+      g_v_boundary_id.resize(n_g_v_boundary);
+      g_v_boundary_value.resize(n_g_v_boundary);
+      //parameters for weakly imposing boundary/interface conditions
+      std::fill(g_v_boundary_id.begin(),
+          g_v_boundary_id.end(), -1);
+
+      std::fill(g_v_boundary_value.begin(),
+          g_v_boundary_value.end(), 0.);
+    }
+
+    if (!strcmp(line, "g_v_boundary_id:")) {
+      for (int ib=0; ib< n_g_v_boundary; ib++) {
+        dat >> g_v_boundary_id[ib];
+      }
+    }
+
+    if (!strcmp(line, "g_v_boundary_value:")) {
+      for (int ib=0; ib< n_g_v_boundary; ib++) {
+        dat >> g_v_boundary_value[ib];
+      }
+    }
+
+
+    if (!strcmp(line, "n_p_v_n_boundary:"))
+    {
+      dat >>  n_p_v_n_boundary;
+      N_Param++;
+      p_v_n_boundary_id.resize(n_p_v_n_boundary);
+      p_v_n_boundary_value.resize(n_p_v_n_boundary);
+      //parameters for weakly imposing boundary/interface conditions
+      std::fill(p_v_n_boundary_id.begin(),
+          p_v_n_boundary_id.end(), -1);
+
+      std::fill(p_v_n_boundary_value.begin(),
+          p_v_n_boundary_value.end(), 0.);
+    }
+
+    if (!strcmp(line, "p_v_n_boundary_id:")) {
+      for (int ib=0; ib< n_p_v_n_boundary; ib++) {
+        dat >> p_v_n_boundary_id[ib];
+      }
+    }
+
+    if (!strcmp(line, "p_v_n_boundary_value:")) {
+      for (int ib=0; ib< n_p_v_n_boundary; ib++) {
+        dat >> p_v_n_boundary_value[ib];
+      }
+    }
+
+    // Nitsche Combi- weak Dirichlet
+    if (!strcmp(line, "n_nitsche_boundary:"))
+    {
+      dat >>  n_nitsche_boundary;
+      N_Param++;
+      nitsche_boundary_id.resize(n_nitsche_boundary);
+      nitsche_penalty.resize(n_nitsche_boundary);
+      //parameters for weakly imposing boundary/interface conditions
+      std::fill(nitsche_boundary_id.begin(),
+          nitsche_boundary_id.end(), -1);
+
+      std::fill(nitsche_penalty.begin(),
+          nitsche_penalty.end(), 0.);
+    }
+
+    if (!strcmp(line, "s1:"))
+    {
+      dat >> s1;
+      N_Param++;
+    }
+
+    if (!strcmp(line, "s2:"))
+    {
+      dat >> s2;
+      N_Param++;
+    }
+    if (!strcmp(line, "nitsche_boundary_id:")) {
+      for (int ib=0; ib< n_nitsche_boundary; ib++) {
+        dat >> nitsche_boundary_id[ib];
+      }
+    }
+
+    if (!strcmp(line, "nitsche_penalty:")) {
+      for (int ib=0; ib< n_nitsche_boundary; ib++) {
+        dat >> nitsche_penalty[ib];
+      }
+    }
+
+    // ----------------------------------------------------------------
+
+
+
+
+    if (!strcmp(line, "timeprofiling:"))
+    {
+      dat >> timeprofiling;
+      N_Param++;
+    }
+    if (!strcmp(line, "MapperType:"))
+    {
+      dat >> MapperType;
+      N_Param++;
+    }
+    if (!strcmp(line, "DSType:"))
+    {
+      dat >> DSType;
+      N_Param++;
+    }
+
+    // read until end of line
+    dat.getline (line, max_line_length-1);
+  }
+  
+  dat.close();
+  
+  if (START_RE_NR < 0)
+    START_RE_NR = RE_NR;
+
+  if(rank==0)
+    Output::info("read_parameters", "Parameter database (old) read with ",
+                 N_Param, " parameters. Parameter file version ",
+                 VERSION);
+}
+
+
 // Constructors
-TDatabase::TDatabase()
+TDatabase::TDatabase(const char *ParamFile)
 {
   // allocate databases
   ShapeDB = new TShapeDesc*[N_SHAPES];
-  RefDescDB = new TRefDesc*[N_SHAPES + N_REFDESC + 2*N_MORTARDESC];
+  RefDescDB = new TRefDesc*[N_SHAPES + N_REFDESC];
   MapperDB = new TMapper*[N_MAPPER];
   IteratorDB = new TIterator*[N_ITERATORS];
   ParamDB = new TParamDB;
@@ -288,12 +2562,15 @@ TDatabase::TDatabase()
   IteratorDB[It_Between] = new TIt_Between();
   IteratorDB[It_OCAF] = new TIt_OCAF();
 
-  #ifdef __MORTAR__
-    IteratorDB[It_Mortar1] = new TIt_Mortar();
-    IteratorDB[It_Mortar2] = new TIt_Mortar();
-  #endif  
   // Initialization of the default parameters
   SetDefaultParameters();
+  if(ParamFile)
+  {
+    //read the param file and fil the old database
+    Output::info<4>("READ-IN", "Constructing old database from file ",
+                    ParamFile);
+    read_parameters(ParamFile);
+  }
 }
 
 TShapeDesc **TDatabase::ShapeDB = nullptr;
@@ -304,26 +2581,6 @@ TParamDB   *TDatabase::ParamDB = nullptr;
 TTimeDB    *TDatabase::TimeDB = nullptr;
 
 // Methods
-
-#ifdef __MORTAR__
-
-void TDatabase::AddMortar0(int Mortar_Ni, int N)
-{
-  RefDescDB[N_SHAPES + Mortar + Mortar_Ni] = new
-               TRefMortar0Desc(ShapeDB[Quadrangle], Mortar_Ni, N);
-  RefDescDB[N_SHAPES + MortarLine + Mortar_Ni] = new
-               TRefMortarLineDesc(ShapeDB[S_Line], N);
-}
-
-void TDatabase::AddMortar1(int Mortar_Ni, int N)
-{
-  RefDescDB[N_SHAPES + Mortar + Mortar_Ni] = new
-               TRefMortar1Desc(ShapeDB[Quadrangle], Mortar_Ni, N);
-  RefDescDB[N_SHAPES + MortarLine + Mortar_Ni] = new
-               TRefMortarLineDesc(ShapeDB[S_Line], N);
-}
-#endif
-
 void TDatabase::SetDefaultParameters()
 {
   char *tmp;
@@ -397,14 +2654,13 @@ void TDatabase::SetDefaultParameters()
     
   ParamDB->SIGMA_PERM = 1;
 
-  ParamDB->VISCOSITY = 1;
-  ParamDB->EFFECTIVE_VISCOSITY = 1;
-  ParamDB->PERMEABILITY = 1;
   ParamDB->equal_order_stab_weight_PkPk = 0;
   ParamDB->grad_div_stab_weight = 0;
   ParamDB->SIGN_MATRIX_BI = 1;
   ParamDB->l_T = 1;
   ParamDB->L_0 = 1;
+  ParamDB->SOURCE_SINK_FUNCTION = false;
+
   
   ParamDB->LAPLACETYPE = 0;
   ParamDB->USE_ISOPARAMETRIC = 1;
@@ -453,8 +2709,6 @@ void TDatabase::SetDefaultParameters()
   ParamDB->DIV_DIV_STAB_TYPE = 0;        // stabilization for div-div term 
   ParamDB->DIV_DIV_STAB_C1 = 2;
   ParamDB->DIV_DIV_STAB_C2 = 1;
-
-  ParamDB->NSE_NONLINEAR_FORM = 0;       // skew symmetric convective term in NSE
 
   ParamDB->LP_FULL_GRADIENT = 1;
   ParamDB->LP_STREAMLINE = 0;
@@ -607,10 +2861,6 @@ void TDatabase::SetDefaultParameters()
   ParamDB-> s2 = 0;
 
   
-  ParamDB->TETGEN_QUALITY = 0.0;
-  ParamDB->TETGEN_VOLUMEN = 0.0;
-  ParamDB->TETGEN_STEINER = 0;
-
   ParamDB->CHAR_L0=1.;
   ParamDB->D_VISCOSITY=1.0;
   ParamDB->SURF_TENSION=0.;
@@ -638,7 +2888,6 @@ void TDatabase::SetDefaultParameters()
   TimeDB->TIMESTEPLENGTH_PARA_ATOL = 0.001;
   TimeDB->TIMESTEPLENGTH_PARA_RTOL = 0.001;
   TimeDB->RESET_CURRENTTIME = 0;
-  TimeDB->RESET_CURRENTTIME_STARTTIME = 0.0;
   TimeDB->STEADY_STATE_TOL = 1e-3;
   TimeDB->SCALE_DIVERGENCE_CONSTRAINT = -1.0;
 
@@ -658,8 +2907,6 @@ void TDatabase::SetDefaultParameters()
   TimeDB->TIME_DISC = 2;
   TimeDB->TIME_DISC2 = -1;
 
-  TimeDB->STARTTIME = 0;
-  TimeDB->ENDTIME = 1;
   TimeDB->EXTRAPOLATE_WEIGHT = 1;
   TimeDB->EXTRAPOLATE_STEPS = 0;
   TimeDB->EXTRAPOLATE_PRESSURE = 0;
@@ -719,6 +2966,7 @@ void TDatabase::SetDefaultParameters()
   ParamDB->INTERNAL_PRESSURE_SPACE = 0;
   ParamDB->INTERNAL_SLIP_WITH_FRICTION = 0;
   ParamDB->INTERNAL_SLIP_WITH_FRICTION_IDENTITY = 0;
+  ParamDB->INTERNAL_SLIP_WEAK_FORM = 0;// 1=weak penetr.(original),0=strong penetr.(like 2D)
   ParamDB->INTERNAL_QUAD_HEXA = 0;
   ParamDB->INTERNAL_QUAD_TETRA = 0;
   ParamDB->INTERNAL_QUAD_QUAD = 0;
@@ -1087,14 +3335,12 @@ void TDatabase::WriteParamDB(char *ExecutedFile)
   printToFile("WEAK_BC_SIGMA: ", ParamDB->WEAK_BC_SIGMA);
   printToFile("WEAK_BC: ", ParamDB->WEAK_BC);
 
-  printToFile("EFFECTIVE_VISCOSITY: " ,ParamDB->EFFECTIVE_VISCOSITY);
-  printToFile("VISCOSITY: ", ParamDB->VISCOSITY);
-  printToFile("PERMEABILITY: ", ParamDB->PERMEABILITY);
   printToFile("EQUAL_ORDER_STAB_WEIGHT_PkPk: ", ParamDB->equal_order_stab_weight_PkPk); 
   printToFile("GRAD_DIV_STAB_WEIGHT: ", ParamDB->grad_div_stab_weight); 
   printToFile("SIGN_MATRIX_BI: ", ParamDB->SIGN_MATRIX_BI);
   printToFile("l_T: ", ParamDB->l_T);
   printToFile("L_0: ", ParamDB->L_0); 
+  printToFile("SOURCE_SINK_FUNCTION: ", ParamDB->SOURCE_SINK_FUNCTION);
 
   printToFile("RE_NR: ", ParamDB->RE_NR);
   printToFile("RA_NR: ", ParamDB->RA_NR);
@@ -1150,7 +3396,6 @@ void TDatabase::WriteParamDB(char *ExecutedFile)
   printToFile("DIV_DIV_STAB_TYPE: ", ParamDB->DIV_DIV_STAB_TYPE); 
   printToFile("DIV_DIV_STAB_C1: ", ParamDB->DIV_DIV_STAB_C1); 
   printToFile("DIV_DIV_STAB_C2: ", ParamDB->DIV_DIV_STAB_C2); 
-  printToFile("NSE_NONLINEAR_FORM: ", ParamDB->NSE_NONLINEAR_FORM);
   printToFile("OSEEN_ZERO_ORDER_COEFF: ", ParamDB->OSEEN_ZERO_ORDER_COEFF);
 
   printToFile("LP_FULL_GRADIENT: ", ParamDB->LP_FULL_GRADIENT);
@@ -1385,7 +3630,6 @@ void TDatabase::WriteTimeDB()
   printToFile("TIMESTEPLENGTH_PARA_ATOL: ",  TimeDB->TIMESTEPLENGTH_PARA_ATOL);
   printToFile("TIMESTEPLENGTH_PARA_RTOL: ",  TimeDB->TIMESTEPLENGTH_PARA_RTOL);
   printToFile("RESET_CURRENTTIME: ", TimeDB->RESET_CURRENTTIME);
-  printToFile("RESET_CURRENTTIME_STARTTIME: ", TimeDB->RESET_CURRENTTIME_STARTTIME);
   printToFile("STEADY_STATE_TOL: ", TimeDB->STEADY_STATE_TOL);
   printToFile("SCALE_DIVERGENCE_CONSTRAINT: ", TimeDB->SCALE_DIVERGENCE_CONSTRAINT);
 
@@ -1404,9 +3648,6 @@ void TDatabase::WriteTimeDB()
 
   printToFile("TIME_DISC: ", TimeDB->TIME_DISC);
   printToFile("TIME_DISC2: ", TimeDB->TIME_DISC2);
-
-  printToFile("STARTTIME: ", TimeDB->STARTTIME);
-  printToFile("ENDTIME: ", TimeDB->ENDTIME);
 
   printToFile("T0: ", TimeDB->T0);
   printToFile("T1: ", TimeDB->T1);
@@ -1456,7 +3697,7 @@ TDatabase::~TDatabase()
     delete ShapeDB[Brick];
   #endif
   delete [] ShapeDB;
-  
+   
   delete RefDescDB[S_Line];
   delete RefDescDB[Triangle];
   delete RefDescDB[Quadrangle];
@@ -1469,6 +3710,7 @@ TDatabase::~TDatabase()
   #endif
   delete RefDescDB[N_SHAPES + LineReg];
   delete RefDescDB[N_SHAPES + TriReg];
+  delete RefDescDB[N_SHAPES + TriBary];
   delete RefDescDB[N_SHAPES + TriBis0];
   delete RefDescDB[N_SHAPES + TriBis1];
   delete RefDescDB[N_SHAPES + TriBis2];
@@ -1496,6 +3738,7 @@ TDatabase::~TDatabase()
 
   #ifdef __3D__
     delete RefDescDB[N_SHAPES + TetraReg];
+    delete RefDescDB[N_SHAPES + TetraBary];
     delete RefDescDB[N_SHAPES + TetraReg0];
     delete RefDescDB[N_SHAPES + TetraReg1];
     delete RefDescDB[N_SHAPES + TetraReg2];
@@ -1590,15 +3833,316 @@ TDatabase::~TDatabase()
   delete IteratorDB[It_LELevel];
   delete IteratorDB[It_Between];
   delete IteratorDB[It_OCAF];
-
-  #ifdef __MORTAR__
-    delete IteratorDB[It_Mortar1];
-    delete IteratorDB[It_Mortar2];
-  #endif
   delete [] IteratorDB;
 }
 
-TParaDB::~TParaDB()
+void TDatabase::read_parameters(const char* ParamFile)
+{
+  ParamDB->read_parameters(ParamFile);
+  TimeDB->read_parameters(ParamFile);
+}
+
+void TTimeDB::read_parameters(const char* ParamFile)
+{
+  int rank = 0;
+#ifdef _MPI
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+#endif
+
+  // if the max_line_length is too short, the program simply hangs
+  size_t max_line_length = 1000;
+  char line[max_line_length];
+  int N_Param = 0;
+  std::ifstream dat(ParamFile);
+
+  if (!dat)
+  {
+    if(rank==0)
+      cerr << "cannot open '" << ParamFile << "' for input" << endl;
+    exit(-1);
+  }
+
+  while (!dat.eof())
+  {
+    dat >> line;
+
+    // read in parameter for time discretization
+    if (!strcmp(line, "STEPLENGTH:"))
+    {
+      dat >> TIMESTEPLENGTH;
+      N_Param++;
+    }
+    if (!strcmp(line, "TIMESTEPLENGTH:"))
+    {
+      dat >> TIMESTEPLENGTH;
+      N_Param++;
+    }
+    if (!strcmp(line, "MIN_TIMESTEPLENGTH:"))
+    {
+      dat >> MIN_TIMESTEPLENGTH;
+      N_Param++;
+    }
+    if (!strcmp(line, "MAX_TIMESTEPLENGTH:"))
+    {
+      dat >> MAX_TIMESTEPLENGTH;
+      N_Param++;
+    }
+    if (!strcmp(line, "TIMESTEPLENGTH_TOL:"))
+    {
+      dat >> TIMESTEPLENGTH_TOL;
+      N_Param++;
+    }
+    if (!strcmp(line, "TIMESTEPLENGTH_CONTROL:"))
+    {
+      dat >> TIMESTEPLENGTH_CONTROL;
+      N_Param++;
+    }
+    if (!strcmp(line, "TIMESTEPLENGTH_CONTROLLER:"))
+    {
+      dat >> TIMESTEPLENGTH_CONTROLLER;
+      N_Param++;
+    }
+    if (!strcmp(line, "TIMESTEPLENGTH_PARA_KK_I:"))
+    {
+      dat >> TIMESTEPLENGTH_PARA_KK_I;
+      N_Param++;
+    }
+    if (!strcmp(line, "TIMESTEPLENGTH_PARA_KK_P:"))
+    {
+      dat >> TIMESTEPLENGTH_PARA_KK_P;
+      N_Param++;
+    }
+    if (!strcmp(line, "TIMESTEPLENGTH_PARA_KK_E:"))
+    {
+      dat >> TIMESTEPLENGTH_PARA_KK_E;
+      N_Param++;
+    }
+    if (!strcmp(line, "TIMESTEPLENGTH_PARA_KK_R:"))
+    {
+      dat >> TIMESTEPLENGTH_PARA_KK_R;
+      N_Param++;
+    }
+    if (!strcmp(line, "TIMESTEPLENGTH_PARA_KK_D:"))
+    {
+      dat >> TIMESTEPLENGTH_PARA_KK_D;
+      N_Param++;
+    }
+    if (!strcmp(line, "TIMESTEPLENGTH_PARA_FAC:"))
+    {
+      dat >> TIMESTEPLENGTH_PARA_FAC;
+      N_Param++;
+    }
+    if (!strcmp(line, "TIMESTEPLENGTH_PARA_FAC_MAX:"))
+    {
+      dat >> TIMESTEPLENGTH_PARA_FAC_MAX;
+      N_Param++;
+    }
+    if (!strcmp(line, "TIMESTEPLENGTH_PARA_FAC_MIN:"))
+    {
+      dat >> TIMESTEPLENGTH_PARA_FAC_MIN;
+      N_Param++;
+    }
+    if (!strcmp(line, "TIMESTEPLENGTH_PARA_TOL:"))
+    {
+      dat >> TIMESTEPLENGTH_PARA_TOL;
+      N_Param++;
+    }
+    if (!strcmp(line, "TIMESTEPLENGTH_PARA_ATOL:"))
+    {
+      dat >> TIMESTEPLENGTH_PARA_ATOL;
+      N_Param++;
+    }
+    if (!strcmp(line, "TIMESTEPLENGTH_PARA_RTOL:"))
+    {
+      dat >> TIMESTEPLENGTH_PARA_RTOL;
+      N_Param++;
+    }
+
+    
+    if (!strcmp(line, "RESET_CURRENTTIME:"))
+    {
+      dat >> RESET_CURRENTTIME;
+      N_Param++;
+    }
+    if (!strcmp(line, "STEADY_STATE_TOL:"))
+    {
+      dat >> STEADY_STATE_TOL;
+      N_Param++;
+    }
+    if (!strcmp(line, "SCALE_DIVERGENCE_CONSTRAINT:"))
+    {
+      dat >> SCALE_DIVERGENCE_CONSTRAINT;
+      N_Param++;
+    }
+    if (!strcmp(line, "EXTRAPOLATE_WEIGHT:"))
+    {
+      dat >> EXTRAPOLATE_WEIGHT;
+      N_Param++;
+    }
+    if (!strcmp(line, "EXTRAPOLATE_STEPS:"))
+    {
+      dat >> EXTRAPOLATE_STEPS;
+      N_Param++;
+    }
+    if (!strcmp(line, "EXTRAPOLATE_PRESSURE:"))
+    {
+      dat >> EXTRAPOLATE_PRESSURE;
+      N_Param++;
+    }
+    if (!strcmp(line, "EXTRAPOLATE_VELOCITY:"))
+    {
+      dat >> EXTRAPOLATE_VELOCITY;
+      N_Param++;
+    }
+    if (!strcmp(line, "TIME_DISC:"))
+    {
+      dat >> TIME_DISC;
+      N_Param++;
+    }
+    if (!strcmp(line, "TIME_DISC2:"))
+    {
+      dat >> TIME_DISC2;
+      N_Param++;
+    }
+    if (!strcmp(line, "FIRST_SSC_STEP:"))
+    {
+      dat >> FIRST_SSC_STEP;
+      N_Param++;
+    }
+    if (!strcmp(line, "T0:"))
+    {
+      dat >> T0;
+      N_Param++;
+    }
+    if (!strcmp(line, "T1:"))
+    {
+      dat >> T1;
+      N_Param++;
+    }
+    if (!strcmp(line, "T2:"))
+    {
+      dat >> T2;
+      N_Param++;
+    }
+    if (!strcmp(line, "T3:"))
+    {
+      dat >> T3;
+      N_Param++;
+    }
+    if (!strcmp(line, "T4:"))
+    {
+      dat >> T4;
+      N_Param++;
+    }
+    if (!strcmp(line, "T5:"))
+    {
+      dat >> T5;
+      N_Param++;
+    }
+    if (!strcmp(line, "T6:"))
+    {
+      dat >> T6;
+      N_Param++;
+    }
+    if (!strcmp(line, "T7:"))
+    {
+      dat >> T7;
+      N_Param++;
+    }
+    if (!strcmp(line, "T8:"))
+    {
+      dat >> T8;
+      N_Param++;
+    }
+    if (!strcmp(line, "T9:"))
+    {
+      dat >> T9;
+      N_Param++;
+    }
+    if (!strcmp(line, "STEPS_PER_IMAGE:"))
+    {
+      dat >> STEPS_PER_IMAGE;
+      N_Param++;
+    }
+    if (!strcmp(line, "STEPS_PER_SNAP:"))
+    {
+      dat >> STEPS_PER_SNAP;
+      N_Param++;
+    }
+    if (!strcmp(line, "RB_TYPE:"))
+    {
+      dat >> RB_TYPE;
+      N_Param++;
+    }
+    if (!strcmp(line, "RB_TYPE2:"))
+    {
+      dat >> RB_TYPE2;
+      N_Param++;
+    }
+    if (!strcmp(line, "STEPSIZECONTROL:"))
+    {
+      dat >> RB_SSC;
+      N_Param++;
+    }
+    if (!strcmp(line, "RB_SSC_TOL:"))
+    {
+      dat >> RB_SSC_TOL;
+      N_Param++;
+    }
+    if (!strcmp(line, "RB_SSC_ALPHA:"))
+    {
+      dat >> RB_SSC_ALPHA;
+      N_Param++;
+    }
+    if (!strcmp(line, "RB_SSC_ALPHA_MAX:"))
+    {
+      dat >> RB_SSC_ALPHA_MAX;
+      N_Param++;
+    }
+    if (!strcmp(line, "RB_SSC_ALPHA_MIN:"))
+    {
+      dat >> RB_SSC_ALPHA_MIN;
+      N_Param++;
+    }
+    if (!strcmp(line, "RB_SSC_MAX_ERROR:"))
+    {
+      dat >> RB_SSC_MAX_ERROR;
+      N_Param++;
+    }
+    if (!strcmp(line, "RB_APPROX_J:"))
+    {
+      dat >> RB_APPROX_J;
+      N_Param++;
+    }
+    if (!strcmp(line, "RB_APPROX_C:"))
+    {
+      dat >> RB_APPROX_C;
+      N_Param++;
+    }
+    if (!strcmp(line, "RB_APPROX_STEPS:"))
+    {
+      dat >> RB_APPROX_STEPS;
+      N_Param++;
+    }
+    
+    // read until end of line
+    dat.getline (line, max_line_length-1);
+  }
+  
+  dat.close();
+  
+  if(MIN_TIMESTEPLENGTH < 0)
+    MIN_TIMESTEPLENGTH = TIMESTEPLENGTH/10.0;
+  if(MAX_TIMESTEPLENGTH < 0)
+    MAX_TIMESTEPLENGTH = TIMESTEPLENGTH*10.0;
+  
+  if(rank==0)
+    Output::info("read_parameters","Time database (old) read with ", N_Param,
+                 " parameters.");
+}
+
+
+TParamDB::~TParamDB()
 {
   // call delete on all char* which were created in 
   // TDatabase::SetDefaultParameters()
@@ -1629,6 +4173,11 @@ void check_parameters_consistency_NSE(ParameterDatabase& db)
 #else
   int my_rank = 0;
 #endif
+  if(!db.contains("space_discretization_type"))
+  {
+    ErrThrow("check_parameters_consistency_NSE: you need to set the "
+             "space_discretization_type");
+  }
 
   // Newton method
   if ((TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE)&&(TDatabase::ParamDB->NSTYPE<=2))
@@ -1670,54 +4219,20 @@ void check_parameters_consistency_NSE(ParameterDatabase& db)
       Output::warn<1>("NSE Parameter Consistency","NSTYPE changed from 2 to 4 because of LAPLACETYPE ");
   }
 
-  // equal order
-  if (TDatabase::ParamDB->NSTYPE == 14)
-  {
-    if (!(db["space_discretization_type"].is("sdfem")))
-    {
-      db["space_discretization_type"].set("sdfem");
-      if(my_rank==0)
-      {
-        Output::warn<1>("NSE Parameter Consistency","discretization_type changed to SDFEM "
-            "because NSTYPE 14!!!");
-      }
-    }
-/*
-      if (TDatabase::ParamDB->SC_SMOOTHER_SADDLE<3)
-      {
-    TDatabase::ParamDB->SC_SMOOTHER_SADDLE+=2;
-    OutPut("SC_SMOOTHER_SADDLE changed to " << TDatabase::ParamDB->SC_SMOOTHER_SADDLE);
-    OutPut(" because of continuous pressure"<< endl);
-      }
-      if (TDatabase::ParamDB->SC_COARSE_SMOOTHER_SADDLE<3)
-      {
-    TDatabase::ParamDB->SC_COARSE_SMOOTHER_SADDLE+=2;
-    OutPut("SC_COARSE_SMOOTHER_SADDLE changed to " << TDatabase::ParamDB->SC_COARSE_SMOOTHER_SADDLE);
-    OutPut(" because of continuous pressure"<< endl);
-      }
-*/
-  }
-
   // rotational form
-  if (TDatabase::ParamDB->NSE_NONLINEAR_FORM==2||(TDatabase::ParamDB->NSE_NONLINEAR_FORM==4))
+  Parameter nonlin_form(db["nse_nonlinear_form"]);
+  if(nonlin_form.is("rotational"))
   {
     if (TDatabase::ParamDB->NSTYPE<=2)
     {
       TDatabase::ParamDB->NSTYPE+=2;
       if(my_rank==0)
       {
-        Output::warn<1>("NSE Parameter Consistency","NSTYPE changed to ", TDatabase::ParamDB->NSTYPE);
-        Output::warn<1>("NSE Parameter Consistency"," because of NSE_NONLINEAR_FORM = ", TDatabase::ParamDB->NSE_NONLINEAR_FORM);
+        Output::warn<1>("NSE Parameter Consistency",
+                        "NSTYPE changed to ", TDatabase::ParamDB->NSTYPE);
+        Output::warn<1>("NSE Parameter Consistency",
+                        " because of nse_nonlinear_form = ", nonlin_form);
       }
-    }
-      // change 'db["discretization_type]" for internal reasons
-    if ( db["space_discretization_type"].is("galerkin") )
-    {
-      db["space_discretization_type"].set("smagorinsky");
-      TDatabase::ParamDB->TURBULENT_VISCOSITY_TYPE = 0;
-      if(my_rank==0)
-        Output::warn<1>("NSE Parameter Consistency","discretization_type changed to 'smagorinsky' (4)"
-            " for internal reasons, turbulent viscosity is switched off.");
     }
   }
 

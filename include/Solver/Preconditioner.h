@@ -20,8 +20,8 @@ class Preconditioner
      * @param z The right hand side of the preconditioning.
      * @param r The obtained vector.
      */
-    void apply(unsigned int i, unsigned int j, const Vector &z, Vector &r) const
-    { apply(z, r); }
+    void apply(unsigned int i, unsigned int j, const Vector &z, Vector &r)
+      const;
     
     /** @brief update this preconditioner
      * 
@@ -50,8 +50,25 @@ class NoPreconditioner : public Preconditioner<Vector>
      * @param z The right hand side of the preconditioning.
      * @param r The obtained vector.
      */
-    void apply(unsigned int i, unsigned int j, const Vector &z, Vector &r) const
-    { apply(z, r); }
+    void apply(unsigned int i, unsigned int j, const Vector &z, Vector &r)
+      const;
 };
+
+
+// implementations
+template <class Vector>
+void Preconditioner<Vector>::apply(unsigned int, unsigned int, const Vector &z,
+                                   Vector &r) const
+{
+  apply(z, r);
+}
+
+template <class Vector>
+void NoPreconditioner<Vector>::apply(unsigned int, unsigned int,
+                                     const Vector &z, Vector &r) const
+{
+  apply(z, r);
+}
+
 
 #endif // __PRECONDITIONER_H__

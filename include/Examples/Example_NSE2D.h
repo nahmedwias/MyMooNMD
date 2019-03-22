@@ -20,7 +20,7 @@
 #include<Example2D.h>
 #include <functional>
 
-class NSE2D; //forward declaration
+template <int d> class NavierStokes; //forward declaration
 
 class Example_NSE2D : public Example2D
 {
@@ -30,23 +30,33 @@ class Example_NSE2D : public Example2D
      * This intializes a (Navier-)Stokes example in 2D. It is chosen according
      * to example_code.
      */
-    Example_NSE2D(const ParameterDatabase& user_input_parameter_db);
+    explicit Example_NSE2D(const ParameterDatabase& user_input_parameter_db);
 
     /** @brief initialize your own example
      * 
      * Create an example with all vectors already defined.
      */
-    Example_NSE2D(std::vector <DoubleFunct2D*> exact,
-                  std::vector <BoundCondFunct2D*> bc,
-                  std::vector <BoundValueFunct2D*> bd, CoeffFct2D coeffs,
-                  double nu = 1.);
+    Example_NSE2D(const std::vector<DoubleFunct2D*>& exact,
+                  const std::vector<BoundCondFunct2D*>& bc,
+                  const std::vector<BoundValueFunct2D*>& bd,
+                  const CoeffFct2D& coeffs, double nu = 1.);
   
     /// Apply the function stored as post processing routine.
-    void do_post_processing(NSE2D& nse2d) const;
+    void do_post_processing(NavierStokes<2>& nse2d) const;
 
-    /// Return kinematic viscosity, if set.
+    /// Return kinematic or effective viscosity, if set (depending on example code)
     double get_nu() const;
 
+ 
+    /// Return permeability, if set.
+    double get_inverse_permeability() const;
+
+    /// Return neumann boundary ids, if set
+    std::vector<size_t> get_neumann_id() const;
+
+    /// Return nitsche boundary ids, if set
+    std::vector<size_t> get_nitsche_id() const;
+    
     //Declaration of special member functions - rule of zero
 
     //! Default copy constructor. Performs deep copy.
@@ -67,7 +77,7 @@ class Example_NSE2D : public Example2D
   private:
   /// Function doing the post processing for a stationary example.
   /// TODO put NSE2D argument const as soon as FEFunctions can be copied properly!
-  std::function<void(NSE2D &)> post_processing_stat;
+  std::function<void(NavierStokes<2>&)> post_processing_stat;
   /// TODO Function doing the post processing for a time dependent example.
 };
 

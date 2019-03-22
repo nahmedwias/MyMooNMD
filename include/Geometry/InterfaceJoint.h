@@ -42,15 +42,15 @@ class TInterfaceJoint : public TJointEqN
     virtual TJoint *NewInst();
 
     /** return start parameter T0 */
-    double GetStartParameter()
+    double GetStartParameter() const
     { return T_0; }
 
     /** return end parameter T1 */
-    double GetEndParameter()
+    double GetEndParameter() const
     { return T_1; }
 
     /** return parameters */
-    void GetParameters(double &t0, double &t1)
+    void GetParameters(double &t0, double &t1) const
     {
       t0 = T_0;
       t1 = T_1;
@@ -58,11 +58,11 @@ class TInterfaceJoint : public TJointEqN
 
 #ifdef __2D__
     /** update parameters according to the new vertex positions */
-    void UpdateParameters(TVertex *Begin, TVertex *End);
+    void UpdateParameters(const TVertex *Begin, const TVertex *End);
 #endif
 
     /** return boundary component */
-    TBoundComp2D *GetBoundComp()
+    const TBoundComp2D *GetBoundComp() const
     { return BoundComp; }
 
     /** return the coordinates {X,Y} of parameter value T */

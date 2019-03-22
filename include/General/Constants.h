@@ -45,8 +45,7 @@ enum BoundCond { DIRICHLET, NEUMANN, ROBIN, SLIP, FREESURF,
                  SLIP_FRICTION_PENETRATION_RESISTANCE, 
                  INTERFACE, SUBDOMAIN_INTERFACE, SUBDOMAIN_HALOBOUND, DIRICHLET_WEAK};
 
-enum JointType {Joint, JointEqN, MortarBaseJoint, MortarJoint,
-                BoundaryPoint, BoundaryEdge, BoundaryFace,
+enum JointType {Joint, JointEqN, BoundaryPoint, BoundaryEdge, BoundaryFace,
                 InterfaceJoint, PeriodicJoint, IsoInterfaceJoint,
                 IsoJointEqN, IsoBoundEdge, IsoBoundFace,
                 Joint_2to1,
@@ -58,7 +57,7 @@ typedef void DoubleFunct1D(double, double *);
 typedef void DoubleFunct2D(double, double, double *);
 typedef void DoubleFunct3D(double, double, double, double *);
 typedef void DoubleFunctND(int, double *, double *);
-typedef void DoubleFunctVect(double *, double *);
+typedef void DoubleFunctVect(const double *, double *);
 typedef int IntFunct2D(double, double);
 typedef double DoubleFunct2Param(double, double);
 
@@ -66,16 +65,6 @@ typedef void BoundCondFunct3D(double, double, double, BoundCond &);
 typedef void BoundValueFunct3D(double, double, double, double &);
 typedef void BoundCondFunct2D(int, double, BoundCond &);
 typedef void BoundValueFunct2D(int, double, double &);
-
-typedef void ErrorMethod2D(int, double *, double *, 
-                           double *, double *, double,
-                           double **, double **,
-                           double **, double *);
-
-typedef void ErrorMethod3D(int, double *, double *, double *,
-                           double *, double *, double,
-                           double **, double **,
-                           double **, double *);
 
 typedef DoubleFunctVect ParamFct;
 
@@ -88,25 +77,20 @@ typedef std::function<void(int, double*, double*, double*, double**, double**)>
 typedef void AssembleFct2D(double, double *, double, double **, 
                            int *, double ***, double **);
 
-typedef void AssembleFctParam2D(double, double *, double *,
-                                double, double **, 
-                                int *, double ***, double **);
+typedef std::function<void(double, double *, double *, double, double **, 
+                           int *, double ***, double **)> AssembleFctParam;
 
 typedef void AssembleFct3D(double, double *, double, double **, 
                            int *, double ***, double **);
 
-typedef void AssembleFctParam3D(double, double *, double *,
-                                double, double **, 
-                                int *, double ***, double **);
-
 class TBaseCell;
-typedef void ManipulateFct2D(int, double **, double **, TBaseCell *);
+typedef void ManipulateFct2D(int, double **, double **, const TBaseCell *);
 
-typedef void ManipulateFct3D(int, double **, double **, TBaseCell *);
+typedef void ManipulateFct3D(int, double **, double **, const TBaseCell *);
 
 class TCollection;
-typedef void EvalAllNF(TCollection *, TBaseCell *, double *, double *);
-typedef void EvalJointNF(TCollection *, TBaseCell *, int, double *, double *);
+typedef void EvalAllNF(TCollection *, const TBaseCell *, const double *, double *);
+typedef void EvalJointNF(TCollection *, const TBaseCell *, int, const double *, double *);
 
 class TFESpace2D;
 typedef void CheckWrongNeumannNodesFunct2D(TCollection *, TFESpace2D *,

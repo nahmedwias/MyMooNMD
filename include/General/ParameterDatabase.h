@@ -28,7 +28,7 @@ class ParameterDatabase
 {
   public:
     /// @brief construct an empty parameter database with a given name
-    ParameterDatabase(std::string name);
+    explicit ParameterDatabase(std::string name);
     
     /// @brief construct a database filled with parameters of general interest
     ///
@@ -36,11 +36,6 @@ class ParameterDatabase
     /// "problem_type", "base_name", ...
     static ParameterDatabase parmoon_default_database();
     
-    /// @brief construct a database filled with parameters for time
-    /// discretization
-    ///
-    static ParameterDatabase default_time_database();
-
     /// @brief construct a database filled with parameters which holds
     /// controls and stopping criteria for a nonlinear iteration loop
     static ParameterDatabase default_nonlinit_database();
@@ -58,11 +53,14 @@ class ParameterDatabase
     /// regular intervals. TODO CB Build in the parameters needed to control
     /// the same feature in MPI.
     static ParameterDatabase default_solution_in_out_database();
+    
+    /// A database to control the writing of snapshots into a file
+    /// This feature is used to build a POD and a reduced-order model
+    static ParameterDatabase get_default_snapshots_database();
 
-    /// construct a database filled with parameters for 
-    /// mesh generation using TetGen
-    static ParameterDatabase default_tetgen_database();
-
+    /// A database to control the computation, writing, and reading
+    /// of POD basis
+    static ParameterDatabase get_default_pod_database();
 
     /// @brief delete all parameters from this database
     ~ParameterDatabase() = default;
@@ -143,7 +141,7 @@ class ParameterDatabase
     std::string get_name() const;
     
     /// @brief change the name of this database
-    void set_name(std::string);
+    void set_name(const std::string&);
     
     /// @brief get the number of parameters in this database
     size_t get_n_parameters() const;
@@ -152,18 +150,18 @@ class ParameterDatabase
     /// 
     /// @note This does not search for such a parameter in nested databases.
     /// better name? one would write e.g.: if(db.contains("param_name"))
-    bool contains(std::string name) const;
+    bool contains(const std::string& name) const;
     
     /// @brief add a nested parameter database
     void add_nested_database(ParameterDatabase db);
     
     /// @brief Kindly ask, whether a nested database of the name
     ///        'name' is contained.
-    bool has_nested_database(std::string name) const;
+    bool has_nested_database(const std::string& name) const;
 
     /// @brief return additional parameter database with a given name.
-    const ParameterDatabase& get_nested_database(std::string name) const;
-    ParameterDatabase& get_nested_database(std::string name);
+    const ParameterDatabase& get_nested_database(const std::string& name) const;
+    ParameterDatabase& get_nested_database(const std::string& name);
     
     /// @brief get the number of nested databases in this database
     size_t get_n_nested_databases() const;
@@ -187,7 +185,7 @@ class ParameterDatabase
     /// results.
     void write(std::ostream& stream, bool verbose = false) const;
     /// @brief convenience function which calls write(std::ostream&, bool)
-    void write(std::string filename, bool verbose = false) const;
+    void write(const std::string& filename, bool verbose = false) const;
     
     /// @brief read parameters from a stream
     ///
@@ -252,7 +250,7 @@ class ParameterDatabase
     /// ParMooN can be kept inside the Parameter objects.
     void read(std::istream& is);
     /// @brief convenience function which calls read(std::istream&)
-    void read(std::string filename);
+    void read(const std::string& filename);
     
     /// @brief merge another database into this one
     ///

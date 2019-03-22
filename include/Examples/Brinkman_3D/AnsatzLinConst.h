@@ -8,6 +8,10 @@
 // to 1/Reynolds_number and is dimensionless
 //double DIMENSIONLESS_VISCOSITY;
 
+double viscosity = -1;
+double effective_viscosity = -1;
+double permeability = -1;
+
 void ExampleFile()
 {
   Output::info<1>("EXAMPLE","AnsatzLinConst.h");
@@ -16,7 +20,7 @@ void ExampleFile()
 // ========================================================================
 // exact solution
 // ========================================================================
-void ExactU1(double x, double y,  double z, double *values)
+void ExactU1(double, double y, double z, double *values)
 {
   values[0] = y+z;      // u1
   values[1] = 0;        // u1_x
@@ -25,7 +29,7 @@ void ExactU1(double x, double y,  double z, double *values)
   values[4] = 0;        // Delta u1=u1_xx+u1_yy+u1_zz
 }
 
-void ExactU2(double x, double y,  double z, double *values)
+void ExactU2(double x, double, double z, double *values)
 {
   values[0] = 5*x-3*z;      // u2
   values[1] = 5;            // u2_x
@@ -34,7 +38,7 @@ void ExactU2(double x, double y,  double z, double *values)
   values[4] = 0;            // Delta u2=u2_xx+u2_yy+u2_zz
 }
 
-void ExactU3(double x, double y,  double z, double *values)
+void ExactU3(double x, double y, double, double *values)
 {
   values[0] = -x-2*y;       // u3
   values[1] = -1;           // u3_x
@@ -43,7 +47,7 @@ void ExactU3(double x, double y,  double z, double *values)
   values[4] = 0;            // Delta u3=u3_xx+u3_yy+u3_zz
 }
 
-void ExactP(double x, double y,  double z, double *values)
+void ExactP(double, double, double, double *values)
 {
   values[0] = 0;
   values[1] = 0;
@@ -51,7 +55,7 @@ void ExactP(double x, double y,  double z, double *values)
   values[3] = 0;
   values[4] = 0;
 }
-// void ExactNull(double x, double y, double z, double *values)
+// void ExactNull(double, double, double, double *values)
 // {
 //   values[0] =0;
 //   values[1] =0;
@@ -61,25 +65,25 @@ void ExactP(double x, double y,  double z, double *values)
 // }
 
 // kind of boundary condition (for FE space needed)
-void BoundCondition(double x, double y, double z, BoundCond &cond)
+void BoundCondition(double, double, double, BoundCond &cond)
 {
   cond = DIRICHLET;
 }
 
 // value of boundary condition
-void U1BoundValue(double x, double y, double z, double &value)
+void U1BoundValue(double, double y, double z, double &value)
 {
     value = y+z;
 }
 
 // value of boundary condition
-void U2BoundValue(double x, double y, double z, double &value)
+void U2BoundValue(double x, double, double z, double &value)
 {
     value = 5*x-3*z;
 }
 
 // value of boundary condition
-void U3BoundValue(double x, double y, double z, double &value)
+void U3BoundValue(double x, double y, double, double &value)
 {
     value = -x-2*y ;
 }
@@ -87,8 +91,8 @@ void U3BoundValue(double x, double y, double z, double &value)
 // ========================================================================
 // coefficients for Stokes form: A, B1, B2, f1, f2
 // ========================================================================
-void LinCoeffs(int n_points, double *X, double *Y, double *Z,
-               double **parameters, double **coeffs)
+void LinCoeffs(int n_points, double *X, double *Y, double *Z, double **,
+               double **coeffs)
 {
 //  static double eps = DIMENSIONLESS_VISCOSITY;
     double *coeff;
@@ -98,9 +102,9 @@ void LinCoeffs(int n_points, double *X, double *Y, double *Z,
         coeff = coeffs[i];
         
         //coeff[0] = eps;
-        coeff[5]=0;//TDatabase::ParamDB->VISCOSITY;//0.;
-        coeff[6]= TDatabase::ParamDB->EFFECTIVE_VISCOSITY;
-        coeff[7]=TDatabase::ParamDB->PERMEABILITY;
+        coeff[5] = 0;//viscosity;//0.;
+        coeff[6] = effective_viscosity;
+        coeff[7] = permeability;
         coeff[1] = (coeff[5]/coeff[7])*(Y[i]+Z[i]); // f1
         coeff[2] = (coeff[5]/coeff[7])*(5*X[i]-3*Z[i]); // f2
         coeff[3] = (coeff[5]/coeff[7])*(-1*X[i]-2*Y[i]); // f3

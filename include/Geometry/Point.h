@@ -43,7 +43,7 @@ class Point
    * If none of the above is true, an exception is thrown, as this is probably
    * not intended.
    */
-  explicit Point(std::vector<double> p);
+  explicit Point(const std::vector<double>& p);
   
   /** @brief construct a Point with the given dimension (1,2, or 3) 
    * 

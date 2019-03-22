@@ -12,10 +12,12 @@
 #ifndef __ASSEMBLE2D__
 #define __ASSEMBLE2D__
 
+class TDiscreteForm2D;
+class TAuxParam2D;
 #include <Constants.h>
 #include <FEDatabase2D.h>
 
-#include "LocalAssembling2D.h"
+#include "LocalAssembling.h"
 
 #ifdef __3D__
 #include <Aux2D3D.h>
@@ -41,23 +43,6 @@ void Assemble2D(int n_fespaces,
                 bool ignore_boundary_for_rhs = false
                 );
 
-//Hier/////////////////////////////////////////////////
-/** a function from a finite element space */
-void Assemble2D(int n_fespaces,
-                const TFESpace2D** fespaces,
-                int n_sqmatrices,
-                TSquareMatrix2D** sqmatrices,
-                int n_matrices,
-                TMatrix2D** matrices,
-                int n_rhs,
-                double** rhs,
-                const TFESpace2D** ferhs,
-                TDiscreteForm2D* DiscreteForm,
-                BoundCondFunct2D** BoundaryConditions,
-                BoundValueFunct2D** BoundaryValues,
-                TAuxParam2D* Parameters,
-                int AssemblePhaseID = -1
-                );
 
 /** assembling of matrices multiplied by a factor */
 void Assemble2D_FCT(int n_fespaces, TFESpace2D **fespaces, int n_sqmatrices,
@@ -99,7 +84,8 @@ void Assemble2D_neigh(int n_fespaces, TFESpace2D **fespaces,
 );
 
 /** assembling for discontinuous Galerkin discretization */
-void Assemble2D_DG(CoeffFct2D Coeff, int n_fespaces, TFESpace2D **fespaces,
+void Assemble2D_DG(const CoeffFct2D& Coeff, int n_fespaces,
+                   TFESpace2D **fespaces,
                    int n_sqmatrices, TSquareMatrix2D **sqmatrices,
                    int n_matrices, TMatrix2D **matrices,
                    int n_rhs, double **rhs, TFESpace2D **ferhs,
@@ -108,7 +94,8 @@ void Assemble2D_DG(CoeffFct2D Coeff, int n_fespaces, TFESpace2D **fespaces,
                    TAuxParam2D *Parameters);
 
 /** assembling for continuous interior penalty discretization */
-void Assemble2D_CIP(CoeffFct2D Coeff,int n_fespaces, TFESpace2D **fespaces,
+void Assemble2D_CIP(const CoeffFct2D& Coeff,int n_fespaces,
+                    TFESpace2D **fespaces,
                     int n_sqmatrices, TSquareMatrix2D **sqmatrices,
                     int n_matrices, TMatrix2D **matrices,
                     int n_rhs, double **rhs, TFESpace2D **ferhs,
@@ -118,6 +105,7 @@ void Assemble2D_CIP(CoeffFct2D Coeff,int n_fespaces, TFESpace2D **fespaces,
 
 /** assembling for vector finite elements (Raviart-Thomas (RT) and
  * Brezzi-Douglas-Marini (BDM)) */
+#ifdef __2D__
 void Assemble2D_VectFE(int n_fespaces, const TFESpace2D **fespaces,
                        int n_sqmatrices, TSquareMatrix2D **sqmatrices,
                        int n_matrices, TMatrix2D **matrices,
@@ -126,6 +114,7 @@ void Assemble2D_VectFE(int n_fespaces, const TFESpace2D **fespaces,
                        BoundCondFunct2D **BoundaryConditions,
                        BoundValueFunct2D * const * const BoundaryValues
                        );
+#endif // 2D
                   
                   void Assemble2D(int n_fespaces,
                                   TFESpace2D **fespaces,

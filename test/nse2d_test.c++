@@ -26,38 +26,46 @@
 #include <Database.h>
 #include <ParameterDatabase.h>
 #include <FEDatabase2D.h>
-#include <NSE2D.h>
+#include "NavierStokes.h"
 #include <Example_NSE2D.h>
 #include <Multigrid.h>
 #include <Chrono.h>
 #include <algorithm>
+#include "LocalAssembling.h"
 
-void compare(const NSE2D& nse2d, std::array<double, int(5)> errors)
+#include <ParMooN_repository_info.h>
+
+const std::string path = parmoon::source_directory;
+const std::string path_to_repo = path + "/data/mesh/";
+
+double accuracy = 1e-6;
+
+void compare(const NavierStokes<2>& nse2d, std::array<double, int(5)> errors)
 {
-  std::array<double, int(5)> computed_errors = nse2d.get_errors();
+  auto computed_errors = nse2d.get_errors();
   
   // check the L2-error of the velcoity
-  if( fabs(computed_errors[0]-errors[0]) > 1e-6 )
+  if( fabs(computed_errors[0]-errors[0]) > accuracy )
   {
     ErrThrow("L2 norm of velocity: ", computed_errors[0], "  ", errors[0]);
   }
   // check the L2-error of the divergence of the velocity
-  if( fabs(computed_errors[1] - errors[1]) > 1e-6 )
+  if( fabs(computed_errors[1] - errors[1]) > accuracy )
   {
     ErrThrow("L2 norm of divergence: ", std::setprecision(14), computed_errors[1], "  ", errors[1]);
   }
   // check the H1-error of the velcoity
-  if( fabs(computed_errors[2] - errors[2]) > 1e-6 )
+  if( fabs(computed_errors[2] - errors[2]) > accuracy )
   {
     ErrThrow("H1 norm of velocity: ", computed_errors[2], "  ", errors[2]);
   }
   // check the L2-error of the pressure
-  if( fabs(computed_errors[3] - errors[3]) > 1e-6)
+  if( fabs(computed_errors[3] - errors[3]) > accuracy)
   {
     ErrThrow("L2 norm of pressure: ", computed_errors[3], "  ", errors[3]);
   }
   // check the H1-error of the pressure
-  if(fabs(computed_errors[4] - errors[4]) > 1e-6 )
+  if(fabs(computed_errors[4] - errors[4]) > accuracy )
   {
     ErrThrow("H1 norm of pressure: ", computed_errors[4], "  ", errors[4]);
   }
@@ -66,18 +74,18 @@ void compare(const NSE2D& nse2d, std::array<double, int(5)> errors)
 void compute(TDomain &domain, ParameterDatabase& db,
              std::array<double, int(5)> errors)
 {
-  NSE2D nse2d(domain, db);
-  nse2d.assemble();
+  NavierStokes<2> nse2d(domain, db);
+  nse2d.assemble_linear_terms();
   // check stopping criterion
-  nse2d.stopIt(0);
+  nse2d.stop_it(0);
   for(unsigned int k=1;; k++)
   {
     Output::print<1>("nonlinear step " , setw(3), k-1, "\t",
-                     nse2d.getResiduals());
+                     nse2d.get_residuals());
     nse2d.solve();
     // checking the first nonlinear iteration    
     nse2d.assemble_nonlinear_term();;
-    if(nse2d.stopIt(k))
+    if(nse2d.stop_it(k))
       break;
   }
   nse2d.output();
@@ -87,9 +95,12 @@ void compute(TDomain &domain, ParameterDatabase& db,
 
 void check(TDomain &domain, ParameterDatabase db,
            int velocity_order, int nstype, int laplace_type,
-           int nonlinear_form,
+           std::string nonlinear_form,
            std::array<double, int(5)> errors)
 {
+  Output::print("\n\nCalling check with velocity_order=", velocity_order,
+                ", nstype=", nstype, ", laplace_type=", laplace_type, 
+                ", and nonlinear_form=", nonlinear_form);
   db.merge(Solver<>::default_solver_database());
   db.merge(ParameterDatabase::default_nonlinit_database());
   db.merge(Multigrid::default_multigrid_database());
@@ -106,7 +117,7 @@ void check(TDomain &domain, ParameterDatabase db,
   TDatabase::ParamDB->PRESSURE_SPACE = -4711;
   TDatabase::ParamDB->NSTYPE = nstype;
   TDatabase::ParamDB->LAPLACETYPE = laplace_type;
-  TDatabase::ParamDB->NSE_NONLINEAR_FORM = nonlinear_form;
+  db["nse_nonlinear_form"] = nonlinear_form;
   
   Chrono timer;
   compute(domain, db, errors);
@@ -150,16 +161,19 @@ void check(TDomain &domain, ParameterDatabase db,
                           + std::to_string(nstype));
 }
 
+template <int laplace_type>
 void check_one_element(TDomain& domain, ParameterDatabase db,
-                       int velocity_order,
+                       int velocity_order, std::string nonlinear_form,
                        std::array<double, int(5)> errors)
 {
-  int laplace_type = 0;
-  int nonlinear_form = 0;
-  // NSTYPE = 1
-  check(domain, db, velocity_order, 1, laplace_type, nonlinear_form, errors);
-  // NSTYPE = 2
-  check(domain, db, velocity_order, 2, laplace_type, nonlinear_form, errors);
+  if(laplace_type == 0 && nonlinear_form != "rotational"
+     && nonlinear_form != "emac")
+  {
+    // NSTYPE = 1
+    check(domain, db, velocity_order, 1, laplace_type, nonlinear_form, errors);
+    // NSTYPE = 2
+    check(domain, db, velocity_order, 2, laplace_type, nonlinear_form, errors);
+  }
   // NSTYPE = 3
   check(domain, db, velocity_order, 3, laplace_type, nonlinear_form, errors);
   // NSTYPE is 4
@@ -167,10 +181,118 @@ void check_one_element(TDomain& domain, ParameterDatabase db,
 }
 
 // =======================================================================
+// routines including boundary errors
+// =======================================================================
+
+
+void compare_including_boundary(const NavierStokes<2>& nse2d, std::array<double, int(8)> errors)
+{
+  auto computed_errors = nse2d.get_errors();
+
+  // check the L2-error of the velcoity
+  if( fabs(computed_errors[0]-errors[0]) > accuracy )
+  {
+    ErrThrow("L2 norm of velocity: ", computed_errors[0], "  ", errors[0]);
+  }
+  // check the L2-error of the divergence of the velocity
+  if( fabs(computed_errors[1] - errors[1]) > accuracy )
+  {
+    ErrThrow("L2 norm of divergence: ", std::setprecision(14), computed_errors[1], "  ", errors[1]);
+  }
+  // check the H1-error of the velcoity
+  if( fabs(computed_errors[2] - errors[2]) > accuracy )
+  {
+    ErrThrow("H1 norm of velocity: ", computed_errors[2], "  ", errors[2]);
+  }
+  // check the L2-error of the pressure
+  if( fabs(computed_errors[3] - errors[3]) > accuracy)
+  {
+    ErrThrow("L2 norm of pressure: ", computed_errors[3], "  ", errors[3]);
+  }
+  // check the H1-error of the pressure
+  if(fabs(computed_errors[4] - errors[4]) > accuracy )
+  {
+    ErrThrow("H1 norm of pressure: ", computed_errors[4], "  ", errors[4]);
+  }
+  // check the L2-error of the pressure
+  if( fabs(computed_errors[6] - errors[5]) > accuracy)
+  {
+    ErrThrow("L2 norm of velocity on the Nitsche boundary: ", computed_errors[6], "  ", errors[5]);
+  }
+  // check the H1-error of the pressure
+  if(fabs(computed_errors[7] - errors[6]) > accuracy )
+  {
+    ErrThrow("L2 norm of normal velocity on the Nitsche boundary: ", computed_errors[7], "  ", errors[6]);
+  }
+}
+
+void compute_including_boundary(TDomain &domain, ParameterDatabase& db,
+             std::array<double, int(8)> errors)
+{
+  NavierStokes<2> nse2d(domain, db);
+  nse2d.assemble_linear_terms();
+  // check stopping criterion
+  nse2d.stop_it(0);
+
+  nse2d.solve();
+
+  nse2d.output();
+  // compare now the errors
+  compare_including_boundary(nse2d, errors);
+}
+
+void check_including_boundary(TDomain &domain, ParameterDatabase db,
+           int velocity_order, int pressure_order, int nstype, int laplace_type,
+           std::array<double, int(8)> errors)
+{
+  Output::print("\n\nCalling check with velocity_order=", velocity_order,
+                ", nstype=", nstype, ", laplace_type=", laplace_type);
+
+  db.merge(Solver<>::default_solver_database());
+  db.merge(ParameterDatabase::default_nonlinit_database());
+  db.merge(Multigrid::default_multigrid_database());
+  db["solver_type"] = "direct";
+  //db["iterative_solver_type"] = "fgmres";
+  //db["residual_tolerance"] = 1.e-12;
+  //db["preconditioner"] = "least_squares_commutator";
+
+  //db["nonlinloop_maxit"] = 50;
+  //db["nonlinloop_epsilon"] = 1e-10;
+
+  TDatabase::ParamDB->VELOCITY_SPACE = velocity_order;
+  TDatabase::ParamDB->PRESSURE_SPACE = pressure_order;
+  TDatabase::ParamDB->NSTYPE = nstype;
+  TDatabase::ParamDB->LAPLACETYPE = laplace_type;
+
+  Chrono timer;
+  compute_including_boundary(domain, db, errors);
+  timer.restart_and_print("nse2d-brinkman2d direct solver,  velocity "
+                          + std::to_string(velocity_order) + ", nstype "
+                          + std::to_string(nstype));
+}
+
+
+template <int laplace_type>
+void check_one_element_including_boundary(TDomain& domain, ParameterDatabase db,
+                       int velocity_order, int pressure_order,
+                       std::array<double, int(8)> errors)
+{
+  check_including_boundary(domain, db, velocity_order, pressure_order, 14, laplace_type, errors);
+}
+
+
+
+
+// =======================================================================
 // main program
 // =======================================================================
-int main(int argc, char* argv[])
+int main(int, char* argv[])
 {
+  bool testall = false;
+  if (argv[1])
+    testall = (std::string(argv[1]).compare("testall") == 0);
+
+
   /** Program 1
    *  This program tests direct solve with galerkin discretization
    * direct solver; Tests for Triangles
@@ -184,19 +306,20 @@ int main(int argc, char* argv[])
     db.merge(ParameterDatabase::default_nonlinit_database());
     db.merge(ParameterDatabase::default_output_database());
     db.merge(Example2D::default_example_database());
+    db.merge(LocalAssembling2D::default_local_assembling_database());
 
     db["problem_type"].set<size_t>(5);
     db["example"] = 2;
 
     db.add("refinement_n_initial_steps", (size_t) 2,"");
-    
+
     db["nonlinloop_maxit"] = 100;
     db["nonlinloop_epsilon"] = 1e-10;
     db["nonlinloop_slowfactor"] = 1.;
 
     db.add("boundary_file", "Default_UnitSquare", "");
     db.add("geo_file", "TwoTriangles", "", {"UnitSquare", "TwoTriangles"});
-    
+
     // default construct a domain object
     TDomain domain(db);
 
@@ -205,66 +328,95 @@ int main(int argc, char* argv[])
     db["space_discretization_type"] = "galerkin";
     TDatabase::ParamDB->NSTYPE = 4;
     TDatabase::ParamDB->LAPLACETYPE = 0;
-    
+
     // possibly parameters in the database
     check_parameters_consistency_NSE(db);
     // refine grid
-    size_t n_ref = domain.get_n_initial_refinement_steps();
-    for(unsigned int i=0; i < n_ref; i++)
-    {
-      domain.RegRefineAll();
-    }
+    domain.refine_and_get_hierarchy_of_collections(db);
     std::array<double, int(5)> errors;
-    
+
     //=========================================================================
     Output::print<1>("\nTesting the P2/P1 elements");
-    errors = {{ 0.005005607397208, 0.085596036177161, 0.15666212408257,
-                0.071089608676709, 1.3407900222228 }};
+    errors = {{ 0.005456127622249, 0.085600792927298, 0.15659378093701,
+            0.07108665290335, 1.3407010450111 }};
     // VELOCITY_SPACE = 2 and the pressure space is chosen in the class NSE2D
-    check_one_element(domain, db, 2, errors);
-    
+    check_one_element<0>(domain, db, 2, "convective", errors);
+    errors = {{ 0.005461517514555, 0.08567089916679, 0.156613079963,
+            0.071844737124695, 1.3491718656292 }};
+    check_one_element<0>(domain, db, 2, "skew_symmetric", errors);
+    errors = {{ 0.006214685051306, 0.10151526663975, 0.16675196021083,
+            0.11655892322349, 1.6480675404577 }};
+    check_one_element<0>(domain, db, 2, "rotational", errors);
+    errors = {{ 0.0057827846340661, 0.094178019255837, 0.16300544453388,
+            0.1607781642646, 1.664867097309 }};
+    check_one_element<0>(domain, db, 2, "emac", errors);
+
     //=========================================================================
     Output::print<1>("\nTesting the P3/P2 elements");
-    errors = {{ 0.00028020829779642, 0.0061977013305504, 0.011391210186952,
-                0.0053396813413967, 0.20779333160236 }};
+    errors = {{ 0.00028020829779641, 0.0061977013305506, 0.011391210186952,
+            0.0056918081803184, 0.20769679500378 }};
     // VELOCITY_SPACE = 3 and the pressure space is chosen in the class NSE2D
-    check_one_element(domain, db, 3, errors);
-    
-    //=========================================================================
-    Output::print<1>("\nTesting the P4/P3 elements");
-    errors = {{ 1.1817023010728e-05, 0.00029575269112296, 0.0006435418450572, 
-                0.00050496270735108, 0.026998702772064 }};
-    // VELOCITY_SPACE = 4 and the pressure space is chosen in the class NSE2D
-    check_one_element(domain, db, 4, errors);
-    
-    //=========================================================================
-    Output::print<1>("\nTesting the P5/P4 elements");
-    errors = {{ 4.3466391168252e-07, 1.4197002168949e-05, 2.793323812439e-05,
-                2.1824211773585e-05, 0.0016936362911126 }};
-    // VELOCITY_SPACE = 5 and the pressure space is chosen in the class NSE2D
-    check_one_element(domain, db, 5, errors);
-    
+    check_one_element<0>(domain, db, 3, "convective", errors);
+    errors = {{ 0.0002801683506044, 0.0061981261043577, 0.011391678805669,
+            0.0056956176000077, 0.20780500907323 }};
+    check_one_element<0>(domain, db, 3, "skew_symmetric", errors);
+    errors = {{ 0.00034351517928429, 0.0096256533312287, 0.013780390342581,
+            0.01555923134715, 0.39131977067853 }};
+    check_one_element<0>(domain, db, 3, "rotational", errors);
+    errors = {{ 0.00031706470111175, 0.0086454126016252, 0.012993003704192,
+            0.014463947314389, 0.32790669662401 }};
+    check_one_element<0>(domain, db, 3, "emac", errors);
+
+    if(testall)
+    {
+      //=========================================================================
+      Output::print<1>("\nTesting the P4/P3 elements");
+      errors = {{ 1.1817023010728e-05, 0.00029575269112296, 0.0006435418450572,
+              0.00050496270735108, 0.026998702772064 }};
+      // VELOCITY_SPACE = 4 and the pressure space is chosen in the class NSE2D
+      check_one_element<0>(domain, db, 4, "convective", errors);
+
+      //=========================================================================
+      Output::print<1>("\nTesting the P5/P4 elements");
+      errors = {{ 4.3466391168252e-07, 1.4197002168949e-05, 2.793323812439e-05,
+              2.1824211773585e-05, 0.0016936362911126 }};
+      // VELOCITY_SPACE = 5 and the pressure space is chosen in the class NSE2D
+      check_one_element<0>(domain, db, 5, "convective", errors);
+    }
+
     //=========================================================================
     Output::print<1>("\nTesting the P2-bubble/P1-disc elements");
     errors = {{ 0.0071886299046824, 0.081842610256743, 0.21185558654462,
-                0.36754876295023, 5.3058522557418 }};
+            0.36754876295023, 5.3058522557418 }};
     // VELOCITY_SPACE = 22 and the pressure space is chosen in the class NSE2D
-    check_one_element(domain, db, 22, errors);
-    
-    //=========================================================================
-    Output::print<1>("\nTesting the P3-bubble/P2-disc elements");
-    errors = {{ 0.00026037876329326, 0.0057269486642841, 0.010856952083039,
-                0.013201231959059, 0.39888576555041 }};
-    // VELOCITY_SPACE = 23 and the pressure space is chosen in the class NSE2D
-    check_one_element(domain, db, 23, errors);
-    
-    //=========================================================================
-    Output::print<1>("\nTesting the P4-bubble/P3-disc elements");
-    errors = {{ 1.2032722339771e-05, 0.00024376809624887, 0.00055164963287203,
-                0.00063706731983293, 0.027783948983068 }};
-    // VELOCITY_SPACE = 24 and the pressure space is chosen in the class NSE2D
-    check_one_element(domain, db, 24, errors);
-  } // end program 1
+    check_one_element<0>(domain, db, 22, "convective", errors);
+    errors = {{ 0.0071870075217203, 0.081812991627381, 0.21185522222301,
+            0.36760565517932, 5.3064844653778 }};
+    check_one_element<0>(domain, db, 22, "skew_symmetric", errors);
+    errors = {{ 0.0071856730855546, 0.081567156856757, 0.2120767352661,
+            0.37174134839162, 5.4006410196856 }};
+    check_one_element<0>(domain, db, 22, "rotational", errors);
+    errors = {{ 0.0071979487572762, 0.082123462115766, 0.21189447518786,
+            0.37027289021106, 5.3911935934541 }};
+    check_one_element<0>(domain, db, 22, "emac", errors);
+
+    if(testall)
+    {
+      //=========================================================================
+      Output::print<1>("\nTesting the P3-bubble/P2-disc elements");
+      errors = {{ 0.00026037876329682, 0.005726948664285, 0.010856952083041,
+              0.013370326976055, 0.39882948355395 }};
+      // VELOCITY_SPACE = 23 and the pressure space is chosen in the class NSE2D
+      check_one_element<0>(domain, db, 23, "convective", errors);
+
+      //=========================================================================
+      Output::print<1>("\nTesting the P4-bubble/P3-disc elements");
+      errors = {{ 1.2032722339771e-05, 0.00024376809624887, 0.00055164963287203,
+              0.00063706731983293, 0.027783948983068 }};
+      // VELOCITY_SPACE = 24 and the pressure space is chosen in the class NSE2D
+      check_one_element<0>(domain, db, 24, "convective", errors);
+    }
+  }   // end program 1
   //=========================================================================
   /** Program 2
    *  This program tests direct solve with galerkin discretization
@@ -280,11 +432,12 @@ int main(int argc, char* argv[])
     db.merge(ParameterDatabase::default_nonlinit_database());
     db.merge(ParameterDatabase::default_output_database());
     db.merge(Example2D::default_example_database());
+    db.merge(LocalAssembling2D::default_local_assembling_database());
     db["problem_type"].set<size_t>(5);
     db["example"] = 2;
 
     db.add("refinement_n_initial_steps", (size_t) 2,"");
-    
+
     db["nonlinloop_maxit"] = 100;
     db["nonlinloop_epsilon"] = 1e-10;
     db["nonlinloop_slowfactor"] = 1.;
@@ -299,74 +452,450 @@ int main(int argc, char* argv[])
     TDatabase::ParamDB->FLOW_PROBLEM_TYPE=5;
     db["space_discretization_type"] = "galerkin";
     TDatabase::ParamDB->LAPLACETYPE = 0;
-        
+
     // possibly parameters in the database
     check_parameters_consistency_NSE(db);
 
     // refine grid
-    size_t n_ref = domain.get_n_initial_refinement_steps();
-    for(unsigned int i=0; i < n_ref; i++)
-    {
-      domain.RegRefineAll();
-    }
+    domain.refine_and_get_hierarchy_of_collections(db);
     std::array<double, int(5)> errors;
-    
+
     //=========================================================================
     Output::print<1>("\nTesting the Q2/Q1 elements");
     errors = {{ 0.004083204524442, 0.05101317284072, 0.10522635824261,
-                0.017686667902813, 0.51182308944019 }};
+            0.017686667902813, 0.51182308944019 }};
     // VELOCITY_SPACE  = 2
-    check_one_element(domain, db, 2, errors);
-    
-    //=========================================================================
-    Output::print<1>("\nTesting the Q3/Q2 elements");
-    errors = {{ 0.00019319433716041, 0.003563918945437, 0.0071078507849009,
-                0.0018446328461379, 0.057123632497266 }};
-    // VELOCITY_SPACE  = 3
-    check_one_element(domain, db, 3, errors);
-    
-    //=========================================================================
-    Output::print<1>("\nTesting the Q4/Q3 elements");
-    errors = {{ 6.9434747253041e-06, 0.0001677182257252, 0.00035212311261646,
-                9.4703269177756e-05, 0.0048368160352994 }};
-    // VELOCITY_SPACE  = 4
-    check_one_element(domain, db, 4, errors);
-    
-    //=========================================================================
-    Output::print<1>("\nTesting the Q5/Q4 elements");
-    errors = {{ 2.3951237974726e-07, 6.8246180893733e-06, 1.4163394749406e-05,
-                4.9000676557526e-06, 0.00030469183949993 }};
-    // VELOCITY_SPACE  = 5
-    check_one_element(domain, db, 5, errors);
-    
+    check_one_element<0>(domain, db, 2, "convective", errors);
+    errors = {{ 0.0040835090784135, 0.051016841655666, 0.10523293839479,
+            0.017611281280989, 0.51158180834432 }};
+    check_one_element<0>(domain, db, 2, "skew_symmetric", errors);
+    errors = {{ 0.0046884833250869, 0.070877525721747, 0.11742828649332,
+            0.11040259260052, 1.0352007333739 }};
+    check_one_element<0>(domain, db, 2, "rotational", errors);
+    errors = {{ 0.0045805109059847, 0.066717957084682, 0.11493220231642,
+            0.11124041590661, 0.94502906380428 }};
+    check_one_element<0>(domain, db, 2, "emac", errors);
+
+    if(testall)
+    {
+      //=========================================================================
+      Output::print<1>("\nTesting the Q3/Q2 elements");
+      errors = {{ 0.00019319433716041, 0.003563918945437, 0.0071078507849009,
+              0.0018446328461379, 0.057123632497266 }};
+      // VELOCITY_SPACE  = 3
+      check_one_element<0>(domain, db, 3, "convective", errors);
+      errors = {{ 0.00019316638866158, 0.0035638246364146, 0.0071078664938289,
+              0.0018454762090097, 0.057115940978707 }};
+      check_one_element<0>(domain, db, 3, "skew_symmetric", errors);
+      errors = {{ 0.00026177332079517, 0.0079927161285491, 0.010243629124348,
+              0.0094414547091167, 0.21505945593453 }};
+      check_one_element<0>(domain, db, 3, "rotational", errors);
+      errors = {{ 0.00024830802922935, 0.0072493956722643, 0.0096501647507086,
+              0.0094088997257092, 0.18990292685865 }};
+      check_one_element<0>(domain, db, 3, "emac", errors);
+
+      //=========================================================================
+      Output::print<1>("\nTesting the Q4/Q3 elements");
+      errors = {{ 6.9434747253041e-06, 0.0001677182257252, 0.00035212311261646,
+              9.4703269177756e-05, 0.0048368160352994 }};
+      // VELOCITY_SPACE  = 4
+      check_one_element<0>(domain, db, 4, "convective", errors);
+
+      //=========================================================================
+      Output::print<1>("\nTesting the Q5/Q4 elements");
+      errors = {{ 2.3951237974726e-07, 6.8246180893733e-06, 1.4163394749406e-05,
+              4.9000676557526e-06, 0.00030469183949993 }};
+      // VELOCITY_SPACE  = 5
+      check_one_element<0>(domain, db, 5, "convective", errors);
+    }
+
     //=========================================================================
     Output::print<1>("\nTesting the Q2/P1-disc elements");
     errors = {{ 0.0040557267369371, 0.05094007770388, 0.10564123627325,
-                0.030975452768144, 0.70842776239597 }};
+            0.030975452768144, 0.70842776239597 }};
     // VELOCITY_SPACE  = 22
-    check_one_element(domain, db, 22, errors);
-    
-    //=========================================================================
-    Output::print<1>("\nTesting the Q3/P2-disc elements");
-    errors = {{ 0.00020642736694367, 0.0042373143298489, 0.0075794259144329,
-                0.0039793392063018, 0.13655739379564 }};
-    // VELOCITY_SPACE  = 23
-    check_one_element(domain, db, 23, errors);
-    
-    //=========================================================================
-    Output::print<1>("\nTesting the Q4/P3-disc elements");
-    errors = {{ 9.9544541389566e-06, 0.00032338687271106, 0.00045888380841742,
-                0.00037625559674667, 0.01835259073302 }};
-    // VELOCITY_SPACE  = 24
-    check_one_element(domain, db, 24, errors);
-    
-    //=========================================================================
-    Output::print<1>("\nTesting the Q5/P4-disc elements");
-    errors = {{ 5.3747286967048e-07, 2.4122655352531e-05, 2.7997005479668e-05,
-                2.81141239001e-05, 0.0018176331985532 }};
-    // VELOCITY_SPACE  = 25
-    check_one_element(domain, db, 25, errors);
+    check_one_element<0>(domain, db, 22, "convective", errors);
+    errors = {{ 0.0040565847234025, 0.050939919166369, 0.10564293309485,
+            0.030954083022779, 0.70858252999859 }};
+    check_one_element<0>(domain, db, 22, "skew_symmetric", errors);
+    errors = {{ 0.0041643538522174, 0.055554927078881, 0.10980572753403,
+            0.036275829042111, 0.75595849613121 }};
+    check_one_element<0>(domain, db, 22, "rotational", errors);
+    errors = {{ 0.0041393709334753, 0.053107233911226, 0.10760054343883,
+            0.033157637926479, 0.72384438559736 }};
+    check_one_element<0>(domain, db, 22, "emac", errors);
+
+    if(testall)
+    {
+      //=========================================================================
+      Output::print<1>("\nTesting the Q3/P2-disc elements");
+      errors = {{ 0.00020642736694367, 0.0042373143298489, 0.0075794259144329,
+              0.0039793392063018, 0.13655739379564 }};
+      // VELOCITY_SPACE  = 23
+      check_one_element<0>(domain, db, 23, "convective", errors);
+
+      //=========================================================================
+      Output::print<1>("\nTesting the Q4/P3-disc elements");
+      errors = {{ 9.9544541389566e-06, 0.00032338687271106, 0.00045888380841742,
+              0.00037625559674667, 0.01835259073302 }};
+      // VELOCITY_SPACE  = 24
+      check_one_element<0>(domain, db, 24, "convective", errors);
+
+      //=========================================================================
+      Output::print<1>("\nTesting the Q5/P4-disc elements");
+      errors = {{ 5.3747286967048e-07, 2.4122655352531e-05, 2.7997005479668e-05,
+              2.81141239001e-05, 0.0018176331985532 }};
+      // VELOCITY_SPACE  = 25
+      check_one_element<0>(domain, db, 25, "convective", errors);
+    }
   }
-  
+
+
+  //=========================================================================
+  /** Program 3
+   *  This program tests direct solve with nonsymm_gls discretization and the Nitsche method
+   * direct solver; Tests for Triangles
+   */
+  { //  declaration of databases
+    TDatabase Database;
+    TFEDatabase2D FEDatabase;
+
+    ParameterDatabase db = ParameterDatabase::parmoon_default_database();
+    db.merge(NavierStokes<2>::default_nse_database());
+    //ParameterDatabase db = NavierStokes<2>::default_nse_database();
+    db.merge(Example2D::default_example_database());
+    db.merge(LocalAssembling2D::default_local_assembling_database());
+
+    std::array<double, int(8)> all_errors; // includes errors at the boundary (Nitsche)
+
+    db["problem_type"].set<size_t>(7);
+
+    db.add("boundary_file", "Default_UnitSquare", "");
+    db.add("geo_file", "TwoTriangles", "", {"UnitSquare", "TwoTriangles"});
+    db.add("refinement_n_initial_steps", (size_t) 0,"", (size_t) 0, (size_t) 20);
+
+    db["output_compute_errors"] = true;
+
+    TDatabase::ParamDB->NSTYPE = 14;
+    TDatabase::ParamDB->LAPLACETYPE = 0;
+    TDatabase::ParamDB->INPUT_QUAD_RULE = 99;
+    TDatabase::ParamDB->INTERNAL_PROBLEM_LINEAR = true;
+
+    // possibly parameters in the database
+    check_parameters_consistency_NSE(db);
+
+    int velocity_space, pressure_space;
+    std::vector<size_t> neumann_id, nitsche_id;
+    std::vector<double> neumann_value, nitsche_penalty;
+
+    // ================================ EXAMPLE: Poiseuille_Flow =======================================
+
+    db["boundary_file"].set("Default_UnitSquare");
+    db["geo_file"].set("TwoTriangles");
+
+    db["example"] = 6;
+    db["refinement_n_initial_steps"].set<size_t>(3);
+
+    velocity_space = 2;
+    pressure_space = 1;
+
+    // coefficients
+    db["effective_viscosity"] = 0.00025;
+    db["inverse_permeability"] = 0.004;
+
+    // stabilization
+    db["space_discretization_type"] = "galerkin";
+    db["gls_stab"] = 0.;
+    db["graddiv_stab"] = 0.;
+    db["corner_stab"] = 0.;
+    db["L_0"] = 0.;
+    db["pspg_delta0"] = 0.;
+
+    // boundary conditions
+    db["n_neumann_bd"] = 2;
+    neumann_id = {1, 3};
+    db["neumann_id"] = neumann_id;
+    neumann_value = {-0.5, 0.5};
+    db["neumann_value"] = neumann_value;
+
+    db["n_nitsche_bd"] = 0;
+
+    // default construct a domain object
+    TDomain domain0(db);
+    // refine grid
+    domain0.refine_and_get_hierarchy_of_collections(db);
+
+    Output::print<1>("\n Example:  Poiseuille_Flow: Testing P2/P1 (with gls_stab) for Brinkman2D via NSE2D");
+    all_errors = {{ 0.074230400439798,  0.29287548273616, 4.0915592126458, 6.111062446254e-05,
+            0.0013491125315994, 0., 0. }};
+
+    check_one_element_including_boundary<0>(domain0, db, velocity_space, pressure_space, all_errors);
+
+    // ================================ EXAMPLE: SinCos_DarcyFlow =======================================
+
+    db["boundary_file"].set("Default_UnitSquare");
+    db["geo_file"].set("TwoTriangles");
+
+    db["example"] = 7;
+    db["refinement_n_initial_steps"].set<size_t>(5);
+
+    velocity_space = 1;
+    pressure_space = 1;
+
+    // coeficients
+    db["effective_viscosity"] = 0.;
+    db["inverse_permeability"] = 0.1;
+
+    // stabilization
+    db["space_discretization_type"] = "nonsymm_gls";
+    db["gls_stab"] = 0.1;
+    db["graddiv_stab"] = 0.1;
+    db["corner_stab"] = 1.;
+    db["L_0"] = 0.1;
+    db["pspg_delta0"] = 0.;
+
+    // boundary conditions
+    db["n_neumann_bd"] = 0;
+
+    db["n_nitsche_bd"] = 4;
+    nitsche_id = {0, 1, 2, 3};
+    db["nitsche_id"] = nitsche_id;
+    nitsche_penalty = {0., 0., 0., 0.};
+    db["nitsche_penalty"] = nitsche_penalty;
+
+    db["symmetric_nitsche_u"] = -1;
+    db["symmetric_nitsche_p"] = -1;
+
+    // default construct a domain object
+    TDomain domain1(db);
+    // refine grid
+    domain1.refine_and_get_hierarchy_of_collections(db);
+
+    Output::print<1>("\n Example: SinCos_DarcyFlow: Testing P1/P1 (with gls_stab and Nitsche method) for Brinkman2D via NSE2D");
+    all_errors = {{ 0.014963869771925, 2.7518157106309, 3.9062600370977, 0.0001701830587647,
+            0.044106028987814, 0.047886464620468, 0.039273676677846 }};
+
+    check_one_element_including_boundary<0>(domain1, db, velocity_space, pressure_space, all_errors);
+
+    // ================================ EXAMPLE: Discacciati_Flow =======================================
+
+    db["boundary_file"].set(path_to_repo + "Rectangle.PRM", false);
+    db["geo_file"].set(path_to_repo + "discacciati_11K.mesh", false);
+
+    db["example"] = 8;
+    db["refinement_n_initial_steps"].set<size_t>(0);
+
+    velocity_space = 1;
+    pressure_space = 1;
+
+    // coefficients
+    db["effective_viscosity"] = 0.01;
+    db["inverse_permeability"] = 0.;
+
+    // stabilization
+    db["space_discretization_type"] = "nonsymm_gls";
+    db["gls_stab"] = 0.1;
+    db["graddiv_stab"] = 0.1;
+    db["corner_stab"] = 0.1;
+    db["L_0"] = 0.1;
+    db["pspg_delta0"] = 0.;
+
+    // boundary conditions
+    db["n_neumann_bd"] = 1;
+    neumann_id = {1};
+    db["neumann_id"] = neumann_id;
+    neumann_value = {0.};
+    db["neumann_value"] = neumann_value;
+
+    db["n_nitsche_bd"] = 3;
+    nitsche_id = {0, 2, 3};
+    db["nitsche_id"] = nitsche_id;
+    nitsche_penalty = {0., 0., 0.};
+    db["nitsche_penalty"] = nitsche_penalty;
+
+    db["symmetric_nitsche_u"] = -1;
+    db["symmetric_nitsche_p"] = -1;
+
+    // default construct a domain object
+    TDomain domain2(db);
+    // refine grid
+    domain2.refine_and_get_hierarchy_of_collections(db);
+
+    Output::print<1>("\n Example: Discacciati_Flow: Testing P1/P1 (with gls_stab and Nitsche method) for Brinkman2D via NSE2D");
+    all_errors = {{ 0.92147504957481, 0.047176605078917, 1.3065668883004, 0.23682311417141,
+            0.044785943200984, 0.0067226743785503, 0.0003305737320877 }};
+
+    check_one_element_including_boundary<0>(domain2, db, velocity_space, pressure_space, all_errors);
+
+    // ================================ EXAMPLE: Radial_Flow_with_Hole =======================================
+
+    db["boundary_file"].set(path_to_repo + "ring.PRM", false);
+    db["geo_file"].set(path_to_repo + "ring.mesh", false);
+
+    db["example"] = 9;
+    db["refinement_n_initial_steps"].set<size_t>(0);
+
+    velocity_space = 1;
+    pressure_space = 1;
+
+    // coefficients
+    db["effective_viscosity"] = 0.;
+    db["inverse_permeability"] = 100.;
+
+    // stabilization
+    db["space_discretization_type"] = "nonsymm_gls";
+    db["gls_stab"] = 0.1;
+    db["graddiv_stab"] = 0.1;
+    db["corner_stab"] = 1.;
+    db["L_0"] = 0.1;
+    db["pspg_delta0"] = 0.;
+
+    // boundary conditions
+    db["n_neumann_bd"] = 1;
+    neumann_id = {0};
+    db["neumann_id"] = neumann_id;
+    neumann_value = {0.};
+    db["neumann_value"] = neumann_value;
+
+    db["n_nitsche_bd"] = 0;
+
+    // default construct a domain object
+    TDomain domain3(db);
+    // refine grid
+    domain3.refine_and_get_hierarchy_of_collections(db);
+
+
+
+    Output::print<1>("\n Example: Radial_Flow_with_Hole: Testing P1/P1 (with gls_stab and Dirichlet) for Brinkman2D via NSE2D");
+    all_errors = {{ 0.026823293395781, 0.86535486158171, 1.7473477017607, 0.66675757107946,
+            9.5869622616597, 0, 0 }};
+
+    check_one_element_including_boundary<0>(domain3, db, velocity_space, pressure_space, all_errors);
+
+
+    db["n_nitsche_bd"] = 1;
+    nitsche_id = {1};
+    db["nitsche_id"] = nitsche_id;
+    nitsche_penalty = {0.};
+    db["nitsche_penalty"] = nitsche_penalty;
+
+    db["symmetric_nitsche_u"] = -1;
+    db["symmetric_nitsche_p"] = -1;
+
+    Output::print<1>("\n Example: Radial_Flow_with_Hole: Testing P1/P1 (with gls_stab and Nitsche method) for Brinkman2D via NSE2D on a coarse grid");
+    all_errors = {{ 0.016276641784288, 0.83486933554338, 1.4033528326104, 0.37760190850872,
+            10.43407941586, 0.0440220129648, 0.04238025006573 }};
+
+
+
+    check_one_element_including_boundary<0>(domain3, db, velocity_space, pressure_space, all_errors);
+
+
+    db["refinement_n_initial_steps"].set<size_t>(2);
+
+    Output::print<1>("\n Example: Radial_Flow_with_Hole: Testing P1/P1 (with gls_stab and Nitsche method) for Brinkman2D via NSE2D on a fine grid");
+    all_errors = {{  0.016276641784288, 0.83486933554338, 1.4033528326104,
+            0.37760190850872, 10.43407941586, 0.0440220129648, 0.04238025006573 }};
+
+    check_one_element_including_boundary<0>(domain3, db, velocity_space, pressure_space, all_errors);
+
+    // ================================ EXAMPLE: circle_with_immersed_hole =======================================
+
+    db["boundary_file"].set(path_to_repo + "disk.PRM", false);
+    db["geo_file"].set(path_to_repo + "disk.mesh", false);
+
+    db["example"] = 10;
+    db["refinement_n_initial_steps"].set<size_t>(3);
+
+    velocity_space = 1;
+    pressure_space = 1;
+
+    // coefficients
+    db["effective_viscosity"] = 0.01;
+    db["inverse_permeability"] = 100.;
+
+    // stabilization
+    db["space_discretization_type"] = "nonsymm_gls";
+    db["gls_stab"] = 0.1;
+    db["graddiv_stab"] = 0.1;
+    db["corner_stab"] = 0.;
+    db["L_0"] = 0.1;
+    db["pspg_delta0"] = 0.;
+
+    // boundary conditions
+    db["n_neumann_bd"] = 1;
+    neumann_id = {0};
+    db["neumann_id"] = neumann_id;
+    neumann_value = {0.};
+    db["neumann_value"] = neumann_value;
+
+    db["n_nitsche_bd"] = 0;
+
+
+    // default construct a domain object
+    TDomain domain4(db);
+    // refine grid
+    domain4.refine_and_get_hierarchy_of_collections(db);
+
+    Output::print<1>("\n Example: circle_with_immersed_hole: Testing P1/P1 (with gls_stab and Nitsche method) for Brinkman2D via NSE2D");
+    all_errors = {{ 0.19746436177033, 10.864988667116, 15.000527454125, 3.6551630574656,
+            179.23536684048, 0, 0 }};
+
+    check_one_element_including_boundary<0>(domain4, db, velocity_space, pressure_space, all_errors);
+
+    // ================================ EXAMPLE: Exponential_Poiseuille_Flow =======================================
+
+    db["boundary_file"].set("Default_UnitSquare");
+    db["geo_file"].set("TwoTriangles");
+
+    db["example"] = 12;
+    db["refinement_n_initial_steps"].set<size_t>(5);
+
+    velocity_space = 1;
+    pressure_space = 1;
+
+    // coefficients
+    db["effective_viscosity"] = 0.1;
+    db["inverse_permeability"] = 10.;
+
+    // stabilization
+    db["space_discretization_type"] = "nonsymm_gls";
+    db["gls_stab"] = 0.1;
+    db["graddiv_stab"] = 0.1;
+    db["corner_stab"] = 1.;
+    db["L_0"] = 0.1;
+    db["pspg_delta0"] = 0.;
+
+    // boundary conditions
+    db["n_neumann_bd"] = 2;
+    neumann_id = {1, 3};
+    db["neumann_id"] = neumann_id;
+    neumann_value = {-0.5, 0.5};
+    db["neumann_value"] = neumann_value;
+
+    db["n_nitsche_bd"] = 2;
+    nitsche_id = {0, 2};
+    db["nitsche_id"] = nitsche_id;
+    nitsche_penalty = {0., 0.};
+    db["nitsche_penalty"] = nitsche_penalty;
+
+    db["symmetric_nitsche_u"] = -1;
+    db["symmetric_nitsche_p"] = -1;
+
+    // default construct a domain object
+    TDomain domain6(db);
+    // refine grid
+    domain6.refine_and_get_hierarchy_of_collections(db);
+
+    Output::print<1>("\n Example: Exponential_Poiseuille_Flow: Testing P1/P1 (with gls_stab and Nitsche method) for Brinkman2D via NSE2D");
+    all_errors = {{  0.002262597973565, 0.0033740583845405,  0.038585873042087,
+            0.00051923122268645, 0.034194588222972, 0.0059477846442968, 0.00011506854321844 }};
+
+    check_one_element_including_boundary<0>(domain6, db, velocity_space, pressure_space, all_errors);
+
+
+  } // end program 3
+
+
   return 0;
 }

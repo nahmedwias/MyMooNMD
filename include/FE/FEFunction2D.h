@@ -19,6 +19,7 @@
 #include <string.h>
 #include <vector>
 #include <functional>
+#include <memory>
 
 class TAuxParam2D;
 #include <FESpace2D.h>
@@ -27,6 +28,11 @@ class TAuxParam2D;
 /** a function from a finite element space */
 class TFEFunction2D
 {
+  public:
+    typedef void ErrorMethod(int, std::array<double*, 2>, double *,
+                             const double *, double, double **, double **,
+                             double **, double *);
+    
   protected:
     /** name of the function */
     std::string Name;
@@ -35,7 +41,7 @@ class TFEFunction2D
     std::string Description;
 
     /** space to which this function belongs to */
-    const TFESpace2D *FESpace2D;
+    std::shared_ptr<const TFESpace2D> FESpace2D;
 
     /** double vector according to FE isomorphism */
     double *Values;
@@ -49,8 +55,9 @@ class TFEFunction2D
     TFEFunction2D();
 
     /** constructor with vector initialization */
-    TFEFunction2D(const TFESpace2D *fespace2D, std::string name, std::string description,
-        double *values, int length);
+    TFEFunction2D(std::shared_ptr<const TFESpace2D> fespace2D,
+                  const std::string& name, const std::string& description,
+                  double *values, int length);
 
     /// Copy assignment operator. Shallow copy, as the
     /// FEFunction does not take any memory responsibility.
@@ -68,7 +75,11 @@ class TFEFunction2D
     { return Description; }
 
     /** return fe space */
-    const TFESpace2D *GetFESpace2D() const
+    std::shared_ptr<const TFESpace2D> GetFESpace2D() const
+    { return FESpace2D; }
+    
+    /** return fe space */
+    std::shared_ptr<const TFESpace> GetFESpace() const
     { return FESpace2D; }
 
     /** return length */
@@ -88,7 +99,7 @@ class TFEFunction2D
      */
     void GetErrors(DoubleFunct2D *Exact, int N_Derivatives,
         MultiIndex2D *NeededDerivatives,
-        int N_Errors, ErrorMethod2D *ErrorMeth, 
+        int N_Errors, ErrorMethod *ErrorMeth, 
         CoeffFct2D Coeff, TAuxParam2D *Aux,
         int n_fespaces, const TFESpace2D **fespaces,
         double *errors, bool is_SDFEM = 0,
@@ -99,7 +110,7 @@ class TFEFunction2D
      *         or Brezzi-Douglas-Marini (BDM) elements) */
     void  GetErrorsForVectorValuedFunction(
         DoubleFunct2D * const * const Exact, 
-        ErrorMethod2D * const ErrorMeth, 
+        ErrorMethod * const ErrorMeth, 
         double * const errors) const;
 
     /** determine the value of function and its first derivatives at
@@ -108,12 +119,12 @@ class TFEFunction2D
 
     /** determine the value of function and its first derivatives at
       the given point */
-    void FindGradientLocal(TBaseCell *cell, int cell_no, double x, double y,
+    void FindGradientLocal(const TBaseCell *cell, int cell_no, double x, double y,
         double *values) const ;
 
     /** determine the value of function at
       the given point */
-    void FindValueLocal(TBaseCell *cell, int cell_no, double x, double y, 
+    void FindValueLocal(const TBaseCell *cell, int cell_no, double x, double y, 
         double *values) const;
 
     /** calculate the interpolation of an exact function */
@@ -124,6 +135,20 @@ class TFEFunction2D
      * required. The function 'OldFeFunction' could even live on a larger domain.
      */
     void Interpolate(TFEFunction2D *F);
+    
+    typedef std::function<double(const TBaseCell* cell, int cell_index,
+                                 std::array<double, 2> xy)> AnalyticFunction;
+    /**
+     * @brief add a given function f to this fe function
+     * 
+     * The cell and cell_index are from the collection of this TFEFunction2D
+     * and the point (x,y) is in that cell.
+     * 
+     * Note that this is similar to creating a second TFEFunction2D, 
+     * interpolating f on it and then adding it via operator+=. Here no second
+     * TFEFunction2D is required.
+     */
+    void add(AnalyticFunction f);
 
     /**
      * @brief project this functions into the space L20 (having zero mean value)
@@ -156,7 +181,7 @@ class TFEFunction2D
     /** calculate parameters which are connected to a mesh cell */
     void GetMeshCellParams(DoubleFunct2D *Exact, int N_Derivatives,
         MultiIndex2D *NeededDerivatives,
-        int N_Errors, ErrorMethod2D *ErrorMeth, 
+        int N_Errors, ErrorMethod *ErrorMeth, 
         CoeffFct2D Coeff, 
         TAuxParam2D *Aux,
         int n_fespaces, const TFESpace2D **fespaces,
@@ -170,8 +195,8 @@ class TFEFunction2D
         BoundValueFunct2D *BoundaryValue);
 
     /** write the solution into a data file - written by Sashi **/
-    void WriteSol(std::string directory=std::string("."),
-        std::string basename=std::string("parmoon_solution"));
+    void WriteSol(const std::string& directory=std::string("."),
+                  const std::string& basename=std::string("parmoon_solution"));
 
     /** Read the solution from a given data file - written by Sashi **/
     void ReadSol(std::string BaseName);
@@ -209,7 +234,7 @@ class TFEFunction2D
      * together with the minimum and maximum value. If the string is empty 
      * (default) the used name will be TFEFunction2D::Name.
      */
-    void PrintMinMax(std::string name = "") const;
+    void PrintMinMax(const std::string& name = "") const;
 
     /** @brief calculate errors to a given function at the boundary (this is of interest, e.g., for the Nitsche method)
      * 
@@ -219,6 +244,17 @@ class TFEFunction2D
         int n_fespaces, const TFESpace2D **fespaces,
         double *final_boundary_error_l2,
         bool rescale_by_h_E = false);
+
+    /** @brief calculate errors to a given function at the boundary (this is of interest, e.g., for the Nitsche method) without the global database
+      *
+      */
+     void GetL2BoundaryError(BoundValueFunct2D *Exact,
+         TAuxParam2D *Aux,
+         int n_fespaces, const TFESpace2D **fespaces,
+         double *final_boundary_error_l2,
+         int boundary_component_id,
+         bool rescale_by_h_E = false);
+
 
     /// @brief compute the L^2 norm on a particular boundary component.
     /// Negative values mean that all components are considered.

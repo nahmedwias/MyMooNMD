@@ -1,4 +1,4 @@
-  #ifdef _MPI
+#ifdef _MPI
 
 #include "mpi.h"
 #include <ParFEMapper3D.h>
@@ -19,30 +19,22 @@
 #define NONHALO  1
 
 
-#ifndef _HYBRID
-TParFEMapper3D::TParFEMapper3D(int N_dim, TFESpace3D *fespace)
+#ifndef _OMP
+TParFEMapper3D::TParFEMapper3D(int N_dim, const TFESpace3D *fespace)
 #else
-TParFEMapper3D::TParFEMapper3D(int N_dim, TFESpace3D *fespace, int *rowptr, int *kcol)
+TParFEMapper3D::TParFEMapper3D(int N_dim, const TFESpace3D *fespace, int *rowptr, int *kcol)
 #endif
 {
   N_Dim       = N_dim; 
   Comm        = TDatabase::ParamDB->Comm;
   FESpace     = fespace;
 
-#ifdef _HYBRID
+#ifdef _OMP
   RowPtr      = rowptr;
   KCol        = kcol;
 #endif
  
   N_Dof = FESpace->GetN_DegreesOfFreedom();
-  
-  MaxSubDomainPerDof = fespace->GetMaxSubDomainPerDof();
-  if(MaxSubDomainPerDof<0)
-  {
-    printf("Error: SetMaxSubDomainPerDof in FeSpace before calling ParFECommunicator3D \n");
-    MPI_Finalize();
-    exit(-1);
-  }
   
   if(TDatabase::ParamDB->MapperType != 2)
   {
@@ -55,7 +47,7 @@ TParFEMapper3D::TParFEMapper3D(int N_dim, TFESpace3D *fespace, int *rowptr, int 
 
     //   if(TDatabase::ParamDB->SOLVER_TYPE == DIRECT)
     Assign_GlobalDofNo();
-#ifdef _HYBRID
+#ifdef _OMP
     Color(N_CInt,ptrCInt,'i');
     Color(N_CMaster,ptrCMaster,'m');
     Color(N_CDept1,ptrCDept1,'D');
@@ -76,7 +68,7 @@ TParFEMapper3D::TParFEMapper3D()
 
 		FESpace = nullptr;
 
-#ifdef _HYBRID
+#ifdef _OMP
 		RowPtr = nullptr;
 		KCol = nullptr;
 #endif
@@ -84,8 +76,6 @@ TParFEMapper3D::TParFEMapper3D()
 		//assign non-array built-in type data members
 		N_Dim = 0;
 		N_Dof = 0;
-
-		MaxSubDomainPerDof = 0;
 
 		N_InterfaceM = 0;
 		N_InterfaceS = 0;
@@ -206,7 +196,7 @@ TParFEMapper3D::TParFEMapper3D()
 
 }
 
-static int GetLocalIndex(int N, int *array, int val)
+static int GetLocalIndex(int, int *array, int val)
 {
  int m=0;
  while(array[m] != val)
@@ -880,8 +870,10 @@ if(TDatabase::ParamDB->Par_P4){
   delete [] all_GlobalDofNo;                  all_GlobalDofNo            = nullptr;
   delete [] GlobalDofNo;                      GlobalDofNo                = nullptr;
   delete [] GlobalDofNo_interface;            GlobalDofNo_interface      = nullptr;
-  for(i=0;i<size;i++) 
+  for(i=0;i<size;i++)
+  {
     delete [] Master_Table[i];                Master_Table[i]            = nullptr;
+  }
   delete [] N_ranks_per_interface_dofs;       N_ranks_per_interface_dofs = nullptr;     
   delete [] N_allocated_masters;              N_allocated_masters        = nullptr;
   delete [] temp_arr;                         temp_arr                   = nullptr;
@@ -985,7 +977,7 @@ if(TDatabase::ParamDB->Par_P4){
     }
   }
 
-#ifdef _HYBRID
+#ifdef _OMP
 if(TDatabase::ParamDB->Par_P5 == 1)
 {  
    N_InterfaceM = 0;
@@ -1540,8 +1532,8 @@ if(TDatabase::ParamDB->Par_P5 == 1)
   if(rank == 0)
     printf("Total Time Taken for mapping the dofs = %lf\n",end_time-temp_time);
   
-    if(rank==TDatabase::ParamDB->Par_P0)
-      printf("\n################       Mapping for slave-master dofs and halo_1, halo_2 dofs done !!!    ################\n");
+  if(rank==TDatabase::ParamDB->Par_P0)
+    printf("\n################       Mapping for slave-master dofs and halo_1, halo_2 dofs done !!!    ################\n");
   
   if(rank == 0)
       printf("total time taken by the ConstructDofMap_light() = %lf\n",MPI_Wtime()-start_time);  
@@ -2113,7 +2105,7 @@ void TParFEMapper3D::Assign_GlobalDofNo()
 }
 
 
-#ifdef _HYBRID
+#ifdef _OMP
 void TParFEMapper3D::Color(int &numColors, int *&ptrColors, char type)
 {
   int i,j,k;
@@ -2201,7 +2193,7 @@ TParFEMapper3D::TParFEMapper3D(const TParFEMapper3D& other)
 	//shallow copies
 	FESpace = other.FESpace;
 
-#ifdef _HYBRID
+#ifdef _OMP
 	RowPtr = other.RowPtr; //shallow copy
 	KCol = other.KCol; //shallow copy
 #endif
@@ -2212,8 +2204,6 @@ TParFEMapper3D::TParFEMapper3D(const TParFEMapper3D& other)
 	//assign non-array built-in type data members
 	N_Dim = other.N_Dim;
 	N_Dof = other.N_Dof;
-
-	MaxSubDomainPerDof = other.MaxSubDomainPerDof;
 
 	N_InterfaceM = other.N_InterfaceM;
 	N_InterfaceS = other.N_InterfaceS;
@@ -2355,12 +2345,11 @@ void swap(TParFEMapper3D& first, TParFEMapper3D& second)
 	std::swap(first.Comm, second.Comm);
 	std::swap(first.N_Dim , second.N_Dim );
 	std::swap(first.N_Dof , second.N_Dof );
-#ifdef _HYBRID
+#ifdef _OMP
 	std::swap(first.RowPtr , second.RowPtr );
 	std::swap(first.KCol , second.KCol );
 #endif
 	std::swap(first.FESpace , second.FESpace );
-	std::swap(first.MaxSubDomainPerDof , second.MaxSubDomainPerDof );
 	std::swap(first.Master , second.Master );
 	std::swap(first.OwnDofs , second.OwnDofs );
 	std::swap(first.DofMarker , second.DofMarker );

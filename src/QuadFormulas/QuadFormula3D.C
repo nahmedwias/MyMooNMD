@@ -50,7 +50,7 @@ void TQuadFormula3D::InitObject(int n, double* w,
   Accuracy = acc;
 }
 
-double *TQuadFormula3D::GetCoords(int i)
+const double *TQuadFormula3D::GetCoords(int i) const
 {
   double *ret=nullptr;
 
@@ -65,8 +65,8 @@ double *TQuadFormula3D::GetCoords(int i)
 }
 
 void TQuadFormula3D::
-  GetFormulaData(int &n_points, double* &weights, 
-                 double* &xi, double* &eta, double* &zeta)
+  GetFormulaData(int &n_points, const double* &weights, 
+                 const double* &xi, const double* &eta, const double* &zeta)
 {
   n_points=N_QuadPoints;
   weights=Weights;
@@ -78,7 +78,7 @@ void TQuadFormula3D::
 #ifdef __3D__
 void TQuadFormula3D::FindLocalQuadFormula3D
         (int N_LocalUsedElements, FE3D *LocalUsedElements,
-         QuadFormula2D &qf1, QuadFormula3D &qf2)
+         QuadFormula2D &, QuadFormula3D &qf2)
 {
   int i, MaxPolynomialDegree, PolynomialDegree;
   BF3DRefElements RefElement;

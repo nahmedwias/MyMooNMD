@@ -23,7 +23,7 @@
 #include <tuple>
 #include <MooNMD_Io.h>
 
-int main(int argc, char* argv[])
+int main(int, char*[])
 {
 
   //  declaration of databases
@@ -76,11 +76,11 @@ int main(int argc, char* argv[])
 #ifdef __2D__
   TFESpace2D space_coarse(coll_coarse, (char*)"space_coarse",
                (char*)"space_coarse",
-               BoundConditionNSE, order, nullptr);
+               BoundConditionNSE, order);
 
   TFESpace2D space_fine(coll_fine, (char*)"space_fine",
                           (char*)"space_fine",
-                          BoundConditionNSE, order, nullptr);
+                          BoundConditionNSE, order);
 #endif
 #ifdef __3D__
   TFESpace3D space_coarse(coll_coarse, (char*)"space_coarse",

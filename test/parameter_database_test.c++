@@ -55,7 +55,7 @@ bool test_for_parameter_class()
   return true;
 }
 
-int main(int argc, char* argv[])
+int main(int, char**)
 {
   Output::print("starting parameter test");
   if(!test_for_parameter_class())
@@ -138,8 +138,6 @@ int main(int argc, char* argv[])
   Output::print("\n\n");
   db2.info();
   
-  
-  ParameterDatabase timedb = ParameterDatabase::default_time_database();
   
   Output::print("successful test");
   return 0;

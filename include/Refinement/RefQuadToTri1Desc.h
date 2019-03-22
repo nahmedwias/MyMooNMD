@@ -32,7 +32,7 @@ class TRefQuadToTri1Desc : public TRefDesc
   public:
     // Constructor
     /** build a descriptor */
-    TRefQuadToTri1Desc(TShapeDesc *shape);
+    explicit TRefQuadToTri1Desc(TShapeDesc *shape);
 
     // Methods
 };

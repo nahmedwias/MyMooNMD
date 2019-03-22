@@ -12,9 +12,11 @@
 #define __COLLECTION__
 
 #include <vector>
+#include <map>
 #include <BaseCell.h>
 #include <JointCollection.h>
 #include <BoundEdge.h>
+#include <BoundFace.h>
 
 /** @brief store cells in an array, used by cell iterators */
 class TCollection
@@ -26,21 +28,19 @@ class TCollection
     /** @brief array containing the pointers to the cells */
     TBaseCell **Cells;
 
-    /** @brief array with all cells sorted by pointer */
-    TBaseCell **SortedCells;
-
-    /** @brief array with index of SortedCells in Cells */
-    int *Index;
-
-    
+    /** @brief map each cell to its index within this collection.
+     * This enables the method get_cell_index. It serves as a cache is therefore
+     * mutable.
+     */
+    mutable std::map<const TBaseCell*, int> cell_to_index_map;
     
 #ifdef  _MPI
     /** @brief Number of own cells (excluding Halo cells) */
     int N_OwnCells;
-#endif
     
     /** @brief array for Globalcell number in Cells */
     int *GlobalIndex;
+#endif
     
    // ------------------------------------------------
    ///@brief create a list of nodes, vertices, elements
@@ -53,7 +53,7 @@ class TCollection
    std::vector<unsigned int> BdFacesReferences;
    std::vector<unsigned int> DomainVertexNumbers;
    unsigned int NLocVertices;
-   //----- used in PostProcessing ----
+   //----- used in DataWriter ----
     
   public:
     /** @brief constructor */
@@ -71,31 +71,19 @@ class TCollection
     ~TCollection();
 
     /** @brief get maximal and minimal diameter */
-    int GetHminHmax(double *hmin, double *hmax);
+    int GetHminHmax(double *hmin, double *hmax) const;
 
-    /** @brief return Index of cell in Cells-array */
-    int GetIndex(TBaseCell *cell);
-
-    /** @brief mark the vertices that are on the boundary */
-    int MarkBoundaryVertices();
-
-    /** @brief return Index of joints in Cells-array */
-    TJointCollection  *GetJointCollection();
-
-    /** @brief Generate   Vertex Neibs for all cells in the collection */
-    void GenerateCellVertNeibs();
-
-    /** @brief return the Index of the vertex in the sorted array */
-    int GetIndex(TVertex **Array, int Length, TVertex *Element);
+    /** @brief return index of cell in Cells-array */
+    int get_cell_index(const TBaseCell *cell) const;
     
 #ifdef  _MPI
     void SetN_OwnCells(int n_OwnCells)
      { N_OwnCells = n_OwnCells; }
 
-    int GetN_OwnCells()
+    int GetN_OwnCells() const
      { return N_OwnCells; }
 
-    int GetN_HaloCells()
+    int GetN_HaloCells() const
      { return (N_Cells - N_OwnCells); }
 
     int *GetGlobalIndex()
@@ -118,14 +106,6 @@ class TCollection
     int find_process_of_point(double x, double y, double z) const;
 #endif
 
-    void Replace_Coll(int n_cells, TBaseCell **cells)
-     {
-      N_Cells = n_cells;
-      Cells = cells;
-     }
-   
-   int getIndexInCollection(TBaseCell *cell);
-
    ///@brief write the geometry in .mesh format
    int writeMesh(const char *meshFileName);
     
@@ -138,8 +118,13 @@ class TCollection
    
    void get_boundary_edge_list(std::vector<TBoundEdge*> &edges);
    
+   //New LB 11.10.18
+#ifdef __3D__
+   void get_face_list_on_component(int boundary_component_id, std::vector< TBoundFace* > &faces);
+#endif
+
    //####################################################
-   //------------- used in PostProcessing ---------------
+   //--------------- used in DataWriter -----------------
    //####################################################
    
    unsigned int GetN_Vertices();
@@ -153,16 +138,6 @@ class TCollection
    unsigned int GetGlobalVerNo(unsigned int cell, unsigned int locvert);
    
    unsigned int GetNLocVertices();
-   
-   //####################################################
-
- private:
-    /** @brief provide additional arrays */
-    void GenerateSortedArrays();
-
-    /** @brief return Index of cell in SortedCells-array */
-    int GetSortedIndex(TBaseCell *cell);
-
 };
 
 #endif

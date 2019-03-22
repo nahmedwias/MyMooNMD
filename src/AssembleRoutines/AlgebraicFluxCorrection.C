@@ -1462,13 +1462,12 @@ namespace
     int *global_numbers, *begin_index, *dof;
     double area, edge, x[3], y[3], dist, dist_max, dist_max2;
     TCollection *Coll;
-    const TFESpace2D *fespace;
     TBaseCell *cell;
     FE2D CurrentElement;
 
     Output::print<4>("AFC: compute parameter for linearity preservation");
     // get fe space
-    fespace = system_matrix.GetFESpace2D();
+    auto fespace = system_matrix.GetFESpace2D();
     // get collection
     Coll = fespace->GetCollection();
     // number of mesh cells
@@ -1571,10 +1570,9 @@ namespace
     double dist, dist_max, dist_max1, dist_max2, dist_max3, x[4], y[4], z[4], A, B, C, area;
     TCollection *Coll;
     TBaseCell *cell; 
-    const TFESpace3D *fespace;
     FE3D CurrentElement;    
     Output::print<4>("AFC: compute parameter for linearity preservation");
-    fespace=system_matrix.GetFESpace3D();
+    auto fespace=system_matrix.GetFESpace3D();
     // get collection  
     Coll = fespace->GetCollection();
     // number of mesh cells

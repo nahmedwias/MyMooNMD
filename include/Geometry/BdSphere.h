@@ -25,7 +25,7 @@ class TBdSphere : public TBoundComp3D
 
   public:
     // Constructor
-    TBdSphere(int id);
+    explicit TBdSphere(int id);
 
     // Methods
     /** set all parameters to the given values */
@@ -34,11 +34,11 @@ class TBdSphere : public TBoundComp3D
 
     /** return the coordinates of parameter value T, S */
     virtual int GetXYZofTS(double T, double S,
-                           double &X, double &Y, double &Z);
+                           double &X, double &Y, double &Z) const override;
 
     /** return the parameter value T, S of coordinates */
     virtual int GetTSofXYZ(double X, double Y, double Z,
-                           double &T, double &S);
+                           double &T, double &S) const override;
 
     /** return parameters and coordinates of a given linear
         combination of vertices */
@@ -46,16 +46,16 @@ class TBdSphere : public TBoundComp3D
                             double *xp, double *yp, double *zp,
                             double *tp, double *sp,
                             double &X, double &Y, double &Z,
-                            double &T, double &S);
+                            double &T, double &S) const override;
 
-    virtual void get_normal_vector(double x, double y, double z,
-				   double& nx, double& ny, double &nz){
-      Output::print(" ** ERROR: get_normal_vector() not yet implemented for BdSphere ");
-      exit(1);
+    virtual void get_normal_vector(double, double, double, double&, double&,
+                                   double &) const override
+    {
+      ErrThrow(" ** ERROR: get_normal_vector() not yet implemented for BdSphere ");
     };
 
     /** read parameter from input file */
-    virtual int ReadIn(std::istream &dat);
+    virtual int ReadIn(std::istream &dat) override;
 };
 
 #endif

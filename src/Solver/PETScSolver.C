@@ -286,8 +286,8 @@ std::vector<int> local_to_global_block(
 
 // *****************************************************************************
 void create_sub_matrix(const BlockFEMatrix& matrix, 
-                       std::pair<size_t, size_t> start, 
-                       std::pair<size_t, size_t> end, Mat& petsc_mat)
+                       const std::pair<size_t, size_t>& start, 
+                       const std::pair<size_t, size_t>& end, Mat& petsc_mat)
 {
   // sanity checks
   if(start.first > end.first || start.second > end.second)
@@ -352,7 +352,7 @@ void create_sub_matrix(const BlockFEMatrix& matrix,
   size_t n_global_rows = 0;
   for(size_t r = 0; r < n_block_rows; ++r)
   {
-    auto comm = &matrix.get_row_space(r + start.first).get_communicator();
+    auto comm = &matrix.get_row_space(r + start.first)->get_communicator();
     row_communicators[r] = comm;
     n_master_rows += comm->GetN_Master();
     n_global_rows += comm->get_n_global_dof();
@@ -363,7 +363,7 @@ void create_sub_matrix(const BlockFEMatrix& matrix,
   size_t n_global_cols = 0;
   for(size_t c = 0; c < n_block_cols; ++c)
   {
-    auto comm = &matrix.get_column_space(c + start.second).get_communicator();
+    auto comm = &matrix.get_column_space(c + start.second)->get_communicator();
     col_communicators[c] = comm;
     n_master_cols += comm->GetN_Master();
     n_global_cols += comm->get_n_global_dof();
@@ -593,7 +593,7 @@ PETScSolver::PETScSolver(const BlockFEMatrix& matrix,
 }
 
 /* ************************************************************************** */
-PETScSolver::PETScSolver(const BlockMatrix& matrix, const ParameterDatabase& db)
+PETScSolver::PETScSolver(const BlockMatrix&, const ParameterDatabase&)
 {
   ErrThrow("can not construct a PETScSolver using a BlockMatrix. I need a "
            "BlockFEMatrix instead. It would be possible to implement this "

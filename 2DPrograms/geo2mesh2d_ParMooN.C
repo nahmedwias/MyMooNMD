@@ -18,11 +18,11 @@
 // =======================================================================
 // main program
 // =======================================================================
-int main(int argc, char* argv[])
+int main(int, char* argv[])
 {
     
   //  declaration of database, you need this in every program
-  TDatabase Database;
+  TDatabase Database(argv[1]);
   TFEDatabase2D FEDatabase;
 
   // read input file (new version)
@@ -31,8 +31,7 @@ int main(int argc, char* argv[])
   parmoon_db.read(fs);
   fs.close();
 
-  /** set variables' value in TDatabase using argv[1] (*.dat file) */
-  TDomain domain(parmoon_db, argv[1]);
+  TDomain domain(parmoon_db);
 
   Output::set_outfile(parmoon_db["outfile"]);
   Output::setVerbosity(parmoon_db["verbosity"]);

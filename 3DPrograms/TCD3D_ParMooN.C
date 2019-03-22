@@ -6,9 +6,10 @@
 #include <Domain.h>
 #include <Database.h>
 #include <FEDatabase3D.h>
-#include <Time_CD3D.h>
+#include "TimeConvectionDiffusion.h"
 #include <TimeDiscRout.h>
 #include <Chrono.h>
+#include <TimeDiscretizations.h>
 
 #include <sys/stat.h>
 
@@ -29,11 +30,10 @@ int main(int argc, char *argv[])
   {
   Chrono timer;
   // Construct the ParMooN Databases.
-  TDatabase Database;
+  TDatabase Database(argv[1]);
   ParameterDatabase parmoon_db = ParameterDatabase::parmoon_default_database();
-  std::ifstream fs(argv[1]);
-  parmoon_db.read(fs);
-  fs.close();
+  parmoon_db.merge(TimeDiscretization::default_TimeDiscretization_database());
+  parmoon_db.read(argv[1]);
   
   bool i_am_root = true;
 #ifdef _MPI
@@ -49,14 +49,14 @@ int main(int argc, char *argv[])
   Output::info("Time_CD3D", "MPI, using ", size, " processes");
 #endif
   
-  TFEDatabase3D feDatabase;
-  TDomain domain(parmoon_db, argv[1]);
-  
   // open outfile, this is where all output is written (additionally to console)
   if(i_am_root)
-    Output::set_outfile(parmoon_db["outfile"]);
+    Output::set_outfile(parmoon_db["outfile"], parmoon_db["script_mode"]);
   
   Output::setVerbosity(parmoon_db["verbosity"]);
+  
+  TFEDatabase3D feDatabase;
+  TDomain domain(parmoon_db);
   
   if(i_am_root)
   {
@@ -65,64 +65,53 @@ int main(int argc, char *argv[])
   }
   
 
-  // Intial refinement and grabbing of grids for multigrid.
-#ifdef _MPI
-  int maxSubDomainPerDof = 0;
-#endif
-  std::list<TCollection* > gridCollections
-  = domain.refine_and_get_hierarchy_of_collections(
-      parmoon_db
-  #ifdef _MPI
-      , maxSubDomainPerDof
-  #endif
-      );
+  // Intial refinement
+  domain.refine_and_get_hierarchy_of_collections(parmoon_db);
   //print information on the mesh partition on the finest grid
   domain.print_info("TCD3D domain");
   
   // set some parameters for time stepping
   SetTimeDiscParameters(0);
 
-  // Choose example according to the value of "example" in the given database
-  Example_TimeCD3D example(parmoon_db);
-  
   timer.restart_and_print("setup(domain, example, database)");
   // create an object of the class Time_CD3D
-#ifdef _MPI
-  Time_CD3D tcd3d(gridCollections, parmoon_db, example, maxSubDomainPerDof);
-#else
-  Time_CD3D tcd3d(gridCollections, parmoon_db, example);
-#endif
+  TimeConvectionDiffusion<3> tcd3d(domain, parmoon_db);
   timer.restart_and_print("constructing Time_CD3D object");
+  
+  TimeDiscretization& tss = tcd3d.get_time_stepping_scheme();
+  tss.current_step_ = 0;
+  tss.current_time_ = parmoon_db["time_start"];
   
   // assemble the matrices and right hand side at the start time
   tcd3d.assemble_initial_time();
-  int step = 0, image=0;
   timer.restart_and_print("initial assembling");
   Chrono timer_solve;
   timer_solve.stop();
   
-  while(TDatabase::TimeDB->CURRENTTIME < TDatabase::TimeDB->ENDTIME - 1e-10)
+  double start_time = parmoon_db["time_start"];
+  TDatabase::TimeDB->CURRENTTIME = start_time;
+  while(!tss.reached_final_time_step())
   {
-    step++;
-    TDatabase::TimeDB->INTERNAL_STARTTIME = TDatabase::TimeDB->CURRENTTIME;
+    tss.current_step_++;
+    TDatabase::TimeDB->INTERNAL_STARTTIME = tss.current_time_;
+    tss.set_time_disc_parameters();
     SetTimeDiscParameters(1);
-
-    double tau = TDatabase::TimeDB->TIMESTEPLENGTH;
-    TDatabase::TimeDB->CURRENTTIME += tau;
+    tss.current_time_ += tss.get_step_length();
+    // this is used at several places, e.g., in the example file etc.
+    TDatabase::TimeDB->CURRENTTIME += tss.get_step_length();
     
     if(i_am_root)
-      Output::print<1>("\nCURRENT TIME: ", TDatabase::TimeDB->CURRENTTIME);
+      Output::print<1>("\nCURRENT TIME: ", tss.current_time_);
     tcd3d.assemble();
     timer_solve.start();
     tcd3d.solve();
     timer_solve.restart_and_print("solving in step t=" 
-                               +std::to_string(TDatabase::TimeDB->CURRENTTIME));
+                               +std::to_string(tss.current_time_));
     timer_solve.stop();
-    tcd3d.descale_stiffness();
     
-    tcd3d.output(step,image);
+    tcd3d.output();
     timer.restart_and_print(
-      "time step (t=" + std::to_string(TDatabase::TimeDB->CURRENTTIME)+ ")");
+      "time step (t=" + std::to_string(tss.current_time_)+ ")");
   }
   
   timer_solve.print_total_time("accumulated solver time");

@@ -27,17 +27,17 @@ void ExampleFile()
 // ========================================================================
 // initial solution
 // ========================================================================
-void InitialU1(double x, double y, double *values)
+void InitialU1(double, double y, double *values)
 {
   values[0] = 6.0*y*(1-y);
 }
 
-void InitialU2(double x, double y, double *values)
+void InitialU2(double, double, double *values)
 {
   values[0] = 0;
 }
 
-void InitialP(double x, double y, double *values)
+void InitialP(double, double, double *values)
 {
   values[0] = 0;
 }
@@ -45,7 +45,7 @@ void InitialP(double x, double y, double *values)
 // ========================================================================
 // exact solution
 // ========================================================================
-void ExactU1(double x, double y, double *values)
+void ExactU1(double, double, double *values)
 {
   values[0] = 0;
   values[1] = 0;
@@ -53,7 +53,7 @@ void ExactU1(double x, double y, double *values)
   values[3] = 0;
 }
 
-void ExactU2(double x, double y, double *values)
+void ExactU2(double, double, double *values)
 {
   values[0] = 0;
   values[1] = 0;
@@ -61,7 +61,7 @@ void ExactU2(double x, double y, double *values)
   values[3] = 0;
 }
 
-void ExactP(double x, double y, double *values)
+void ExactP(double, double, double *values)
 {
   values[0] = 0;
   values[1] = 0;
@@ -72,7 +72,7 @@ void ExactP(double x, double y, double *values)
 // ========================================================================
 // boundary conditions
 // ========================================================================
-void BoundCondition(int bdcomp, double t, BoundCond &cond)
+void BoundCondition(int bdcomp, double, BoundCond &cond)
 {
   switch(bdcomp)
   {
@@ -85,12 +85,12 @@ void BoundCondition(int bdcomp, double t, BoundCond &cond)
   }      
 }
 
-void BoundConditionPressure(int bdcomp, double t, BoundCond &cond)
+void BoundConditionPressure(int, double, BoundCond &cond)
 {
      cond = NEUMANN;
 }
 
-void PressureBoundValue(int BdComp, double y, double &value)
+void PressureBoundValue(int, double, double &value)
 {
   value = 0;
 }
@@ -136,13 +136,13 @@ void U1BoundValue_diff(int BdComp, double Param, double &value)
 
 }
 
-void U2BoundValue(int BdComp, double Param, double &value)
+void U2BoundValue(int BdComp, double, double &value)
 {
   value = 0;
   if(BdComp>4) cout << "wrong boundary part number: " << BdComp << endl;
 }
 
-void U2BoundValue_diff(int BdComp, double Param, double &value)
+void U2BoundValue_diff(int BdComp, double, double &value)
 {
   value = 0;
   if(BdComp>4) cout << "wrong boundary part number: " << BdComp << endl;
@@ -151,8 +151,7 @@ void U2BoundValue_diff(int BdComp, double Param, double &value)
 // ========================================================================
 // coefficients for Stokes form: A, B1, B2, f1, f2
 // ========================================================================
-void LinCoeffs(int n_points, double *x, double *y,
-               double **parameters, double **coeffs)
+void LinCoeffs(int n_points, double *, double *, double **, double **coeffs)
 {
   double eps = DIMENSIONLESS_VISCOSITY;
   int i;
@@ -178,7 +177,7 @@ void GetCdCl(TFEFunction2D *u1fct, TFEFunction2D *u2fct,
 {
   int i,j,k,l, N_;
   int N_Points,N_Edges,comp;
-  double *weights, *xi, *eta;
+  const double *weights, *xi, *eta;
   double X[MaxN_QuadPoints_2D];
   double Y[MaxN_QuadPoints_2D];
   double AbsDetjk[MaxN_QuadPoints_2D];
@@ -188,7 +187,6 @@ void GetCdCl(TFEFunction2D *u1fct, TFEFunction2D *u2fct,
   double **OrigFEValues, *Orig;
   bool SecondDer[2] = { false, false };
   double *u1, *u2, *p, *u1old, *u2old;
-  const TFESpace2D *USpace, *PSpace;
   int *UGlobalNumbers, *UBeginIndex;
   int *PGlobalNumbers, *PBeginIndex;
   int *N_BaseFunct, N_Cells;
@@ -210,7 +208,7 @@ void GetCdCl(TFEFunction2D *u1fct, TFEFunction2D *u2fct,
   double *Der, *aux;
   TJoint *joint;
   TBoundEdge *boundedge;
-  TBoundComp *BoundComp;
+  const TBoundComp *BoundComp;
   TFE2D *eleCell;
   FE2D FEEle;
   TFEDesc2D *FEDesc;
@@ -229,8 +227,8 @@ void GetCdCl(TFEFunction2D *u1fct, TFEFunction2D *u2fct,
   u2old = u2oldfct->GetValues();
   p = pfct->GetValues();
 
-  USpace = u1fct->GetFESpace2D();
-  PSpace = pfct->GetFESpace2D();
+  auto USpace = u1fct->GetFESpace2D();
+  auto PSpace = pfct->GetFESpace2D();
 
   UGlobalNumbers = USpace->GetGlobalNumbers();
   UBeginIndex = USpace->GetBeginIndex();
@@ -408,7 +406,7 @@ void GetCdCl(TFEFunction2D *u1fct, TFEFunction2D *u2fct,
   delete v;
 }
 
-void compute_drag_lift_pdiff(Time_NSE2D& time_nse2d, double& val)
+void compute_drag_lift_pdiff(TimeNavierStokes<2>& time_nse2d, double&)
 {
   double drag, lift, dP1[4], dP2[4];
 

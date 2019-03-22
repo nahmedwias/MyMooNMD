@@ -20,7 +20,7 @@ static void B_Q_IB2_2D_DeriveEta(double xi, double eta, double *values)
   values[0]=-2.*eta+2.*xi*xi*eta;
 }
 // values of the derivatives in xi-xi  direction
-static void B_Q_IB2_2D_DeriveXiXi(double xi, double eta, double *values)
+static void B_Q_IB2_2D_DeriveXiXi(double, double eta, double *values)
 {
   values[0]=-2.+2.*eta*eta;
 }
@@ -30,7 +30,7 @@ static void B_Q_IB2_2D_DeriveXiEta(double xi, double eta, double *values)
   values[0]=4.*eta*xi;
 }
 // values of the derivatives in eta-eta direction
-static void B_Q_IB2_2D_DeriveEtaEta(double xi, double eta, double *values)
+static void B_Q_IB2_2D_DeriveEtaEta(double xi, double, double *values)
 {
   values[0]=-2.+2.*xi*xi;
 }

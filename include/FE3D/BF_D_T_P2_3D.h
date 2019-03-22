@@ -86,8 +86,7 @@ static void D_T_P2_3D_DeriveZeta(double xi, double eta, double zeta,
   }
 }
 
-static void D_T_P2_3D_DeriveXiXi(double xi, double eta, double zeta,
-                             double *values)
+static void D_T_P2_3D_DeriveXiXi(double, double, double, double *values)
 {
   int nBF = 10; // number of basis functions
   double mon[]={0,0,0,0,2,0,0,
@@ -103,8 +102,7 @@ static void D_T_P2_3D_DeriveXiXi(double xi, double eta, double zeta,
   }
 }
 
-static void D_T_P2_3D_DeriveXiEta(double xi, double eta, double zeta,
-                             double *values)
+static void D_T_P2_3D_DeriveXiEta(double, double, double, double *values)
 {
   int nBF = 10; // number of basis functions
   double mon[]={0,0,0,0,0,1,0,
@@ -120,8 +118,7 @@ static void D_T_P2_3D_DeriveXiEta(double xi, double eta, double zeta,
   }
 }
 
-static void D_T_P2_3D_DeriveXiZeta(double xi, double eta, double zeta,
-                             double *values)
+static void D_T_P2_3D_DeriveXiZeta(double, double, double, double *values)
 {
   int nBF = 10; // number of basis functions
   double mon[]={0,0,0,0,0,0,1,
@@ -137,8 +134,7 @@ static void D_T_P2_3D_DeriveXiZeta(double xi, double eta, double zeta,
   }
 }
 
-static void D_T_P2_3D_DeriveEtaEta(double xi, double eta, double zeta,
-                             double *values)
+static void D_T_P2_3D_DeriveEtaEta(double, double, double, double *values)
 {
   int nBF = 10; // number of basis functions
   double mon[]={0,0,0,0,0,0,0,
@@ -154,8 +150,7 @@ static void D_T_P2_3D_DeriveEtaEta(double xi, double eta, double zeta,
   }
 }
 
-static void D_T_P2_3D_DeriveEtaZeta(double xi, double eta, double zeta,
-                             double *values)
+static void D_T_P2_3D_DeriveEtaZeta(double, double, double, double *values)
 {
   int nBF = 10; // number of basis functions
   double mon[]={0,0,0,0,0,0,0,
@@ -171,8 +166,7 @@ static void D_T_P2_3D_DeriveEtaZeta(double xi, double eta, double zeta,
   }
 }
 
-static void D_T_P2_3D_DeriveZetaZeta(double xi, double eta, double zeta,
-                             double *values)
+static void D_T_P2_3D_DeriveZetaZeta(double, double, double, double *values)
 {
   int nBF = 10; // number of basis functions
   double mon[]={0,0,0,0,0,0,0,

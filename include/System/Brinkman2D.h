@@ -22,10 +22,12 @@
 #include <BlockVector.h>
 #include <Solver.h>
 #include <ParameterDatabase.h>
-#include <PostProcessing2D.h>
+#include <DataWriter.h>
 #include <utility>
 #include <array>
 #include <FEFunction2D.h>
+
+
 
 class Brinkman2D
 {
@@ -99,8 +101,17 @@ public:
      * This assembles everything which is not related to the nonlinear term.
      * I.e. it assembles a Stokes matrix.
      */
+
+// LB NEW 16.04.18 start
+void assemble(size_t level = 4711, TFEFunction2D* coefficient_function = nullptr);
+TFEFunction2D* u1;
+TFEFunction2D* u2;
+// LB NEW 16.04.18 end
+/*
+// LB OLD 16.04.18 start
     void assemble();
-    
+// LB OLD 16.04.18 end
+*/
     /** @brief solve the system */
     void solve();
     
@@ -153,6 +164,52 @@ public:
     double getH1SemiPressureError() const;
     //@}
 
+    /////////////// Routines for periodic boundary conditions /////////////////
+
+    // for the riverbed example with "nonhomogeneous periodic boundary conditions".
+    // this map contains all pairs of velocity dofs which have to be identified
+    std::map<int,int> periodic_dofs;
+
+
+    /** find periodic boundaries dofs.·
+     * This fills the map<int,int> 'periodic_dofs' such that a call to·
+     * 'getPeriodicDOF(int)' now makes sense
+     */
+    void findPeriodicDOFs();
+    /** enable periodic boundaries in some matrix which has as many rows as the
+     * Stokes matrix. This is used for·
+     * - S, the Stokes matrix itself  (default, i.e., no arguments)
+     * - C, coupling matrix used for the direct solution
+     * - E, representing (eta_f,u.n), which is added to the rhs during iteration
+     *·
+     * The method makePeriodicBoundary() (without arguments must be called first
+     * If the second argument is true then there will be ones on the diagonal and·
+     * -1 in the off-diagonal entry coupling with this row. If additionally the·
+     * third argument is true, then there are zeros put where otherwise 1 and -1
+     * are put (as described in the previous sentence). This enlarges the·
+     * structure of the matrix 'mat', it is then possible to add two such·
+     * matrices. This is currently implemented only due to periodic boundary
+     * values (riverbed example).··
+     */
+		 void makePeriodicBoundary(std::shared_ptr<TMatrix> mat = nullptr,
+				 bool stokesMat = false, bool p = false);
+
+     void checkPeriodicDOFs();
+
+     /** check if the given dof is a periodic dof. If no, -1 is returned. If yes,·
+      * the dof to which this dof is coupled (periodicDOF) is returned. The row·
+      * 'dof' should then be deleted. If mat==getMat().squareBlock(0), the row
+      * 'dof' should be replaced by a 1 on the diagonal and -1 on 'periodicDOF'.
+      */
+			int getPeriodicDOF(int dof) const
+      {
+      	std::map<int,int>::const_iterator it = periodic_dofs.find(dof);
+      	if (it == periodic_dofs.end()) return -1;
+      	else return it->second;
+      }
+
+			/////////////// /////////////// /////////////// ///////////////
+
     // getters and setters
     //    const BlockMatrixNSE2D & get_matrix() const TODO
     //    { return this->systems.front().matrix; }
@@ -191,7 +248,7 @@ public:
     const Example_Brinkman2D & get_example() const
     { return example; }
     const ParameterDatabase & get_db() const
-    { return db; }
+    { return brinkman2d_db; }
     /// @brief get the current residuals  (updated in Brinkman2D::normOfResidual)
     const Residuals& getResiduals() const;
     /// @brief get the current impuls residual (updated in Brinkman2D::normOfResidual)
@@ -202,6 +259,7 @@ public:
     double getFullResidual() const;
     /// @brief return the computed errors
     std::array<double, int(8)> get_errors();
+
 
 protected:
     
@@ -229,7 +287,7 @@ protected:
         
         /** @brief constructor */
         System_per_grid(const Example_Brinkman2D& example, TCollection& coll,
-                        std:: pair <int,int> velocity_pressure_orders,
+                        const std:: pair <int,int>& velocity_pressure_orders,
                         Brinkman2D::Matrix type);
         
         /**
@@ -261,7 +319,14 @@ protected:
      * other parameters such as solver parameters. Those are only in the
      * Solver object.
      */
-    ParameterDatabase db;
+
+     // LB NEW 19.04.18 start
+    ParameterDatabase brinkman2d_db;
+    // LB NEW 19.04.18 end
+/*      // LB OLD 19.04.18 start
+    ParameterDatabase brinkman2d_db;
+    // LB OLD 19.04.18 end
+*/
     
     /** @brief a solver object which will solve the linear system
      *
@@ -271,7 +336,7 @@ protected:
     Solver<BlockFEMatrix, BlockVector> solver;
 
     /** @brief class for output handling (vtk and case files) */
-    PostProcessing2D outputWriter;
+    DataWriter2D outputWriter;
     
     /** @brief a complete system on each grid
      *
@@ -333,7 +398,10 @@ protected:
      * and pressure
      */
     std::array<double, int(8)> errors;
-    
+   
+
+
+
 };
 
 

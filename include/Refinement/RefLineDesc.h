@@ -25,7 +25,7 @@ class TRefLineDesc : public TRefDesc
   public:
     // Constructor
     /** build a descriptor for regular refinement of a line */
-    TRefLineDesc(TShapeDesc *shape);
+    explicit TRefLineDesc(TShapeDesc *shape);
 
     // Methods
 };

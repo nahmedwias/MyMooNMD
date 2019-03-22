@@ -1,18 +1,8 @@
-// =======================================================================
-// %W% %G%
-//
-// Class:      TRefTrans3D
-//
-// Purpose:    reference transformations for 3D geometric objects
-//
-// Author:     Gunar Matthies
-//
-// History:    01.02.00 start implementation
-// 
-// =======================================================================
+#include "RefTrans3D.h"
+#include "MooNMD_Io.h"
 
-#include <RefTrans3D.h>
-
-TRefTrans3D::TRefTrans3D()
-{
-}
+void TRefTrans3D::PiolaMapOrigFromRef(double, double, double, int,
+                                      const double *, double *)
+{ 
+  ErrThrow("Piola Map not defined for this element");
+};

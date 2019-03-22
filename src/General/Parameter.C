@@ -9,7 +9,7 @@
 
 /// @brief Check that name is allowed (no spaces or dots), it returns the name
 /// without any changes, or throws
-std::string check_name(std::string name)
+const std::string& check_name(const std::string& name) 
 {
   // Space and punctuation not allowed in names
   for (std::size_t i = 0; i < name.size(); i++)
@@ -24,7 +24,7 @@ std::string check_name(std::string name)
 }
 
 /// @brief check if the given Parameter type is the corresponding template type
-template <typename T> bool check_type(Parameter::types t) { return false; }
+template <typename T> bool check_type(Parameter::types) { return false; }
 template<> bool check_type<bool>(Parameter::types t)
 { return Parameter::types::_bool == t; }
 template<> bool check_type<int>(Parameter::types t)
@@ -71,7 +71,7 @@ std::string convert_to_string(T x)
   return s;
 }
 template <typename T>
-std::string convert_to_string(std::vector<T> x)
+std::string convert_to_string(const std::vector<T>& x)
 {
   if(x.empty())
     return std::string("");
@@ -109,7 +109,7 @@ std::string type_as_string(const Parameter::types t)
 
 /* ************************************************************************** */
 Parameter::Parameter(std::string key, bool new_value, std::string description)
- : type(Parameter::types::_bool), bool_value(new_value), name(key),
+ : type(Parameter::types::_bool), bool_value(new_value), name(check_name(key)),
    description(description), not_bool_value_allowed(true)
 {
   // allow both 'true' and 'false'
@@ -117,20 +117,20 @@ Parameter::Parameter(std::string key, bool new_value, std::string description)
 
 //template <typename T>
 Parameter::Parameter(std::string key, int new_value, std::string description)
- : type(Parameter::types::_int), int_value(new_value), name(key),
+ : type(Parameter::types::_int), int_value(new_value), name(check_name(key)),
    description(description), range_is_an_interval(false), int_range({new_value})
 {
 }
 
 Parameter::Parameter(std::string key, size_t new_value, std::string description)
- : type(Parameter::types::_size_t), unsigned_value(new_value), name(key),
+ : type(Parameter::types::_size_t), unsigned_value(new_value), name(check_name(key)),
    description(description), range_is_an_interval(false),
    unsigned_range({new_value})
 {
 }
 
 Parameter::Parameter(std::string key, double new_value, std::string description)
- : type(Parameter::types::_double), double_value(new_value), name(key),
+ : type(Parameter::types::_double), double_value(new_value), name(check_name(key)),
    description(description), range_is_an_interval(true), double_min(new_value),
    double_max(new_value)
 {
@@ -138,21 +138,21 @@ Parameter::Parameter(std::string key, double new_value, std::string description)
 
 Parameter::Parameter(std::string key, std::string new_value, 
                      std::string description)
- : type(Parameter::types::_string), string_value(new_value), name(key),
+ : type(Parameter::types::_string), string_value(new_value), name(check_name(key)),
    description(description), string_range({new_value})
 {
 }
 
 Parameter::Parameter(std::string key, std::vector<bool> new_values,
                      std::string description)
- : type(Parameter::types::_bool_vec), bool_vector(new_values), name(key),
+ : type(Parameter::types::_bool_vec), bool_vector(new_values), name(check_name(key)),
    description(description)
 {
 }
 
 Parameter::Parameter(std::string key, std::vector<int> new_values,
                      std::string description)
- : type(Parameter::types::_int_vec), int_vector(new_values), name(key),
+ : type(Parameter::types::_int_vec), int_vector(new_values), name(check_name(key)),
    description(description)
 {
   this->int_range.insert(new_values.begin(), new_values.end());
@@ -160,7 +160,7 @@ Parameter::Parameter(std::string key, std::vector<int> new_values,
 
 Parameter::Parameter(std::string key, std::vector<size_t> new_values,
                      std::string description)
- : type(Parameter::types::_size_t_vec), unsigned_vector(new_values), name(key),
+ : type(Parameter::types::_size_t_vec), unsigned_vector(new_values), name(check_name(key)),
    description(description)
 {
   this->unsigned_range.insert(new_values.begin(), new_values.end());
@@ -168,7 +168,7 @@ Parameter::Parameter(std::string key, std::vector<size_t> new_values,
 Parameter::Parameter(std::string key, 
                      std::initializer_list<unsigned int> new_values,
                      std::string description)
- : type(Parameter::types::_size_t_vec), name(key), description(description)
+ : type(Parameter::types::_size_t_vec), name(check_name(key)), description(description)
    
 {
   unsigned_vector.reserve(new_values.size());
@@ -179,7 +179,7 @@ Parameter::Parameter(std::string key,
 
 Parameter::Parameter(std::string key, std::vector<double> new_values,
                      std::string description)
- : type(Parameter::types::_double_vec), double_vector(new_values), name(key),
+ : type(Parameter::types::_double_vec), double_vector(new_values), name(check_name(key)),
    description(description)
 {
   auto result = std::minmax_element(new_values.begin(), new_values.end());
@@ -189,7 +189,7 @@ Parameter::Parameter(std::string key, std::vector<double> new_values,
 
 Parameter::Parameter(std::string key, std::vector<std::string> new_values,
                      std::string description)
- : type(Parameter::types::_string_vec), string_vector(new_values), name(key),
+ : type(Parameter::types::_string_vec), string_vector(new_values), name(check_name(key)),
    description(description), not_bool_value_allowed(true)
 {
   this->string_range.insert(new_values.begin(), new_values.end());
@@ -234,7 +234,7 @@ Parameter::Parameter(const Parameter& p)
    double_min(p.double_min), double_max(p.double_max),
    string_range(p.string_range)
 {
-  Output::print<4>("Parameter(const Parameter& p)\tname: ", this->name);
+  Output::print<5>("Parameter(const Parameter& p)\tname: ", this->name);
 }
 
 /* ************************************************************************** */
@@ -1470,13 +1470,12 @@ template<> void Parameter::set_range(double min_value, double max_value)
   this->double_min = min_value;
   this->double_max = max_value;
 }
-template<> void Parameter::set_range(bool min_value, bool max_value)
+template<> void Parameter::set_range(bool, bool)
 {
   ErrThrow("Parameter::set_range with two bool arguments makes no sense, "
            "Parameter ", this->name);
 }
-template<> void Parameter::set_range(std::string min_value,
-                                     std::string max_value)
+template<> void Parameter::set_range(std::string, std::string)
 { 
   ErrThrow("Parameter::set_range with two string arguments makes no sense, "
            "Parameter ", this->name);
@@ -1619,8 +1618,9 @@ void Parameter::info() const
 }
 
 /* ************************************************************************** */
-void Parameter::print_description(std::ostream& os, std::string prepend, 
-                                  size_t max_width, std::string key) const
+void Parameter::print_description(std::ostream& os, const std::string& prepend, 
+                                  size_t max_width, const std::string& key)
+ const
 {
   // words in description as a vector of strings
   // see http://stackoverflow.com/a/19137669

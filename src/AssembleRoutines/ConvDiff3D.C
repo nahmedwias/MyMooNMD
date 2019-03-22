@@ -57,198 +57,6 @@ void Compute_Crosswind_Plane(double *n, double *v1, double *v2)
   }
 }
 
-
-void BilinearAssemble(double Mult, double *coeff, double hK,
-double **OrigValues, int *N_BaseFuncts,
-double ***LocMatrices, double **LocRhs)
-{
-  double **Matrix, *Rhs, val, *MatrixRow;
-  double ansatz000, ansatz100, ansatz010, ansatz001;
-  double test000, test100, test010, test001;
-  double *Orig0, *Orig1, *Orig2, *Orig3;
-  int i,j, N_;
-  double c0, c1, c2, c3, c4, c5;
-
-  Matrix = LocMatrices[0];
-  Rhs = LocRhs[0];
-
-  N_ = N_BaseFuncts[0];
-
-  Orig0 = OrigValues[0];
-  Orig1 = OrigValues[1];
-  Orig2 = OrigValues[2];
-  Orig3 = OrigValues[3];
-
-  c0 = coeff[0];
-  c1 = coeff[1];
-  c2 = coeff[2];
-  c3 = coeff[3];
-  c4 = coeff[4];
-  c5 = coeff[5];
-
-  
-//   cout << " c0 " << c0 <<" c5 " << c5 << endl;
-  
-  for(i=0;i<N_;i++)
-  {
-    MatrixRow = Matrix[i];
-    test100 = Orig0[i];
-    test010 = Orig1[i];
-    test001 = Orig2[i];
-    test000 = Orig3[i];
-
-    Rhs[i] += Mult*test000*c5;
-    
-//      if(TDatabase::ParamDB->P14<Mult) TDatabase::ParamDB->P14=Mult;    
-
-    for(j=0;j<N_;j++)
-    {
-      ansatz100 = Orig0[j];
-      ansatz010 = Orig1[j];
-      ansatz001 = Orig2[j];
-      ansatz000 = Orig3[j];
-
-      val = c0*(test100*ansatz100+test010*ansatz010+test001*ansatz001);
-      val += (c1*ansatz100+c2*ansatz010+c3*ansatz001)*test000;
-      val += c4*ansatz000*test000;
-
-      val *= Mult;
-
-      MatrixRow[j] += val;
-    }                            // endfor j
-  }                              // endfor i
-}
-
-void BilinearAssembleGalerkin(double Mult, double *coeff, double* param,
-						      double hK, double **OrigValues, int *N_BaseFuncts,
-							  double ***LocMatrices, double **LocRhs)
-{
-  double **Matrix, *Rhs, val, *MatrixRow;
-  double ansatz000, ansatz100, ansatz010, ansatz001;
-  double test000, test100, test010, test001;
-  double *Orig0, *Orig1, *Orig2, *Orig3;
-  int i,j, N_;
-  double c0, c1, c2, c3, c4, c5;
-
-  Matrix = LocMatrices[0];
-  Rhs = LocRhs[0];
-
-  N_ = N_BaseFuncts[0];
-
-  Orig0 = OrigValues[0];
-  Orig1 = OrigValues[1];
-  Orig2 = OrigValues[2];
-  Orig3 = OrigValues[3];
-
-  c0 = coeff[0];
-  c1 = coeff[1];
-  c2 = coeff[2];
-  c3 = coeff[3];
-  c4 = coeff[4];
-  c5 = coeff[5];
-
-
-//   cout << " c0 " << c0 <<" c5 " << c5 << endl;
-
-  for(i=0;i<N_;i++)
-  {
-    MatrixRow = Matrix[i];
-    test100 = Orig0[i];
-    test010 = Orig1[i];
-    test001 = Orig2[i];
-    test000 = Orig3[i];
-
-    Rhs[i] += Mult*test000*c5;
-
-//      if(TDatabase::ParamDB->P14<Mult) TDatabase::ParamDB->P14=Mult;
-
-    for(j=0;j<N_;j++)
-    {
-      ansatz100 = Orig0[j];
-      ansatz010 = Orig1[j];
-      ansatz001 = Orig2[j];
-      ansatz000 = Orig3[j];
-
-      val = c0*(test100*ansatz100+test010*ansatz010+test001*ansatz001);
-      val += (c1*ansatz100+c2*ansatz010+c3*ansatz001)*test000;
-      val += c4*ansatz000*test000;
-
-      val *= Mult;
-
-      MatrixRow[j] += val;
-    }                            // endfor j
-  }                              // endfor i
-}
-
-
-// SDFEM without 2nd derivatives
-void BilinearAssemble_SD(double Mult, double *coeff, double* param, 
-                         double hK, double **OrigValues, int *N_BaseFuncts,
-                         double ***LocMatrices, double **LocRhs)
-{
-  double **Matrix, *Rhs, val, *MatrixRow;
-  double ansatz000, ansatz100, ansatz010, ansatz001;
-  double test000, test100, test010, test001;
-  double *Orig0, *Orig1, *Orig2, *Orig3;
-  int i,j, N_;
-  double c0, c1, c2, c3, c4, c5, c6;
-  double delta, bgradv;
- 
-  Matrix = LocMatrices[0];
-  Rhs = LocRhs[0];
-
-  N_ = N_BaseFuncts[0];
-
-  Orig0 = OrigValues[0];
-  Orig1 = OrigValues[1];
-  Orig2 = OrigValues[2];
-  Orig3 = OrigValues[3];
-
-  c0 = coeff[0];                 // nu
-  c1 = coeff[1];                 // b_1
-  c2 = coeff[2];                 // b_2
-  c3 = coeff[3];                 // b_3
-  c4 = coeff[4];                 // c
-  c5 = coeff[5];                 // f
-  c6 = coeff[6];                 // ||b||
-
-  delta = Compute_SDFEM_delta(hK, c0, c1, c2, c3, c4, c6);
-
-  for(i=0;i<N_;i++)
-  {
-    MatrixRow = Matrix[i];
-    test100 = Orig0[i];
-    test010 = Orig1[i];
-    test001 = Orig2[i];
-    test000 = Orig3[i];
-
-    bgradv = c1*test100+c2*test010+c3*test001;
-
-    Rhs[i] += Mult*(test000+delta*bgradv)*c5;
-
-    for(j=0;j<N_;j++)
-    {
-      ansatz100 = Orig0[j];
-      ansatz010 = Orig1[j];
-      ansatz001 = Orig2[j];
-      ansatz000 = Orig3[j];
-
-      val = c0*(test100*ansatz100+test010*ansatz010+test001*ansatz001);
-      val += (c1*ansatz100+c2*ansatz010+c3*ansatz001)*test000;
-      val += c4*ansatz000*test000;
-
-      val += delta * (c1*ansatz100+c2*ansatz010+c3*ansatz001
-        +c4*ansatz000) * bgradv;
-
-      val *=Mult;
-
-      MatrixRow[j] += val;
-
-    }                            // endfor j
-  }                              // endfor i
-}
-
-
 /*
 void BilinearAssemble_UPW1(double Mult, double *coeff, double hK,
                            double **OrigValues, int *N_BaseFuncts,
@@ -291,7 +99,7 @@ void BilinearAssemble_UPW1(double Mult, double *coeff, double hK,
 }
 */
 
-void BilinearAssemble_UPW2(double Mult, double *coeff, double hK,
+void BilinearAssemble_UPW2(double Mult, double *coeff, double,
 double **OrigValues, int *N_BaseFuncts,
 double ***LocMatrices, double **LocRhs)
 {
@@ -359,7 +167,7 @@ double ***LocMatrices, double **LocRhs)
 void BilinearAssemble_SOLD(double Mult, double *coeff, double *param,
 double hK,
 double **OrigValues, int *N_BaseFuncts,
-double ***LocMatrices, double **LocRhs)
+double ***LocMatrices, double **)
 {
   double **Matrix, val, *MatrixRow;
   double ansatz000, ansatz100, ansatz010, ansatz001;
@@ -387,9 +195,10 @@ double ***LocMatrices, double **LocRhs)
   c5 = coeff[5];                 // f
   c6 = coeff[6];                 // \|b\|_infty
 
-  delta = Compute_SDFEM_delta(hK, c0, c1, c2, c3, c4, c6);
+  delta = Compute_SDFEM_delta<3>(hK, c0, {{c1, c2, c3}}, c4, c6);
 
-  sigma = Compute_SOLD_sigma(hK, c0, c1, c2, c3, c4, c5, c6, delta, param, 0, 0, 0);
+  sigma = Compute_SOLD_sigma<3>(hK, c0, {{c1, c2, c3}}, c4, c5, c6, delta,
+                                param, 0, 0, 0);
 
   for(i=0;i<N_;i++)
   {
@@ -434,7 +243,7 @@ double ***LocMatrices, double **LocRhs)
 void BilinearAssemble_SOLD_Orthogonal(double Mult, double *coeff,
 double *param, double hK,
 double **OrigValues, int *N_BaseFuncts,
-double ***LocMatrices, double **LocRhs)
+double ***LocMatrices, double **)
 {
   double **Matrix, val, *MatrixRow;
   double ansatz000, ansatz100, ansatz010, ansatz001;
@@ -462,9 +271,10 @@ double ***LocMatrices, double **LocRhs)
   c5 = coeff[5];                 // f
   c6 = coeff[6];                 // \|b\|_infty
 
-  delta = Compute_SDFEM_delta(hK, c0, c1, c2, c3, c4, c6);
+  delta = Compute_SDFEM_delta<3>(hK, c0, {{c1, c2, c3}}, c4, c6);
 
-  sigma = Compute_SOLD_sigma(hK, c0, c1, c2, c3, c4, c5, c6, delta, param, 0, 0, 0);
+  sigma = Compute_SOLD_sigma<3>(hK, c0, {{c1, c2, c3}}, c4, c5, c6, delta,
+                                param, 0, 0, 0);
 
   norm_b = c1*c1+c2*c2+c3*c3;
 

@@ -21,7 +21,6 @@ class TDomain;
 #include <Iterator.h>
 #include <Mesh.h>
 #include <ParameterDatabase.h>
-class TTetGenMeshLoader;
 
 /** contains the boundary description, the virtual cell
     tree and macro grid */
@@ -86,8 +85,6 @@ class TDomain
     /** @brief current refinment level */
     int RefLevel;
     
-    friend class TTetGenMeshLoader;
-
 #ifdef  _MPI
       /** @brief array contains the global cell number of local cells (including Halo cells) */
       int *GlobalCellIndex;
@@ -96,6 +93,8 @@ class TDomain
       int N_OwnCells;
 #endif
 
+      /** @brief see documentation of refine_and_get_hierarchy_of_collections */
+      std::list<TCollection*> gridCollections;
       /**
        * A Database object which holds parameters which are of a certain
        * interest to this domain object.
@@ -105,15 +104,9 @@ class TDomain
   public:
     /**
      * @brief Constructor.
-     * Eventually reads in data of the old database - this feature is messy,
-     * it is a trait from heritage MooNMD, and should be removed soon.
-     *
-     * @param param_db A database to be merged into the domain's own.
-     * @param ParamFile Path to a ParMooN parameter input textfile, if
-     * given, it is used to fill the old Database.
-     *
+     * @param db A database to be merged into the domain's own.
      */
-     TDomain(const ParameterDatabase& db, const char *ParamFile = nullptr);
+    explicit TDomain(const ParameterDatabase& db);
      
     /** @brief copy constructor, deleted as a precaution */
     TDomain(const TDomain&) = delete;
@@ -155,8 +148,8 @@ class TDomain
      * @param[in] file_name Input stream which contains the initial mesh information
      * in either MooNMD-native ".GEO"-format or medit style ".mesh"-format.
      */
-    void ReadSandwichGeo(std::string file_name,
-                         std::string prm_file_name = "");
+    void ReadSandwichGeo(const std::string& file_name,
+                         const std::string& prm_file_name = "");
 
     /** @brief make boundary parameter consistent */
     void MakeBdParamsConsistent(TCollection *coll);
@@ -169,17 +162,6 @@ class TDomain
 
 #endif
 
-#ifdef __2D__
-    /** @brief set boundary parameters and cell shape according to
-        possibly moving vertices */
-    void CorrectParametersAndShapes();
-    
-    /** @brief mesh genration using Triangle for give IN */
-    void TriMeshGen(struct triangulateio *In);
-#endif
-
-    /** @brief read parameter file */
-    int ReadParam(const char *ParamFile);
 
     /** @brief Reads in boundary parameterization in ".PRM" file format
      *
@@ -195,9 +177,6 @@ class TDomain
 #else
     void ReadBdParam(std::istream& dat, bool& sandwich_flag);
 #endif
-
-    /** @brief read mapping information */
-    int ReadMapFile(char *MapFile, TDatabase *database);
 
     /** @brief get boundary part of BdCompID */
     int GetBdPartID(int BdCompID);
@@ -231,10 +210,6 @@ class TDomain
       N_OwnCells = 0;
       #endif 
     }
-
-    /** @brief generate initial grid using external mesh generator */
-    int GenInitGrid();
-
 
     /**
       * @brief Chooses in what way to construct the domain's geometry
@@ -287,39 +262,16 @@ class TDomain
        * @param[in] m filepath to mesh file
        * @attention this function uses only strings (new convention, 05.2016)
        */
-      void InitFromMesh(std::string PRM, std::string m);
+      void InitFromMesh(const std::string& PRM, const std::string& m);
       
 #ifdef __3D__
-      /**
-       * @brief Initialize the domain starting from a tetgen generated mesh
-       *
-       * This function will read the mesh file ".smesh, or .." 
-       * and modiefy the domain to ressemble the mesh, 
-       * the boundary, and build the mesh which will be 
-       * used within ParMooN.
-       * @param[in] tgml an object of the class TTetGenMeshLoader
-       * @todo this function is work in progress (08.2016)
-       */
-      void GenerateFromTetgen(TTetGenMeshLoader& tgml);
+
       void GenerateFromMesh(Mesh& m);
       void buildBoundary(Mesh& m);
       void buildParMooNMesh(Mesh& m);
       void setVertices(Mesh& m);
       void allocRootCells(Mesh& m);
-      void distributeJoints(Mesh& m);
-      /**
-       * @brief build the boundary of a tetrahedral mesh
-       *
-       * All the (triangular) faces are considered to be
-       * different boundary components (planes) belonging
-       * to the same BdPart.
-       */
-      void buildBoundary(TTetGenMeshLoader& tgml);
-      void buildParMooNMesh(TTetGenMeshLoader& tgml);
-      void setVertices(TTetGenMeshLoader& tgml);
-      void allocRootCells(TTetGenMeshLoader& tgml);
-      void distributeJoints(TTetGenMeshLoader& tgml);
-      
+      void distributeJoints(Mesh& m);      
 
       // auxiliary vector of boundary components 
       std::vector<TBoundComp3D*> meshBoundComps;
@@ -328,23 +280,15 @@ class TDomain
       // auxiliary vector of Joints
       std::vector<TJoint*> meshJoints;
 #endif
-    /** @brief write domain boundary  into a postscript file */
-    int Draw(char *name, Iterators iterator, int arg);
     /** @brief write mesh into a postscript file */
-    int PS(const char *name, Iterators iterator, int arg);
+    void PS(const char *name, Iterators iterator, int arg);
     /** @brief write collection into a postscript file */
-    int PS(const char *name, TCollection *Coll);
-    /** @brief write files for MD-Out format */
-    int MD_raw(const char *name, Iterators iterator, int arg);
-
+    void PS(const char *name, TCollection *Coll);
+    
     /** @brief refine the grid according the cell refinement descriptors */
     int Refine();
     /** @brief refine all cells regular */
     int RegRefineAll();
-    /** @brief refine all cells in subgrid ID regular */
-    int RegRefineSub(int ID);
-    /** @brief refine only in one direction */
-    int RefineallxDirection();
     /** @brief generate a 1-regular grid */
     int Gen1RegGrid();
     /** @brief refine the finest grid according the given indicator function */
@@ -353,11 +297,7 @@ class TDomain
         grid with conforming closures */
     int MakeConfClosure();
 
-    /** @brief refine the finest grid according a given error estimate */
-    int RefineByErrorEstimator(TCollection *Collection,double *eta_K,
-                               double eta_max,double tolerance,
-                               bool ConfClosure);
-
+    
     /** @brief refine/derefine algorithm for a 1-regular grid, geolevel of all
         cells on the finest grid is between MinLevel and MaxLevel */
     void Refine1Reg(int MinLevel, int MaxLevel);
@@ -551,8 +491,6 @@ class TDomain
 #ifdef __3D__
   public: 
 
-//      int Tetgen(const char*);
-
      /** @brief generate edge info in 3D mesh **/
      // TODO CB Add documentation. This method does mark certain Vertices as boundary vertices
      // (TVertex::SetAsBoundVertex(...) ) and creates edge objects, pointers to which are then
@@ -583,7 +521,7 @@ class TDomain
    * to console and outfile.
    * @param name A name for the domain.
    */
-  void print_info(std::string name) const;
+  void print_info(const std::string& name) const;
 
   /** This is a method which wraps together two things which are awful about
    * MPI ParMooN, especially in connection with multigrid.
@@ -594,19 +532,20 @@ class TDomain
    *   determine_n_refinement_steps_multigrid
    * for a description of the problem.
    * @param[in] parmoon_db The input database.
-   * @param[out] maxSubDomainPerDof A very annoying value, which we must
-   * curetnly drag through the whole program. Is finally used in TParFECommunicator
-   * to determine, how much space to allocate for MPI Communications
    * @return A hierarchy of geometric grids which can be used for multigrid,
    * finest grid first.
    *
    */
-  std::list<TCollection* > refine_and_get_hierarchy_of_collections(
-      const ParameterDatabase& parmoon_db
-  #ifdef _MPI
-      , int& maxSubDomainPerDof
-  #endif
-      );
+  std::list<TCollection*> refine_and_get_hierarchy_of_collections(
+      const ParameterDatabase& parmoon_db);
+
+  const std::list<TCollection*> get_grid_collections() const
+  {
+    if(gridCollections.empty())
+      ErrThrow("There are no collections stored in the TDomain object, you "
+               "need to call 'refine_and_get_hierarchy_of_collections'");
+    return gridCollections;
+  }
 
   /// Get a const reference to the database of this domain object.
   const ParameterDatabase& get_database() const {return this->db;};

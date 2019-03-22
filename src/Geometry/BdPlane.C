@@ -44,7 +44,7 @@ void TBdPlane::SetParams (double p_x, double p_y, double p_z,
 }
 
 int TBdPlane::GetXYZofTS(double T, double S,
-                        double &X, double &Y, double &Z)
+                        double &X, double &Y, double &Z) const
 {
   X = P_x + T * A_x + S * B_x;
   Y = P_y + T * A_y + S * B_y;
@@ -57,7 +57,7 @@ int TBdPlane::GetXYZandTS(int N_Points, double *LinComb,
                           double *xp, double *yp, double *zp,
                           double *tp, double *sp,
                           double &X, double &Y, double &Z,
-                          double &T, double &S)
+                          double &T, double &S) const
 {
   T = 0;
   S = 0;
@@ -84,7 +84,7 @@ int TBdPlane::GetXYZandTS(int N_Points, double *LinComb,
 }
 
 int TBdPlane::GetTSofXYZ(double X, double Y, double Z,
-                        double &T, double &S)
+                        double &T, double &S) const
 {
   double TS_aux;
 
@@ -133,7 +133,7 @@ int TBdPlane::ReadIn(std::istream &dat)
 
 void TBdPlane::GetParams (double &p_x, double &p_y, double &p_z,
                     double &a_x, double &a_y, double &a_z,
-                    double &n_x, double &n_y, double &n_z)
+                    double &n_x, double &n_y, double &n_z) const
 {
   p_x = P_x;
   p_y = P_y;

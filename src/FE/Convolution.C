@@ -60,13 +60,14 @@ void  ConvoluteVelocity(TFEVectFunct2D *u, TFEVectFunct2D *uConv)
   int neigh_i, N_Neigh, ll, lll, N_PointsNeigh, N_Edges, same_dof;
   FE2D LocalUsedElements[N_FEs2D], CurrentElement, CurrentElementConv;
   FE2D CurrentElementNeigh,LocalUsedElementsNeigh[N_FEs2D] ;
-  double *weights, *xi, *eta, *xi_ref, *eta_ref;
+  const double *weights, *xi, *eta;
+  const double *xi_ref, *eta_ref;
   TFE2D *Element;
   TNodalFunctional2D *nf;
   BaseFunct2D BaseFunct, *BaseFuncts, BaseFunctNeigh;
   TCollection *Coll;
   TBaseCell *cell, *neigh;
-  double *weightsNeigh, *xiNeigh, *etaNeigh;
+  const double *weightsNeigh, *xiNeigh, *etaNeigh;
   double X_orig[MaxN_PointsForNodal2D], Y_orig[MaxN_PointsForNodal2D];
   double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D];
   double AbsDetjk[MaxN_QuadPoints_2D], AbsDetjkConv[MaxN_QuadPoints_2D];
@@ -92,7 +93,6 @@ void  ConvoluteVelocity(TFEVectFunct2D *u, TFEVectFunct2D *uConv)
   double *Values, *u_conv,distance_sq,g;
   double *x_conv, *y_conv;
   TJoint *joint;
-  const TFESpace2D *fespace, *fespaceConv; 
 
   // gives an array where the needed derivatives are described
   // defined in NavierStokes.h 
@@ -100,8 +100,8 @@ void  ConvoluteVelocity(TFEVectFunct2D *u, TFEVectFunct2D *uConv)
   MultiIndex2D NeededDerivatives[1] = { D00 };
 
   // get fe spaces of velocity u and of covoluted tensor
-  fespace = u->GetFESpace2D();
-  fespaceConv = uConv->GetFESpace2D();
+  auto fespace = u->GetFESpace2D();
+  auto fespaceConv = uConv->GetFESpace2D();
 
   // gives a pointer to all available basis functions which
   // are described in the fedatabase
@@ -550,8 +550,9 @@ void  ConvoluteVelocityFull(TFEVectFunct2D *u, TFEVectFunct2D *uConv)
   BaseFunct2D BaseFunct, *BaseFuncts, BaseFunctNeigh;
   TCollection *Coll;
   TBaseCell *cell, *neigh;
-  double *weights, *xi, *eta, *xi_ref, *eta_ref;
-  double *weightsNeigh, *xiNeigh, *etaNeigh;
+  const double *weights, *xi, *eta;
+  const double *xi_ref, *eta_ref;
+  const double *weightsNeigh, *xiNeigh, *etaNeigh;
   double X_orig[MaxN_PointsForNodal2D], Y_orig[MaxN_PointsForNodal2D];
   double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D];
   double AbsDetjk[MaxN_QuadPoints_2D], AbsDetjkConv[MaxN_QuadPoints_2D];
@@ -578,7 +579,6 @@ void  ConvoluteVelocityFull(TFEVectFunct2D *u, TFEVectFunct2D *uConv)
   double *x_conv, *y_conv;
   TVertex *vertex0;
   double x_vertex, y_vertex;
-  const TFESpace2D *fespace, *fespaceConv; 
 
   // gives an array where the needed derivatives are described
   // defined in NavierStokes.h 
@@ -586,8 +586,8 @@ void  ConvoluteVelocityFull(TFEVectFunct2D *u, TFEVectFunct2D *uConv)
   MultiIndex2D NeededDerivatives[1] = { D00 };
 
   // get fe spaces of velocity u and of covoluted tensor
-  fespace = u->GetFESpace2D();
-  fespaceConv = uConv->GetFESpace2D();
+  auto fespace = u->GetFESpace2D();
+  auto fespaceConv = uConv->GetFESpace2D();
 
   // gives a pointer to all available basis functions which
   // are described in the fedatabase
@@ -1067,8 +1067,9 @@ void  ConvoluteDuTensor(TFEVectFunct2D *u, TFEVectFunct2D *duTensor)
   BaseFunct2D BaseFunct, *BaseFuncts, BaseFunctNeigh;
   TCollection *Coll;
   TBaseCell *cell, *neigh;
-  double *weights, *xi, *eta, *xi_ref, *eta_ref;
-  double *weightsNeigh, *xiNeigh, *etaNeigh;
+  const double *weights, *xi, *eta;
+  const double *xi_ref, *eta_ref;
+  const double *weightsNeigh, *xiNeigh, *etaNeigh;
   double X_orig[MaxN_PointsForNodal2D], Y_orig[MaxN_PointsForNodal2D];
   double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D];
   double AbsDetjk[MaxN_QuadPoints_2D], AbsDetjkConv[MaxN_QuadPoints_2D];
@@ -1097,15 +1098,14 @@ void  ConvoluteDuTensor(TFEVectFunct2D *u, TFEVectFunct2D *duTensor)
   double *Values, *u_conv,distance_sq,g;
   double *x_conv, *y_conv, delta, hK;
   TJoint *joint;
-  const TFESpace2D *fespace, *fespaceConv; 
 
   bool SecondDer[1] = { false };
   int N_Derivatives = 2;
   MultiIndex2D NeededDerivatives[2] = { D10, D01 };
 
   // get fe spaces of velocity u and of covoluted tensor
-  fespace = u->GetFESpace2D();
-  fespaceConv = duTensor->GetFESpace2D();
+  auto fespace = u->GetFESpace2D();
+  auto fespaceConv = duTensor->GetFESpace2D();
 
   // gives a pointer to all available basis functions which
   // are described in the fedatabase
@@ -1579,8 +1579,8 @@ void  ConvoluteSymmetricTensor(TFEVectFunct2D *u, TFEVectFunct2D *duTensor)
   BaseFunct2D BaseFunct, *BaseFuncts, BaseFunctNeigh;
   TCollection *Coll;
   TBaseCell *cell, *neigh;
-  double *weights, *xi, *eta, *xi_ref, *eta_ref;
-  double *weightsNeigh, *xiNeigh, *etaNeigh;
+  const double *weights, *xi, *eta, *xi_ref, *eta_ref;
+  const double *weightsNeigh, *xiNeigh, *etaNeigh;
   double X_orig[MaxN_PointsForNodal2D], Y_orig[MaxN_PointsForNodal2D];
   double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D];
   double AbsDetjk[MaxN_QuadPoints_2D], AbsDetjkConv[MaxN_QuadPoints_2D];
@@ -1609,15 +1609,14 @@ void  ConvoluteSymmetricTensor(TFEVectFunct2D *u, TFEVectFunct2D *duTensor)
   double *Values, *u_conv,distance_sq,g;
   double *x_conv, *y_conv, delta, hK;
   TJoint *joint;
-  const TFESpace2D *fespace, *fespaceConv; 
 
   bool SecondDer[1] = { false };
   int N_Derivatives = 2;
   MultiIndex2D NeededDerivatives[2] = { D10, D01 };
 
   // get fe spaces of velocity u and of covoluted tensor
-  fespace = u->GetFESpace2D();
-  fespaceConv = duTensor->GetFESpace2D();
+  auto fespace = u->GetFESpace2D();
+  auto fespaceConv = duTensor->GetFESpace2D();
 
   // gives a pointer to all available basis functions which
   // are described in the fedatabase
@@ -2087,8 +2086,9 @@ void  ConvoluteSymmetricTensorFull(TFEVectFunct2D *u, TFEVectFunct2D *duTensor)
   BaseFunct2D BaseFunct, *BaseFuncts, BaseFunctNeigh;
   TCollection *Coll;
   TBaseCell *cell, *neigh;
-  double *weights, *xi, *eta, *xi_ref, *eta_ref;
-  double *weightsNeigh, *xiNeigh, *etaNeigh;
+  const double *weights, *xi, *eta;
+  const double *xi_ref, *eta_ref;
+  const double *weightsNeigh, *xiNeigh, *etaNeigh;
   double X_orig[MaxN_PointsForNodal2D], Y_orig[MaxN_PointsForNodal2D];
   double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D];
   double AbsDetjk[MaxN_QuadPoints_2D], AbsDetjkConv[MaxN_QuadPoints_2D];
@@ -2116,7 +2116,6 @@ void  ConvoluteSymmetricTensorFull(TFEVectFunct2D *u, TFEVectFunct2D *duTensor)
   int N_UConv, N_DOFConv, index, *conv_comp;
   double *Values, *u_conv,distance_sq,g;
   double *x_conv, *y_conv, delta, hK;
-  const TFESpace2D *fespace, *fespaceConv; 
   TVertex *vertex0;
   double x_vertex, y_vertex;
 
@@ -2125,8 +2124,8 @@ void  ConvoluteSymmetricTensorFull(TFEVectFunct2D *u, TFEVectFunct2D *duTensor)
   MultiIndex2D NeededDerivatives[2] = { D10, D01 };
 
   // get fe spaces of velocity u and of covoluted tensor
-  fespace = u->GetFESpace2D();
-  fespaceConv = duTensor->GetFESpace2D();
+  auto fespace = u->GetFESpace2D();
+  auto fespaceConv = duTensor->GetFESpace2D();
 
   // gives a pointer to all available basis functions which
   // are described in the fedatabase
@@ -3177,8 +3176,8 @@ void  ConvoluteVelocity3D(TFEVectFunct3D *u, TFEVectFunct3D *uConv)
   TCollection *Coll;
   TBaseCell *cell, *neigh;
 //  TFE3D *ele;
-  double *weights, *xi, *eta, *zeta, *xi_ref, *eta_ref, *zeta_ref;
-  double *weightsNeigh, *xiNeigh, *etaNeigh, *zetaNeigh;
+  const double *weights, *xi, *eta, *zeta, *xi_ref, *eta_ref, *zeta_ref;
+  const double *weightsNeigh, *xiNeigh, *etaNeigh, *zetaNeigh;
   double X_orig[MaxN_PointsForNodal3D], Y_orig[MaxN_PointsForNodal3D];
   double Z_orig[MaxN_PointsForNodal3D];
   double X[MaxN_QuadPoints_3D], Y[MaxN_QuadPoints_3D], Z[MaxN_QuadPoints_3D];
@@ -3213,7 +3212,6 @@ void  ConvoluteVelocity3D(TFEVectFunct3D *u, TFEVectFunct3D *uConv)
   double *Values, *u_conv,distance_sq, g;   //h_fine,*u_values;
   double *x_conv, *y_conv, *z_conv;
   TJoint *joint;
-  const TFESpace3D *fespace, *fespaceConv; 
 
   TDatabase::ParamDB->INTERNAL_QUAD_RULE=1;
 
@@ -3223,8 +3221,8 @@ void  ConvoluteVelocity3D(TFEVectFunct3D *u, TFEVectFunct3D *uConv)
   MultiIndex3D NeededDerivatives[1] = { D000 };
 
   // get fe spaces of velocity u and of covoluted tensor
-  fespace = u->GetFESpace3D();
-  fespaceConv = uConv->GetFESpace3D();
+  auto fespace = u->GetFESpace3D();
+  auto fespaceConv = uConv->GetFESpace3D();
 
   // gives a pointer to all available basis functions which
   // are described in the fedatabase
@@ -3673,8 +3671,8 @@ void  ConvoluteVelocityFull3D(TFEVectFunct3D *u, TFEVectFunct3D *uConv)
   TCollection *Coll;
   TBaseCell *cell, *neigh;
 //  TFE3D *ele;
-  double *weights, *xi, *eta, *zeta, *xi_ref, *eta_ref, *zeta_ref;
-  double *weightsNeigh, *xiNeigh, *etaNeigh, *zetaNeigh;
+  const double *weights, *xi, *eta, *zeta, *xi_ref, *eta_ref, *zeta_ref;
+  const double *weightsNeigh, *xiNeigh, *etaNeigh, *zetaNeigh;
   double X_orig[MaxN_PointsForNodal3D], Y_orig[MaxN_PointsForNodal3D];
   double Z_orig[MaxN_PointsForNodal3D];
   double X[MaxN_QuadPoints_3D], Y[MaxN_QuadPoints_3D], Z[MaxN_QuadPoints_3D];
@@ -3711,7 +3709,6 @@ void  ConvoluteVelocityFull3D(TFEVectFunct3D *u, TFEVectFunct3D *uConv)
 //  TJoint *joint;
   TVertex *vertex0;
   double x_vertex, y_vertex, z_vertex;
-  const TFESpace3D *fespace, *fespaceConv; 
 
   //  TDatabase::ParamDB->INTERNAL_QUAD_RULE=1; there is something wrong !!!!
   // gives an array where the needed derivatives are described
@@ -3720,8 +3717,8 @@ void  ConvoluteVelocityFull3D(TFEVectFunct3D *u, TFEVectFunct3D *uConv)
   MultiIndex3D NeededDerivatives[1] = { D000 };
 
   // get fe spaces of velocity u and of covoluted tensor
-  fespace = u->GetFESpace3D();
-  fespaceConv = uConv->GetFESpace3D();
+  auto fespace = u->GetFESpace3D();
+  auto fespaceConv = uConv->GetFESpace3D();
 
   // gives a pointer to all available basis functions which
   // are described in the fedatabase
@@ -4177,8 +4174,8 @@ void  ConvoluteSymmetricTensor3D(TFEVectFunct3D *u, TFEVectFunct3D *duTensor)
   TCollection *Coll;
   TBaseCell *cell, *neigh;
 //  TFE3D *ele;
-  double *weights, *xi, *eta, *zeta, *xi_ref, *eta_ref, *zeta_ref;
-  double *weightsNeigh, *xiNeigh, *etaNeigh, *zetaNeigh;
+  const double *weights, *xi, *eta, *zeta, *xi_ref, *eta_ref, *zeta_ref;
+  const double *weightsNeigh, *xiNeigh, *etaNeigh, *zetaNeigh;
   double X_orig[MaxN_PointsForNodal3D], Y_orig[MaxN_PointsForNodal3D];
   double Z_orig[MaxN_PointsForNodal3D];
   double X[MaxN_QuadPoints_3D], Y[MaxN_QuadPoints_3D], Z[MaxN_QuadPoints_3D];
@@ -4225,7 +4222,6 @@ void  ConvoluteSymmetricTensor3D(TFEVectFunct3D *u, TFEVectFunct3D *duTensor)
   double distance_sq = 0;
   double *x_conv, *y_conv, *z_conv, delta, hK;
   TJoint *joint;
-  const TFESpace3D *fespace, *fespaceConv; 
 
   bool SecondDer[1] = { false };
   int N_Derivatives = 3;
@@ -4233,8 +4229,8 @@ void  ConvoluteSymmetricTensor3D(TFEVectFunct3D *u, TFEVectFunct3D *duTensor)
   //TDatabase::ParamDB->INTERNAL_QUAD_RULE=1; there is something wrong !!!!
 
   // get fe spaces of velocity u and of covoluted tensor
-  fespace = u->GetFESpace3D();
-  fespaceConv = duTensor->GetFESpace3D();
+  auto fespace = u->GetFESpace3D();
+  auto fespaceConv = duTensor->GetFESpace3D();
 
   // gives a pointer to all available basis functions which
   // are described in the fedatabase
@@ -4781,8 +4777,8 @@ void  ConvoluteSymmetricTensorFull3D(TFEVectFunct3D *u, TFEVectFunct3D *duTensor
   TCollection *Coll;
   TBaseCell *cell, *neigh;
 //  TFE3D *ele;
-  double *weights, *xi, *eta, *zeta, *xi_ref, *eta_ref, *zeta_ref;
-  double *weightsNeigh, *xiNeigh, *etaNeigh, *zetaNeigh;
+  const double *weights, *xi, *eta, *zeta, *xi_ref, *eta_ref, *zeta_ref;
+  const double *weightsNeigh, *xiNeigh, *etaNeigh, *zetaNeigh;
   double X_orig[MaxN_PointsForNodal3D], Y_orig[MaxN_PointsForNodal3D];
   double Z_orig[MaxN_PointsForNodal3D];
   double X[MaxN_QuadPoints_3D], Y[MaxN_QuadPoints_3D], Z[MaxN_QuadPoints_3D];
@@ -4828,7 +4824,6 @@ void  ConvoluteSymmetricTensorFull3D(TFEVectFunct3D *u, TFEVectFunct3D *duTensor
   double *Values, *u_conv,distance_sq, g;
   double *x_conv, *y_conv, *z_conv, delta, hK;
 //  TJoint *joint;
-  const TFESpace3D *fespace, *fespaceConv; 
   TVertex *vertex0;
   double x_vertex, y_vertex, z_vertex;
 
@@ -4838,8 +4833,8 @@ void  ConvoluteSymmetricTensorFull3D(TFEVectFunct3D *u, TFEVectFunct3D *duTensor
   TDatabase::ParamDB->INTERNAL_QUAD_RULE=1;
 
   // get fe spaces of velocity u and of covoluted tensor
-  fespace = u->GetFESpace3D();
-  fespaceConv = duTensor->GetFESpace3D();
+  auto fespace = u->GetFESpace3D();
+  auto fespaceConv = duTensor->GetFESpace3D();
 
   // gives a pointer to all available basis functions which
   // are described in the fedatabase
@@ -5338,8 +5333,8 @@ void  ConvolutePressure3D(TFEFunction3D *u, TFEFunction3D *uConv)
   TCollection *Coll;
   TBaseCell *cell, *neigh;
 //  TFE3D *ele;
-  double *weights, *xi, *eta, *zeta, *xi_ref, *eta_ref, *zeta_ref;
-  double *weightsNeigh, *xiNeigh, *etaNeigh, *zetaNeigh;
+  const double *weights, *xi, *eta, *zeta, *xi_ref, *eta_ref, *zeta_ref;
+  const double *weightsNeigh, *xiNeigh, *etaNeigh, *zetaNeigh;
   double X_orig[MaxN_PointsForNodal3D], Y_orig[MaxN_PointsForNodal3D];
   double Z_orig[MaxN_PointsForNodal3D];
   double X[MaxN_QuadPoints_3D], Y[MaxN_QuadPoints_3D], Z[MaxN_QuadPoints_3D];
@@ -5366,7 +5361,6 @@ void  ConvolutePressure3D(TFEFunction3D *u, TFEFunction3D *uConv)
   double *Values, *u_conv,distance_sq, g;
   double *x_conv, *y_conv, *z_conv;
   TJoint *joint;
-  const TFESpace3D *fespace, *fespaceConv; 
   TDatabase::ParamDB->INTERNAL_QUAD_RULE=1;
 
   // gives an array where the needed derivatives are described
@@ -5375,8 +5369,8 @@ void  ConvolutePressure3D(TFEFunction3D *u, TFEFunction3D *uConv)
   MultiIndex3D NeededDerivatives[1] = { D000 };
 
   // get fe spaces of velocity u and of covoluted tensor
-  fespace = u->GetFESpace3D();
-  fespaceConv = uConv->GetFESpace3D();
+  auto fespace = u->GetFESpace3D();
+  auto fespaceConv = uConv->GetFESpace3D();
 
   // gives a pointer to all available basis functions which
   // are described in the fedatabase

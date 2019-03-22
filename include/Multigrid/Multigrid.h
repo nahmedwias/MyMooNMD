@@ -33,7 +33,7 @@
 class BlockVector;
 
 enum class MultigridType{ STANDARD , MDML };
-MultigridType string_to_multigrid_type(std::string code);
+MultigridType string_to_multigrid_type(const std::string& code);
 
 class Multigrid
 {
@@ -43,7 +43,7 @@ class Multigrid
      * 
      * To really use it, you have to call initialize as well.
      */
-    Multigrid(const ParameterDatabase& db);
+    explicit Multigrid(const ParameterDatabase& db);
 
     /** @brief Actual set up a multigrid object. 
      *
@@ -55,7 +55,7 @@ class Multigrid
      * @param matrices A vector of the matrices per level, ordered from coarsest
      * (0) to finest level.
      */
-    void initialize(std::list<BlockFEMatrix*> matrices);
+    void initialize(const std::list<BlockFEMatrix*>& matrices);
 
     /// @brief Apply one complete multigrid cycle. 
     /// @details Which kind of cycle that is is determined at the time of 

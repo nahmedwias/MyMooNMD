@@ -38,15 +38,14 @@ TIsoBoundFace::TIsoBoundFace(TBoundComp3D *bdcomp)
 }
 
 // Methods
-int TIsoBoundFace::CheckMatchingRef(TBaseCell *Me, int J_i,
-                  struct StoreGeom &Tmp)
+int TIsoBoundFace::CheckMatchingRef(TBaseCell *, int, struct StoreGeom &Tmp)
 {
   Tmp.Filled = false;
   return 0;
 }
 
 // create a new instance of this class
-TJoint *TIsoBoundFace::NewInst(double newT_0, double newT_1, TBaseCell *Me)
+TJoint *TIsoBoundFace::NewInst(double, double, TBaseCell *)
 {
   return new TIsoBoundFace(BoundComp);
 }
@@ -56,7 +55,8 @@ TJoint *TIsoBoundFace::NewInst()
   return new TIsoBoundFace(BoundComp);
 }
 
-void TIsoBoundFace::SetVertices(int n_vertices, TVertex **vertices)
+void TIsoBoundFace::SetVertices(int n_vertices,
+                                const TVertex * const * vertices)
 {
   if(Vertices)
     delete Vertices;
@@ -66,8 +66,8 @@ void TIsoBoundFace::SetVertices(int n_vertices, TVertex **vertices)
 
 }
 
-void TIsoBoundFace::GenVert(int N_NewVert,const int N_V, double **LinComb,
-                            double *X, double *Y, double *Z )
+void TIsoBoundFace::GenVert(int, const int, double **, double *, double *,
+                            double *)
 {
     cerr << __FILE__ << ":" << __LINE__ << ": GentVert() is currently not working properly" << endl;
     exit(0);
@@ -106,8 +106,8 @@ void TIsoBoundFace::GenVert(int N_NewVert,const int N_V, double **LinComb,
 
 }
 
-void TIsoBoundFace::GenHexaVert(int N_NewVert,const int N_V, double **LinComb,
-                            double *X, double *Y, double *Z )
+void TIsoBoundFace::GenHexaVert(int, const int , double **, double *, double *,
+                                double *)
 {
   cerr << __FILE__ << ":" << __LINE__ << ": GentHexaVert() is currently not working properly" << endl;
   exit(0);

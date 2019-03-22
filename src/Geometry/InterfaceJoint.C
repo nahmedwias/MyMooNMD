@@ -73,7 +73,8 @@ int TInterfaceJoint::GetXYofT(double T, double &X, double &Y)
 
 #ifdef __2D__
 /** update parameters according to the new vertex positions */
-void TInterfaceJoint::UpdateParameters(TVertex *Begin, TVertex *End)
+void TInterfaceJoint::UpdateParameters(const TVertex *Begin,
+                                       const TVertex *End)
 {
   double x1, y1, x2, y2;
   double t1, t2;

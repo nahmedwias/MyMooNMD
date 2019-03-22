@@ -79,7 +79,7 @@ Example Example::NavierStokes(const ParameterDatabase& param_db)
         // bd.push_back(BoundaryData(bc, exact));
         // Boundary data for first velocity component
         auto g1 = [reynolds, deformation_tensor, p](unsigned int component,
-                                                    double t, double time)
+                                                    double t, double)
         {
           switch(component)
           {
@@ -102,7 +102,7 @@ Example Example::NavierStokes(const ParameterDatabase& param_db)
         bd.push_back(BoundaryData(g1));
         // Boundary data for first velocity component
         auto g2 = [reynolds, deformation_tensor, p](unsigned int component,
-                                                    double t, double time)
+                                                    double t, double)
         {
           switch(component)
           {
@@ -227,7 +227,7 @@ Example Example::NavierStokes(const ParameterDatabase& param_db)
         };
         exact.push_back(AnalyticalFunction(u3));
         // exact solution, pressure component
-        auto pr = [p](const Point& point, FunctionEvaluation& v)
+        auto pr = [p](const Point&, FunctionEvaluation& v)
         {
           v.set(0., 0, MultiIndex::D000);
           v.set(0., 0, MultiIndex::D100);
@@ -245,21 +245,21 @@ Example Example::NavierStokes(const ParameterDatabase& param_db)
         // bd.push_back(BoundaryData(bc, exact));
         // Boundary data for first velocity component
         auto g1 =
-            [reynolds, deformation_tensor, p](const Point& point, double time)
+            [reynolds, deformation_tensor, p](const Point& point, double)
         {
           return cos(p * point.x()) * sin(p * point.y()) * sin(p * point.z());
         };
         bd.push_back(BoundaryData(g1));
         // Boundary data for first velocity component
         auto g2 =
-            [reynolds, deformation_tensor, p](const Point& point, double time)
+            [reynolds, deformation_tensor, p](const Point& point, double)
         {
           return sin(p * point.x()) * cos(p * point.y()) * sin(p * point.z());
         };
         bd.push_back(BoundaryData(g2));
         // Boundary data for third velocity component
         auto g3 =
-            [reynolds, deformation_tensor, p](const Point& point, double time)
+            [reynolds, deformation_tensor, p](const Point& point, double)
         {
           return -2 * sin(p * point.x()) * sin(p * point.y())
                  * cos(p * point.z());
@@ -350,7 +350,7 @@ Example Example::NavierStokes(const ParameterDatabase& param_db)
       // boundary data, automatically computed from known solution
       // bd.push_back(BoundaryData(bc, exact));
       // Boundary data for first velocity component
-      auto g1 = [](unsigned int component, double t, double time)
+      auto g1 = [](unsigned int component, double t, double)
       {
         return (component == 1 || component == 3) ? 4 * t * (1 - t) : 0.;
       };
@@ -359,7 +359,7 @@ Example Example::NavierStokes(const ParameterDatabase& param_db)
       bd.push_back(BoundaryData(0.0));
       bd.push_back(BoundaryData(0.0)); // all zero for pressure
       // the coefficient function
-      f = [reynolds](const Point& point, double, std::vector<double>& coeffs)
+      f = [reynolds](const Point&, double, std::vector<double>& coeffs)
       {
         coeffs[0] = 1. / reynolds; // reynolds number
         coeffs[1] = 0.;            // right hand side, first component
@@ -389,7 +389,7 @@ Example Example::NavierStokes(const ParameterDatabase& param_db)
       if(two_d)
       {
         auto g1 = [reynolds, deformation_tensor](unsigned int component,
-                                                 double t, double time)
+                                                 double t, double)
         {
           return (component == 2 && t > 0.00001 && t < 0.99999) ? 1. : 0.;
         };
@@ -448,7 +448,7 @@ Example Example::NavierStokes(const ParameterDatabase& param_db)
       if(two_d)
       {
         auto g1 = [reynolds, deformation_tensor](unsigned int component,
-                                                 double t, double time)
+                                                 double t, double)
         { return (component == 3) ? 1.2*t*(1-t) : 0.; };
         bd.push_back(BoundaryData(g1));
       }
@@ -481,7 +481,7 @@ Example Example::NavierStokes(const ParameterDatabase& param_db)
       }
       bd.push_back(BoundaryData(0.0)); // all zero for pressure
       // the coefficient function
-      f = [reynolds, only_stokes, two_d](const Point& point, double,
+      f = [reynolds, only_stokes, two_d](const Point&, double,
                                          std::vector<double>& coeffs)
       {
         coeffs[0] = 1. / reynolds; // reynolds number
