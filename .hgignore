@@ -3,6 +3,7 @@ documentation/html/
 # files created by KDevelop 
 \.kdev4$
 include/General/ParMooN_repository_info.h
+build/
 # some strange mac-files
 .DS_Store
 ._.DS_Store
