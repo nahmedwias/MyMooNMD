@@ -20,6 +20,8 @@
 #include <array>
 #include <deque>
 
+class TDomain;
+
 template<int d>
 class TimeConvectionDiffusion
 {
@@ -91,8 +93,8 @@ class TimeConvectionDiffusion
     { return this->systems.front().rhs; }
     const BlockVector & get_solution() const
     { return this->systems.front().solution; }
-    const FESpace & get_space() const
-    { return *this->systems.front().fe_space; }
+    std::shared_ptr<const FESpace> get_space() const
+    { return this->systems.front().fe_space; }
     const ParameterDatabase & get_db() const
     { return db; }
     const Solver<BlockFEMatrix, BlockVector> & get_solver() const

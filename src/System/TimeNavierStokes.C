@@ -1432,8 +1432,8 @@ void TimeNavierStokes<d>::output()
     TAuxParam2D aux;
     MultiIndex2D nsAllDerivs[d+1] = {D00, D10, D01};
 #endif
-    const FESpace *velocity_space = &this->get_velocity_space();
-    const FESpace *pressure_space = &this->get_pressure_space();
+    const FESpace *velocity_space = this->systems.front().velocity_space.get();
+    const FESpace *pressure_space = this->systems.front().pressure_space.get();
     double tau = TDatabase::TimeDB->TIMESTEPLENGTH;
     
     // errors in the velocity components
@@ -1625,7 +1625,7 @@ void TimeNavierStokes<d>::output_problem_size_info() const
   size_t nTotal = nDofu + nDofp;
   size_t nActive = d*velocity_space.GetActiveBound();
 
-  TCollection* coll = velocity_space.GetCollection();
+  auto coll = velocity_space.GetCollection();
   double hmin, hmax;
   coll->GetHminHmax(&hmin, &hmax);
   int n_cells = coll->GetN_Cells();
@@ -1640,7 +1640,7 @@ void TimeNavierStokes<d>::output_problem_size_info() const
   int nDofp  = pressure_comm.get_n_global_dof();
   int nTotal = nDofu + nDofp;
   
-  TCollection* coll = systems.front().velocity_space->GetCollection();
+  auto coll = systems.front().velocity_space->GetCollection();
   int n_local_master_cells = coll->GetN_OwnCells();
   int n_cells;
   MPI_Reduce(&n_local_master_cells, &n_cells, 1, MPI_DOUBLE, MPI_SUM, root,

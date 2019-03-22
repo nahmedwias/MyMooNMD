@@ -117,10 +117,10 @@ class TimeNavierStokes
     FEFunction & get_pressure()
     { return this->systems.front().p; }
 
-    const FESpace & get_velocity_space() const
-    { return *this->systems.front().velocity_space.get(); }
-    const FESpace & get_pressure_space() const
-    { return *this->systems.front().pressure_space.get(); }
+    std::shared_ptr<const FESpace> get_velocity_space() const
+    { return this->systems.front().velocity_space; }
+    std::shared_ptr<const FESpace> get_pressure_space() const
+    { return this->systems.front().pressure_space; }
     const BlockVector & get_solution() const
     { return this->systems.front().solution; }
     BlockVector & get_solution()

@@ -4,6 +4,7 @@
 //*****************************************************
 //
 #include <Superconvergence3D.h>
+#include "BaseCell.h"
 
 void Transform_Q2Q3_3D(double *fine_values, double *coarse_values)
 {
@@ -1829,7 +1830,6 @@ void Superconvergence_Q1Q2_3D(TFEFunction3D *q1_function,
  
   double *q1_values, *q2_values;
 //  int q1_ndof, q2_ndof;
-  TCollection *q1_coll, *q2_coll;
   const TBaseCell *coarse_cell,*child_cell0,*child_cell1;
   const TBaseCell *child_cell2,*child_cell3,*child_cell4;
   const TBaseCell *child_cell5,*child_cell6,*child_cell7;
@@ -1848,8 +1848,8 @@ void Superconvergence_Q1Q2_3D(TFEFunction3D *q1_function,
   auto q1_space=q1_function->GetFESpace3D();
   auto q2_space=q2_function->GetFESpace3D();
   
-  q2_coll=q2_space->GetCollection();
-  q1_coll=q1_space->GetCollection();
+  auto q2_coll = q2_space->GetCollection();
+  auto q1_coll = q1_space->GetCollection();
   
 //  q1_ndof=q1_space->GetN_DegreesOfFreedom();  // not used in the rest of this function
   q1_values=q1_function->GetValues();
@@ -1953,7 +1953,6 @@ void Superconvergence_Q2Q3_3D(TFEFunction3D *q2_function,
   double *q2_values,*q3_values;
 //  int q2_ndof,q3_ndof;   // set but unused
   
-  TCollection *q3_coll, *q2_coll;
   const TBaseCell *coarse_cell,*child_cell0,*child_cell1;
   const TBaseCell *child_cell2,*child_cell3,*child_cell4;
   const TBaseCell *child_cell5,*child_cell6,*child_cell7;
@@ -2006,8 +2005,8 @@ void Superconvergence_Q2Q3_3D(TFEFunction3D *q2_function,
   auto q2_space=q2_function->GetFESpace3D();
   auto q3_space=q3_function->GetFESpace3D();
   
-  q2_coll=q2_space->GetCollection();
-  q3_coll=q3_space->GetCollection();
+  auto q2_coll = q2_space->GetCollection();
+  auto q3_coll = q3_space->GetCollection();
   
 //  q2_ndof=q2_space->GetN_DegreesOfFreedom();  // not used in the rest of this function
   q2_values=q2_function->GetValues();
@@ -2096,8 +2095,6 @@ void Superconvergence_Q2Q4_3D(TFEFunction3D *q2_function,
 {
   double *q2_values,*q4_values;
 //  int q2_ndof,q4_ndof;  // set but unused
-  
-  TCollection *q4_coll, *q2_coll;
   const TBaseCell *coarse_cell,*child_cell0,*child_cell1;
   const TBaseCell *child_cell2,*child_cell3,*child_cell4;
   const TBaseCell *child_cell5,*child_cell6,*child_cell7;
@@ -2150,8 +2147,8 @@ void Superconvergence_Q2Q4_3D(TFEFunction3D *q2_function,
   auto q2_space=q2_function->GetFESpace3D();
   auto q4_space=q4_function->GetFESpace3D();
   
-  q2_coll=q2_space->GetCollection();
-  q4_coll=q4_space->GetCollection();
+  auto q2_coll = q2_space->GetCollection();
+  auto q4_coll = q4_space->GetCollection();
   
 //  q2_ndof=q2_space->GetN_DegreesOfFreedom();  // not used in the rest of this function
   q2_values=q2_function->GetValues();
@@ -2245,7 +2242,6 @@ void Superconvergence_P1P2_3D(int version, TFEFunction3D *p1_function,
 {
   double *p1_values, *p2_values;
 //  int p1_ndof, p2_ndof;   // set but unused
-  TCollection *p1_coll, *p2_coll;
   const TBaseCell *coarse_cell,*child_cell0,*child_cell1;
   const TBaseCell *child_cell2,*child_cell3,*child_cell4;
   const TBaseCell *child_cell5,*child_cell6,*child_cell7;
@@ -2262,8 +2258,8 @@ void Superconvergence_P1P2_3D(int version, TFEFunction3D *p1_function,
   auto p1_space=p1_function->GetFESpace3D();
   auto p2_space=p2_function->GetFESpace3D();
   
-  p2_coll=p2_space->GetCollection();
-  p1_coll=p1_space->GetCollection();
+  auto p2_coll = p2_space->GetCollection();
+  auto p1_coll = p1_space->GetCollection();
   
 //  p1_ndof=p1_space->GetN_DegreesOfFreedom();  // not used in the rest of this function
   p1_values=p1_function->GetValues();

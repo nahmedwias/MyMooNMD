@@ -113,7 +113,7 @@ double NF_N_T_RT3_2D_iw[19] =
   0.0216417696886446886446886446886446,
   0.0216417696886446886446886446886446 };
 
-void NF_N_T_RT3_2D_EvalAll(TCollection *, const TBaseCell *Cell,
+void NF_N_T_RT3_2D_EvalAll(const TCollection *, const TBaseCell *Cell,
                            const double *PointValues, double *Functionals)
 {
   for(unsigned int i = 0; i < 24; ++i)
@@ -275,7 +275,7 @@ void NF_N_T_RT3_2D_EvalAll(TCollection *, const TBaseCell *Cell,
   }
 }
 
-void NF_N_T_RT3_2D_EvalEdge(TCollection *, const TBaseCell *Cell, int Joint,
+void NF_N_T_RT3_2D_EvalEdge(const TCollection *, const TBaseCell *Cell, int Joint,
                             const double *PointValues, double *Functionals)
 {
   // this is needed for setting boundary conditions

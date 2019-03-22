@@ -74,13 +74,13 @@ static double *NF_B_H_IB2_3D_ZetaArray[6] = {
 static double *NF_B_H_IB2_3D_T = nullptr;
 static double *NF_B_H_IB2_3D_S = nullptr;
 
-void NF_B_H_IB2_3D_EvalAll(TCollection *, const TBaseCell *,
+void NF_B_H_IB2_3D_EvalAll(const TCollection *, const TBaseCell *,
                            const double *PointValues, double *Functionals)
 {
   Functionals[0] = PointValues[0];
 }
 
-void NF_B_H_IB2_3D_EvalFace(TCollection *, const TBaseCell *, int,
+void NF_B_H_IB2_3D_EvalFace(const TCollection *, const TBaseCell *, int,
                             const double *, double *)
 {
 }

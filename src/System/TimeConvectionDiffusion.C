@@ -138,7 +138,7 @@ void TimeConvectionDiffusion<d>::output_problem_size_info() const
 {
   // print some useful information
   const FESpace& space = *this->systems.front().fe_space;
-  TCollection *coll = space.GetCollection();
+  auto coll = space.GetCollection();
 #ifndef _MPI
   double hMin, hMax;
   coll->GetHminHmax(&hMin, &hMax);

@@ -16,6 +16,7 @@
 #include <LinAlg.h>
 #include <string.h>
 #include <stdlib.h>
+#include "BaseCell.h"
 
 /** constuctor */
 TLineAffin::TLineAffin()
@@ -197,12 +198,8 @@ void TLineAffin::GetOrigValues(int N_Sets, BaseFunct1D *BaseFuncts, int N_Points
      
 }
 
-void TLineAffin::SetCell(TBaseCell *cell)
+void TLineAffin::SetCell(const TBaseCell *cell)
 {
-//  int i;
-// #ifdef __2D__
-
-// #endif
   x0 = 0.;   x1 = 0.; 
   y0 = 0.;   y1 = 0.; 
   Cell = cell;

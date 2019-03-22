@@ -12,7 +12,7 @@ static double NF_N_Q_RT0_2D_Eta[8] =
   1, 1, -sqrt(1./3.), sqrt(1./3.) };
 static double NF_N_Q_RT0_2D_T[2] = {-sqrt(1./3.), sqrt(1./3.)};
 
-void NF_N_Q_RT0_2D_EvalAll(TCollection *, const TBaseCell *Cell,
+void NF_N_Q_RT0_2D_EvalAll(const TCollection *, const TBaseCell *Cell,
                            const double *PointValues, double *Functionals)
 {
   // on the reference cell [-1,1]^2
@@ -66,7 +66,7 @@ void NF_N_Q_RT0_2D_EvalAll(TCollection *, const TBaseCell *Cell,
   }
 }
 
-void NF_N_Q_RT0_2D_EvalEdge(TCollection *, const TBaseCell *Cell, int,
+void NF_N_Q_RT0_2D_EvalEdge(const TCollection *, const TBaseCell *Cell, int,
                             const double *PointValues, double *Functionals)
 {
   // this is needed for setting boundary conditions

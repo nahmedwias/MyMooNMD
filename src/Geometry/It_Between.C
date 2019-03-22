@@ -12,6 +12,7 @@
 
 #include <It_Between.h>
 #include <Database.h>
+#include "BaseCell.h"
 
 // Methods
 int TIt_Between::Init(int level, int Levels, int Level_bottom)

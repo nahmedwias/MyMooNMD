@@ -175,7 +175,7 @@ void ConvectionDiffusion<d>::output_problem_size_info() const
   // print some useful information
   auto& space = *this->systems.front().fe_space;
   double hMin, hMax;
-  TCollection *coll = space.GetCollection();
+  auto coll = space.GetCollection();
   coll->GetHminHmax(&hMin, &hMax);
   Output::print<1>("N_Cells    : ", setw(13), coll->GetN_Cells());
   Output::print<1>("h(min, max): ", setw(13), hMin, " ", setw(13), hMax);

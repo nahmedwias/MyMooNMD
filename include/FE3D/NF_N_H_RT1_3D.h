@@ -184,7 +184,7 @@ static double NF_N_H_RT1_3D_S[] = {-100};  //???
 
 
 
-void NF_N_H_RT1_3D_EvalAll(TCollection *, const TBaseCell *,
+void NF_N_H_RT1_3D_EvalAll(const TCollection *, const TBaseCell *,
                            const double *PointValues, double *Functionals)
 {
   //face 0
@@ -283,7 +283,7 @@ void NF_N_H_RT1_3D_EvalAll(TCollection *, const TBaseCell *,
   Functionals[35] = s;
 }
 
-void NF_N_H_RT1_3D_EvalFace(TCollection *, const TBaseCell *Cell, int face,
+void NF_N_H_RT1_3D_EvalFace(const TCollection *, const TBaseCell *Cell, int face,
                             const double *PointValues, double *Functionals)
 {
   double s; // size of face

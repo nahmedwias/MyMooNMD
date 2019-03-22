@@ -23,7 +23,8 @@
 #ifndef __FESPACE__
 #define __FESPACE__
 
-#include <Collection.h>
+#include "Collection.h"
+#include "Constants.h"
 #include <string.h>
 
 /** general super class for all finite element spaces, special spaces are
@@ -129,7 +130,7 @@ class TFESpace
     { return N_Cells; }
 
     /** return the collection of this space */
-    TCollection *GetCollection() const
+    const TCollection *GetCollection() const
     { return Collection; }
     
     /** @brief get dimension of the vector basis function */

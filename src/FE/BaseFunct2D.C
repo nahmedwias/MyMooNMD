@@ -549,7 +549,7 @@ TGridCell *TBaseFunct2D::GenerateRefElement() const
 }
 
 /** change basis functions on cell if needed */
-void TBaseFunct2D::ChangeBF(TCollection *Coll, const TBaseCell *Cell,
+void TBaseFunct2D::ChangeBF(const TCollection *Coll, const TBaseCell *Cell,
                             double *Values) const
 {
   const int *JointArray;
@@ -645,7 +645,7 @@ void TBaseFunct2D::ChangeBF(TCollection *Coll, const TBaseCell *Cell,
 }
 
 /** change basis functions on cell in all points if needed */
-void TBaseFunct2D::ChangeBF(TCollection *Coll, const TBaseCell *Cell,
+void TBaseFunct2D::ChangeBF(const TCollection *Coll, const TBaseCell *Cell,
                             int N_Points, double **Values) const
 {
   const int *JointArray;

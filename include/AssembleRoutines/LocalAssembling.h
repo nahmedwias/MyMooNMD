@@ -302,7 +302,7 @@ class LocalAssembling
                     std::vector<int> myColumnSpace,
                     std::vector<int> myRhsSpace,
                     CoeffFct myCoeffs, 
-                    AssembleFctParam myAssembleParam,
+                    std::vector<AssembleFctParam> myAssembleParam,
                     ManipulateFct* myManipulate,
                     int myN_Matrices, int myN_Rhs,
                     int myN_ParamFct, std::vector<ParamFct*> myParameterFct,

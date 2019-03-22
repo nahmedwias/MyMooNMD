@@ -3,6 +3,7 @@
 #include "FEDatabase2D.h"
 #include "FEMatrix.h"
 #include "FEFunction2D.h"
+#include "BaseCell.h"
 
 double ComputePSPGParameterLPS(double hK, bool velocity, double nu,
                                size_t lps_coeff_type, double delta0,
@@ -82,7 +83,7 @@ std::shared_ptr<FEMatrix> LPS_for_pressure_Scott_Zhang(
   std::vector<int> node_to_cell(N_P, -1);
 
   // get collection and number of cells
-  TCollection *coll = pressure_space->GetCollection();
+  auto coll = pressure_space->GetCollection();
   int N_Cells = coll->GetN_Cells();
 
   // Output::print("set node-to-cell map");

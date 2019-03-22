@@ -58,8 +58,6 @@ void Assemble3D(int n_fespaces, const TFESpace3D** fespaces, int n_sqmatrices,
           FE3D TestElement, AnsatzElement;
           QuadFormula2D FaceQuadFormula = BaryCenterTria;
           TQuadFormula2D *qf2;
-          TCollection *Coll;
-          TBaseCell *cell, *neigh;
           TJoint *joint;
           //  TIsoBoundEdge *isoboundedge;
           TFE3D *ele;
@@ -201,18 +199,18 @@ void Assemble3D(int n_fespaces, const TFESpace3D** fespaces, int n_sqmatrices,
 
 
           // all spaces use same Coll
-          Coll = fespaces[0]->GetCollection();
+          auto Coll = fespaces[0]->GetCollection();
           N_Cells = Coll->GetN_Cells();
         //   cout << "N_Cells: " << N_Cells << endl;
 
           // reset clipboards of all neighbours to -1
           for(i=0;i<N_Cells;i++)
           {
-            cell = Coll->GetCell(i);
+            auto cell = Coll->GetCell(i);
             k = cell->GetN_Joints();
             for(j=0;j<k;j++)
             {
-              neigh=cell->GetJoint(j)->GetNeighbour(cell);
+              auto neigh=cell->GetJoint(j)->GetNeighbour(cell);
               if(neigh) neigh->SetClipBoard(-1);
             }
             cell->SetClipBoard(-1);
@@ -237,7 +235,7 @@ void Assemble3D(int n_fespaces, const TFESpace3D** fespaces, int n_sqmatrices,
           for(int i=0;i<N_Cells;i++)
           {
               //  OutPut(i<<endl);
-            cell = Coll->GetCell(i);
+            auto cell = Coll->GetCell(i);
         //     cout << "Zellenr.: " << i << endl;
         //     OutPut(TDatabase::ParamDB->CELL_MEASURE << endl);
             switch (TDatabase::ParamDB->CELL_MEASURE)
@@ -1157,9 +1155,6 @@ void Assemble3DSlipBC(int n_fespaces, const TFESpace3D **fespaces,
   FE3D LocalUsedElements[N_FEs3D], CurrentElement;
   QuadFormula2D FaceQuadFormula = BaryCenterTria; //avoid uninit warning
   TQuadFormula2D *qf2;
-  TCollection *Coll;
-  TBaseCell *cell;
-  TJoint *joint;
   int **GlobalNumbers=nullptr, **BeginIndex=nullptr;
   int **RhsGlobalNumbers=nullptr, **RhsBeginIndex=nullptr;
   int **TestGlobalNumbers=nullptr, **TestBeginIndex=nullptr;
@@ -1302,12 +1297,12 @@ void Assemble3DSlipBC(int n_fespaces, const TFESpace3D **fespaces,
 // ########################################################################
 // loop over all cells
 // ########################################################################
-  Coll = fespaces[0]->GetCollection(); // all spaces use same Coll
+  auto Coll = fespaces[0]->GetCollection(); // all spaces use same Coll
   N_Cells = Coll->GetN_Cells();
   // cout << "Anzahl Zellen: " << N_Cells << endl;
   for(i=0;i<N_Cells;i++)
   {
-    cell = Coll->GetCell(i);
+    auto cell = Coll->GetCell(i);
     //cout << "Zellenr.: " << i << endl;
     hK = cell->GetDiameter();
 
@@ -1365,7 +1360,7 @@ void Assemble3DSlipBC(int n_fespaces, const TFESpace3D **fespaces,
       N_Joints = cell->GetN_Faces();
       for(m=0;m<N_Joints;m++)
       {
-        joint = cell->GetJoint(m);
+        auto joint = cell->GetJoint(m);
         if (joint->GetType() == BoundaryFace)
            //|| (joint->GetType() == IsoBoundaryFace))
         {
@@ -2670,7 +2665,7 @@ BoundValueFunct3D **BoundaryValues)
   
 
   // all spaces use same Coll
-  TCollection *Coll = fespaces[0]->GetCollection();
+  auto Coll = fespaces[0]->GetCollection();
   int N_Cells = Coll->GetN_Cells();
 
   for(int i = 0; i < N_Cells; ++i)
@@ -2681,7 +2676,7 @@ BoundValueFunct3D **BoundaryValues)
   // ########################################################################
   for(int i = 0; i < N_Cells; ++i)
   {
-    TBaseCell *cell = Coll->GetCell(i);
+    auto cell = Coll->GetCell(i);
     
     int n_faces = cell->GetN_Faces(); // number of faces of this cell
     cell->SetNormalOrientation();

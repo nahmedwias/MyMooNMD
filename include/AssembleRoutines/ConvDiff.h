@@ -8,6 +8,7 @@
 #define __CONVDIFF__
 
 #include <Collection.h>
+#include "Constants.h"
 
 template <int d>
 double Mesh_size_in_convection_direction_without_storing(

@@ -43,7 +43,6 @@ void TAux2D3D::GetGradient(int num, int N_Points, const double *t1,
 {
   int i,j;
   int CellNumber, JointNumber;
-  TBaseCell *Cell;
   FE3D FEID;
 //  TFE3D *ele;
   TBaseFunct3D *bf;
@@ -63,7 +62,7 @@ void TAux2D3D::GetGradient(int num, int N_Points, const double *t1,
 
   JointNumber = JointNumbers[num];
   CellNumber = CellNumbers[num];
-  Cell = Coll->GetCell(CellNumber);
+  auto Cell = Coll->GetCell(CellNumber);
   // OutPut("in GetGradient: " << CellNumber << " " << JointNumber << endl);
 
   FEID = FESpace->GetFE3D(CellNumber, Cell);

@@ -17,6 +17,7 @@
 #include <BoundEdge.h>
 #include <InterfaceJoint.h>
 #include <BoundComp.h>
+#include "BaseCell.h"
 #include <string.h>
 #include <stdlib.h>
 #include <IsoInterfaceJoint.h>

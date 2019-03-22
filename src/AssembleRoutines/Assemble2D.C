@@ -22,6 +22,7 @@
 #include <MooNMD_Io.h>
 #include <Database.h>
 #include <Convolution.h>
+#include "BaseCell.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -62,7 +63,6 @@ double factor
   FE2D TestElement, AnsatzElement;
   QuadFormula1D LineQuadFormula;
   TQuadFormula1D *qf1;
-  TCollection *Coll;
   int **GlobalNumbers = nullptr;
   int **BeginIndex = nullptr;
   int **RhsGlobalNumbers = nullptr;
@@ -239,7 +239,7 @@ double factor
   // ########################################################################
   // loop over all cells
   // ########################################################################
-  Coll = fespaces[0]->GetCollection();            // all spaces use same Coll
+  auto Coll = fespaces[0]->GetCollection();            // all spaces use same Coll
 
   N_Cells = Coll->GetN_Cells();
   for(i=0;i<N_Cells;i++)
@@ -1106,7 +1106,6 @@ TFEFunction2D *u1, TFEFunction2D *u2)
   FE2D LocalUsedElements[N_FEs2D], CurrentElement;
   QuadFormula1D LineQuadFormula;
   TQuadFormula1D *qf1;
-  TCollection *Coll;
   int **GlobalNumbers = nullptr;
   int **BeginIndex = nullptr;
   int **RhsGlobalNumbers = nullptr;
@@ -1261,7 +1260,7 @@ TFEFunction2D *u1, TFEFunction2D *u2)
   // ########################################################################
   // loop over all cells
   // ########################################################################
-  Coll = fespaces[0]->GetCollection();            // all spaces use same Coll
+  auto Coll = fespaces[0]->GetCollection();            // all spaces use same Coll
   N_Cells = Coll->GetN_Cells();
   for(i=0;i<N_Cells;i++)
   {
@@ -1947,7 +1946,7 @@ void Assemble2D_VectFE(int n_fespaces, const TFESpace2D** fespaces,
   // ########################################################################
   // loop over all cells
   // ########################################################################
-  TCollection *Coll = fespaces[0]->GetCollection();// all spaces use same Coll
+  auto Coll = fespaces[0]->GetCollection();// all spaces use same Coll
   int N_Cells = Coll->GetN_Cells(); // number of cells in this collection
   // set cell indices for all cells
   for(int icell=0; icell<N_Cells; icell++)
@@ -2374,7 +2373,6 @@ void Assemble2D(int n_fespaces, TFESpace2D **fespaces,
   FE2D TestElement, AnsatzElement;
   QuadFormula1D LineQuadFormula;
   TQuadFormula1D *qf1;
-  TCollection *Coll;
   int **GlobalNumbers = nullptr;
   int **BeginIndex = nullptr;
   int **RhsGlobalNumbers = nullptr;
@@ -2541,7 +2539,7 @@ void Assemble2D(int n_fespaces, TFESpace2D **fespaces,
   // ########################################################################
   // loop over all cells
   // ########################################################################
-  Coll = fespaces[0]->GetCollection();            // all spaces use same Coll
+  auto Coll = fespaces[0]->GetCollection();            // all spaces use same Coll
   N_Cells = Coll->GetN_Cells();
   for(i=0;i<N_Cells;i++)
   {
@@ -3798,7 +3796,6 @@ void Assemble2D_DG(const CoeffFct2D& Coeff, int n_fespaces,
   QuadFormula1D LineQuadFormula;
   TQuadFormula1D *qf1D;
   BaseFunct2D BaseFunctCell;
-  TCollection *Coll;
   int **GlobalNumbers = nullptr, **BeginIndex = nullptr;
   int **RhsGlobalNumbers = nullptr, **RhsBeginIndex = nullptr;
   int **TestGlobalNumbers = nullptr, **TestBeginIndex = nullptr;
@@ -4223,7 +4220,7 @@ void Assemble2D_DG(const CoeffFct2D& Coeff, int n_fespaces,
   // ########################################################################
 
   // all spaces use same Coll
-  Coll = fespaces[0]->GetCollection();            // all spaces use same Coll
+  auto Coll = fespaces[0]->GetCollection();            // all spaces use same Coll
   N_Cells = Coll->GetN_Cells();
 
   for(i=0;i<N_Cells;i++)                          // set clipboard of cells on finest
@@ -5288,7 +5285,6 @@ void Assemble2D_CIP(const CoeffFct2D& Coeff, int n_fespaces,
   QuadFormula1D LineQuadFormula;
   TQuadFormula1D *qf1D;
   BaseFunct2D BaseFunctCell;
-  TCollection *Coll;
   int **GlobalNumbers = nullptr, **BeginIndex = nullptr;
   int **RhsGlobalNumbers = nullptr, **RhsBeginIndex = nullptr;
   int **TestGlobalNumbers = nullptr, **TestBeginIndex = nullptr;
@@ -5718,7 +5714,7 @@ void Assemble2D_CIP(const CoeffFct2D& Coeff, int n_fespaces,
   // ########################################################################
 
   // all spaces use same Coll
-  Coll = fespaces[0]->GetCollection();            // all spaces use same Coll
+  auto Coll = fespaces[0]->GetCollection();            // all spaces use same Coll
   N_Cells = Coll->GetN_Cells();
 
   for(i=0;i<N_Cells;i++)                          // set clipboard of cells on finest
@@ -7042,7 +7038,7 @@ void Assemble2D(int n_fespaces, const TFESpace2D** fespaces, int n_sqmatrices,
   // ########################################################################
   // loop over all cells
   // ########################################################################
-  TCollection *Coll = fespaces[0]->GetCollection();            // all spaces use same Coll
+  auto Coll = fespaces[0]->GetCollection();            // all spaces use same Coll
   int N_Cells = Coll->GetN_Cells();
   for(int i=0;i<N_Cells;i++) // set the cell indices
   {

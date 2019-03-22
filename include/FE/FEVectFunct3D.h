@@ -51,12 +51,6 @@ class TFEVectFunct3D : public TFEFunction3D
                                Values+i*Length, Length);
     }
 
-    /** convert current grid to vector-values FE function */
-    void GridToData();
-
-    /** use current data for grid replacement */
-    void DataToGrid();
-
     /**
      * @brief compute the integral \int_{Gamma_i} u.n (flux) over a given surface
      *

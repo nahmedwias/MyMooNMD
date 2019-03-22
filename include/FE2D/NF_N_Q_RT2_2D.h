@@ -37,7 +37,7 @@ static double NF_N_Q_RT2_2D_T[] =
 
 
 
-void NF_N_Q_RT2_2D_EvalAll(TCollection *, const TBaseCell *Cell,
+void NF_N_Q_RT2_2D_EvalAll(const TCollection *, const TBaseCell *Cell,
                            const double *PointValues, double *Functionals)
 {
   // short names
@@ -459,7 +459,7 @@ void NF_N_Q_RT2_2D_EvalAll(TCollection *, const TBaseCell *Cell,
   }
 }
 
-void NF_N_Q_RT2_2D_EvalEdge(TCollection *, const TBaseCell *Cell, int,
+void NF_N_Q_RT2_2D_EvalEdge(const TCollection *, const TBaseCell *Cell, int,
                             const double *PointValues, double *Functionals)
 {
   double x0, x1, y0, y1, z; // z is just a dummy

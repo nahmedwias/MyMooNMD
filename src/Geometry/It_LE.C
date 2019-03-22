@@ -11,6 +11,7 @@
 // =======================================================================
 
 #include <It_LE.h>
+#include "BaseCell.h"
 
 // Methods
 TBaseCell *TIt_LE::Next(int &info)

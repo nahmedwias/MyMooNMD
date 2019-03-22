@@ -21,6 +21,7 @@ class TDomain;
 #include <Iterator.h>
 #include <Mesh.h>
 #include <ParameterDatabase.h>
+class TJoint;
 
 /** contains the boundary description, the virtual cell
     tree and macro grid */
@@ -539,13 +540,7 @@ class TDomain
   std::list<TCollection*> refine_and_get_hierarchy_of_collections(
       const ParameterDatabase& parmoon_db);
 
-  const std::list<TCollection*> get_grid_collections() const
-  {
-    if(gridCollections.empty())
-      ErrThrow("There are no collections stored in the TDomain object, you "
-               "need to call 'refine_and_get_hierarchy_of_collections'");
-    return gridCollections;
-  }
+  const std::list<TCollection*> get_grid_collections() const;
 
   /// Get a const reference to the database of this domain object.
   const ParameterDatabase& get_database() const {return this->db;};

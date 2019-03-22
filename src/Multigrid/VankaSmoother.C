@@ -17,6 +17,7 @@
 #ifdef _MPI
 #include <mpi.h>
 #include <ParFECommunicator3D.h>
+#include "BaseCell.h"
 #endif
 
 // Experimental Macro to avoid double code.
