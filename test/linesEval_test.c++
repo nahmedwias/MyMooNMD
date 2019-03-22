@@ -201,7 +201,14 @@ int main(int argc, char* argv[])
       return 1;
     }
   }
-  
+
+  // delete temporary file used for this test
+  std::string dir_name = lines_eval_db["directory_name"];
+  if(std::remove(dir_name.c_str()) != 0)
+  {
+    ErrThrow("linesEval_test: Error deleting temporary file.");
+  }
+
 #ifdef _MPI
   MPI_Finalize();
 #endif

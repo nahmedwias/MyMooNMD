@@ -81,13 +81,13 @@ int remove_tmp_test_files(ParameterDatabase db)
   std::string pod_name_mean = pod_basename + "mean";
   std::string pod_name_eigs = pod_basename + "eigs";
 
-  status = (remove(snaps_name.c_str()) == 0) ? 0 : 1;
-  status = (remove(snaps_dir_name.c_str()) == 0) ? 0 : 1;
+  status |= (std::remove(snaps_name.c_str()) == 0) ? 0 : 1;
+  status |= (std::remove(snaps_dir_name.c_str()) == 0) ? 0 : 1;
 
-  status = (remove(pod_name_pod.c_str()) == 0) ? 0 : 1;
-  status = (remove(pod_name_mean.c_str()) == 0) ? 0 : 1;
-  status = (remove(pod_name_eigs.c_str()) == 0) ? 0 : 1;
-  status = (remove(pod_dir_name.c_str()) == 0) ? 0 : 1;
+  status |= (std::remove(pod_name_pod.c_str()) == 0) ? 0 : 1;
+  status |= (std::remove(pod_name_mean.c_str()) == 0) ? 0 : 1;
+  status |= (std::remove(pod_name_eigs.c_str()) == 0) ? 0 : 1;
+  status |= (std::remove(pod_dir_name.c_str()) == 0) ? 0 : 1;
 
   return status;
 }
@@ -151,11 +151,6 @@ int main(int, char**)
 
   TimeConvectionDiffusion<2> tcd(domain, db);
 
-  // initialize snapshot writer (only needed if parmoon_db["write_snaps"])
-  // the solutions are stored in a special collector which can be later read
-  // by the computation of POD the basis
-  SnapshotsCollector snaps(db);
-
   TimeDiscretization& tss = tcd.get_time_stepping_scheme();
   tss.current_step_ = 0;
   tss.set_time_disc_parameters();
@@ -164,31 +159,36 @@ int main(int, char**)
 
   tcd.assemble_initial_time();
 
-  // store initial condition as snapshot
-  if(db["write_snaps"])
-  {
-    snaps.write_data(tcd.get_solution());
-  }
-
   //----------------------------------------------------------------------------
   // solve the PDE using FEM and acquire snapshots
   //----------------------------------------------------------------------------
-  while(!tss.reached_final_time_step())
+  if(db["write_snaps"])
   {
-    tss.current_step_++;
-    SetTimeDiscParameters(1);
+    // initialize snapshot writer (only needed if parmoon_db["write_snaps"])
+    // the solutions are stored in a special collector which can be later read
+    // by the computation of POD the basis
+    SnapshotsCollector snaps(db);
 
-    tss.current_time_ += tss.get_step_length();;
-    TDatabase::TimeDB->CURRENTTIME += tss.get_step_length();
+    // store initial condition as snapshot
+    snaps.write_data(tcd.get_solution());
 
-    Output::print<1>("\nCURRENT TIME: ", tss.current_time_);
-    tcd.assemble();
-    tcd.solve();
-
-    // write the snapshots
-    if(db["write_snaps"])
+    while(!tss.reached_final_time_step())
     {
-      snaps.write_data(tcd.get_solution(), tss.current_step_);
+      tss.current_step_++;
+      SetTimeDiscParameters(1);
+
+      tss.current_time_ += tss.get_step_length();;
+      TDatabase::TimeDB->CURRENTTIME += tss.get_step_length();
+
+      Output::print<1>("\nCURRENT TIME: ", tss.current_time_);
+      tcd.assemble();
+      tcd.solve();
+
+      // write the snapshots
+      if(db["write_snaps"])
+      {
+        snaps.write_data(tcd.get_solution(), tss.current_step_);
+      }
     }
   }
 
