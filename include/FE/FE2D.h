@@ -61,6 +61,9 @@ class TFE2D
     /** return BaseFunct2D_ID */
     BaseFunct2D GetBaseFunct2D_ID() const
       { return BaseFunct_ID; };
+    
+    BaseFunct2D get_id() const
+      { return BaseFunct_ID; };
 
     /** return BaseFunct2D */
     TBaseFunct2D *GetBaseFunct2D() const

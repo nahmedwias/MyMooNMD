@@ -1,20 +1,7 @@
-// =======================================================================
-// %W% %G%
-//
-// Class:      TBaseFunct3D
-//
-// Purpose:    represents the set of base functions for a finite element
-//             in three dimensions
-//
-// Author:     Gunar Matthies
-//
-// History:    19.11.99 start implementation
-// 
-// =======================================================================
-
 #include <Constants.h>
 #include <BaseFunct3D.h>
 #include <FEDatabase3D.h>
+#include <GridCell.h>
 #include <Database.h>
 #include <JointEqN.h>
 
@@ -38,11 +25,8 @@ TBaseFunct3D::TBaseFunct3D(int dimension, BaseFunct3D basefunct,
                            int baseVectDim)
 {
   Dimension=dimension;
-
   RefElement = refelement;
-
   BaseFunct = basefunct;
-
   Functions[D000]=functions;
   Functions[D100]=derivativesXi;
   Functions[D010]=derivativesEta;
@@ -53,42 +37,28 @@ TBaseFunct3D::TBaseFunct3D(int dimension, BaseFunct3D basefunct,
   Functions[D020]=derivativesEtaEta;
   Functions[D011]=derivativesEtaZeta;
   Functions[D002]=derivativesZetaZeta;
-
-  changable = false;
-
   PolynomialDegree = polynomialdegree;
   Accuracy = accuracy;
-
   N_BF2Change = n_bf2change;
   BF2Change = bf2change;
   BaseVectDim = baseVectDim;
 }
 
-/** constructor without filling data structure */
-TBaseFunct3D::TBaseFunct3D(int dimension)
-{
-  Dimension = dimension;
-
-  changable = true;
-}
-
 /** return the values for derivative MultiIndex at all
     quadrature points */
 void TBaseFunct3D::GetDerivatives(MultiIndex3D MultiIndex, 
-                        TQuadFormula3D *formula, double **values)
+                        TQuadFormula3D *formula, double **values) const
 {
   int i, N_;
-  double *w, *xi, *eta, *zeta;
-
+  const double *w, *xi, *eta, *zeta;
   formula->GetFormulaData(N_, w, xi, eta, zeta);
-
   for(i=0;i<N_;i++)
     GetDerivatives(MultiIndex, xi[i], eta[i], zeta[i], values[i]);
 }
 
 /** return values on joint */
-void TBaseFunct3D::GetValues(int N_Points, double *t, double *s, 
-                             int joint, double **Values)
+void TBaseFunct3D::GetValues(int N_Points, const double *t, const double *s, 
+                             int joint, double **Values) const
 {
   int i;
   double xi[MaxN_QuadPoints_2D], eta[MaxN_QuadPoints_2D];
@@ -192,8 +162,9 @@ void TBaseFunct3D::GetValues(int N_Points, double *t, double *s,
 }
 
 /** return values of derivative index on joint */
-void TBaseFunct3D::GetValues(int N_Points, double *t, double *s, int joint, 
-                             MultiIndex3D index, double **Values)
+void TBaseFunct3D::GetValues(int N_Points, const double *t, const double *s,
+                             int joint, MultiIndex3D index, double **Values) 
+  const
 {
   int i;
   double xi[MaxN_QuadPoints_2D], eta[MaxN_QuadPoints_2D];
@@ -297,21 +268,13 @@ void TBaseFunct3D::GetValues(int N_Points, double *t, double *s, int joint,
     GetDerivatives(index, xi[i], eta[i], zeta[i], Values[i]);
 }
 
-/** set function for derivative MultiIndex */
-void TBaseFunct3D::SetFunction(MultiIndex3D MultiIndex, 
-                               DoubleFunct3D* function)
-{
-  if(changable)
-    Functions[MultiIndex] = function;
-}
-
 /** make data on reference element */
-void TBaseFunct3D::MakeRefElementData(QuadFormula2D FaceQF)
+void TBaseFunct3D::MakeRefElementData(QuadFormula2D FaceQF) const
 {
   int i, j, N_Joints;
   double **Values, *AllValues;
   TQuadFormula2D *qf2;
-  double *w, *t, *s;
+  const double *w, *t, *s;
   int N_Points;
 
   qf2 = TFEDatabase3D::GetQuadFormula2D(FaceQF);
@@ -337,9 +300,9 @@ void TBaseFunct3D::MakeRefElementData(QuadFormula2D FaceQF)
     {
       // data not generated yet
       Values = new double* [N_Points];
-      AllValues = new double [N_Points*Dimension];
+      AllValues = new double [N_Points*Dimension*BaseVectDim];
       for(j=0;j<N_Points;j++)
-        Values[j] = AllValues+j*Dimension;
+        Values[j] = AllValues+j*Dimension*BaseVectDim;
       GetValues(N_Points, t, s, i, Values);
       TFEDatabase3D::RegisterJointValues3D(BaseFunct, FaceQF, 
                        i, Values);
@@ -350,9 +313,9 @@ void TBaseFunct3D::MakeRefElementData(QuadFormula2D FaceQF)
     {
       // data not generated yet
       Values = new double* [N_Points];
-      AllValues = new double [N_Points*Dimension];
+      AllValues = new double [N_Points*Dimension*BaseVectDim];
       for(j=0;j<N_Points;j++)
-        Values[j] = AllValues+j*Dimension;
+        Values[j] = AllValues+j*Dimension*BaseVectDim;
       GetValues(N_Points, t, s, i, D100, Values);
       TFEDatabase3D::RegisterJointDerivatives3D(BaseFunct, FaceQF, 
                        i, D100, Values);
@@ -363,9 +326,9 @@ void TBaseFunct3D::MakeRefElementData(QuadFormula2D FaceQF)
     {
       // data not generated yet
       Values = new double* [N_Points];
-      AllValues = new double [N_Points*Dimension];
+      AllValues = new double [N_Points*Dimension*BaseVectDim];
       for(j=0;j<N_Points;j++)
-        Values[j] = AllValues+j*Dimension;
+        Values[j] = AllValues+j*Dimension*BaseVectDim;
       GetValues(N_Points, t, s, i, D010, Values);
       TFEDatabase3D::RegisterJointDerivatives3D(BaseFunct, FaceQF, 
                        i, D010, Values);
@@ -376,9 +339,9 @@ void TBaseFunct3D::MakeRefElementData(QuadFormula2D FaceQF)
     {
       // data not generated yet
       Values = new double* [N_Points];
-      AllValues = new double [N_Points*Dimension];
+      AllValues = new double [N_Points*Dimension*BaseVectDim];
       for(j=0;j<N_Points;j++)
-        Values[j] = AllValues+j*Dimension;
+        Values[j] = AllValues+j*Dimension*BaseVectDim;
       GetValues(N_Points, t, s, i, D001, Values);
       TFEDatabase3D::RegisterJointDerivatives3D(BaseFunct, FaceQF, 
                        i, D001, Values);
@@ -387,7 +350,7 @@ void TBaseFunct3D::MakeRefElementData(QuadFormula2D FaceQF)
 }
 
 /** make data on reference element */
-void TBaseFunct3D::MakeRefElementData(QuadFormula3D QuadFormula)
+void TBaseFunct3D::MakeRefElementData(QuadFormula3D QuadFormula) const
 {
   int j;
   double **Values, *AllValues;
@@ -401,9 +364,9 @@ void TBaseFunct3D::MakeRefElementData(QuadFormula3D QuadFormula)
   if( Values==nullptr)
   {
     Values = new double* [n_points];
-    AllValues = new double [n_points*Dimension];
+    AllValues = new double [n_points*Dimension*BaseVectDim];
     for(j=0;j<n_points;j++)
-      Values[j] = AllValues+j*Dimension;
+      Values[j] = AllValues+j*Dimension*BaseVectDim;
     GetDerivatives(D000, qf2, Values);
     TFEDatabase3D::RegisterRefElementValues(BaseFunct, QuadFormula, 
                                           D000, Values);
@@ -414,9 +377,9 @@ void TBaseFunct3D::MakeRefElementData(QuadFormula3D QuadFormula)
   if( Values==nullptr)
   {
     Values = new double* [n_points];
-    AllValues = new double [n_points*Dimension];
+    AllValues = new double [n_points*Dimension*BaseVectDim];
     for(j=0;j<n_points;j++)
-      Values[j] = AllValues+j*Dimension;
+      Values[j] = AllValues+j*Dimension*BaseVectDim;
     GetDerivatives(D100, qf2, Values);
     TFEDatabase3D::RegisterRefElementValues(BaseFunct, QuadFormula, 
                                           D100, Values);
@@ -427,9 +390,9 @@ void TBaseFunct3D::MakeRefElementData(QuadFormula3D QuadFormula)
   if( Values==nullptr)
   {
     Values = new double* [n_points];
-    AllValues = new double [n_points*Dimension];
+    AllValues = new double [n_points*Dimension*BaseVectDim];
     for(j=0;j<n_points;j++)
-      Values[j] = AllValues+j*Dimension;
+      Values[j] = AllValues+j*Dimension*BaseVectDim;
     GetDerivatives(D010, qf2, Values);
     TFEDatabase3D::RegisterRefElementValues(BaseFunct, QuadFormula, 
                                           D010, Values);
@@ -440,9 +403,9 @@ void TBaseFunct3D::MakeRefElementData(QuadFormula3D QuadFormula)
   if( Values==nullptr)
   {
     Values = new double* [n_points];
-    AllValues = new double [n_points*Dimension];
+    AllValues = new double [n_points*Dimension*BaseVectDim];
     for(j=0;j<n_points;j++)
-      Values[j] = AllValues+j*Dimension;
+      Values[j] = AllValues+j*Dimension*BaseVectDim;
     GetDerivatives(D001, qf2, Values);
     TFEDatabase3D::RegisterRefElementValues(BaseFunct, QuadFormula, 
                                           D001, Values);
@@ -527,7 +490,7 @@ void TBaseFunct3D::MakeRefElementData(QuadFormula3D QuadFormula)
   }
 }
 
-TGridCell *TBaseFunct3D::GenerateRefElement()
+TGridCell *TBaseFunct3D::GenerateRefElement() const
 {
   TGridCell *Cell =nullptr;
   TVertex *v[8];
@@ -585,11 +548,11 @@ TGridCell *TBaseFunct3D::GenerateRefElement()
 }
 
 /** change basis functions on cell if needed */
-void TBaseFunct3D::ChangeBF(TCollection *Coll, TBaseCell *Cell, double *Values)
+void TBaseFunct3D::ChangeBF(TCollection *, const TBaseCell *Cell,
+                            double *Values) const
 {
   int i, j, k, maptype, *JointArray;
-  TJoint *joint;
-  TBaseCell *neigh;
+  const TBaseCell *neigh;
 
   if(BF2Change == nullptr) return;
 
@@ -601,7 +564,7 @@ void TBaseFunct3D::ChangeBF(TCollection *Coll, TBaseCell *Cell, double *Values)
     case BFUnitHexahedron:
       for(i=0;i<6;i++)
       {
-        joint = Cell->GetJoint(i);
+        auto joint = Cell->GetJoint(i);
         maptype = joint->GetMapType();
         if(maptype == 1 || maptype == 2)
         {
@@ -634,62 +597,12 @@ void TBaseFunct3D::ChangeBF(TCollection *Coll, TBaseCell *Cell, double *Values)
   } // end switch
 }
 
-// #ifdef _HYBRID
-// /** change basis functions on cell if needed */
-// void TBaseFunct3D::ChangeBF(TCollection *Coll, TBaseCell *Cell, double *Values, int &maptype, TJoint *joint)
-// {
-//   int i, j, k, *JointArray;
-//   TBaseCell *neigh;
-// 
-//   if(BF2Change == nullptr) return;
-// 
-//   switch(RefElement)
-//   {
-//     case BFUnitTetrahedron:
-//     break;
-// 
-//     case BFUnitHexahedron:
-//       for(i=0;i<6;i++)
-//       {
-//         joint = Cell->GetJoint(i);
-//         maptype = joint->GetMapType();
-//         if(maptype == 1 || maptype == 2)
-//         {
-//           neigh = (TGridCell *)(joint->GetNeighbour(Cell));
-//           if(neigh != nullptr && neigh-Cell < 0)
-//           {
-//             JointArray = BF2Change[0][i];
-//             for(j=0;j<N_BF2Change;j++)
-//             {
-//               k = JointArray[j];
-//               Values[k] = -Values[k];
-//             }
-//           }
-//         }
-//         if(maptype == 2 || maptype == 3)
-//         {
-//           neigh = (TGridCell *)(joint->GetNeighbour(Cell));
-//           if(neigh != nullptr && neigh-Cell < 0)
-//           {
-//             JointArray = BF2Change[1][i];
-//             for(j=0;j<N_BF2Change;j++)
-//             {
-//               k = JointArray[j];
-//               Values[k] = -Values[k];
-//             }
-//           }
-//         }
-//       } // endfor i
-//     break;
-//   } // end switch
-// }
-// #endif
-
 /** change basis functions on cell in all points if needed */
-void TBaseFunct3D::ChangeBF(TCollection *Coll, TBaseCell *Cell, int N_Points, double **Values)
+void TBaseFunct3D::ChangeBF(TCollection *, const TBaseCell *Cell,
+                            int N_Points, double **Values) const
 {
   int i, j, k, l, maptype, *JointArray;
-  TJoint *joint;
+  const TJoint *joint;
   TBaseCell *neigh;
   double *Array;
 

@@ -2,7 +2,7 @@
 #include <cmath>
 #include <FunctionEvaluation.h>
 
-int main(int argc, char **argv)
+int main(int, char**)
 {
   unsigned int space_dim = 2;
   unsigned int n_functions = 3;

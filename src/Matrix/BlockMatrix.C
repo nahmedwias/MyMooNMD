@@ -38,8 +38,8 @@ BlockMatrix::CellInfo::CellInfo(size_t nRows, size_t nColumns)
   {
   }
 
-  BlockMatrix::BlockMatrix(std::vector<size_t> cellRowNumbers,
-                                         std::vector<size_t> cellColumnNumbers)
+  BlockMatrix::BlockMatrix(const std::vector<size_t>& cellRowNumbers,
+                           const std::vector<size_t>& cellColumnNumbers)
   : n_cell_rows_{cellRowNumbers.size()},
     n_cell_columns_{cellColumnNumbers.size()},
     cell_grid_(n_cell_rows_, std::vector<CellInfo>(n_cell_columns_))
@@ -81,7 +81,7 @@ BlockMatrix::CellInfo::CellInfo(size_t nRows, size_t nColumns)
 
 /* ************************************************************************* */
 BlockMatrix::BlockMatrix(int nRows, int nCols, 
-                         std::vector<std::shared_ptr<TMatrix>> blocks)
+                         const std::vector<std::shared_ptr<TMatrix>>& blocks)
  : n_cell_rows_(nRows), n_cell_columns_(nCols),
    cell_grid_(nRows, std::vector<CellInfo>(nCols)), color_count_(nRows*nCols, 1)
 {
@@ -513,8 +513,8 @@ void BlockMatrix::sor_sweep(const BlockVector& b, BlockVector& x, double omega,
     }
 
     BlockMatrix BlockMatrix::get_sub_blockmatrix(
-        std::pair<size_t,size_t> upper_left,
-        std::pair<size_t,size_t> lower_right) const
+        const std::pair<size_t,size_t>& upper_left,
+        const std::pair<size_t,size_t>& lower_right) const
     {
       size_t r_first = upper_left.first;
       size_t r_last  = lower_right.first;
@@ -596,7 +596,7 @@ void BlockMatrix::sor_sweep(const BlockVector& b, BlockVector& x, double omega,
 
 
     /* ************************************************************************* */
-    void BlockMatrix::print_and_check(std::string matrix_name) const
+    void BlockMatrix::print_and_check(const std::string& matrix_name) const
     {
       // do both prints
       print_coloring_pattern(matrix_name);
@@ -607,7 +607,7 @@ void BlockMatrix::sor_sweep(const BlockVector& b, BlockVector& x, double omega,
     }
 
     /* ************************************************************************* */
-    void BlockMatrix::print_coloring_count(std::string matrix_name) const
+    void BlockMatrix::print_coloring_count(const std::string& matrix_name) const
     {
       Output::print("----------------------");
       Output::print(" Color count: ", matrix_name);
@@ -622,7 +622,7 @@ void BlockMatrix::sor_sweep(const BlockVector& b, BlockVector& x, double omega,
     }
 
     /* ************************************************************************* */
-    void BlockMatrix::print_coloring_pattern(std::string matrix_name,
+    void BlockMatrix::print_coloring_pattern(const std::string& matrix_name,
                                                     bool print_adress) const
     {
       Output::print("-------------------------");
@@ -1170,7 +1170,7 @@ std::shared_ptr<const TMatrix> BlockMatrix::get_block(size_t cell_row,
 
     /* ************************************************************************* */
     void BlockMatrix::check_indices(
-        std::vector<grid_place_and_mode>& row_column_transpose_tuples
+        const std::vector<grid_place_and_mode>& row_column_transpose_tuples
     ) const
     {
       for (auto it: row_column_transpose_tuples)
@@ -1414,7 +1414,7 @@ std::shared_ptr<const TMatrix> BlockMatrix::get_block(size_t cell_row,
 
     /* ************************************************************************* */
     void BlockMatrix::handle_discovery_of_vector_non_actives(
-      const int n_nonActive, const int spaceNumber) const
+      const int n_nonActive, const int) const
     {
       if(n_nonActive != 0)
       {
@@ -1442,9 +1442,9 @@ std::shared_ptr<const TMatrix> BlockMatrix::get_block(size_t cell_row,
     }
 
     /* ************************************************************************* */
-    void BlockMatrix::mark_for_color_split(size_t color_to_mark,
-                                                  std::vector<grid_place_and_mode>
-    row_column_transposed_tuples)
+    void BlockMatrix::mark_for_color_split(
+      size_t color_to_mark,
+      const std::vector<grid_place_and_mode>& row_column_transposed_tuples)
     {
       for (auto it : row_column_transposed_tuples)
       {

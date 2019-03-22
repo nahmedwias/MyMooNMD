@@ -37,7 +37,7 @@ void InitialU2(double x, double y, double *values)
   values[0] = cn*U_INFTY * exp(-z2*z2)*(sin(8.*Pi*x)*8.*Pi + sin(20.*Pi*x) * 20.*Pi);
 }
 
-void InitialP(double x, double y, double *values)
+void InitialP(double, double, double *values)
 {
   values[0] = 0;
 }
@@ -46,7 +46,7 @@ void InitialP(double x, double y, double *values)
 // ========================================================================
 // exact solution
 // ========================================================================
-void ExactU1(double x, double y, double *values)
+void ExactU1(double, double, double *values)
 {
   values[0] = 0;
   values[1] = 0;
@@ -54,7 +54,7 @@ void ExactU1(double x, double y, double *values)
   values[3] = 0;
 }
 
-void ExactU2(double x, double y, double *values)
+void ExactU2(double, double, double *values)
 {
   values[0] = 0;
   values[1] = 0;
@@ -62,7 +62,7 @@ void ExactU2(double x, double y, double *values)
   values[3] = 0;
 }
 
-void ExactP(double x, double y, double *values)
+void ExactP(double, double, double *values)
 {
   values[0] = 0;
   values[1] = 0;
@@ -73,13 +73,13 @@ void ExactP(double x, double y, double *values)
 // ========================================================================
 // boundary conditions
 // ========================================================================
-void BoundCondition(int i, double t, BoundCond &cond)
+void BoundCondition(int, double, BoundCond &cond)
 {
   cond = SLIP_FRICTION_PENETRATION_RESISTANCE;
   TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION = 1;
 }
 
-void U1BoundValue(int BdComp, double Param, double &value)
+void U1BoundValue(int BdComp, double, double &value)
 {
   if(BdComp>3)
   {
@@ -89,7 +89,7 @@ void U1BoundValue(int BdComp, double Param, double &value)
   value =0.;
 }
 
-void U2BoundValue(int BdComp, double Param, double &value)
+void U2BoundValue(int, double, double &value)
 {
   value = 0;
 }
@@ -97,8 +97,7 @@ void U2BoundValue(int BdComp, double Param, double &value)
 // ========================================================================
 // coefficients for Stokes form: A, B1, B2, f1, f2
 // ========================================================================
-void LinCoeffs(int n_points, double *X, double *Y,
-               double **parameters, double **coeffs)
+void LinCoeffs(int n_points, double *, double *, double **, double **coeffs)
 {
   for(int i=0;i<n_points;i++)
   {
@@ -115,10 +114,8 @@ void ComputeVorticiyThickness(const TFEFunction2D *Vorticity, double &thickness)
   TBaseCell *cell;
   double x0,x1,x,y0,y1,val[3],max;
   double *global_y_coord, *aver_vort;
-  const TFESpace2D *vorticity_space;
 
-
-  vorticity_space=Vorticity->GetFESpace2D();
+  auto vorticity_space=Vorticity->GetFESpace2D();
   N_Vort = vorticity_space->GetN_DegreesOfFreedom();
   global_y_coord = new double[N_Vort];
   aver_vort =  new double[N_Vort];
@@ -202,26 +199,28 @@ void ComputeVorticiyThickness(const TFEFunction2D *Vorticity, double &thickness)
   return;
 }
 
-void EvaluateSolution(const Time_NSE2D &tnse2d, double & zero_vort)
+void EvaluateSolution(const TimeNavierStokes<2> &, double &)
 {
-  const TFEFunction2D& vorticity(tnse2d.get_vorticity_funct());
-  double thickness;
-  ComputeVorticiyThickness(&vorticity, thickness);
-
-  double t=TDatabase::TimeDB->CURRENTTIME;
-  const TFESpace2D * sp = vorticity.GetFESpace2D();
-  MultiIndex2D allderiv[3]= {D00, D10, D01};
-  TAuxParam2D aux;
-  double locerr[8];
-  vorticity.GetErrors(ExactNull, 3, allderiv, 2, L2H1Errors, nullptr, &aux, 1, 
-                               &sp, locerr);
-  
-  Output::print(t, " " , "enstrophy ", (locerr[0]*locerr[0])/2, " ", (locerr[1]*locerr[1])/2);
-  
-  if(zero_vort < 0)
-    zero_vort = thickness;
-  Output::print( t, " ", "vorticity thickness: ", thickness,
-                 " ", thickness/zero_vort);
+  ErrThrow("This needs to be reimplemented, the vorticity is not stored in the "
+           "TimeNavierStokes<2> class");
+//   const TFEFunction2D& vorticity(tnse2d.get_vorticity_funct());
+//   double thickness;
+//   ComputeVorticiyThickness(&vorticity, thickness);
+// 
+//   double t=TDatabase::TimeDB->CURRENTTIME;
+//   const TFESpace2D * sp = vorticity.GetFESpace2D();
+//   MultiIndex2D allderiv[3]= {D00, D10, D01};
+//   TAuxParam2D aux;
+//   double locerr[8];
+//   vorticity.GetErrors(ExactNull, 3, allderiv, 2, L2H1Errors, nullptr, &aux, 1, 
+//                                &sp, locerr);
+//   
+//   Output::print(t, " " , "enstrophy ", (locerr[0]*locerr[0])/2, " ", (locerr[1]*locerr[1])/2);
+//   
+//   if(zero_vort < 0)
+//     zero_vort = thickness;
+//   Output::print( t, " ", "vorticity thickness: ", thickness,
+//                  " ", thickness/zero_vort);
   
   /// computation of the mean velocity profile
   

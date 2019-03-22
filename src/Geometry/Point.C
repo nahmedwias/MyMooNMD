@@ -26,7 +26,7 @@ Point::Point(double x, double y, double z)
 }
 
 /* ************************************************************************** */
-Point::Point(std::vector<double> p)
+Point::Point(const std::vector<double>& p)
 {
   const unsigned int p_size = p.size();
   if(p_size == 2)

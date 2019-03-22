@@ -120,7 +120,7 @@ namespace Output
   ///
   /// The print methods print to both std::cout and the outfile. This method 
   /// opens the file and it should be closed again calling Output::close_file().
-  void set_outfile(std::string filename, bool script_mode = false);
+  void set_outfile(const std::string& filename, bool script_mode = false);
   
   /// @brief close files which have been previously opened
   ///
@@ -141,7 +141,7 @@ namespace Output
    * \endcode
    * \note Using `printf` will still give you output on the console
    */
-  void redirect(std::string filename);
+  void redirect(const std::string& filename);
   /// @brief close the file after a call to Output::redirect.
   ///
   /// This restores the normal behavior of the print methods.
@@ -170,16 +170,16 @@ namespace Output
   void print(Arguments const& ... rest);
   
   template<unsigned int verbosity = 1, typename ... Arguments>
-  void warn(std::string context, Arguments const& ... rest);
+  void warn(const std::string& context, Arguments const& ... rest);
 
   template<unsigned int verbosity = 1, typename ... Arguments>
-  void stat(std::string context, Arguments const& ... rest);
+  void stat(const std::string& context, Arguments const& ... rest);
 
   template<unsigned int verbosity = 1, typename ... Arguments>
-  void info(std::string context, Arguments const& ... rest);
+  void info(const std::string& context, Arguments const& ... rest);
 
   template<unsigned int verbosity = 1, typename ... Arguments>
-  void root_info(std::string context, Arguments const& ... rest);
+  void root_info(const std::string& context, Arguments const& ... rest);
 
   template<unsigned int verbosity = 1, typename ... Arguments>
   void dash(Arguments const& ... rest);
@@ -208,7 +208,7 @@ namespace Output
   ///
   /// You have to provide a meaningful error message here.
   #define ErrThrow(...) {Output::errThrow(__FILE__, __LINE__, __VA_ARGS__);}
-};
+}
 
 
 // this is an attempt to separate declaration and implementation. The template
@@ -295,19 +295,19 @@ namespace Output
   }
   
   template<unsigned int verbosity, typename ... Arguments>
-  void warn(std::string context, Arguments const& ... rest)
+  void warn(const std::string& context, Arguments const& ... rest)
   {
 	  print<verbosity>("WARNING (",context,"): ", rest ...);
   }
 
   template<unsigned int verbosity, typename ... Arguments>
-  void stat(std::string context, Arguments const& ... rest)
+  void stat(const std::string& context, Arguments const& ... rest)
   {
 	  print<verbosity>("STATS (",context,"): ", rest ...);
   }
 
   template<unsigned int verbosity, typename ... Arguments>
-  void info(std::string context, Arguments const& ... rest)
+  void info(const std::string& context, Arguments const& ... rest)
   {
 	  print<verbosity>("INFO (",context,"): ", rest ...);
   }
@@ -315,7 +315,7 @@ namespace Output
   /// Use this method whenever only the root process should give
   /// an info. In sequential, this performs just the same as info.
   template<unsigned int verbosity, typename ... Arguments>
-  void root_info(std::string context, Arguments const& ... rest)
+  void root_info(const std::string& context, Arguments const& ... rest)
   {
     int my_rank = 0;
 #ifdef _MPI
@@ -366,7 +366,7 @@ namespace Output
     get_outfile() << stream.str() << "\n";
     throw std::runtime_error(stream.str());
   }
-};
+}
 
 /// @brief old macro to print things into a file and to std::cout, deprecated
 ///

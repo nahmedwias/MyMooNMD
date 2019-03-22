@@ -36,7 +36,7 @@ void TLineAffin::GetOrigFromRef(double xi, double &X
 }
 
 /** transfer a set of points from reference to original element */
-void TLineAffin::GetOrigFromRef(int N_Points, double *xi, double *X, 
+void TLineAffin::GetOrigFromRef(int N_Points, const double *xi, double *X, 
                                 double *Y,  double *absdetjk)
 {
   int i;
@@ -49,14 +49,12 @@ void TLineAffin::GetOrigFromRef(int N_Points, double *xi, double *X,
     X[i] = xc0 + xc1*Xi;
     absdetjk[i] = absdet;
     
-    #ifdef __2D__
     Y[i] = 0;
-    #endif
   } // endfor i
 }
 
 /** transfer a set of points from reference to original element */
-void TLineAffin::GetOrigFromRef(int N_Points, double *xi, double *X, double *absdetjk)
+void TLineAffin::GetOrigFromRef(int N_Points, const double *xi, double *X, double *absdetjk)
 {
   int i;
   double Xi;
@@ -72,7 +70,7 @@ void TLineAffin::GetOrigFromRef(int N_Points, double *xi, double *X, double *abs
 }
 
 
-void TLineAffin::GetOrigValues(int N_Sets, BaseFunct1D *BaseFuncts, int N_Points, double *zeta,
+void TLineAffin::GetOrigValues(int N_Sets, BaseFunct1D *BaseFuncts, int N_Points, double *,
                                QuadFormula1D QuadFormula, bool *Needs2ndDer)
 {
   int i, j, k, N_Functs;

@@ -22,7 +22,7 @@ class TJointEqN : public TJoint
   public:
     // Constructors
     /** constructor with one initial neighbour */
-    TJointEqN(TBaseCell *neighb0);
+    explicit TJointEqN(TBaseCell *neighb0);
     /** constructor with two initial neighbours */
     TJointEqN(TBaseCell *neighb0, TBaseCell *neighb1);
 
@@ -31,15 +31,8 @@ class TJointEqN : public TJoint
     virtual int CheckMatchingRef(TBaseCell *Me, int J_i,
                      struct StoreGeom &Tmp);
 
-    #ifdef __MORTAR__
-      /** check the refinement pattern on both sides for matching,
-          special version for moratr cells */
-      virtual int CheckMatchingRef(TBaseCell *Me, int J_i,
-                    StoreGeomMortar &Tmp);
-    #endif
-
     /** create a new instance of this class */
-    virtual TJoint *NewInst(double T_0, double T_1, TBaseCell *Me)
+    virtual TJoint *NewInst(double, double, TBaseCell *Me)
     {
       return new TJointEqN(Me);
     }

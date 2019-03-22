@@ -27,7 +27,7 @@ namespace MeshPartitionInOut
 	/// Write domain partitioning information to a file.
 	void write_file(const TDomain& Domain, int size,
 	                int N_Cells, idx_t *Cell_Rank);
-};
+}
 #endif
 
 #endif //INCLUDE_PARALLEL_MESH_PARTITION_IN_OUT_INCLUDED

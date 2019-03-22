@@ -27,7 +27,7 @@
 #include <FEFunction3D.h>
 #include <Residuals.h>
 #include <FESpace3D.h>
-#include <PostProcessing3D.h>
+#include <DataWriter.h>
 #include <vector>
 #include <deque>
 #include <list>
@@ -46,24 +46,13 @@ protected:
      */
     struct System_per_grid
     {
-        /** @brief constructor in mpi case
+        /** @brief constructor
          * @param[in] example The current example.
          * @param[in] coll The collection of mesh cells of this grid.
-         * @param[in] maxSubDomainPerDof Only in MPI case! The maximal number of
-         * processes which share a single dof. The value is calculated in the
-         * main program and handed down to the FESpaces. Getting rid of this
-         * construction is a TODO .
          */
-#ifdef _MPI
-        System_per_grid(const Example_Brinkman3D& example,
-                        TCollection& coll, std::pair<int, int> order, Brinkman3D::Matrix type,
-                        int maxSubDomainPerDof);
-#else
-        /** @brief constructor */
         System_per_grid(const Example_Brinkman3D& example, TCollection& coll,
                         std:: pair <int,int> velocity_pressure_orders,
                         Brinkman3D::Matrix type);
-#endif
         /** @brief Finite Element space for the velocity */
         TFESpace3D velocity_space;
         /** @brief Finite Element space for the pressure */
@@ -118,7 +107,7 @@ protected:
      * other parameters such as solver parameters. Those are only in the
      * Solver object.
      */
-    ParameterDatabase db;
+    ParameterDatabase brinkman3d_db;
     
     /** @brief a solver object which will solve the linear system
      *
@@ -148,7 +137,7 @@ protected:
     std::array<double, int(4)> errors;
     
     /** @brief output object*/
-    PostProcessing3D outputWriter;
+    DataWriter3D outputWriter;
     
 protected:
     
@@ -184,18 +173,10 @@ public:
      * @param collections
      * @param example The example to perform
      */
-#ifdef _MPI
-    Brinkman3D(std::list<TCollection* > collections,
-               const ParameterDatabase& param_db,
-               const Example_Brinkman3D& example,
-               int maxSubDomainPerDof,
-               int reference_id = -4711);
-#else
     Brinkman3D(std::list<TCollection* > collections,
                const ParameterDatabase& param_db,
                const Example_Brinkman3D& example,
                int reference_id = -4711);
-#endif
     
     
     /** @brief constructor
@@ -203,19 +184,10 @@ public:
      * This constructor calls the other constructor creating an Example_Brinkman2D
      * object for you. See there for more documentation.
      */
-#ifdef _MPI
-    Brinkman3D(const TDomain& domain,
-               const ParameterDatabase& param_db,
-               const Example_Brinkman3D& example,
-               int maxSubDomainPerDof,
-               int reference_id = -4711);
-#else
     Brinkman3D(const TDomain& domain,
                const ParameterDatabase& param_db,
                const Example_Brinkman3D& example,
                int reference_id = -4711);
-    
-#endif
     
     
     /** @brief standard destructor */
@@ -306,10 +278,10 @@ public:
     const TFESpace3D& get_pressure_space() const
     { return this->systems.front().pressure_space; }
     
-    const int get_size(){return this->systems.front().solution.length();}
+    int get_size(){return this->systems.front().solution.length();}
     
     const ParameterDatabase & get_db() const
-    { return db; }
+    { return brinkman3d_db; }
     
     /// @brief Get the current residuals  (updated in compute_residuals)
     const Residuals& get_residuals() const;

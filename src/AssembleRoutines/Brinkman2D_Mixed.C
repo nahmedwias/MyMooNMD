@@ -35,7 +35,7 @@
 // Standard Galerkin for Brinkman in [p div v] formulation
 // ======================================================================
 void BrinkmanType1Galerkin(double Mult, double *coeff,
-    double *param, double hK,
+    double *, double,
     double **OrigValues, int *N_BaseFuncts,
     double ***LocMatrices, double **LocRhs)
 {
@@ -46,8 +46,8 @@ void BrinkmanType1Galerkin(double Mult, double *coeff,
   //double ** MatrixA12 = LocMatrices[1];
   //double ** MatrixA21 = LocMatrices[2];
   double ** MatrixA22 = LocMatrices[3];
-  //double ** MatrixC = LocMatrices[4];
-  double ** MatrixB1 = LocMatrices[5];
+ // double ** MatrixC = LocMatrices[4];
+   double ** MatrixB1 = LocMatrices[5];
   double ** MatrixB2 = LocMatrices[6];
   double ** MatrixB1T = LocMatrices[7];
   double ** MatrixB2T = LocMatrices[8];
@@ -76,7 +76,17 @@ void BrinkmanType1Galerkin(double Mult, double *coeff,
   double mu_eff = coeff[5];               // effective viscosity
   double K = coeff[6];                    // permeability
 
-  double val;
+// LB Debug New 25.04.18 start:
+double approximate_delta_distribution_function = 0;
+
+if (TDatabase::ParamDB->SOURCE_SINK_FUNCTION)
+{
+	approximate_delta_distribution_function = coeff[9];
+}
+//cout<< "K::: "<< K << endl;
+//cout<< "mueff::: "<< mu_eff << endl;
+// LB Debug 25.04.18 end
+double val;
   for(int i = 0; i < N_U; i++)
   {
     test10 = Orig0[i];
@@ -115,9 +125,15 @@ void BrinkmanType1Galerkin(double Mult, double *coeff,
 
   for(int i = 0; i < N_P; i++)
   {
-    test00 = Orig3[i];      // p
+    test00 = Orig3[i];      // q
 
     Rhs_p[i] += Mult * (TDatabase::ParamDB->SIGN_MATRIX_BI) * test00 * c3;        // (g, q) (sign chosen according to stabilization)
+
+
+    //introduce sources and sinks
+    double P = 1;
+    Rhs_p[i] += Mult  * (TDatabase::ParamDB->SIGN_MATRIX_BI) * test00 * approximate_delta_distribution_function * P;
+
 
     for(int j = 0; j < N_U; j++)
     {
@@ -130,6 +146,18 @@ void BrinkmanType1Galerkin(double Mult, double *coeff,
       val = TDatabase::ParamDB->SIGN_MATRIX_BI * test00 * ansatz01;                       // +/- (q, div u) --> +/- q * u2_y
       MatrixB2[i][j] += Mult * val;
     }
+   
+   /*
+   // consider sources and sinks impacts on the matrix as well 
+    for(int j = 0; j < N_P; j++)
+    {
+      ansatz00 = Orig3[j];   // p
+
+      val = approximate_delta_distribution_function * (ansatz00 * test00);               // source term  delta_fct * ( ph,  qh) 
+      MatrixC[i][j] += Mult * val;
+    }
+  */
+
   }
 }
 
@@ -139,7 +167,7 @@ void BrinkmanType1Galerkin(double Mult, double *coeff,
 // ======================================================================
 // To Do: Decide about deleting this assembling
 void BrinkmanType2Galerkin(double Mult, double *coeff,
-    double *param, double hK,
+    double *, double,
     double **OrigValues, int *N_BaseFuncts,
     double ***LocMatrices, double **LocRhs)
 {
@@ -260,7 +288,7 @@ void BrinkmanType2Galerkin(double Mult, double *coeff,
 // ======================================================================
 
 void BrinkmanType1GalerkinResidualStabP1(double Mult, double *coeff,
-    double *param, double hK,
+    double *, double hK,
     double **OrigValues, int *N_BaseFuncts,
     double ***LocMatrices, double **LocRhs)
 {
@@ -394,7 +422,7 @@ void BrinkmanType1GalerkinResidualStabP1(double Mult, double *coeff,
 // ======================================================================
 
 void BrinkmanType1GalerkinResidualStabP2(double Mult, double *coeff,
-    double *param, double hK,
+    double *, double hK,
     double **OrigValues, int *N_BaseFuncts,
     double ***LocMatrices, double **LocRhs)
 {
@@ -520,7 +548,7 @@ void BrinkmanType1GalerkinResidualStabP2(double Mult, double *coeff,
 // Additional Terms:  grad_div_stab_weight * (div u - g, div v)
 // ======================================================================
 void BrinkmanGradDivStab(double Mult, double *coeff,
-    double *param, double hK,
+    double *, double hK,
     double **OrigValues, int *N_BaseFuncts,
     double ***LocMatrices, double **LocRhs)
 {
@@ -559,6 +587,7 @@ void BrinkmanGradDivStab(double Mult, double *coeff,
   double mu = coeff[4];                   // viscosity
   double mu_eff = coeff[5];               // effective viscosity
   double K = coeff[6];                    // permeability
+    
   //double grad_div_stab_weight = coeff[8]; // without considering the units
   //double grad_div_stab_weight = coeff[8] * (mu/K) * hK * hK; // units are fine
   //double grad_div_stab_weight = coeff[8] * mu_eff;  // units are fine
@@ -570,13 +599,32 @@ void BrinkmanGradDivStab(double Mult, double *coeff,
   }
   else if (TDatabase::ParamDB->l_T == -1)
   {
-    grad_div_stab = delta * (mu_eff + (mu/K) * TDatabase::ParamDB->L_0 * TDatabase::ParamDB->L_0); // Brinkman_P1P1.tex with l_T=L_0
+  	grad_div_stab = delta * (mu_eff + (mu/K) * TDatabase::ParamDB->L_0 * TDatabase::ParamDB->L_0); // Brinkman_P1P1.tex with l_T=L_0
   }
   double val;
 
   if (TDatabase::ParamDB->SIGN_MATRIX_BI == -1)
   { // TODO LB: Do the stability analysis for the symmetric GLS stabilization and adapt the 'grad_div_stab_weight' accordingly.' 
-    grad_div_stab = coeff[8];
+  	grad_div_stab = coeff[8];
+  }
+
+  int GradDivStab_propto_h = 0;
+  if (GradDivStab_propto_h)
+  {
+  	int i = 0;
+  	if (i == 0)
+  	{
+  		Output::print("GradDiv-Stab is scaled as O(h).");
+  		i += 1;
+  	}
+  	grad_div_stab = delta * hK;
+  }
+
+  // LB Debug New21.08.18 start:
+  double approximate_delta_distribution_function = 0;
+  if (TDatabase::ParamDB->SOURCE_SINK_FUNCTION)
+  {
+  	approximate_delta_distribution_function = coeff[9];
   }
 
   for(int i = 0; i < N_U; i++)
@@ -586,6 +634,9 @@ void BrinkmanGradDivStab(double Mult, double *coeff,
 
     Rhs_u1[i] += Mult * grad_div_stab * c3 * test10; //(g,div v) = g (dv_1/dx_1 + ...)
     Rhs_u2[i] += Mult * grad_div_stab * c3 * test01; //(g,div v) = g(... + dv_2/dx_2)
+
+    Rhs_u1[i] += Mult * grad_div_stab * approximate_delta_distribution_function * test10; //(g,div v) = g (dv_1/dx_1 + ...)
+    Rhs_u2[i] += Mult * grad_div_stab * approximate_delta_distribution_function * test01; //(g,div v) = g(... + dv_2/dx_2)
 
     for(int j = 0; j < N_U; j++)
     {

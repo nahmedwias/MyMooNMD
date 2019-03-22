@@ -17,8 +17,8 @@ static double NF_C_T_B2_2D_Eta[] = { 0, 0, 0,
                                    0.33333333333333333333 };
 static double NF_C_T_B2_2D_T[] = { -1, 0, 1 };
 
-void NF_C_T_B2_2D_EvalAll(TCollection *Coll, TBaseCell *Cell, double *PointValues,
-                          double *Functionals)
+void NF_C_T_B2_2D_EvalAll(TCollection *, const TBaseCell *,
+                          const double *PointValues, double *Functionals)
 {
   Functionals[0] = PointValues[0];
   Functionals[1] = PointValues[1];
@@ -31,8 +31,8 @@ void NF_C_T_B2_2D_EvalAll(TCollection *Coll, TBaseCell *Cell, double *PointValue
                   +0.40*(PointValues[1]+PointValues[3]+PointValues[4]);
 }
 
-void NF_C_T_B2_2D_EvalEdge(TCollection *Coll, TBaseCell *Cell, int Joint, double *PointValues,
-                           double *Functionals)
+void NF_C_T_B2_2D_EvalEdge(TCollection *, const TBaseCell *, int,
+                           const double *PointValues, double *Functionals)
 {
   Functionals[0] = PointValues[0];
   Functionals[1] = PointValues[1];

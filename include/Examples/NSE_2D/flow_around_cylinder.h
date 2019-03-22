@@ -13,17 +13,33 @@
 // This is also called nu, or eps, it is equal
 // to 1/Reynolds_number and is dimensionless
 double DIMENSIONLESS_VISCOSITY;
+constexpr double reference_nu = 0.001;
+constexpr double reference_drag = 5.57953523384;
+constexpr double reference_lift = 0.010618948146;
+constexpr double reference_deltap = 0.11752016697;
 
 //side effect: sets the global parameter
 void ExampleFile()
 {
   Output::print("Example: flow_around_cylinder.h (stationary, 2D)");
+  if(DIMENSIONLESS_VISCOSITY == reference_nu)
+  {
+    Output::print("         This is Example D.5 in Volker John's book "
+                  "\"Finite Element Methods for Incompressible Flow Problems\""
+                  ", 2016");
+    Output::print(setprecision(12),"         Published values are: drag = ",
+                  reference_drag);
+    Output::print(setprecision(12), "                               lift = ",
+                  reference_lift);
+    Output::print(setprecision(12), "                               deltaP = ",
+                  reference_deltap);
+  }
 }
 
 // ========================================================================
 // exact solution
 // ========================================================================
-void ExactU1(double x, double y, double *values)
+void ExactU1(double, double, double *values)
 {
   values[0] = 0;
   values[1] = 0;
@@ -31,7 +47,7 @@ void ExactU1(double x, double y, double *values)
   values[3] = 0;
 }
 
-void ExactU2(double x, double y, double *values)
+void ExactU2(double, double, double *values)
 {
   values[0] = 0;
   values[1] = 0;
@@ -39,7 +55,7 @@ void ExactU2(double x, double y, double *values)
   values[3] = 0;
 }
 
-void ExactP(double x, double y, double *values)
+void ExactP(double, double, double *values)
 {
   values[0] = 0;
   values[1] = 0;
@@ -50,7 +66,7 @@ void ExactP(double x, double y, double *values)
 // ========================================================================
 // boundary conditions
 // ========================================================================
-void BoundCondition(int i, double t, BoundCond &cond)
+void BoundCondition(int i, double, BoundCond &cond)
 {
   if (i==1)
   {
@@ -78,7 +94,7 @@ void U1BoundValue(int BdComp, double Param, double &value)
   }  
 }
 
-void U2BoundValue(int BdComp, double Param, double &value)
+void U2BoundValue(int BdComp, double, double &value)
 {
   value = 0;
   if(BdComp>4) cout << "wrong boundary part number: " << BdComp << endl;
@@ -87,8 +103,7 @@ void U2BoundValue(int BdComp, double Param, double &value)
 // ========================================================================
 // coefficients for Stokes form: A, B1, B2, f1, f2
 // ========================================================================
-void LinCoeffs(int n_points, double *x, double *y,
-               double **parameters, double **coeffs)
+void LinCoeffs(int n_points, double *, double *, double **, double **coeffs)
 {
   double eps = DIMENSIONLESS_VISCOSITY;
   int i;
@@ -102,6 +117,9 @@ void LinCoeffs(int n_points, double *x, double *y,
     coeff[1] = 0; // f1
     coeff[2] = 0; // f2
     coeff[3] = 0; // g (divergence)
+     
+    // additional coefficient (used only in the Brinkman problem)
+    coeff[4] = 0.;
   }
 }
 
@@ -111,7 +129,7 @@ void GetCdCl(TFEFunction2D *u1fct, TFEFunction2D *u2fct,
 {
   int i,j,k,l, N_;
   int N_Points,N_Edges,comp;
-  double *weights, *xi, *eta;
+  const double *weights, *xi, *eta;
   double X[MaxN_QuadPoints_2D];
   double Y[MaxN_QuadPoints_2D];
   double AbsDetjk[MaxN_QuadPoints_2D];
@@ -121,7 +139,6 @@ void GetCdCl(TFEFunction2D *u1fct, TFEFunction2D *u2fct,
   double **OrigFEValues, *Orig;
   bool SecondDer[2] = { false, false };
   double *u1, *u2, *p;
-  const TFESpace2D *USpace, *PSpace;
   int *UGlobalNumbers, *UBeginIndex;
   int *PGlobalNumbers, *PBeginIndex;
   int *N_BaseFunct, N_Cells;
@@ -136,24 +153,22 @@ void GetCdCl(TFEFunction2D *u1fct, TFEFunction2D *u2fct,
   int N_DerivativesU = 3;
   double *Derivatives[MaxN_BaseFunctions2D];
   MultiIndex2D NeededDerivatives[3] = { D00, D10, D01 };
-  TFEFunction2D *vfct;
   double *v, nu = DIMENSIONLESS_VISCOSITY;
   double *Der, *aux;
   TJoint *joint;
   TBoundEdge *boundedge;
-  TBoundComp *BoundComp;
+  const TBoundComp *BoundComp;
   TFE2D *eleCell;
   FE2D FEEle;
   TFEDesc2D *FEDesc;
   int N_DOF_Circ, *DOF_Circ;
-  char VString[] = "v";
 
   u1 = u1fct->GetValues();
   u2 = u2fct->GetValues();
   p = pfct->GetValues();
 
-  USpace = u1fct->GetFESpace2D();
-  PSpace = pfct->GetFESpace2D();
+  auto USpace = u1fct->GetFESpace2D();
+  auto PSpace = pfct->GetFESpace2D();
 
   UGlobalNumbers = USpace->GetGlobalNumbers();
   UBeginIndex = USpace->GetBeginIndex();
@@ -171,7 +186,6 @@ void GetCdCl(TFEFunction2D *u1fct, TFEFunction2D *u2fct,
   N_ = u1fct->GetLength();
   v = new double[N_];
   memset(v,0,N_*SizeOfDouble);
-  vfct = new TFEFunction2D(USpace, VString, VString, v, N_);
 
 // ########################################################################
 // loop over all cells
@@ -316,11 +330,10 @@ void GetCdCl(TFEFunction2D *u1fct, TFEFunction2D *u2fct,
   cl *= -500;
 
   delete Derivatives[0];
-  delete vfct;
   delete v;
 }
 
-void compute_drag_lift_pdiff(NSE2D& nse2d)
+void compute_drag_lift_pdiff(NavierStokes<2>& nse2d)
 {
   double drag, lift, dP1[4], dP2[4];
 
@@ -336,12 +349,23 @@ void compute_drag_lift_pdiff(NSE2D& nse2d)
 
   double pdiff = dP1[0]-dP2[0];
 
-  // print them reference values - f.y.i. some reference values are:
-  // drag is 5.579, lift is 0.010, pdiff is 0.117
-  // note: these hold for DIMENSIONLESS_VISCOSITY = 1e-3 and geometry
-  // as described in John & Matthies 2001.
   Output::print(">>>>> Flow Around Cylinder (stat) 2D: Postprocessing Output <<<<<");
-  Output::print( " Drag = ",setprecision(16), drag);
-  Output::print( " Lift = ", setprecision(16), lift);
-  Output::print( " deltaP = ", setprecision(16), pdiff);
+  if(DIMENSIONLESS_VISCOSITY == reference_nu)
+  {
+    Output::print(" Drag = ", setprecision(16), drag, "  \terror: ",
+                  std::abs(drag - reference_drag), "  \trelative_error: ",
+                  std::abs(drag - reference_drag)/drag);
+    Output::print(" Lift = ", setprecision(16), lift, "  \terror: ",
+                  std::abs(lift - reference_lift), "  \trelative_error: ",
+                  std::abs(lift - reference_lift)/lift);
+    Output::print(" deltaP = ", setprecision(16), pdiff, "  \terror: ",
+                  std::abs(pdiff - reference_deltap), "  \trelative_error: ",
+                  std::abs(pdiff - reference_deltap)/pdiff);
+  }
+  else
+  {
+    Output::print(" Drag = ", setprecision(16), drag);
+    Output::print(" Lift = ", setprecision(16), lift);
+    Output::print(" deltaP = ", setprecision(16), pdiff);
+  }
 }

@@ -1,5 +1,5 @@
 #include <Example_NSE3D.h>
-#include <NSE3D.h>
+#include "NavierStokes.h"
 
 #include <FEDatabase3D.h>
 #include <Database.h>
@@ -36,6 +36,14 @@ namespace flow_around_cylinder_stat
 namespace poiseuille// 5
 {
 #include "NSE_3D/Poiseuille.h"
+}
+namespace simple_coriolis // 6
+{
+#include "NSE_3D/Coriolis_simple.h"
+}
+namespace brinkman3d_poiseuille // 7
+{
+  #include "NSE_3D/Brinkman3D_Poiseuille.h"
 }
 
 //test examples
@@ -214,35 +222,100 @@ Example_NSE3D::Example_NSE3D(const ParameterDatabase& user_input_parameter_db)
       ExampleFile();
       break;
     }
-      case 5:
-      {
-          /** exact_solution */
-          exact_solution.push_back( poiseuille::ExactU1 );
-          exact_solution.push_back( poiseuille::ExactU2 );
-          exact_solution.push_back( poiseuille::ExactU3 );
-          exact_solution.push_back( poiseuille::ExactP );
-          
-          /* boundary condition */
-          boundary_conditions.push_back( poiseuille::BoundCondition );
-          boundary_conditions.push_back( poiseuille::BoundCondition );
-          boundary_conditions.push_back( poiseuille::BoundCondition );
-          boundary_conditions.push_back( BoundConditionNoBoundCondition );
-          
-          /* boundary values */
-          boundary_data.push_back( poiseuille::U1BoundValue );
-          boundary_data.push_back( poiseuille::U2BoundValue );
-          boundary_data.push_back( poiseuille::U3BoundValue );
-          boundary_data.push_back( BoundaryValueHomogenous );
-          
-          /* coefficients */
-          problem_coefficients = poiseuille::LinCoeffs;
-          
-          /** some variables to change values in the example */
-          poiseuille::DIMENSIONLESS_VISCOSITY = this->get_nu();
-          
-          poiseuille::ExampleFile();
-          break;
-      }
+    case 5:
+    {
+      /** exact_solution */
+      exact_solution.push_back( poiseuille::ExactU1 );
+      exact_solution.push_back( poiseuille::ExactU2 );
+      exact_solution.push_back( poiseuille::ExactU3 );
+      exact_solution.push_back( poiseuille::ExactP );
+      
+      /* boundary condition */
+      boundary_conditions.push_back( poiseuille::BoundCondition );
+      boundary_conditions.push_back( poiseuille::BoundCondition );
+      boundary_conditions.push_back( poiseuille::BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+      
+      /* boundary values */
+      boundary_data.push_back( poiseuille::U1BoundValue );
+      boundary_data.push_back( poiseuille::U2BoundValue );
+      boundary_data.push_back( poiseuille::U3BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+      
+      /* coefficients */
+      problem_coefficients = poiseuille::LinCoeffs;
+      
+      /** some variables to change values in the example */
+      poiseuille::DIMENSIONLESS_VISCOSITY = this->get_nu();
+      
+      poiseuille::ExampleFile();
+      break;
+    }
+    case 6:
+    {
+      /** exact_solution */
+      exact_solution.push_back(simple_coriolis::ExactU1 );
+      exact_solution.push_back(simple_coriolis::ExactU2 );
+      exact_solution.push_back(simple_coriolis::ExactU3 );
+      exact_solution.push_back(simple_coriolis::ExactP );
+      
+      /* boundary condition */
+      boundary_conditions.push_back(simple_coriolis::BoundCondition );
+      boundary_conditions.push_back(simple_coriolis::BoundCondition );
+      boundary_conditions.push_back(simple_coriolis::BoundCondition );
+      boundary_conditions.push_back(BoundConditionNoBoundCondition );
+      
+      /* boundary values */
+      boundary_data.push_back(simple_coriolis::U1BoundValue );
+      boundary_data.push_back(simple_coriolis::U2BoundValue );
+      boundary_data.push_back(simple_coriolis::U3BoundValue );
+      boundary_data.push_back(BoundaryValueHomogenous );
+      
+      /* coefficients */
+      problem_coefficients = simple_coriolis::LinCoeffs;
+      
+      /** some variables to change values in the example */
+      simple_coriolis::DIMENSIONLESS_VISCOSITY = this->get_nu();
+      simple_coriolis::alpha = 0.05;
+      simple_coriolis::v_0 = 1.;
+      simple_coriolis::omega = 1.;
+      simple_coriolis::include_nonlinear_term = false;
+      simple_coriolis::include_coriolis_term = true;
+      simple_coriolis::ExampleFile();
+      break;
+    }
+    case 7:
+    {
+      /** exact_solution */
+      exact_solution.push_back( brinkman3d_poiseuille::ExactU1 );
+      exact_solution.push_back( brinkman3d_poiseuille::ExactU2 );
+      exact_solution.push_back( brinkman3d_poiseuille::ExactU3 );
+      exact_solution.push_back( brinkman3d_poiseuille::ExactP );
+
+      /** boundary condition */
+      boundary_conditions.push_back( brinkman3d_poiseuille::BoundCondition );
+      boundary_conditions.push_back( brinkman3d_poiseuille::BoundCondition );
+      boundary_conditions.push_back( brinkman3d_poiseuille::BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+
+      /** boundary values */
+      boundary_data.push_back( brinkman3d_poiseuille::U1BoundValue );
+      boundary_data.push_back( brinkman3d_poiseuille::U2BoundValue );
+      boundary_data.push_back( brinkman3d_poiseuille::U3BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+
+      /** coefficients */
+      problem_coefficients = brinkman3d_poiseuille::LinCoeffs;
+
+      // Set dimensionless viscosity
+      brinkman3d_poiseuille::effective_viscosity = get_effective_viscosity();
+      brinkman3d_poiseuille::sigma = get_inverse_permeability();
+      brinkman3d_poiseuille::neumann_id = get_neumann_id();
+      brinkman3d_poiseuille::nitsche_id = get_nitsche_id();
+
+      brinkman3d_poiseuille::ExampleFile();
+      break;
+    }
     case -1:
     {
       using namespace test_u_0_p_0;
@@ -366,7 +439,7 @@ Example_NSE3D::Example_NSE3D(const ParameterDatabase& user_input_parameter_db)
   }
 }
 
-void Example_NSE3D::do_post_processing(NSE3D& nse3d) const
+void Example_NSE3D::do_post_processing(NavierStokes<3>& nse3d) const
 {
   if(post_processing_stat)
   {
@@ -389,3 +462,36 @@ double Example_NSE3D::get_nu() const
   inverse_reynolds = 1/inverse_reynolds;
   return inverse_reynolds;
 }
+
+double Example_NSE3D::get_effective_viscosity() const
+{
+double effective_viscosity = this->example_database["effective_viscosity"];
+return effective_viscosity;
+}
+
+double Example_NSE3D::get_inverse_permeability() const
+{
+  return this->example_database["inverse_permeability"];
+}
+
+std::vector<size_t> Example_NSE3D::get_neumann_id() const
+{
+  std::vector<size_t> neumann_id;
+  int n_neumann_bd = this->example_database["n_neumann_bd"];
+  if (n_neumann_bd)
+    return this->example_database["neumann_id"];
+  else
+    return neumann_id;
+}
+
+
+std::vector<size_t> Example_NSE3D::get_nitsche_id() const
+{
+  std::vector<size_t> nitsche_id;
+  int n_nitsche_bd = this->example_database["n_nitsche_bd"];
+  if (n_nitsche_bd) 
+    return this->example_database["nitsche_id"];
+  else
+    return nitsche_id;
+}
+

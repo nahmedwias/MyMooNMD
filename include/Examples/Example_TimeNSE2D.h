@@ -19,7 +19,7 @@
 #include <Example_NonStationary2D.h>
 #include <functional>
 
-class Time_NSE2D; //forward declaration
+template <int d> class TimeNavierStokes; //forward declaration
 
 class Example_TimeNSE2D : public Example_NonStationary2D
 {
@@ -28,25 +28,21 @@ public:
    * This intializes a Time dependent (Navier-)Stokes example in 2D. 
    * It is chosen according to example_code.
    */
-  Example_TimeNSE2D(const ParameterDatabase& user_input_parameter_db);
+  explicit Example_TimeNSE2D(const ParameterDatabase& user_input_parameter_db);
   /** @brief initialize your own example
    * 
    * Create an example with all vectors already defined.
    */
-  Example_TimeNSE2D(std::vector <DoubleFunct2D*> exact,
-                   std::vector <BoundCondFunct2D*> bc,
-                   std::vector <BoundValueFunct2D*> bd, 
-                   CoeffFct2D coeffs,
-                   bool timedependentrhs, bool timedependentcoeffs,
-                   std::vector <DoubleFunct2D*> init_cond)
-  : Example_NonStationary2D(exact, bc, bd, coeffs, timedependentrhs, 
-                          timedependentcoeffs, init_cond)
-  {
-
-  };
+  Example_TimeNSE2D(const std::vector<DoubleFunct2D*>& exact,
+                    const std::vector<BoundCondFunct2D*>& bc,
+                    const std::vector<BoundValueFunct2D*>& bd, 
+                    const CoeffFct2D& coeffs,
+                    bool timedependentrhs, bool timedependentcoeffs,
+                    const std::vector<DoubleFunct2D*>& init_cond);
 
   /// Apply the function stored as post processing routine.
-  void do_post_processing(Time_NSE2D& tnse2d, double& val) const;
+  void do_post_processing(TimeNavierStokes<2>& tnse2d, double& val) const;
+  void do_post_processing(TimeNavierStokes<2>& tnse2d) const;
 
   /// Return kinematic viscosity, if set.
   double get_nu() const;
@@ -54,9 +50,9 @@ public:
   private:
   /// Function doing the post processing for a stationary example.
   /// TODO put Time_NSE2D argument const as soon as FEFunctions can be copied properly!
-  std::function<void(Time_NSE2D&, double& val)> post_processing_stat;
+  std::function<void(TimeNavierStokes<2>&, double& val)> post_processing_stat;
   
-  std::function<void(Time_NSE2D &)> post_processing_stat_old;
+  std::function<void(TimeNavierStokes<2>&)> post_processing_stat_old;
   /// TODO Function doing the post processing for a time dependent example.
 
 };

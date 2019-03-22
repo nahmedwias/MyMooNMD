@@ -70,12 +70,12 @@ class BlockVector
     
     /** Construct a BlockVector of length length.size(), where block i has
      * length[i] entries, filled with zeroes.*/
-    BlockVector(std::vector<unsigned int> lengths);
+    explicit BlockVector(const std::vector<unsigned int>& lengths);
 
     /** constructor for a BlockVector consisting of a single block of length
      * 'l' filled with zeros.
      */
-    BlockVector(unsigned int l);
+    explicit BlockVector(unsigned int l);
     
     /** constructor for a BlockVector consisting of a single block of length
      * 'l' filled with zeros.
@@ -83,7 +83,7 @@ class BlockVector
      * @note This constructor is for backwards compatibility, to avoid
      * explicit casts of integers to unsigned int. Use carefully.
      */
-    BlockVector(int l);
+    explicit BlockVector(int l);
 
 
     /// Construct a BlockVector which is suitable to serve as factor ("false")
@@ -231,18 +231,21 @@ class BlockVector
      * 
      * compute the 2-norm (square root of sum of squares)
      * Note: possibly implement other norms as well
+     * @param[in] blocks compute norm only for the specified subblocks, defaults
+     * to all blocks.
      */
-    double norm(
+    double norm(const std::vector<unsigned int>& blocks
 #ifdef _MPI
-        std::vector<const TParFECommunicator3D*> comms={}
+       , std::vector<const TParFECommunicator3D*> comms={}
 #endif
     ) const;
-
+    
 #ifdef _MPI
-    /// Compute global norm of a vector distributed among the processes. All
-    /// processes will return the same results.
-    double norm_global(std::vector<const TParFECommunicator3D*> comms) const;
+    double norm(std::vector<const TParFECommunicator3D*> comms) const
+    { return norm(std::vector<unsigned int>{}, comms); }
 #endif
+    double norm() const
+    { return norm(std::vector<unsigned int>{}); }
 
     /**
      * @brief Print subvector iB to console in Matlab format
@@ -255,13 +258,13 @@ class BlockVector
      * @param iB index of subvector
      *
      */
-    void print(const std::string name = "rhs", const int iB = -1) const;
+    void print(const std::string& name = "rhs", const int iB = -1) const;
     
     /**
      * Write entire Vector into an Outfile in MatrixMarket array format.
      * @param filename Desired filename (and path).
      */
-    void write(std::string filename) const;
+    void write(const std::string& filename) const;
 
     /**
      * @brief Print some information without explicitly printing values
@@ -302,7 +305,7 @@ class BlockVector
      * A file created with this method can be read into a BlockVector using 
      * BlockVector::read_from_file(std::string);
      */
-    void write_to_file(std::string filename) const;
+    void write_to_file(const std::string& filename) const;
     
     /** 
      * @brief read data into this BlockVector from a file
@@ -314,7 +317,7 @@ class BlockVector
      * A file created with BlockVector::write_fo_file(std::string) can be read 
      * using this method.
      */
-    void read_from_file(std::string filename);
+    void read_from_file(const std::string& filename);
     
     /** getters */
     

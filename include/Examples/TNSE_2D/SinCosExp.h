@@ -16,6 +16,10 @@ void ExampleFile()
   OutPut(N_OSCILLATIONS << endl) ;
 }
 
+// This is also called nu, or eps, it is equal
+// to 1/Reynolds_number and is dimensionless
+double DIMENSIONLESS_VISCOSITY;
+
 // ========================================================================
 // initial solution
 // ========================================================================
@@ -97,7 +101,7 @@ void ExactP(double x, double y, double *values)
 // ========================================================================
 // boundary conditions
 // ========================================================================
-void BoundCondition(int i, double t, BoundCond &cond)
+void BoundCondition(int, double, BoundCond &cond)
 {
   cond = DIRICHLET;
 }
@@ -208,12 +212,11 @@ void U2BoundValue_diff(int BdComp, double Param, double &value)
 // ========================================================================
 // coefficients for Stokes form: A, B1, B2, f1, f2
 // ========================================================================
-void LinCoeffs(int n_points, double *X, double *Y,
-               double **parameters, double **coeffs)
+void LinCoeffs(int n_points, double *, double *, double **, double **coeffs)
 {
   int i;
   double *coeff;//, x, y;
-  double nu=1/TDatabase::ParamDB->RE_NR;
+  double eps = DIMENSIONLESS_VISCOSITY;
 
   for(i=0;i<n_points;i++)
   {
@@ -221,19 +224,19 @@ void LinCoeffs(int n_points, double *X, double *Y,
 //    x = X[i];
 //    y = Y[i];
 
-    coeff[0] = nu;
+    coeff[0] = eps;
 
     coeff[1] = 0;
     coeff[2] = 0;
   }
 }
 
-void BoundConditionPressure(int bdcomp, double t, BoundCond &cond)
+void BoundConditionPressure(int, double, BoundCond &cond)
 {
      cond = NEUMANN;
 }
 
-void BoundConditionPressureLaplace(int bdcomp, double t, BoundCond &cond)
+void BoundConditionPressureLaplace(int bdcomp, double, BoundCond &cond)
 {
   switch(bdcomp)
   {
@@ -246,7 +249,7 @@ void BoundConditionPressureLaplace(int bdcomp, double t, BoundCond &cond)
   }      
 }
 
-void PressureBoundValue(int BdComp, double y, double &value)
+void PressureBoundValue(int BdComp, double, double &value)
 {
   switch(BdComp)
   {
@@ -264,7 +267,7 @@ void PressureBoundValue(int BdComp, double y, double &value)
   }
 }
 
-void PressureBoundValueLaplace(int BdComp, double y, double &value)
+void PressureBoundValueLaplace(int BdComp, double, double &value)
 {
   switch(BdComp)
   {
@@ -282,8 +285,7 @@ void PressureBoundValueLaplace(int BdComp, double y, double &value)
   }
 }
 
-void EvaluateSolution(TFEFunction2D **PArray, TFEVectFunct2D  **UArray, double *err, 
-		 int *flags)
+void EvaluateSolution(TFEFunction2D **, TFEVectFunct2D  **, double *, int *)
 {
   // so special evaluations in this example
   return;

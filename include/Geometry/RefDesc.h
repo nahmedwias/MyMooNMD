@@ -16,8 +16,6 @@
 #include <ShapeDesc.h>
 
 #define N_REFDESC  76
-// Actually there are some more refinement types (the mortar types).
-// These will be added dynamicly.
 // We use TriBis0 - Quad2Conf3 for generation of closures. Do not
 // put any other descriptors between these.
 enum Refinements {NoRef, LineReg, TriReg, QuadReg, ParallReg, RectReg,
@@ -36,20 +34,7 @@ enum Refinements {NoRef, LineReg, TriReg, QuadReg, ParallReg, RectReg,
                   TetraBis40, TetraBis41, TetraBis43, TetraBis45,
                   TetraBis51, TetraBis52, TetraBis53, TetraBis54,
                   TetraQuad0, TetraQuad1, TetraQuad2, TetraQuad3, TetraQuad4, TetraQuad5,
-                  HexaReg, BrickReg,
-                  Mortar, MortarLine};
-
-#ifdef __MORTAR__
-  #define N_MORTARDESC 5
-
-  #define MORTAR_N1  0
-  #define MORTAR_N2  2
-  #define MORTAR_N3  4
-  #define MORTAR_N4  6
-  #define MORTAR_N5  8
-#else
-  #define N_MORTARDESC 0
-#endif
+                  HexaReg, BrickReg};
 
 enum RefinementMarks { NoRefinement, Refinement, DeRefinement };
 
@@ -310,7 +295,7 @@ class TRefDesc
   public:
     // Constructor
     /** initialize the whole data structure */
-    TRefDesc(TShapeDesc *shape);
+    explicit TRefDesc(TShapeDesc *shape);
 
     virtual ~TRefDesc(){};
     
@@ -345,15 +330,15 @@ class TRefDesc
     #endif
 
     /** return a bool, whether to refine or not */
-    virtual int IsToRefine()
+    virtual int IsToRefine() const
     { return true; }
     
     /** return shape descriptor */
-    TShapeDesc *GetShapeDesc()
+    const TShapeDesc *GetShapeDesc() const
     { return Shape; }
     /** return refinement type of edge J\_i */
-    Refinements GetEdgeRef(int J_i)
-    { return EdgeType[J_i]; } const
+    Refinements GetEdgeRef(int J_i) const
+    { return EdgeType[J_i]; }
     /** return type of child number C\_i */
     Shapes GetChildType(int C_i) const
     { return ChildType[C_i]; }

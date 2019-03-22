@@ -86,7 +86,7 @@ class TMatrix
     
   public:
     /** @brief generate the matrix, initialize entries with zeros */
-    TMatrix(std::shared_ptr<TStructure> structure
+    explicit TMatrix(std::shared_ptr<TStructure> structure
 #ifdef _MPI
             , const SparsityType& sparse_type = SparsityType::STANDARD
 #endif
@@ -96,6 +96,12 @@ class TMatrix
      * @brief Generates an empty `nRows`*`nCols` Matrix with no entries
      */
     TMatrix(int nRows, int nCols);
+
+    /**
+     * @brief Generates a diagonal matrix with entries from input std::vector<double> diag
+     */
+    TMatrix(const std::vector<double>& diag,
+            std::shared_ptr<TStructure> Structure);
 
     /// @brief Default copy constructor
     ///
@@ -197,7 +203,7 @@ class TMatrix
     /// diagonal. In that case it will have a zero there. The length of this
     /// vector is the minimum of the number of rows and columns.
     std::vector<double> get_diagonal() const;
-    
+
     /** @brief return the norm of the matrix 
      * 
      * The parameter \p p determines which norm to compute. Choose \p as  
@@ -222,7 +228,7 @@ class TMatrix
      *
      * @param[in] filename The filename where to write the matrix.
      */
-    void write(std::string filename) const;
+    void write(const std::string& filename) const;
     
     /// @brief Print matrix into the shell
     void Print(const char *name = "a") const;
@@ -231,7 +237,7 @@ class TMatrix
      * 
      * This is only meaningful for very small matrices.
      */
-    void PrintFull(std::string name="", int fieldWidth=4) const;
+    void PrintFull(const std::string& name="", int fieldWidth=4) const;
 
     /// @brief add a value at selected entry
     void add(int i,int j, double val);
@@ -240,11 +246,11 @@ class TMatrix
      * 
      * This should be faster than adding all values in 'vals' individually
      */
-    void add(int i, std::map<int,double> vals, double factor = 1.0);
+    void add(int i, const std::map<int,double>& vals, double factor = 1.0);
     /** @brief add values `vals[i][j]` to this matrix at the positions `(i,j)`
      * for all `i,j` defined in the map `vals`
      */
-    void add(std::map<int, std::map<int,double> > vals, double factor = 1.0);
+    void add(const std::map<int, std::map<int,double>>& vals, double factor = 1.0);
     /// @brief set a value at selected entry
     void set(int i, int j, double val);
     /// @brief get a value at selected entry
@@ -273,10 +279,10 @@ class TMatrix
      *@param[in] j The column index.
      *@return A matrix column as an std::vector<double>.
      */
-    void set_matrix_column(size_t j, std::vector<double> col);
+    void set_matrix_column(size_t j, const std::vector<double>& col);
 
     /// @brief reset the entries, the given vector must be of the same size
-    void setEntries(std::vector<double> entries);
+    void setEntries(const std::vector<double>& entries);
     
     /** @brief reorders the Matrix to comply with direct solvers. 
      * 
@@ -284,6 +290,25 @@ class TMatrix
      */
     void reorderMatrix();
     
+    /////////////// Routines for periodic boundary conditions /////////////////
+    /**
+    * @brief replace several rows in the matrix with new entries.
+    *
+    * Replace rows by new ones. This creates a new structure for the sparsity
+    * pattern of the matrix. Therefore reallocation is necessary.
+    *
+    * If there are no rows to change, i.e. if entries.size()==0, nothing is·
+    * done.
+    *·
+    * This will create a new structure for this matrix. The structure·
+    * previously belonging to this matrix is not changed. So other matrices·
+    * are not affected.
+    *
+    * @param entries for every row a map of columns-to-entries map
+    */
+    void changeRows(const std::map<int,std::map<int,double>>& entries);
+    ///////////////// ///////////////// ///////////////// /////////////////
+
     /// @brief return ordering of columns, see TStructure::ColOrder
     int GetColOrder() const
     { return structure->GetColOrder(); }
@@ -362,7 +387,21 @@ class TMatrix
      */ 
     TMatrix* multiply(const TMatrix * const B, double a = 1.0) const;
     
-    
+    /**
+        * @brief compute matrix-matrix product C = A * diag[d] * B,
+        *
+        * 'A' is this matrix, 'd' is a vector, 'B' is given. Then matrix
+        * 'C' is created during this function and the user is responsible to
+        * delete C.
+        *
+        * Note that this is rather slow.
+        *
+        * @param B matrix to be multiplied (from right) to this matrix
+        * @param d vector
+        */
+       TMatrix* multiply(const TMatrix * const B,
+                         const std::vector<double>& d) const;
+
     /**
      * @brief multiply this matrix B with its transposed B^T from the right
      * 

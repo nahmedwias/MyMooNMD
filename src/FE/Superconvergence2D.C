@@ -306,13 +306,11 @@ void Superconvergence_Q1Q2_2D(TFEFunction2D *q1_function,
 			    TFEFunction2D *q2_function) 
 {
 /* build the Q2 space */  
- 
-  const TFESpace2D *q1_space, *q2_space;
   double *q1_values, *q2_values;
 //  int q1_ndof, q2_ndof;   // set but unused variables
   TCollection *q1_coll, *q2_coll;
-  TBaseCell *coarse_cell,*child_cell0,*child_cell1;
-  TBaseCell *child_cell2,*child_cell3;
+  const TBaseCell *coarse_cell,*child_cell0,*child_cell1;
+  const TBaseCell *child_cell2,*child_cell3;
   double coarse_values[9];
 //  double fine_values[9];
   int *coarse_GlobalNumbers,*fine_GlobalNumbers;
@@ -323,8 +321,8 @@ void Superconvergence_Q1Q2_2D(TFEFunction2D *q1_function,
 //  const TFESpace2D *fesp2d[1];
   int j,k;
   
-  q1_space=q1_function->GetFESpace2D();
-  q2_space=q2_function->GetFESpace2D();
+  auto q1_space = q1_function->GetFESpace2D();
+  auto q2_space = q2_function->GetFESpace2D();
   
   q2_coll=q2_space->GetCollection();
   q1_coll=q1_space->GetCollection();
@@ -393,15 +391,12 @@ void Superconvergence_Q1Q2_2D(TFEFunction2D *q1_function,
 void Superconvergence_Q2Q3_2D(TFEFunction2D *q2_function, 
 			    TFEFunction2D *q3_function) 
 {
-  const TFESpace2D *q2_space;
-  const TFESpace2D *q3_space;
-
   double *q2_values,*q3_values;
 //  int q2_ndof,q3_ndof;   // set but unused variables
   
   TCollection *q3_coll, *q2_coll;
-  TBaseCell *coarse_cell,*child_cell0,*child_cell1;
-  TBaseCell *child_cell2,*child_cell3;
+  const TBaseCell *coarse_cell,*child_cell0,*child_cell1;
+  const TBaseCell *child_cell2,*child_cell3;
   double coarse_values[16];
   double fine_values[25];
   int *coarse_GlobalNumbers,*fine_GlobalNumbers;
@@ -412,8 +407,8 @@ void Superconvergence_Q2Q3_2D(TFEFunction2D *q2_function,
 //  const TFESpace2D *fesp2d[1];
   int j,k;
 
-  q2_space=q2_function->GetFESpace2D();
-  q3_space=q3_function->GetFESpace2D();
+  auto q2_space = q2_function->GetFESpace2D();
+  auto q3_space = q3_function->GetFESpace2D();
   
   q2_coll=q2_space->GetCollection();
   q3_coll=q3_space->GetCollection();
@@ -481,15 +476,12 @@ void Superconvergence_Q2Q3_2D(TFEFunction2D *q2_function,
 void Superconvergence_Q2Q4_2D(TFEFunction2D *q2_function, 
 			    TFEFunction2D *q4_function) 
 {
-  const TFESpace2D *q2_space;
-  const TFESpace2D *q4_space;
-
   double *q2_values,*q4_values;
 //  int q2_ndof,q4_ndof;   // set but unused
   
   TCollection *q4_coll, *q2_coll;
-  TBaseCell *coarse_cell;
-  TBaseCell *child_cell0,*child_cell1,*child_cell2,*child_cell3;
+  const TBaseCell *coarse_cell;
+  const TBaseCell *child_cell0,*child_cell1,*child_cell2,*child_cell3;
   double coarse_values[25];
   double fine_values[25];
   int *coarse_GlobalNumbers,*fine_GlobalNumbers;
@@ -500,8 +492,8 @@ void Superconvergence_Q2Q4_2D(TFEFunction2D *q2_function,
 //  const TFESpace2D *fesp2d[1];
   int j,k;
   
-  q2_space=q2_function->GetFESpace2D();
-  q4_space=q4_function->GetFESpace2D();
+  auto q2_space = q2_function->GetFESpace2D();
+  auto q4_space = q4_function->GetFESpace2D();
   
   q2_coll=q2_space->GetCollection();
   q4_coll=q4_space->GetCollection();
@@ -569,12 +561,11 @@ void Superconvergence_Q2Q4_2D(TFEFunction2D *q2_function,
 void Superconvergence_P1P2_2D(int version, TFEFunction2D *p1_function, 
 			    TFEFunction2D *p2_function) 
 {
-  const TFESpace2D *p1_space, *p2_space;
   double *p1_values, *p2_values;
 //  int p1_ndof, p2_ndof;   // set but unused
   TCollection *p1_coll, *p2_coll;
-  TBaseCell *coarse_cell,*child_cell0,*child_cell1;
-  TBaseCell *child_cell2,*child_cell3;
+  const TBaseCell *coarse_cell,*child_cell0,*child_cell1;
+  const TBaseCell *child_cell2,*child_cell3;
   double coarse_values[6];
   double fine_values[12];
   int *coarse_GlobalNumbers,*fine_GlobalNumbers;
@@ -585,8 +576,8 @@ void Superconvergence_P1P2_2D(int version, TFEFunction2D *p1_function,
 //  const TFESpace2D *fesp2d[1];
   int j,k;
   
-  p1_space=p1_function->GetFESpace2D();
-  p2_space=p2_function->GetFESpace2D();
+  auto p1_space = p1_function->GetFESpace2D();
+  auto p2_space = p2_function->GetFESpace2D();
   
   p2_coll=p2_space->GetCollection();
   p1_coll=p1_space->GetCollection();
@@ -656,15 +647,12 @@ void Superconvergence_P1P2_2D(int version, TFEFunction2D *p1_function,
 void Superconvergence_NQ1P2_2D(TFEFunction2D *q1n_function, 
 			    TFEFunction2D *p2_function) 
 {
-  const TFESpace2D *q1n_space;
-  const TFESpace2D *p2_space;
-
   double *q1n_values,*p2_values;
 //  int q1n_ndof,p2_ndof;   // set but unused
   
   TCollection *p2_coll, *q1n_coll;
-  TBaseCell *coarse_cell,*child_cell0,*child_cell1;
-  TBaseCell *child_cell2,*child_cell3;
+  const TBaseCell *coarse_cell,*child_cell0,*child_cell1;
+  const TBaseCell *child_cell2,*child_cell3;
   double coarse_values[6];
   double fine_values[16];
   int *coarse_GlobalNumbers,*fine_GlobalNumbers;
@@ -675,8 +663,8 @@ void Superconvergence_NQ1P2_2D(TFEFunction2D *q1n_function,
 //  const TFESpace2D *fesp2d[1];
   int j,k;
 
-  q1n_space=q1n_function->GetFESpace2D();
-  p2_space=p2_function->GetFESpace2D();
+  auto q1n_space = q1n_function->GetFESpace2D();
+  auto p2_space = p2_function->GetFESpace2D();
   
   q1n_coll=q1n_space->GetCollection();
   p2_coll=p2_space->GetCollection();

@@ -67,7 +67,7 @@ Example Example::ConvDiff(const ParameterDatabase& param_db)
         exact.push_back(AnalyticalFunction(e));
         // boundary data, automatically computed from known solution
         // bd.push_back(BoundaryData(bc[0], exact[0]));
-        auto g = [diffusion](unsigned int component, double t, double time)
+        auto g = [diffusion](unsigned int component, double t, double)
         {
           return component == 1 ? -diffusion * M_PI * sin(M_PI * t) : 0.;
         };
@@ -149,7 +149,7 @@ Example Example::ConvDiff(const ParameterDatabase& param_db)
         // exact solution unknown
         exact.push_back(AnalyticalFunction());
         // boundary data
-        auto g = [diffusion](unsigned int component, double t, double time)
+        auto g = [diffusion](unsigned int component, double t, double)
         {
           return (component == 0 && t > 1. / 3. && t < 2. / 3.) ? 1. : 0.;
         };
@@ -186,7 +186,7 @@ Example Example::ConvDiff(const ParameterDatabase& param_db)
       bc.push_back(BoundaryCondition(c));
       // exact solution (unknown)
       exact.push_back(AnalyticalFunction());
-      auto g = [diffusion](unsigned int component, double t, double time)
+      auto g = [diffusion](unsigned int component, double, double)
       {
         return component == 4 ? 1. : 0.;
       };
@@ -194,7 +194,7 @@ Example Example::ConvDiff(const ParameterDatabase& param_db)
       if(two_d)
       {
         // the coefficient function
-        f = [diffusion](const Point& point, double, std::vector<double>& coeffs)
+        f = [diffusion](const Point&, double, std::vector<double>& coeffs)
         {
           const double angle = 0.;
           const double v1 = std::cos(angle);
@@ -210,7 +210,7 @@ Example Example::ConvDiff(const ParameterDatabase& param_db)
       else // 3D
       {
         // the coefficient function
-        f = [diffusion](const Point& point, double, std::vector<double>& coeffs)
+        f = [diffusion](const Point&, double, std::vector<double>& coeffs)
         {
           const double angle = 0.;
           const double v1 = std::cos(angle);
@@ -239,13 +239,13 @@ Example Example::ConvDiff(const ParameterDatabase& param_db)
         // exact solution unknown
         exact.push_back(AnalyticalFunction());
         // boundary data
-        auto g = [diffusion](unsigned int component, double t, double time)
+        auto g = [diffusion](unsigned int component, double t, double)
         {
           return (component == 3 && t < 0.5) ? 1. : 0.;
         };
         bd.push_back(BoundaryData(g));
         // the coefficient function
-        f = [diffusion](const Point& point, double, std::vector<double>& coeffs)
+        f = [diffusion](const Point&, double, std::vector<double>& coeffs)
         {
           coeffs[0] = diffusion;            // diffusion
           coeffs[1] = std::cos(M_PI / 18.); // convection in x-direction

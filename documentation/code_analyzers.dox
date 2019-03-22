@@ -134,10 +134,11 @@ are not discussed here. Check them out if your interested.
 The default tool of valgrind is called memcheck, a memory error detector. Call
 it in its default behavior as
 \code{.sh}
-valgrind ./nse2d nse2d.dat 2&> valgrind.txt
+valgrind --log-file=valgrind.txt ./nse2d nse2d.dat
 \endcode
-This will already give you a lot of information (if errors occur at all). One 
-option to valgrind proved especially useful in this context, namely 
+This will already give you a lot of information (if errors occur at all) which 
+is written into the spcified log file. One other option to valgrind proved
+especially useful in this context, namely 
 \code{.sh}
 --leak-check=full
 \endcode

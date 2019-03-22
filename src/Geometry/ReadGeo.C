@@ -979,8 +979,8 @@ int TDomain::MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int N_Vertices,
 
 // this makes a 3D coarse grid
 int TDomain::MakeGrid(double *DCORVG, int *KVERT, int *KNPR, int *ELEMSREF,
-                      int N_Vertices, int NVE, int *BoundFaces,
-                      int *FaceParam, int NBF, int NVpF,
+                      int N_Vertices, int NVE, int *,
+                      int *FaceParam, int NBF, int,
                       int *InterfaceParam, int N_Interfaces)
 {
   int i, j, k, l=0, m, maxElpV = 0, comp, auxi, auxj;
@@ -1548,7 +1548,7 @@ void find_low_and_high_face_element(bool orientation_low, bool orientation_mid,
 
 //Treat the special case of a closed boundary component (closed circle)
 //uses that vert1 and vert2 are part of the bottom plane !!!
-void correct_parameterlist(int n_verts, TBoundComp3D * BdComp, TVertex* vert1,
+void correct_parameterlist(int, TBoundComp3D * BdComp, TVertex* vert1,
                            TVertex * vert2, double *parameterlist)
 {
   if(BdComp->GetType() == Wall)

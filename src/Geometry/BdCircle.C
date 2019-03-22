@@ -44,11 +44,11 @@ int TBdCircle::ReadIn(std::istream &dat)
   return 0;
 }
 
-int TBdCircle::GetXYofT(double T, double &X, double &Y)
+int TBdCircle::GetXYofT(double T, double &X, double &Y) const
 {
   double Phi;
 
-  if (T < -0.001 || T > 1.001)
+  if(!this->is_full_circle() && (T < -0.001 || T > 1.001))
   { 
     ErrThrow("WARNING in TBdCircle::GetXYofT. Parameter T=",T," out of range."
         " Not writing on X and Y. ");;
@@ -62,7 +62,7 @@ int TBdCircle::GetXYofT(double T, double &X, double &Y)
   return 0;
 }
 
-int TBdCircle::GetTofXY(double X, double Y, double &T)
+int TBdCircle::GetTofXY(double X, double Y, double &T) const
 {
   T = atan2((Y-Ymid)/Radius_b, (X-Xmid)/Radius_a);
   while (T < std::min(Phi1, Phi2) - 1e-5 ) T += 2*Pi;

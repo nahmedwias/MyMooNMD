@@ -28,7 +28,7 @@ std::ostream& operator<<(std::ostream& out, const Problem_type value)
 /* ************************************************************************* */
 PDECoefficients::PDECoefficients(
     std::function<void(const Point&, double, std::vector<double>&)> f,
-    Problem_type t, bool lhs_depends_on_time, bool rhs_depends_on_time)
+    Problem_type t, bool, bool)
   : type(t), coeff(f)
 {
 }

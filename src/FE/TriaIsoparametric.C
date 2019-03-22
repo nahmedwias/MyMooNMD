@@ -82,9 +82,9 @@ void TTriaIsoparametric::GetOrigFromRef(double xi, double eta,
 }
 
 /** transfer a set of points from reference to original element */
-void TTriaIsoparametric::GetOrigFromRef(int N_Points, 
-                                double *xi, double *eta,
-                                double *X, double *Y, double *absdetjk)
+void TTriaIsoparametric::GetOrigFromRef(int N_Points, const double *xi,
+                                        const double *eta,
+                                        double *X, double *Y, double *absdetjk)
 {
 /*
   int i, j, k;
@@ -199,7 +199,7 @@ void TTriaIsoparametric::GetOrigFromRef(int N_Points,
 }
 
 /** transfer from reference element to original element */
-void TTriaIsoparametric::GetOrigFromRef(double *ref, double *orig)
+void TTriaIsoparametric::GetOrigFromRef(const double *ref, double *orig)
 {
   int i, j;
   double X, Y, xi, eta;
@@ -240,23 +240,21 @@ void TTriaIsoparametric::GetOrigFromRef(double *ref, double *orig)
 }
 
 /** transfer from original element to reference element */
-void TTriaIsoparametric::GetRefFromOrig(double X, double Y, 
-                                        double &xi, double &eta)
+void TTriaIsoparametric::GetRefFromOrig(double, double, double &, double &)
 {
   cout << "not implemented yet 1 " << endl;
 }
 
 /** transfer from original element to reference element */
-void TTriaIsoparametric::GetRefFromOrig(double *orig, double *ref)
+void TTriaIsoparametric::GetRefFromOrig(const double *, double *)
 {
   cout << "not implemented yet 2" << endl;
 }
 
 /** calculate functions and derivatives from reference element
     to original element */
-void TTriaIsoparametric::GetOrigValues(BaseFunct2D BaseFunct,
-                               int N_Points, double *xi, double *eta,
-                               int N_Functs, QuadFormula2D formula)
+void TTriaIsoparametric::GetOrigValues(BaseFunct2D, int, const double *,
+                                       const double *, int, QuadFormula2D)
 {
   cout << "not implemented yet 3" << endl;
 }
@@ -264,9 +262,10 @@ void TTriaIsoparametric::GetOrigValues(BaseFunct2D BaseFunct,
 /** calculate functions and derivatives from reference element
     to original element, for all given elements */
 void TTriaIsoparametric::GetOrigValues(int N_Sets, BaseFunct2D *BaseFuncts,
-                               int N_Points, double *xi, double *eta,
-                               QuadFormula2D formula,
-                               bool *Needs2ndDer)
+                                       int N_Points, const double *,
+                                       const double *,
+                                       QuadFormula2D formula,
+                                       bool *Needs2ndDer)
 {
   int i,j,k;
   double **refvaluesD00, **origvaluesD00;
@@ -439,10 +438,12 @@ void TTriaIsoparametric::GetOrigValues(int N_Sets, BaseFunct2D *BaseFuncts,
 
 /** calculate functions and derivatives from reference element
     to original element */
-void TTriaIsoparametric::GetOrigValues(double xi, double eta, 
-                int N_BaseFunct,
-                double *uref, double *uxiref, double *uetaref,
-                double *uorig, double *uxorig, double *uyorig)
+void TTriaIsoparametric::GetOrigValues(double xi, double eta, int N_BaseFunct,
+                                       const double *uref,
+                                       const double *uxiref,
+                                       const double *uetaref,
+                                       double *uorig, double *uxorig,
+                                       double *uyorig)
 {
 /*
   int i, j, k;
@@ -536,10 +537,11 @@ void TTriaIsoparametric::GetOrigValues(double xi, double eta,
 
 /** calculate functions and derivatives from reference element
     to original element */
-void TTriaIsoparametric::GetOrigValues(int joint, double zeta,
-            int N_BaseFunct,
-            double *uref, double *uxiref, double *uetaref,
-            double *uorig, double *uxorig, double *uyorig)
+void TTriaIsoparametric::GetOrigValues(int joint, double zeta, int N_BaseFunct,
+                                       const double *uref,const double *uxiref,
+                                       const double *uetaref,
+                                       double *uorig, double *uxorig,
+                                       double *uyorig)
 {
   int i, k;
   double a11, a12, a21, a22, rec_detjk;
@@ -596,13 +598,10 @@ void TTriaIsoparametric::GetOrigValues(int joint, double zeta,
   } // endfor i
 }
 
-void TTriaIsoparametric::SetCell(TBaseCell *cell)
+void TTriaIsoparametric::SetCell(const TBaseCell *cell)
 {
   int i, j;
-  TJoint *joint;
-  TBoundEdge *boundedge;
-  TBoundComp2D *comp;
-  TInterfaceJoint *interface;
+  const TBoundComp2D *comp;
   JointType type;
   double t0, t1, t, dt;
   double xa, ya, xe, ye, xm, ym, xp, yp, dx, dy;
@@ -647,7 +646,7 @@ void TTriaIsoparametric::SetCell(TBaseCell *cell)
   for(i=0;i<3;i++)
   {
     // check whether the joint i is curved
-    joint = Cell->GetJoint(i);
+    auto joint = Cell->GetJoint(i);
     type = joint->GetType();
     if(type == BoundaryEdge || type == InterfaceJoint)
     {
@@ -658,14 +657,14 @@ void TTriaIsoparametric::SetCell(TBaseCell *cell)
       ye = y[(i+1) % 3];
       if(type == BoundaryEdge)
       {
-        boundedge = (TBoundEdge *)(joint);
+        auto boundedge = (const TBoundEdge *)(joint);
         comp = boundedge->GetBoundComp();
 //        compid = comp->GetID();
         boundedge->GetParameters(t0, t1);
       }
       else
       {
-        interface = (TInterfaceJoint *)(joint);
+        auto interface = (const TInterfaceJoint *)(joint);
         comp = interface->GetBoundComp();
 //        compid = comp->GetID();
 
@@ -710,18 +709,18 @@ void TTriaIsoparametric::SetCell(TBaseCell *cell)
         switch(type)
         {
           case IsoInterfaceJoint:
-            N_Vertices = ((TIsoInterfaceJoint *)joint)->GetN_Vertices();
-            Vertices = ((TIsoInterfaceJoint *)joint)->GetVertices();
+            N_Vertices = ((const TIsoInterfaceJoint *)joint)->GetN_Vertices();
+            Vertices = ((const TIsoInterfaceJoint *)joint)->GetVertices();
           break;
 
           case IsoBoundEdge:
-            N_Vertices = ((TIsoBoundEdge *)joint)->GetN_Vertices();
-            Vertices = ((TIsoBoundEdge *)joint)->GetVertices();
+            N_Vertices = ((const TIsoBoundEdge *)joint)->GetN_Vertices();
+            Vertices = ((const TIsoBoundEdge *)joint)->GetVertices();
           break;
 
           case IsoJointEqN:
-            N_Vertices = ((TIsoJointEqN *)joint)->GetN_Vertices();
-            Vertices = ((TIsoJointEqN *)joint)->GetVertices();
+            N_Vertices = ((const TIsoJointEqN *)joint)->GetN_Vertices();
+            Vertices = ((const TIsoJointEqN *)joint)->GetVertices();
           break;
 	  default:
 	    break;
@@ -811,8 +810,8 @@ void TTriaIsoparametric::SetCell(TBaseCell *cell)
 } // TTriaIsoparametric::SetCell
 
 /** return outer normal vector */
-void TTriaIsoparametric::GetOuterNormal(int j, double zeta,
-                                        double &n1, double &n2)
+void TTriaIsoparametric::GetOuterNormal(int j, double zeta, double &n1,
+                                        double &n2) const
 {
   double len;
   double t1, t2;
@@ -825,8 +824,8 @@ void TTriaIsoparametric::GetOuterNormal(int j, double zeta,
 }
 
 /** return tangent */
-void TTriaIsoparametric::GetTangent(int j, double zeta,
-                                        double &t1, double &t2)
+void TTriaIsoparametric::GetTangent(int j, double zeta, double &t1, double &t2)
+  const
 {
   TBaseFunct2D *bf;
   bf = TFEDatabase2D::GetBaseFunct2D(BaseFunctFromOrder[ApproximationOrder]);
@@ -885,7 +884,7 @@ void TTriaIsoparametric::GetTangent(int j, double zeta,
 }
 
 /** return volume of cell according to isoparametric boundary */
-double TTriaIsoparametric::GetVolume()
+double TTriaIsoparametric::GetVolume() const
 {
   double locvol;
 
@@ -962,11 +961,19 @@ void TTriaIsoparametric::GetOrigBoundFromRef( int joint, int N_Points,
       Y[i] += YDistance[k] * AuxVector[j];
       //cout << i << " "  <<joint << " isoxi " <<  X[i] << " XDistance[k] " << XDistance[k] << " xi " << xi << " eta " << eta  << endl;     
      }
-     
-
    }
-
 }
 
-
+void TTriaIsoparametric::PiolaMapOrigFromRef(double, double, int,
+                                             const double *, double *)
+{
+  ErrThrow("TTriaIsoparametric::PiolaMapOrigFromRef not implemented");
+}
+    
+void TTriaIsoparametric::PiolaMapOrigFromRef(double, double, int,
+                                             const double *, const double *,
+                                             const double *, double *, double *)
+{
+  ErrThrow("TTriaIsoparametric::PiolaMapOrigFromRef not implemented");
+}
 

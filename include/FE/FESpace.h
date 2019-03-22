@@ -109,7 +109,8 @@ class TFESpace
      * @param[in] name The name of the space, used in printout etc.
      * @param[in] description A description of the space, used in printout etc.
      */
-    TFESpace(TCollection *coll, std::string name, std::string description);
+    TFESpace(TCollection *coll, const std::string& name,
+             const std::string& description);
 
     /** destrcutor */
     virtual ~TFESpace();
@@ -130,6 +131,9 @@ class TFESpace
     /** return the collection of this space */
     TCollection *GetCollection() const
     { return Collection; }
+    
+    /** @brief get dimension of the vector basis function */
+    virtual int GetBaseVectDim() const = 0;
 
     /** return global numbers of local degrees of freedom */
     int *GetGlobalNumbers() const
@@ -208,7 +212,7 @@ class TFESpace
     { return ActiveBound; }
 
     /** write info on fespace into file */
-    int Write(const std::string filename);
+    int Write(const std::string& filename);
 
     void SetAsDGSpace() { is_discontinuous_galerkin_space = true; }
 

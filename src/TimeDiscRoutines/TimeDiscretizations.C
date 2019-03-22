@@ -76,8 +76,11 @@ TimeDiscretization::TimeDiscretization(const ParameterDatabase & param_db)
   else
   {
     // rk = std::make_shared<RungeKuttaTable>(db["time_discretization"]);
+    pre_stage_bdf = false;
   }
+  start_time = db["time_start"];
   current_time_step_length = db["time_step_length"];
+  current_time_ = db["time_start"];
   end_time = db["time_end"];
   TDatabase::TimeDB->TIMESTEPLENGTH = current_time_step_length;
   TDatabase::TimeDB->CURRENTTIMESTEPLENGTH = current_time_step_length;
@@ -91,9 +94,10 @@ TimeDiscretization::TimeDiscretization(const ParameterDatabase & param_db)
 }
 
 /* ****************************************************************************/
-void TimeDiscretization::prepare_timestep(BlockFEMatrix& system_matrix,
-  const BlockFEMatrix& mass_matrix, std::vector<BlockVector> & rhs,
-  const std::vector<BlockVector> old_solutions)
+void TimeDiscretization::prepare_timestep(BlockFEMatrix&,
+                                          const BlockFEMatrix&,
+                                          std::vector<BlockVector>&,
+                                          const std::vector<BlockVector>&)
 {
   //TODO: here the idea can be implemented of multisteps
 }
@@ -101,38 +105,34 @@ void TimeDiscretization::prepare_timestep(BlockFEMatrix& system_matrix,
 /* ****************************************************************************/
 void TimeDiscretization::prepare_rhs_from_time_disc(
      BlockFEMatrix& system_matrix, const BlockFEMatrix& mass_matrix,
-     std::vector<BlockVector> & rhs, const std::vector<BlockVector> old_solutions)
+     std::vector<BlockVector> & rhs,
+     const std::vector<BlockVector>& old_solutions)
 {
+  int n_blocks;
+  if(system_matrix.get_n_cell_rows() == 1)
+    n_blocks = 1;
+  if(system_matrix.get_n_cell_rows() == 3)
+    n_blocks = 2;
+  if(system_matrix.get_n_cell_rows() == 4)
+    n_blocks = 3;
+  
   // at the moment it's implemented in the way it was done in MooNMD
   // but have to be adopted to be fit according to the Butscher table
   if( (db["time_discretization"].is("bdf_two")) && !pre_stage_bdf)
   {
     // right hand side with tau*..
     rhs[0].scaleActive(bdf_coefficients[2]*current_time_step_length);
-#ifdef __2D__
-    mass_matrix.apply_scaled_submatrix(old_solutions[0], rhs[0], 2, 2,
+    mass_matrix.apply_scaled_submatrix(old_solutions[0], rhs[0], n_blocks, n_blocks,
                                            bdf_coefficients[0]);
-    mass_matrix.apply_scaled_submatrix(old_solutions[1], rhs[0], 2, 2,
+    mass_matrix.apply_scaled_submatrix(old_solutions[1], rhs[0], n_blocks, n_blocks,
                                            bdf_coefficients[1]);
-#endif
-#ifdef __3D__
-    mass_matrix.apply_scaled_submatrix(old_solutions[0], rhs[0], 3, 3,
-                                           bdf_coefficients[0]);
-    mass_matrix.apply_scaled_submatrix(old_solutions[1], rhs[0], 3, 3,
-                                           bdf_coefficients[1]);
-#endif
     Output::print<5>(RED, "bdf2_stage ", pre_stage_bdf, BLACK);
   }
   else if(db["time_discretization"].is("backward_euler") || pre_stage_bdf)
   {
     rhs[0].scaleActive(current_time_step_length);
-#ifdef __2D__
     // mass matrix times old solution goes to right hand side
-    mass_matrix.apply_scaled_submatrix(old_solutions[0], rhs[0], 2, 2, 1.);
-#endif
-#ifdef __3D__
-    mass_matrix.apply_scaled_submatrix(old_solutions[0], rhs[0], 3, 3, 1.);
-#endif
+    mass_matrix.apply_scaled_submatrix(old_solutions[0], rhs[0], n_blocks, n_blocks, 1.);
     if((db["time_discretization"].is("bdf_two") ) && pre_stage_bdf)
     {
       Output::print<5>("First step in BDF2 scheme is performed by the BDF1 scheme");
@@ -143,18 +143,11 @@ void TimeDiscretization::prepare_rhs_from_time_disc(
     // ErrThrow("not yet implemented");
     rhs[0].scaleActive(0.5*current_time_step_length);
     rhs[0].addScaledActive(rhs[1], 0.5*current_time_step_length);
-#ifdef __2D__
     // mass matrix times old solution goes to right hand side
-    mass_matrix.apply_scaled_submatrix(old_solutions[0], rhs[0], 2, 2, 1.);
+    mass_matrix.apply_scaled_submatrix(old_solutions[0], rhs[0], n_blocks, n_blocks, 1.);
     // A * u_old
-    system_matrix.apply_scaled_submatrix(old_solutions[0], rhs[0], 2, 2,
+    system_matrix.apply_scaled_submatrix(old_solutions[0], rhs[0], n_blocks, n_blocks,
                                          -0.5*current_time_step_length);
-#endif 
-#ifdef __3D__
-    mass_matrix.apply_scaled_submatrix(old_solutions[0], rhs[0], 3, 3, 1.);
-    system_matrix.apply_scaled_submatrix(old_solutions[0], rhs[0], 3, 3,
-                                         -0.5*current_time_step_length);
-#endif    
   }
   else
   {
@@ -166,16 +159,22 @@ void TimeDiscretization::prepare_rhs_from_time_disc(
 void TimeDiscretization::prepare_system_matrix(
   BlockFEMatrix& system_matrix, const BlockFEMatrix& mass_matrix)
 {
-   std::vector<std::vector<size_t>> cells;
-#ifdef __2D__  
-  cells = {{0,0}, {0,1},
-           {1,0}, {1,1} };
-#endif
-#ifdef __3D__ 
-  cells = {{0,0}, {0,1}, {0,2},
-           {1,0}, {1,1}, {1,2},
-	   {2,0}, {2,1}, {2,2} };
-#endif
+  std::vector<std::vector<size_t>> cells;
+  if(system_matrix.get_n_cell_rows() ==3)
+  {
+    cells = {{0,0}, {0,1},
+             {1,0}, {1,1} };
+  }
+  if(system_matrix.get_n_cell_rows() == 4)
+  {
+    cells = {{0,0}, {0,1}, {0,2},
+             {1,0}, {1,1}, {1,2},
+             {2,0}, {2,1}, {2,2} };
+  }
+  if(system_matrix.get_n_cell_rows() ==1)
+  {
+    cells = {{0,0}};
+  }
   double factor=0.;
   if(db["time_discretization"].is("backward_euler") || pre_stage_bdf)
     factor = current_time_step_length;
@@ -211,23 +210,29 @@ void TimeDiscretization::reset_linear_matrices(BlockFEMatrix& matrix,
 
   // reset the matrices
   std::vector<std::vector<size_t>> cells;
-#ifdef __2D__  
-  cells = {{0,0}, {0,1},
-           {1,0}, {1,1} };
-#endif
-#ifdef __3D__ 
-  cells = {{0,0}, {0,1}, {0,2},
-           {1,0}, {1,1}, {1,2},
-	   {2,0}, {2,1}, {2,2} };
-#endif
+  if(matrix.get_n_cell_rows() ==3)
+  {
+    cells = {{0,0}, {0,1},
+             {1,0}, {1,1} };
+  }
+  if(matrix.get_n_cell_rows() == 4)
+  {
+    cells = {{0,0}, {0,1}, {0,2},
+             {1,0}, {1,1}, {1,2},
+             {2,0}, {2,1}, {2,2} };
+  }
+  if(matrix.get_n_cell_rows() ==1)
+  {
+    cells = {{0,0}};
+  }
   matrix.scale_blocks_actives(1./factor, cells);
   // No need to reset the B, BT and C blocks because they are only scaled once during
   // the time step or re-assembled and scaled in the nonlinear case.
 }
 
 /* ****************************************************************************/
-void TimeDiscretization::scale_descale_all_b_blocks(BlockFEMatrix& matrix, 
-                                          std::string scale_dscale)
+void TimeDiscretization::scale_descale_all_b_blocks(
+  BlockFEMatrix& matrix, const std::string& scale_dscale)
 {
   /// @DETAILS: scaling of the B and BT's blocks (also "C")
   double factor;
@@ -260,6 +265,7 @@ void TimeDiscretization::scale_descale_all_b_blocks(BlockFEMatrix& matrix,
     {
       cells = {{0,2},{1,2},
                {2,0},{2,1}};
+      factor *= TDatabase::TimeDB->SCALE_DIVERGENCE_CONSTRAINT;
     }
 #endif
 #ifdef __3D__ 
@@ -268,6 +274,7 @@ void TimeDiscretization::scale_descale_all_b_blocks(BlockFEMatrix& matrix,
     {
       cells = {{0,3},{1,3},{2,3},
                {3,0},{3,1},{3,2}};
+      factor *= TDatabase::TimeDB->SCALE_DIVERGENCE_CONSTRAINT;
     }
 #endif  
   }

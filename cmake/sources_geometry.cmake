@@ -42,11 +42,10 @@ list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/Joint.C")
 list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/JointCollection.C")
 list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/JointEqN.C")
 list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/Line.C")
+list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/LinesEval.C")
 list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/MacroCell.C")
 list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/Mapper.C")
 list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/Mesh.C")
-list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/MortarBaseJoint.C")
-list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/MortarJoint.C")
 list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/PeriodicJoint.C")
 list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/Point.C")
 list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/Quadrangle.C")
@@ -63,7 +62,6 @@ list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/Vertex.C")
 
 # Source files only used in 2D
 list(APPEND GEO_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/Geometry/InnerInterfaceJoint.C")
-#list(APPEND GEO_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/Geometry/MeshGen.C") #CB why not?
 list(APPEND GEO_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/Geometry/Parallelogram.C")
 
 # Source files only used in 3D
@@ -82,7 +80,6 @@ list(APPEND GEO_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/Geometry/InterfaceJoint3D.
 list(APPEND GEO_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/Geometry/IsoBoundFace.C")
 list(APPEND GEO_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/Geometry/IsoEdge3D.C")
 list(APPEND GEO_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/Geometry/IsoInterfaceJoint3D.C")
-list(APPEND GEO_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/Geometry/TetGenMeshLoader.C")
 list(APPEND GEO_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/Geometry/Tetrahedron.C")
 list(APPEND GEO_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/Geometry/Parallelogram.C")
 

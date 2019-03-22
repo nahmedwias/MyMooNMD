@@ -24,11 +24,12 @@
 #include <FEDatabase2D.h>
 #include <ParameterDatabase.h>
 #include <LoopInfo.h>
-#include <NSE2D.h>
+#include "NavierStokes.h"
 #include <Solver.h>
 #include <Example_NSE2D.h>
+#include "LocalAssembling.h"
 
-#include "algorithm"
+#include <algorithm>
 
 std::vector<int> reynolds_numbers = {10, 100};//,1000};
 
@@ -60,7 +61,7 @@ std::vector< std::vector<int> > target_n_gmres_steps =
 // =======================================================================
 // main program
 // =======================================================================
-int main(int argc, char* argv[])
+int main(int, char**)
 {
     //  declaration of databases
     TDatabase Database;
@@ -71,6 +72,7 @@ int main(int argc, char* argv[])
     db.merge(ParameterDatabase::default_output_database());
     db.merge(Example2D::default_example_database());
     db.merge(Solver<>::default_solver_database());
+    db.merge(LocalAssembling2D::default_local_assembling_database());
 
     db["problem_type"].set<size_t>(5);
     db["example"] = 1; //lid driven cavity example
@@ -95,18 +97,14 @@ int main(int argc, char* argv[])
 
       for(size_t ref_st_index = 0; ref_st_index < n_ref_steps.size(); ++ref_st_index)
       {
-        db["refinement_n_initial_steps"]=n_ref_steps[ref_st_index];
-        Output::print("Refinement level ",n_ref_steps[ref_st_index]);
+        db["refinement_n_initial_steps"] = n_ref_steps[ref_st_index];
+        Output::print("Refinement level ", n_ref_steps[ref_st_index]);
 
         // construct a domain object
         TDomain domain(db);
 
         // refine grid
-        size_t n_ref = domain.get_n_initial_refinement_steps();
-        for(unsigned int i=0; i < n_ref; i++)
-        {
-          domain.RegRefineAll();
-        }
+        domain.refine_and_get_hierarchy_of_collections(db);
 
         Example_NSE2D example(db);
 
@@ -120,15 +118,15 @@ int main(int argc, char* argv[])
         db["nonlinloop_residual_relative_to_rhs"] = true;
 
         // create an object of the Navier-Stokes class
-        NSE2D ns(domain, db, example);
+        NavierStokes<2> ns(domain, db, example);
 
-        ns.assemble();
-        ns.stopIt(0);
+        ns.assemble_linear_terms();
+        ns.stop_it(0);
 
         LoopInfo loop_info("nonlinear");
         loop_info.print_time_every_step = true;
         loop_info.verbosity_threshold = 1; // full verbosity
-        loop_info.print(0, ns.getFullResidual());
+        loop_info.print(0, ns.get_full_residual());
 
         //======================================================================
         // iterate with a direct solver until relative residual of 10^-5 is hit
@@ -136,13 +134,13 @@ int main(int argc, char* argv[])
         {
           ns.solve();
           ns.assemble_nonlinear_term();
-          if(ns.stopIt(k))
+          if(ns.stop_it(k))
           {
-            loop_info.finish(k, ns.getFullResidual());
+            loop_info.finish(k, ns.get_full_residual());
             break;
           }
           else
-            loop_info.print(k, ns.getFullResidual());
+            loop_info.print(k, ns.get_full_residual());
         }
 
         {
@@ -152,26 +150,27 @@ int main(int argc, char* argv[])
           db["preconditioner"] = "least_squares_commutator";
           db["max_n_iterations"] = 100; //should not be hit
           db["gmres_restart"] = 100;    //should not be hit
-          db["residual_tolerance"] = 1.0e-6 * ns.getFullResidual();
+          db["residual_tolerance"] = 1.0e-6 * ns.get_full_residual();
           db["residual_reduction"] = 1.0e-20;  //should not be hit
 
-          NSE2D ns_2(domain, db, example);
+          NavierStokes<2> ns_2(domain, db, example);
 
           //insert solution from the nonlinear loop into the fresh object
           ns_2.get_solution() = ns.get_solution();
 
-          ns_2.assemble();
+          ns_2.assemble_linear_terms();
           ns_2.assemble_nonlinear_term();
 
-          ns.stopIt(0);
+          ns.stop_it(0);
           ns_2.solve();
-          ns_2.stopIt(1);
+          ns_2.stop_it(1);
 
           int n_its = ns_2.get_it_solver_info().get_n_previous_iterations();
 
           // Now check the test quantity:
           if(n_its != target_n_gmres_steps[re_nr_index][ref_st_index])
-            ErrThrow("Incorrect number of GMRES iterations.");
+            ErrThrow("Incorrect number of GMRES iterations. ", n_its, " ",
+                     target_n_gmres_steps[re_nr_index][ref_st_index]);
         }
 
 

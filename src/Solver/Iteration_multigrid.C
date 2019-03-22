@@ -34,7 +34,7 @@ void Iteration_multigrid<L,V>::apply(const V & z, V & r) const
 
 template <class L, class V>
 std::pair<unsigned int, double> Iteration_multigrid<L,V>::iterate(
-    const L & A, const V & rhs, V & solution)
+    const L &, const V &, V &)
 {
   ErrThrow("Using Multigrid as an iterative method is a TODO");
 }

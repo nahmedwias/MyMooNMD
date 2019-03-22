@@ -10,7 +10,7 @@ bool equal(const double a, const double b)
     return fabs(a-b) < 1e-14;
 }
 
-int main(int argc, char **argv) 
+int main(int, char **)
 {
   /**
    * A = [ 0.5, 0,    0, 0  ; B = [ 4, 0, 0, 1; C = [ 7, 0, 8;

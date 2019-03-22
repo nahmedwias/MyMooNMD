@@ -72,7 +72,6 @@ int main(int argc, char* argv[])
   int maxCellsPerVertex;
   Partition_Mesh3D(comm, &domain, maxCellsPerVertex);
   domain.GenerateEdgeInfo();
-  int maxSubDomainPerDof = MIN(maxCellsPerVertex, mpiSize);
 
   Output::print(" Rank ", mpiRank, ": domain.GetN_OwnCells() = ", domain.GetN_OwnCells());
   //  // this is hardcoded for the 2 processes case - we expect rank 0
@@ -89,30 +88,27 @@ int main(int argc, char* argv[])
   size_t first_ansatz_order = 1;
   size_t second_ansatz_order = 2;
 
-  TFESpace3D fe_space_1(coll, (char*)"first_fe_space",
-                        (char*)"first_fe_space",
-                        BoundCondition_FEM_FCT, first_ansatz_order); //with dirichlet boundaries
+  std::shared_ptr<const TFESpace3D> fe_space_1(
+    new TFESpace3D(coll, (char*)"first_fe_space", (char*)"first_fe_space",
+                   BoundCondition_FEM_FCT, first_ansatz_order)); //with dirichlet boundaries
 
-  TFESpace3D fe_space_2(coll, (char*)"second_fe_space",
-                        (char*)"second_fe_space",
-                        BoundaryConditionNewton, second_ansatz_order); //actives only
-  fe_space_1.initialize_parallel(maxSubDomainPerDof);
-  fe_space_2.initialize_parallel(maxSubDomainPerDof);
-
+  std::shared_ptr<const TFESpace3D> fe_space_2(
+    new TFESpace3D(coll, (char*)"second_fe_space", (char*)"second_fe_space",
+                   BoundaryConditionNewton, second_ansatz_order)); //actives only
   //end blackbox
 
   //build ParFECommunicators, -mappers and a BlockFEMatrix for testing
-  TParFEMapper3D mapper_1(1, &fe_space_1);
+  TParFEMapper3D mapper_1(1, fe_space_1.get());
   TParFECommunicator3D comm_1(&mapper_1);
-  TParFEMapper3D mapper_2(1, &fe_space_2);
+  TParFEMapper3D mapper_2(1, fe_space_2.get());
   TParFECommunicator3D comm_2(&mapper_2);
 
-  BlockFEMatrix bfem({&fe_space_1, &fe_space_2});
+  BlockFEMatrix bfem({fe_space_1, fe_space_2});
 
-  FEMatrix fe_matrix_1(&fe_space_1);
-  FEMatrix fe_matrix_2(&fe_space_2, &fe_space_1);
-  FEMatrix fe_matrix_2_t(&fe_space_1, &fe_space_2);
-  FEMatrix fe_matrix_3(&fe_space_2);
+  FEMatrix fe_matrix_1(fe_space_1);
+  FEMatrix fe_matrix_2(fe_space_2, fe_space_1);
+  FEMatrix fe_matrix_2_t(fe_space_1, fe_space_2);
+  FEMatrix fe_matrix_3(fe_space_2);
   fe_matrix_1.setEntries(std::vector<double>(fe_matrix_1.GetN_Entries(),1.0));
   fe_matrix_2.setEntries(std::vector<double>(fe_matrix_2.GetN_Entries(),2.0));
   fe_matrix_2_t.setEntries(std::vector<double>(fe_matrix_2_t.GetN_Entries(),2.0));
@@ -144,7 +140,7 @@ int main(int argc, char* argv[])
 
   {
     //for fiddling around with: nse-style matrix with one off-diagonal zero block
-    BlockFEMatrix nsemat({&fe_space_1, &fe_space_1, &fe_space_2});
+    BlockFEMatrix nsemat({fe_space_1, fe_space_1, fe_space_2});
     nsemat.replace_blocks(fe_matrix_1,
                           {{0,0},{0,1},{1,1}},
                           {false, false, false});

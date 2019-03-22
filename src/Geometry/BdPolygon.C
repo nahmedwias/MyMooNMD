@@ -31,7 +31,7 @@ void TBdPolygon::SetParams (int n_points, double *coords)
   Coords = coords;
 }
 
-int TBdPolygon::GetXYofT(double T, double &X, double &Y)
+int TBdPolygon::GetXYofT(double T, double &X, double &Y) const
 {
   int N_Intervals, N1, N2;
   double S, D;
@@ -57,7 +57,7 @@ int TBdPolygon::GetXYofT(double T, double &X, double &Y)
   return 0;
 }
 
-int TBdPolygon::GetTofXY(double X, double Y, double &T)
+int TBdPolygon::GetTofXY(double X, double Y, double &T) const
 {
   int i, j; 
   double t1, t2, x1, x2, y1, y2;

@@ -31,9 +31,6 @@ TCollection::TCollection(int n_cells, TBaseCell **cells)
   N_Cells = n_cells;
   Cells = cells;
 
-  SortedCells = nullptr;
-  Index = nullptr;
-
   #ifdef  _MPI
   N_OwnCells = 0;
   GlobalIndex = new int[N_Cells];
@@ -43,41 +40,21 @@ TCollection::TCollection(int n_cells, TBaseCell **cells)
   #endif
 }
 
-void TCollection::GenerateSortedArrays()
-{
-  if(!SortedCells)
-  {
-    SortedCells = new TBaseCell*[N_Cells];
-    Index = new int[N_Cells];
-
-    memcpy(SortedCells, Cells, N_Cells*sizeof(TBaseCell*));
-    std::sort(SortedCells, SortedCells+N_Cells);
-
-    for(int i=0;i<N_Cells;i++)
-      Index[GetSortedIndex(Cells[i])] = i;
-  }
-}
-
 /** destructor: delete arrays */
 TCollection::~TCollection()
 {
-  if(Index) delete [] Index;
-  if(SortedCells) delete [] SortedCells;
-
   if(Cells) delete [] Cells;
 }
 
 /** get maximal and minimal diameter */
-int TCollection::GetHminHmax(double *hmin, double *hmax)
+int TCollection::GetHminHmax(double *hmin, double *hmax) const
 {
-  int i;
-  double h_min = 1e10 , h_max= 0, h;
-  TBaseCell *cell;
-    
-  for (i=0;i<N_Cells;i++)
+  double h_min = 1e10;
+  double h_max = 0;
+  for(int i = 0; i < N_Cells; i++)
   {
-    cell = GetCell(i);
-    h = cell->GetDiameter();
+    auto cell = GetCell(i);
+    double h = cell->GetDiameter();
     if (h<h_min)
       h_min = h;
     if (h>h_max)
@@ -89,380 +66,23 @@ int TCollection::GetHminHmax(double *hmin, double *hmax)
 }
 
 /** return Index of cell in SortedCells-array */
-int TCollection::GetSortedIndex(TBaseCell *cell)
+int TCollection::get_cell_index(const TBaseCell *cell) const
 {
-  int Left = 0;
-  int Mid;
-  int Right = N_Cells - 1;
-  int ret = -1;
-  TBaseCell *b;
-
-  while (Left <= Right )
+  if(cell_to_index_map.empty()) // only done once
   {
-    Mid = Left + ((Right - Left) / 2);
-
-    b = SortedCells[Mid];
-
-    if (b == cell)
+    for(int i = 0; i < N_Cells; ++i)
     {
-      ret = Mid;
-      break;
-    }
-
-    if(b > cell)
-      Right = Mid - 1;
-    else
-      Left = Mid + 1;
-  }
-
-  return ret;
-}
-
-/** return Index of cell in SortedCells-array */
-int TCollection::GetIndex(TBaseCell *cell)
-{
-  int ret, gsi;
-
-  GenerateSortedArrays();
-
-  gsi = GetSortedIndex(cell);
-  ret = (gsi==-1)?(N_Cells+1):Index[gsi];
-
-  return ret;
-}
-
- /** return the Index of the vertex in the sorted array */
-int TCollection::GetIndex(TVertex **Array, int Length, TVertex *Element)
-{
-  int l=0, r=Length, m=(r+l)/2;
-  TVertex *Mid;
-
-  Mid=Array[m];
-  while(Mid!=Element)
-  {
-    if(Mid>Element)
-    {
-      l=m;
-    }
-    else
-    {
-      r=m;
-    }
-    m=(r+l)/2;
-    Mid=Array[m];
-  }
-
-  return m;
-}
-
-
-/** mark the vertices that are on the boundary */
-int TCollection::MarkBoundaryVertices()
-{
-  int i, j, N_, comp;
-  double x0, y0, x2, y2, t0, t1, eps=1e-8;
-  const int *TmpEdVer;  
-  TBaseCell *cell;
-  TVertex *vertex0, *vertex1;
-  TRefDesc *refdesc;
-  TBoundEdge *boundedge;
-  TBoundComp *BoundComp;
-  TJoint *joint;
-
-  // initialization 
-  // loop over all mesh cells
-  for (i=0;i<N_Cells;i++)
-  {
-    cell = GetCell(i);
-    N_ = cell->GetN_Vertices();
-    // loop over the vertices
-    for (j=0;j<N_;j++)
-    {
-     vertex1 = cell->GetVertex(j);
-     vertex1->SetClipBoard(-1);
-    }
-  }
-
-  // set ClipBoard for vertices on the boundary
-  for (i=0;i<N_Cells;i++)
-  {
-    cell = GetCell(i);
-    // get refinement descriptor
-    refdesc=cell->GetRefDesc();                   
-    // get information to compute vertices from edges
-    refdesc->GetShapeDesc()->GetEdgeVertex(TmpEdVer);
-    // number of edges
-    N_ = cell->GetN_Edges();
-    for (j=0;j<N_;j++)
-    {
-      joint = cell->GetJoint(j);
-	// if boundary edge
-	if (joint->GetType() == BoundaryEdge ||
-	    joint->GetType() == IsoBoundEdge)
-	{
-	  boundedge=(TBoundEdge *)joint;
-	  BoundComp=boundedge->GetBoundComp();      // get boundary component
-	  comp=BoundComp->GetID();                  // boundary id
-	  boundedge->GetParameters(t0, t1);         // parameter interval
-	  vertex0 = cell->GetVertex(TmpEdVer[2*j]);
-	  x0 = vertex0->GetX();
-	  y0 = vertex0->GetY();
-	  vertex1 = cell->GetVertex(TmpEdVer[2*j+1]);
-	  boundedge->GetXYofT(t0,x2,y2);
-	  if ((fabs(x0-x2)<eps)&&(fabs(y0-y2)<eps))
-	    {
-	       vertex0->SetClipBoard(comp+t0);
-	       vertex1->SetClipBoard(comp+t1);
-	    }
-	  else
-	    {
-	       vertex0->SetClipBoard(comp+t1);
-	       vertex1->SetClipBoard(comp+t0);
-	    }
-	  //OutPut(t0 << " " << vertex0->GetClipBoard() << " " << vertex1->GetClipBoard() << endl);
-	}
-    }
-  }
-  
-  return(0);
-  
-}
-
-// methods for TJointCollection, 03.11.09  (Sashi)
-static void Sort(TJoint **Array, int length)
-{
-  int n=0, l=0, r=length-1, m;
-  int i, j, *rr, len;
-  TJoint *Mid, *Temp;
-  double lend = length;
-
-  len=(int)(2*log(lend)/log((double) 2.0)+2);
-  rr= new int[len];
-
-  do
-  {
-    do
-    {
-      i=l;
-      j=r;
-
-      m=(l+r)/2;
-      Mid=Array[m];
-
-      do
+      auto it = cell_to_index_map.insert({Cells[i], i});
+      if(it.second == false)
       {
-        while(Array[i] > Mid) i++;
-
-        while(Array[j] < Mid) j--;
-
-        if (i<=j)
-        {
-          Temp=Array[i];
-          Array[i]=Array[j];
-          Array[j]=Temp;
-          i++; j--;
-        }
-      } while (i<=j);
-
-      if (l<j)
-      {
-        rr[++n]=r;
-        r=j;
+        ErrThrow("cell ", Cells[i],
+                 " appears more than once in this collection. Indices ",
+                 it.first->second, " and ", i);
       }
-    } while (l<j);
-
-    if (n>0) r=rr[n--];
-
-    if (i<r) l=i;
-
-  } while (i<r);
-
-  delete [] rr;
-
-}
-
-static void Sort(TVertex **Array, int length)
-{
-  int n=0, l=0, r=length-1, m;
-  int i, j, *rr, len;
-  TVertex *Mid, *Temp;
-  double lend = length;
-
-  len=(int)(2*log(lend)/log((double) 2.0)+2);
-  rr= new int[len];
-
-  do
-  {
-    do
-    {
-      i=l;
-      j=r;
-
-      m=(l+r)/2;
-      Mid=Array[m];
-
-      do
-      {
-        while(Array[i] > Mid) i++;
-
-        while(Array[j] < Mid) j--;
-
-        if (i<=j)
-        {
-          Temp=Array[i];
-          Array[i]=Array[j];
-          Array[j]=Temp;
-          i++; j--;
-        }
-      } while (i<=j);
-
-      if (l<j)
-      {
-        rr[++n]=r;
-        r=j;
-      }
-    } while (l<j);
-
-    if (n>0) r=rr[n--];
-
-    if (i<r) l=i;
-
-  } while (i<r);
-
-  delete [] rr;
-
-}
-
-
-/** return Index of joints in Cells-array */
-TJointCollection *TCollection::GetJointCollection()
-{
- int i, j, N_Joints, N, N_RootJoints;
- TBaseCell *Me;
- TJoint **joints, **RootJoints, *Last, *Current;
- TJointCollection *JointColl;
-
-
- #ifdef __3D__ 
- joints = new TJoint*[6*N_Cells];
- #else 
- joints = new TJoint*[4*N_Cells];
- #endif
-
- N=0;
- for(i=0; i<N_Cells; i++)
-  {
-   Me = Cells[i];
-   Me->SetCellIndex(i); // needed for DG matrices assembling
-   N_Joints = Me->GetN_Joints();
-   
-   for(j=0; j<N_Joints; j++) 
-    {
-     joints[N] = Me->GetJoint(j);
-     N++;
-    } //for(j=0; j<N_Joints; j++) 
-  } //for(i=0; i<N_Cells; i++)
-
-
-  N--;
-  // sort the Vertices array
-  Sort(joints, N);
-  N++;
-
-  Last=nullptr;
-  N_RootJoints=0;
-  for(i=0;i<N;i++)
-   {
-    Current=joints[i];
-    if(Current!=Last)
-    {
-      N_RootJoints++;
-      Last=Current;
     }
-   }
-
-  RootJoints =  new TJoint*[N_RootJoints];
-  Last=nullptr;
-  N_RootJoints=0;
-  for(i=0;i<N;i++)
-   {
-    Current=joints[i];
-    if(Current!=Last)
-    {
-      RootJoints[N_RootJoints] = Current;
-      Last = Current;
-      N_RootJoints++;
-    }
-   }
-
-  JointColl = new TJointCollection(N_RootJoints, RootJoints);
-
- return JointColl;
+  }
+  return cell_to_index_map.at(cell);
 }
-
-
-// for operator-split nodal point collection, 14.07.2010 (Sashi)
-void TCollection::GenerateCellVertNeibs()
-{
- int i, j, k, m, N, N_VertInCell, N_LocVertices;
- int Max_N_VertInCell, N_RootVertices, *NumberVertex, *VertexNumbers;
- TVertex *Current, *Last, **Vertices;
-
-   Max_N_VertInCell = 0;
-   for(i=0;i<N_Cells;i++)
-    if(Max_N_VertInCell<Cells[i]->GetN_Vertices())
-      Max_N_VertInCell=Cells[i]->GetN_Vertices();
-
-   Vertices=new TVertex*[Max_N_VertInCell*N_Cells];
-
-   N=0;
-   for(i=0;i<N_Cells;i++)
-    {
-     N_VertInCell = Cells[i]->GetN_Vertices();
-
-     for(j=0;j<N_VertInCell;j++)
-      {
-       Vertices[N]=Cells[i]->GetVertex(j);
-       N++;
-      } // j
-    } // i
-  N_LocVertices = N;
-  N--;
-  NumberVertex =new int[N_LocVertices];
-  VertexNumbers= new int[N_LocVertices];
-  // sort the Vertices array based on vertices pointer values
-  Sort(Vertices, N);
-
-  Last=nullptr;
-  N_RootVertices=-1;
-  for(i=0;i<N_LocVertices;i++)
-   {
-    if((Current=Vertices[i])!=Last)
-    {
-      N_RootVertices++;
-      Last=Current;
-    }
-    NumberVertex[i]=N_RootVertices;
-   }
-  N_RootVertices++;
-
-  m=0;
-  for(i=0;i<N_Cells;i++)
-   {
-    k=Cells[i]->GetN_Vertices();
-    for(j=0;j<k;j++)
-    {
-      Current=Cells[i]->GetVertex(j);
-      N=GetIndex(Vertices, N_LocVertices, Current);
-      VertexNumbers[m]=NumberVertex[N];
-      m++;
-    } // endfor j
-  } //endfor i
-
-
-
-}
-
 
 /// @brief create lists with vertex coordinates and element ids
 int TCollection::createElementLists()
@@ -799,22 +419,6 @@ unsigned int TCollection::GetNLocVertices()
 
 //#############################################################
 
-/** @brief return the index of cell in SortedCells-array 
-    1.- now during construction the array GlobalIndex[] is filled
-    2.- cell index is compared with the ones in GlobalIndex[]
-    3.- return -1 if cell does not belong to collection
-    @warning The previous function GetIndex() does not seem to work properly in general
-*/
-int TCollection::getIndexInCollection(TBaseCell *cell)
-{
-  for (int i=0; i<N_Cells; i++) {
-    if (GlobalIndex[i]==cell->GetCellIndex()) {
-      return i;
-    }
-  }
-  return -1;
-}
-
 /**
    Notes: 
    (1) we always write a .mesh file with three dimensions. This
@@ -988,7 +592,7 @@ void TCollection::get_edge_list_on_component(int id,std::vector<TBoundEdge*> &ed
     if (joint->GetType()==BoundaryEdge)
             {
         TBoundEdge *boundedge = (TBoundEdge *)joint;
-        TBoundComp *BoundComp = boundedge->GetBoundComp();
+        const TBoundComp *BoundComp = boundedge->GetBoundComp();
      if (BoundComp->GetID() == id)
                 {
     ///@todo set the boundedge properties in the function MakeGrid
@@ -1000,6 +604,7 @@ void TCollection::get_edge_list_on_component(int id,std::vector<TBoundEdge*> &ed
         }
     }
 }
+
 void TCollection::get_boundary_edge_list(std::vector<TBoundEdge*> &edges)
 {
   edges.clear();
@@ -1015,11 +620,44 @@ void TCollection::get_boundary_edge_list(std::vector<TBoundEdge*> &edges)
           ///@todo set the boundedge properties in the function MakeGrid
           boundedge->SetNeighbour(cell);
           boundedge->set_index_in_neighbour(cell,j);
-          edges.push_back(boundedge);                 
+          edges.push_back(boundedge);
       }
     }
   }
 }
+
+//New LB 11.10.18
+#ifdef __3D__
+void TCollection::get_face_list_on_component(int boundary_component_id, std::vector<TBoundFace*> &faces)
+{
+  faces.clear();
+  for (int i = 0; i < this->N_Cells; i++)
+  {
+    TBaseCell *cell = this->Cells[i];
+//cout << "Jooooooo" << endl;
+    for(size_t joint_id = 0; joint_id < (size_t) cell->GetN_Faces(); joint_id++)
+    {
+      TJoint* joint = cell->GetJoint(joint_id);
+     // cout << "joint_id: " << joint_id << endl;
+      if ((joint->GetType() == BoundaryFace) || (joint->GetType() == IsoBoundFace))
+      {
+        //cout << "joint_id on boundary: " << joint_id << endl;
+        // convert the joint to an object of BoundFace type
+        TBoundFace *boundface = (TBoundFace *)joint;
+
+        if (boundface->GetBoundComp()->get_physical_id() == boundary_component_id)
+        {
+          ///@todo set the boundedge properties in the function MakeGrid
+          boundface->SetNeighbour(cell); //todo check if ok
+
+          boundface->set_index_in_neighbour(cell, joint_id); //todo check if ok
+          faces.push_back(boundface);
+        }
+      }
+    }
+  }
+}
+#endif
 
 #ifdef _MPI
 int TCollection::find_process_of_point(double x, double y, double z) const

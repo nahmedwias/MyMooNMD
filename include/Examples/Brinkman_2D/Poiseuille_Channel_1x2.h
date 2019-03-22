@@ -6,6 +6,10 @@ Rectangle [0,1]x[0,2]
  p(x,y) = 0.5-x
  */
 
+double viscosity = -1;
+double effective_viscosity = -1;
+double permeability = -1;
+
 void ExampleFile()
 {
   Output::print<1>("Example: Poiseuille_Channel_1x2.h");
@@ -15,7 +19,7 @@ void ExampleFile()
 // exact solution
 // ========================================================================
 
-void ExactU2(double x, double y, double *values)
+void ExactU2(double, double y, double *values)
 {
   values[0] = 4 * y * (1-y);    //u1
   values[1] = 0;                //u1_x
@@ -23,7 +27,7 @@ void ExactU2(double x, double y, double *values)
   values[3] = -8;               //Delta u1
 }
 
-void ExactU1(double x, double y, double *values)
+void ExactU1(double, double, double *values)
 {
   values[0] = 0;            //u2
   values[1] = 0;            //u2_x
@@ -31,7 +35,7 @@ void ExactU1(double x, double y, double *values)
   values[3] = 0;            //Delta u2
 }
 
-void ExactP(double x, double y, double *values)
+void ExactP(double x, double, double *values)
 {
   values[0] = 0.5 - x;        //p
   values[1] = -1;   //1;      //p_x
@@ -40,7 +44,7 @@ void ExactP(double x, double y, double *values)
 }
 
 
-void BoundCondition(int i, double Param, BoundCond &cond)
+void BoundCondition(int i, double, BoundCond &cond)
 {
     cond = DIRICHLET; // Default
     
@@ -105,7 +109,7 @@ void U1BoundValue(int BdComp, double Param, double &value)
 }
 
 
-void U2BoundValue(int BdComp, double Param, double &value)
+void U2BoundValue(int, double, double &value)
 {
     value = 0;
 }
@@ -115,9 +119,9 @@ void U2BoundValue(int BdComp, double Param, double &value)
 // (the lhs of the Brinkman problem computed at quadrature points - for the error norms)
 // ========================================================================
 
-void LinCoeffs(int n_points, double *x, double *y,
+void LinCoeffs(int n_points, double *, double *,
     //std::vector<std::vector<double>> parameters,
-    double **Parameters,
+    double **,
     //std::vector<std::vector<double>> coeffs,
     double **coeffs)
 {
@@ -133,9 +137,9 @@ void LinCoeffs(int n_points, double *x, double *y,
 
     // if f1=coeff[1] is set to its analytical rhs (8 * coeff[0] - 1 + 4 * y[i] * (1-y[i]);),
     // a cange in the parameter t^2 will not influence the solution
-    coeff[4] = TDatabase::ParamDB->VISCOSITY;
-    coeff[5] = TDatabase::ParamDB->EFFECTIVE_VISCOSITY;
-    coeff[6] = TDatabase::ParamDB->PERMEABILITY;
+    coeff[4] = viscosity;
+    coeff[5] = effective_viscosity;
+    coeff[6] = permeability;
     coeff[0] = (coeff[5] / coeff[4]) * coeff[6];
     coeff[1] = 0; //8 * coeff[0] - 1 + 4 * y[i] * (1-y[i]);  //0;                    // f1 (rhs of Brinkman problem for u1)
     coeff[2] = 0;                                                           // f2 (rhs of Brinkman problem for u2)

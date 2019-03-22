@@ -19,10 +19,10 @@
 #ifndef __EXAMPLE_DARCY2D__
 #define __EXAMPLE_DARCY2D__
 
-#include<Example2D.h>
+#include <Example2D.h>
 #include <functional>
 
-class Darcy2D; //forward declaration
+template <int d> class Darcy; //forward declaration
 
 class Example_Darcy2D : public Example2D 
 {
@@ -32,19 +32,20 @@ class Example_Darcy2D : public Example2D
      * This intializes a convection-diffusion example in 2D. It is chosen 
      * according to example_code
      */
-    Example_Darcy2D(const ParameterDatabase& user_input_parameter_db);
+    explicit Example_Darcy2D(const ParameterDatabase& user_input_parameter_db);
     
     /** @brief initialize your own example
      * 
      * Create an example with all vectors already defined.
      */
-    Example_Darcy2D(std::vector <DoubleFunct2D*> exact,
-                    std::vector <BoundCondFunct2D*> bc,
-                    std::vector <BoundValueFunct2D*> bd, CoeffFct2D coeffs)
+    Example_Darcy2D(const std::vector<DoubleFunct2D*>& exact,
+                    const std::vector<BoundCondFunct2D*>& bc,
+                    const std::vector<BoundValueFunct2D*>& bd,
+                    const CoeffFct2D& coeffs)
     : Example2D(exact, bc, bd, coeffs) {};
 
     /// Apply the function stored as post processing routine.
-    void do_post_processing(Darcy2D& darcy2d) const;
+    void do_post_processing(Darcy<2>& darcy2d) const;
 
     /// Return kinematic viscosity, if set.
     double get_nu() const;
@@ -69,7 +70,7 @@ class Example_Darcy2D : public Example2D
   private:
     /// Function doing the post processing for a stationary example.
     /// TODO put Darcy2D argument const as soon as FEFunctions can be copied properly!
-    std::function<void(Darcy2D &)> post_processing_stat;
+    std::function<void(Darcy<2> &)> post_processing_stat;
     /// TODO Function doing the post processing for a time dependent example.
 
 };

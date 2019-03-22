@@ -37,18 +37,24 @@ class TimeDiscretization
     /// @brief time step legth 
     double current_time_step_length;
     
+    /// @brief start time 
+    double start_time;
+    
     /// @brief end time 
     double end_time;
 
 public:
     // 
-    TimeDiscretization(const ParameterDatabase& param_db);
+    explicit TimeDiscretization(const ParameterDatabase& param_db);
 
     /// @brief This parameter is used for time step counter.
     /// It is set to be zero before the time iteration starts
     /// in the main code and increment is done within the 
     /// the time iteration. 
     unsigned int current_step_;
+    
+    /// @brief current time
+    double current_time_;
     
     /// @brief return a default TimeDiscretization parameter database
     /// Using the TimeDiscretization class requires these parameters.
@@ -70,7 +76,7 @@ public:
     /// is 0. For the bdf schemes,  the scaling will be done at first
     /// two, three ... time steps depending on the order of the scheme
     void scale_descale_all_b_blocks(BlockFEMatrix& matrix, 
-                                    std::string scale_dscale);
+                                    const std::string& scale_dscale);
     
     /// @brief This scales the B, BT or C blocks that are nonlinear. This 
     /// is the special case in the SUPG or Residual based VMS schemes
@@ -84,12 +90,12 @@ public:
     // a function which takes the matrices, right-hand side and solution vector
     // and perform the ...
     void prepare_timestep(BlockFEMatrix& system_matrix, 
-        const BlockFEMatrix& mass_matrix, std::vector<BlockVector> & rhs, 
-        const std::vector<BlockVector> old_solutions);
+        const BlockFEMatrix& mass_matrix, std::vector<BlockVector>& rhs, 
+        const std::vector<BlockVector>& old_solutions);
     //
     void prepare_rhs_from_time_disc(BlockFEMatrix& system_matrix, 
-        const BlockFEMatrix& mass_matrix, std::vector<BlockVector> & rhs, 
-        const std::vector<BlockVector> old_solutions);
+        const BlockFEMatrix& mass_matrix, std::vector<BlockVector>& rhs, 
+        const std::vector<BlockVector>& old_solutions);
     
     /// @brief this function will prepare the BlockFEMatrix 
     /// which passes to the solver. In details, the system_matrix
@@ -135,13 +141,22 @@ public:
     }
    
     //getters
-    double get_step_length()
+    double get_step_length() const
     {
       return current_time_step_length;
     }
-    double get_end_time()
+    double get_start_time() const
+    {
+      return start_time;
+    }
+    double get_end_time() const
     {
       return end_time;
+    }
+    
+    bool reached_final_time_step() const
+    {
+      return current_time_ > end_time - 1e-10;
     }
 };
 

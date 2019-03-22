@@ -20,6 +20,12 @@
 #include <stdio.h>
 #include <limits>
 
+#include <BdCircle.h>
+#include <BdLine.h>
+#include <BdSpline.h>
+#include <BdPolygon.h>
+#include <BdNonUniformSpline.h>
+
 #ifdef __2D__
   #include <IsoBoundEdge.h>
   #include <IsoInterfaceJoint.h>
@@ -27,14 +33,15 @@
 
 #ifdef __3D__
   #include <BoundFace.h>
+  #include <BdNoPRM.h>
   #include <BdPlane.h>
   #include <BdWall.h>
+  #include <BdSphere.h>
   #include <BdCylinder.h>
   #include <IsoInterfaceJoint3D.h>
   #include <InterfaceJoint3D.h>
   #include <IsoBoundFace.h>
   
-  #include <TetGenMeshLoader.h>
   #include <BDEdge3D.h>
   #include <InnerEdge.h>
   #include <IsoEdge3D.h>
@@ -43,13 +50,7 @@
 #include <string.h>
 #include <vector>
 #include <algorithm>
-
-extern "C"
-{
-  #include "triangle.h"
-  void triangulate(char *, struct triangulateio *, struct triangulateio *,
-                   struct triangulateio *);
-}
+#include <assert.h>
 
 ParameterDatabase TDomain::default_domain_parameters()
 {
@@ -83,23 +84,19 @@ ParameterDatabase TDomain::default_domain_parameters()
         {"Default_UnitSquare", "Default_UnitCube"}
        );
    
-   db.add("geo_file", "Default_UnitSquare",
+   db.add("geo_file", "UnitSquare",
         "This files describes the computational mesh. You probably want to "
         "adjust this to be the path to some file which typically has the "
         "extension 'GEO' or 'xGEO'. See the documentation for GEO and PRM "
         "files.",
         {"UnitSquare", "TwoTriangles", "Default_UnitCube_Hexa", 
-         "Default_UnitCube_Tetra","Default_UnitSquare"});
+         "Default_UnitCube_Tetra"});
    
-   db.add("mesh_tetgen_file", std::string("Wuerfel"),
-         "This files describes the computational mesh. Typically this files"
-         " has the extension 'mesh, 'smesh', 'node' or 'poly'. "
-         " currently only the smesh files are supported");
-
    db.add("read_metis", false , "This Boolean will state if you read a file "
           "which contains the partition of the cells on the processors.");
 
-   db.add("read_metis_file", std::string("mesh_partitioning_file.txt"), "The Mesh-file will be read here.");
+   db.add("read_metis_file", std::string("mesh_partitioning_file.txt"),
+          "The Mesh-file will be read here.");
 
    db.add("write_metis", false , "This Boolean will state if you write out "
           "which cell belongs to which processor into a file (see parameter"
@@ -151,15 +148,9 @@ bool ends_with (std::string const &fullString, std::string const &ending) {
     }
 }
 
-TDomain::TDomain(const ParameterDatabase& param_db, const char* ParamFile) :
-  Interfaces(nullptr), RefLevel(0), db(default_domain_parameters())
+TDomain::TDomain(const ParameterDatabase& param_db)
+  : Interfaces(nullptr), RefLevel(0), db(default_domain_parameters())
 {
-  if(ParamFile)
-  {//read the param file and fil the old database
-	  Output::info<4>("READ-IN","Constructing old database from file ", ParamFile);
-	  ReadParam(ParamFile);
-  }
-
   // get the relevant parameters from the new database
   db.merge(param_db, false);
   
@@ -194,8 +185,6 @@ TDomain::TDomain(const ParameterDatabase& param_db, const char* ParamFile) :
 
   std::string geoname = db["geo_file"];
   std::string boundname = db["boundary_file"];
-  // This parameter is only used, if the other two are of no use.
-  std::string smesh = db["mesh_tetgen_file"];
   
   // Find out what kind of geometry input files are given.
   if( ends_with(geoname, "GEO") && ends_with(boundname, ".PRM") )
@@ -217,19 +206,6 @@ TDomain::TDomain(const ParameterDatabase& param_db, const char* ParamFile) :
              " and no .PRM file.");
     InitFromMesh(boundname, geoname);
   }
-  else if( ends_with(smesh, ".smesh") || ends_with(smesh, ".mesh"))
-  {// tetgen initialization from .smesh (surface mesh) file
-    Output::info("Domain", "Experimental feature: Using tetgen for initialization "
-        " of domain from ", smesh);
-    // initialize a TTetGenMeshLoader using the surface mesh and generate volume mesh
-    TTetGenMeshLoader tetgen(smesh, db);   
-    // convert the mesh into ParMooN Mesh object
-    Mesh m(tetgen.meshTetGenOut);
-    // generate vertices, cells and joint
-    GenerateFromMesh(m);
-    // test: write the mesh on a file
-    m.writeToMesh("test_parmoon.mesh"); 
-  }
 #endif
   else 
   {// If nothing else fits, the program supposes a default geometry.
@@ -248,6 +224,9 @@ TDomain::~TDomain()
   for(int i = 0; i < N_BoundParts; ++i)
     delete BdParts[i];
   delete [] BdParts;
+  for(auto coll: gridCollections)
+    delete coll;
+  gridCollections.clear();
   /// @todo delete cells, joints, vertices here
   delete [] CellTree;
 }
@@ -274,423 +253,6 @@ int TDomain::GetLocalBdCompID(int BdCompID)
 }
 
 #ifdef __2D__
-//void SaveTri(struct triangulateio &outt);
-
-int TDomain::GenInitGrid()
-{
-#ifdef _MPI
-  int rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-#endif
-
-  int *VertsPerComp;
-  int i, j, k, N_, N_BdComps, N_InitVerts = 0;
-  int CurrComp = 0;
-  int CurrPoint = 0, CurrSeg = 0, BdStartPoint;
-  TBoundComp2D *CurrCompPtr;
-  double T, X, Y, T_a, T_b, *Coordinates;
-  double Xmin = 1e10, Xmax = -1e10, Ymin = 1e10, Ymax = -1e10;
-  int *PartMarker, *Triangles, *PointNeighb, maxEpV = 0;
-  int a, b, len1, len2, aux, part, comp, Neib[2], CurrNeib;
-  TJoint *Joint;
-  TVertex **NewVertices;
-  struct triangulateio inn,  outt;
-  bool AllowEdgeRef = (bool) TDatabase::ParamDB->MESHGEN_ALLOW_EDGE_REF;
-  std::ostringstream opts;
-
-  VertsPerComp = new int[N_BoundComps];
-
-  for (i=0;i<N_BoundParts;i++)
-  {
-    N_BdComps = BdParts[i]->GetN_BdComps();
-    for (j=0;j<N_BdComps;j++)
-      VertsPerComp[CurrComp++] = BdParts[i]->GetBdComp(j)->GetN_InitVerts();
-  }
-
-  for (i=0;i<N_BoundComps;i++)
-    N_InitVerts += VertsPerComp[i] - 1;
-
-  inn.numberofsegments = N_InitVerts;
-  inn.segmentlist = new int[2*N_InitVerts];
-  inn.segmentmarkerlist = new int[N_InitVerts];
-  
-  for (i=0;i<N_BoundParts;i++)
-    if (Interfaces[i] < 0) N_InitVerts++;
-
-  inn.numberofpoints = N_InitVerts;             
-  inn.numberofpointattributes = 0;
-  inn.numberofholes = N_Holes;
-  inn.numberofregions = N_Regions;
-  inn.regionlist = PointInRegion;
-
-  inn.pointlist = new double[2*N_InitVerts + 2];
-  inn.pointmarkerlist = new int[N_InitVerts + 1];
-  inn.holelist = PointInHole;
-
-  CurrComp = 1;
-
-  for (i=0;i<N_BoundParts;i++)
-  {
-    N_BdComps = BdParts[i]->GetN_BdComps();
-    BdStartPoint = CurrPoint;
-
-    for (j=0;j<N_BdComps;j++)
-    {
-      CurrCompPtr = (TBoundComp2D*)(BdParts[i]->GetBdComp(j));
-      switch (CurrCompPtr->GetType())
-      {
-        case Line:
-          inn.segmentlist[2*CurrSeg  ] = CurrPoint;
-          inn.segmentlist[2*CurrSeg+1] = CurrPoint + 1;
-          inn.segmentmarkerlist[CurrSeg++] = CurrComp;
-
-          CurrCompPtr->GetXYofT(0.0, X, Y);
-          inn.pointlist[2*CurrPoint  ] = X;
-          inn.pointlist[2*CurrPoint+1] = Y;
-          inn.pointmarkerlist[CurrPoint++] = CurrComp;
-
-          CurrCompPtr->GetXYofT(1.0, X, Y);
-          inn.pointlist[2*CurrPoint  ] = X;
-          inn.pointlist[2*CurrPoint+1] = Y;
-          inn.pointmarkerlist[CurrPoint] = CurrComp;
-        break;
-
-        case Polygon:
-          inn.segmentlist[2*CurrSeg  ] = CurrPoint;
-          inn.segmentlist[2*CurrSeg+1] = CurrPoint + 1;
-          inn.segmentmarkerlist[CurrSeg++] = CurrComp + 100000;
-
-          CurrCompPtr->GetXYofT(0.0, X, Y);
-          inn.pointlist[2*CurrPoint  ] = X;
-          inn.pointlist[2*CurrPoint+1] = Y;
-          inn.pointmarkerlist[CurrPoint++] = CurrComp;
-
-          CurrCompPtr->GetXYofT(1.0, X, Y);
-          inn.pointlist[2*CurrPoint  ] = X;
-          inn.pointlist[2*CurrPoint+1] = Y;
-          inn.pointmarkerlist[CurrPoint] = CurrComp;
-        break;
-
-        case Circle:
-        case Spline2D:
-          BdParts[i]->GetBdComp(j)->GenInitVerts(inn.pointlist, CurrPoint,
-                        inn.segmentlist, CurrSeg);
-
-          N_ = VertsPerComp[CurrComp-1];
-          for (k=0;k<N_;k++)
-          {
-            if (AllowEdgeRef)
-            {
-              if (k) 
-                inn.segmentmarkerlist[CurrSeg++] = CurrComp;
-            }
-            else
-            {
-              if (k) 
-                inn.segmentmarkerlist[CurrSeg++] = 100000 + CurrComp;
-            }
-
-            inn.pointmarkerlist[CurrPoint++] = CurrComp;
-          }
-          CurrPoint--;
-        break;
-
-      default:
-         cerr << "Not a 1D  or 2D BDcomp" << endl;
-             exit(-1);
-        break;	
-	
-      }
-
-      CurrComp++;
-    }
-
-    if (Interfaces[i] > 0)
-      inn.segmentlist[2*CurrSeg-1] = BdStartPoint;
-    else
-      if (ABS(inn.pointlist[2*CurrPoint] -
-              inn.pointlist[2*BdStartPoint]) < 1e-4 &&
-          ABS(inn.pointlist[2*CurrPoint + 1] -
-              inn.pointlist[2*BdStartPoint + 1]) < 1e-4)
-      {
-        inn.segmentlist[2*CurrSeg-1] = BdStartPoint;
-        inn.numberofpoints--;
-      }
-      else
-        CurrPoint++;
-  }
-
-  outt.pointlist = nullptr;        
-  outt.pointmarkerlist = nullptr; 
-  outt.trianglelist = nullptr;    
-  outt.neighborlist = nullptr;
-  outt.segmentlist = nullptr;
-  outt.segmentmarkerlist = nullptr;
-  outt.edgelist = nullptr;        
-  outt.edgemarkerlist = nullptr;  
-  outt.triangleattributelist = nullptr;
-
-  opts << "pq" << TDatabase::ParamDB->MESHGEN_REF_QUALITY;
-  opts << "zneQA" << ends;
-  triangulate((char *)(opts.str().c_str()), &inn, &outt, (struct triangulateio *) nullptr);
-  //SaveTri(outt);
-
-  N_RootCells = outt.numberoftriangles;
-
-  // allocate auxillary fields
-  Coordinates = outt.pointlist;
-  Triangles = outt.trianglelist;
-  PartMarker = new int[outt.numberofpoints];
-
-  N_ = outt.numberofpoints;
-  for (i=0;i<N_;i++)
-    if (outt.pointmarkerlist[i])
-      PartMarker[i] = GetBdPartID(outt.pointmarkerlist[i]-1);
-    else
-      PartMarker[i] = 0;
-
-  // generate all vertices
-  N_ = outt.numberofpoints;
-  NewVertices = new TVertex*[N_];
-
-  for (i=0;i<N_;i++)
-  {
-    X = Coordinates[2*i];
-    Y = Coordinates[2*i+1];
-
-    if ((CurrComp = outt.pointmarkerlist[i]) && AllowEdgeRef)
-    {
-      CurrComp--;
-      part = GetBdPartID(CurrComp);
-      comp = GetLocalBdCompID(CurrComp);
-      if (BdParts[part]->GetBdComp(comp)->GetType() == Circle)
-      {
-        BdParts[part]->GetBdComp(comp)->GetTofXY(X, Y, T);
-        BdParts[part]->GetBdComp(comp)->GetXYofT(T, X, Y);
-      }
-    }
-        
-    NewVertices[i] = new TVertex(X, Y);
-
-    if (X > Xmax) Xmax = X;
-    if (X < Xmin) Xmin = X;
-    if (Y > Ymax) Ymax = Y;
-    if (Y < Ymin) Ymin = Y;
-  }
-
-  // set bounding box
-  StartX = Xmin;
-  StartY = Ymin;
-  BoundX = Xmax - Xmin;
-  BoundY = Ymax - Ymin;
-
-  // generate cells
-  CellTree = new TBaseCell*[N_RootCells];
-
-  for (i=0;i<N_RootCells;i++)
-  {
-    CellTree[i] = new TMacroCell(TDatabase::RefDescDB[Triangle],
-                                 RefLevel);
-
-    CellTree[i]->SetVertex(0, NewVertices[outt.trianglelist[3*i    ]]);
-    CellTree[i]->SetVertex(1, NewVertices[outt.trianglelist[3*i + 1]]);
-    CellTree[i]->SetVertex(2, NewVertices[outt.trianglelist[3*i + 2]]);
-
-    if(N_Regions)
-    {
-      ((TMacroCell *) CellTree[i])->SetSubGridID(
-          (int)(outt.triangleattributelist[i]+0.05));
-      CellTree[i]->SetReference_ID((int)(outt.triangleattributelist[i]+1.05));
-    }
-    else
-      ((TMacroCell *) CellTree[i])->SetSubGridID(0);
-  }
-
-  // initialize iterators
-  TDatabase::IteratorDB[It_EQ]->SetParam(this);
-  TDatabase::IteratorDB[It_LE]->SetParam(this);
-  TDatabase::IteratorDB[It_Finest]->SetParam(this);
-  TDatabase::IteratorDB[It_Between]->SetParam(this);
-  TDatabase::IteratorDB[It_OCAF]->SetParam(this);
-
-  // search neighbours
-  N_ = outt.numberofpoints;
-  PointNeighb = new int[N_];
-
-  memset(PointNeighb, 0, N_ * SizeOfInt);
-
-  for (i=0;i<3*N_RootCells;i++)
-    PointNeighb[Triangles[i]]++;
-
-  for (i=0;i<N_;i++)
-    if (PointNeighb[i] > maxEpV) maxEpV = PointNeighb[i];
-
-  delete PointNeighb;
-  PointNeighb = new int[++maxEpV * N_];
-
-  memset(PointNeighb, 0, maxEpV * N_ * SizeOfInt);
-  
-  // first colomn contains the number of following elements
-  for (i=0;i<3*N_RootCells;i++)
-  {
-    j = Triangles[i]*maxEpV;
-    PointNeighb[j]++;
-    PointNeighb[j + PointNeighb[j]] = i / 3;
-  }
-
-  // generate edges
-  N_ = outt.numberofedges;
-  for (i=0;i<N_;i++)
-  {
-    a = outt.edgelist[2*i];
-    b = outt.edgelist[2*i+1];
-    Neib[0] = -1;
-    Neib[1] = -1;
-    CurrNeib = 0;
-
-    len1 = PointNeighb[a*maxEpV];
-    len2 = PointNeighb[b*maxEpV];
-
-    for (j=1;j<=len1;j++)
-    {
-      aux = PointNeighb[a*maxEpV + j];
-
-      for (k=1;k<=len2;k++)
-        if (aux == PointNeighb[b*maxEpV + k])
-        {
-          Neib[CurrNeib++] = aux;
-          break;
-        }
-
-      if (CurrNeib == 2) break;
-    }
-
-    if (outt.edgemarkerlist[i])
-    {
-      CurrComp = outt.edgemarkerlist[i] - 1;
-      if (CurrComp >= 100000) CurrComp -= 100000;
-
-      part = GetBdPartID(CurrComp);
-      comp = GetLocalBdCompID(CurrComp);
-
-
-     #ifdef _MPI
-     if(rank==0)
-     #endif
-      {
-      if (BdParts[part]->GetBdComp(comp)->GetTofXY(
-            NewVertices[a]->GetX(), NewVertices[a]->GetY(), T_a) ||
-          BdParts[part]->GetBdComp(comp)->GetTofXY(
-            NewVertices[b]->GetX(), NewVertices[b]->GetY(), T_b))
-        cerr << "Warning in GenInitGrid: could not get parameter values!"
-             << endl;
-       }
-
-      if (BdParts[part]->GetBdComp(comp)->GetType() != Line)
-        if (ABS(T_a) < 1e-4 || ABS(T_a) > 0.9999 ||
-            ABS(T_b) < 1e-4 || ABS(T_b) > 0.9999)
-        {
-          X = (NewVertices[a]->GetX() + NewVertices[b]->GetX()) / 2;
-          Y = (NewVertices[a]->GetY() + NewVertices[b]->GetY()) / 2;
-
-          BdParts[part]->GetBdComp(comp)->GetTofXY(X, Y, T);
-
-          if ((T_a - T)*(T - T_b) < 0)
-          {
-            if (ABS(T_a) < 1e-4) T_a = 1.0;
-            if (ABS(T_b) < 1e-4) T_b = 1.0;
-            if (ABS(T_a) > 0.9999) T_a = 0.0;
-            if (ABS(T_b) > 0.9999) T_b = 0.0;
-          }
-        }
-
-      if (CurrNeib == 2)
-        if(BdParts[part]->GetBdComp(comp)->IsFreeBoundary())
-          Joint = new TIsoInterfaceJoint(BdParts[part]->GetBdComp(comp), 
-                  T_a, T_b, CellTree[Neib[0]], CellTree[Neib[1]]);
-        else
-          Joint = new TInterfaceJoint(BdParts[part]->GetBdComp(comp),
-                  T_a, T_b, CellTree[Neib[0]], CellTree[Neib[1]]);
-      else
-        if(BdParts[part]->GetBdComp(comp)->IsFreeBoundary())
-          Joint = new TIsoBoundEdge(BdParts[part]->GetBdComp(comp), T_a, T_b);
-        else
-          Joint = new TBoundEdge(BdParts[part]->GetBdComp(comp), T_a, T_b);
-    }
-    else
-    {
-      if (CurrNeib != 2)
-        cerr << "Warning in GenInitGrid: not enough neighbours!" << endl;
-
-      Joint = new TJointEqN(CellTree[Neib[0]], CellTree[Neib[1]]);
-    }
-
-    for (j=0;j<3;j++)
-      if (Triangles[3*Neib[0]+j] == a) break;
-        
-    for (k=0;k<3;k++)
-      if (Triangles[3*Neib[0]+k] == b) break;
-
-    k = k*10 + j;
-
-    switch (k)
-    {
-      case  1:
-      case 10:
-        aux = 0;
-        break;
-      case 12:
-      case 21:
-        aux = 1;
-        break;
-      case  2:
-      case 20:
-        aux = 2;
-        break;
-    }
-    
-    CellTree[Neib[0]]->SetJoint(aux, Joint);
-    
-    if (Neib[1] != -1)
-    {
-      for (j=0;j<3;j++)
-        if (Triangles[3*Neib[1]+j] == a) break;
-        
-      for (k=0;k<3;k++)
-        if (Triangles[3*Neib[1]+k] == b) break;
-
-      k = k*10 + j;
-
-      switch (k)
-      {
-        case  1:
-        case 10:
-          aux = 0;
-          break;
-        case 12:
-        case 21:
-          aux = 1;
-          break;
-        case  2:
-        case 20:
-          aux = 2;
-          break;
-      }
-    
-      CellTree[Neib[1]]->SetJoint(aux, Joint);
-    }
-
-    if (Joint->GetType() == InterfaceJoint ||
-        Joint->GetType() == IsoInterfaceJoint)
-      ((TInterfaceJoint *) Joint)->CheckOrientation();
-  }
-  
-  delete NewVertices;
-  delete PointNeighb;
-
-  return 0;
-}
-
 
 void TDomain::Init(const std::string& PRM, const std::string& GEO)
 {
@@ -718,11 +280,7 @@ void TDomain::Init(const std::string& PRM, const std::string& GEO)
   }
 
   // Interpret the GEO string - start with default meshes
-  if (GEO == "InitGrid")
-  {
-    GenInitGrid();
-  }
-  else if (GEO == "TwoTriangles")
+  if (GEO == "TwoTriangles")
   {
     TwoTriangles();
   }
@@ -889,7 +447,8 @@ void TDomain::Init(const std::string& PRM, const std::string& GEO)
   }
 }
 
-void TDomain::ReadSandwichGeo(std::string file_name, std::string prm_file_name)
+void TDomain::ReadSandwichGeo(const std::string& file_name,
+                              const std::string& prm_file_name)
 {
 
   // The constructor took care of this nested database being present.
@@ -1064,9 +623,209 @@ void TDomain::ReadSandwichGeo(std::string file_name, std::string prm_file_name)
 
 #endif
 
+#ifdef __2D__
+void TDomain::ReadBdParam(std::istream& dat)
+#else
+void TDomain::ReadBdParam(std::istream& dat, bool& sandwich_flag)
+#endif
+{
+#ifdef _MPI
+  int rank; // out_rank=int(TDatabase::ParamDB->Par_P0);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+#endif
+  char line[100];
+  int i, j, CurrentBdPart, N_BdComp, CompType, CompID = 0, N_Spls;
+#ifdef __2D__
+  TBoundComp2D *BdComp;
+#else
+  TBoundComp3D *BdComp=nullptr;
+  TBoundComp2D *BdComp2D=nullptr;
+  sandwich_flag = false;
+#endif
+
+
+
+  // determine dimensions for creating arrays
+
+  // get the number of boundaries (inner and outer) of the domain
+  dat.getline (line, 99);
+  dat >> N_BoundParts;
+  dat.getline (line, 99);
+
+  BdParts = new TBoundPart*[N_BoundParts];
+  Interfaces = new int[N_BoundParts];
+  N_BoundComps = 0;
+  // StartBdCompID: index in the bdpart list where the new BdPart starts
+  StartBdCompID = new int[N_BoundParts + 1];
+  StartBdCompID[0] = 0; // set the first to 0
+
+  for (i=0;i<N_BoundParts;i++)
+  {
+    dat.getline (line, 99); // IBCT
+    dat >> CurrentBdPart;
+    dat.getline (line, 99);
+    Interfaces[i] = CurrentBdPart;
+    CurrentBdPart = ABS(CurrentBdPart); // it can be negative (for orientation)
+    if (i+1 != CurrentBdPart)
+    {
+#ifdef _MPI
+      if(rank==0)
+#endif
+        ErrThrow("different number of boundary part\nCurrentBdPart ", i, "  ",
+                 CurrentBdPart);
+    }
+
+    // get number of components f the bdpart i
+    dat.getline (line, 99);
+    dat >> N_BdComp;
+    dat.getline (line, 99);
+
+    BdParts[i] = new TBoundPart(N_BdComp);
+    N_BoundComps += N_BdComp;
+    SetStartBdCompID(N_BoundComps, i+1); // set the start ID of the next bdcomp
+
+    dat.getline (line, 99);
+    for (j=0;j<N_BdComp;j++)
+    {
+      dat >> CompType >> N_Spls;  //ITYP NSPLINE NPAR
+      dat.getline (line, 99);
+
+#ifdef __2D__
+      // 2D types: Line (1), Circle (2), Spline (3), Poygon (4), NonUnif Spline (5)
+      switch (abs(CompType))
+      {
+        case 1: BdComp = new TBdLine(CompID++);
+                break;
+        case 2: BdComp = new TBdCircle(CompID++);
+                break;
+        case 3: BdComp = new TBdSpline(CompID++, N_Spls);
+                break;
+        case 4: BdComp = new TBdPolygon(CompID++, N_Spls);
+                break;
+        case 5: BdComp = new TBdNonUniformSpline(CompID++, N_Spls);
+                break;
+        default:
+#ifdef _MPI
+                if(rank==0)
+#endif
+                  OutPut("ReadParam.C: Boundary type not implemented" << endl);
+                exit(-1);
+      }
+#else
+      // 3D types: Line (1), Circle (2), Spline (3), Poygon (4), NonUnif Spline (5),
+      //           Plane (10), Sphere (11)
+      switch (abs(CompType))
+      {
+        case 1: BdComp2D = new TBdLine(CompID++);
+                break;
+        case 2: BdComp2D = new TBdCircle(CompID++);
+                break;
+        case 3: BdComp2D = new TBdSpline(CompID++, N_Spls);
+                break;
+        case 4: BdComp2D = new TBdPolygon(CompID++, N_Spls);
+                break;
+        case 5: BdComp2D = new TBdNonUniformSpline(CompID++, N_Spls);
+                break;
+        case 10: BdComp = new TBdPlane(CompID++);
+                 break;
+        case 11: BdComp = new TBdSphere(CompID++);
+                 break;
+        case 4711: BdComp = new TBdNoPRM(CompID++); // create grid without PRM file
+                   break;
+        default:
+#ifdef _MPI
+                   if(rank==0)
+#endif
+                     OutPut("ReadParam.C: Boundary type (3D) not implemented" << endl);
+                   exit(-1);
+      }
+
+      if(abs(CompType)<10)
+      {
+        BdComp = new TBdWall(CompID-1, BdComp2D);
+        sandwich_flag = true;
+      }
+#endif // 3D
+      BdParts[i]->SetBdComp(j, BdComp);
+
+      if(CompType<0)
+      {
+        BdComp->SetFreeBoundaryStatus(true);
+        cout <<i<< " ReadBdParam : " << j << endl;
+      }
+    }
+  }
+
+  dat.getline (line, 99);
+  for (i=0;i<N_BoundParts;i++)
+  {
+    N_BdComp = BdParts[i]->GetN_BdComps();
+    for (j=0;j<N_BdComp;j++)
+    {
+      BdParts[i]->GetBdComp(j)->ReadIn(dat);
+    }
+  }
+
+  // read HOLES (if any)
+  dat.getline (line, 99);
+  N_Holes = -12345;
+  if (dat.eof())
+    N_Holes = 0;
+  else
+    dat >> N_Holes;
+
+  if(N_Holes == -12345)
+    N_Holes = 0;
+
+  dat.getline (line, 99);
+
+  if (N_Holes)
+  {
+    // coordinates of a point in a hole
+    PointInHole = new double[2*N_Holes];
+
+    dat.getline (line, 99);
+    for (i=0;i<N_Holes;i++)
+    {
+      dat >> PointInHole[2*i] >> PointInHole[2*i+1];
+      dat.getline (line, 99);
+    }
+  }
+  else
+    PointInHole = nullptr;
+
+  dat.getline (line, 99);
+  N_Regions = -12345;
+  if (dat.eof())
+    N_Regions = 0;
+  else
+    dat >> N_Regions;
+
+  if(N_Regions == -12345)
+    N_Regions = 0;
+
+  dat.getline (line, 99);
+
+  // read REGIONS (if any)
+  if (N_Regions)
+  {
+    PointInRegion = new double[4*N_Regions];
+
+    dat.getline (line, 99);
+    for (i=0;i<N_Regions;i++)
+    {
+      dat >> PointInRegion[4*i] >> PointInRegion[4*i+1];
+      PointInRegion[4*i+2] = i;
+      PointInRegion[4*i+3] = 10000;
+      dat.getline (line, 99);
+    }
+  }
+  else
+    PointInRegion = nullptr;
+}
 
 // initialize a domain from a mesh and a boundary(PRM) file
-void TDomain::InitFromMesh(std::string PRM, std::string MESHFILE)
+void TDomain::InitFromMesh(const std::string& PRM, const std::string& MESHFILE)
 {
 #ifdef __2D__
   Output::print<3>("TDomain:: InitFromMesh using ", PRM, " and ", MESHFILE);
@@ -1182,90 +941,30 @@ void TDomain::InitFromMesh(std::string PRM, std::string MESHFILE)
 #endif
 }
 
-int TDomain::PS(const char *name, Iterators iterator, int arg)
+void TDomain::PS(const char *name, Iterators iterator, int arg)
 {
-  int BX, BY, info, i;
-  double scale;
-  std::ofstream dat(name);
-  TBaseCell *CurrCell;
-
-  if (!dat)
-  {
-    cerr << "cannot open '" << name << "' for output" << endl;
-    return -1;
-  }
-
-  cout << "Generating postscript file " << name << endl;
-  
-  // scale = 5350 / BoundX;
-  // if (7820 / BoundY < scale) scale = 7820 / BoundY;
-  scale = 535 / BoundX;
-  if (782 / BoundY < scale) scale = 782 / BoundY;
-
-  BX = (int) (BoundX * scale + .5);
-  BY = (int) (BoundY * scale + .5);
-
-  dat << "%!PS-Adobe-2.0" << endl;
-  dat << "%%Creator: MooN_MD (Volker Behns)" << endl;
-  dat << "%%DocumentFonts: Helvetica" << endl;
-  // dat << "%%BoundingBox: 300 300 " << 300+BX << " " << 300+BY << endl;
-  dat << "%%BoundingBox: 25 25 " << 35+BX << " " << 35+BY << endl;
-  dat << "%%Pages: 1" << endl;
-  dat << "%%EndComments" << endl;
-  dat << "%%EndProlog" << endl;
-  dat << "%%Page: 1 1" << endl;
-  dat << "/Helvetica findfont 14 scalefont setfont" << endl;
-  dat << "/Cshow { dup stringwidth pop 2 div neg 0 rmoveto show } def" << endl;
-  dat << "/M { moveto } def" << endl;
-  dat << "/L { lineto } def" << endl;
-  //dat << "0.10 0.10 scale" << endl;
-  //dat << "10.0 setlinewidth" << endl;
-  dat << "0.5 setlinewidth" << endl;
-
-  TDatabase::IteratorDB[iterator]->Init(arg);
-
-  // loop over all cells
-  i = 0;
-  while((CurrCell = TDatabase::IteratorDB[iterator]->Next(info)))
-  {
-    CurrCell->SetClipBoard(i);
-    CurrCell->PS(dat, scale, StartX, StartY);
-    i++;
-  }
-
-  dat << "stroke" << endl;
-  dat << "showpage" << endl;
-  dat << "%%Trailer" << endl;
-  dat << "%%Pages: 1" << endl;
-
-  return 0;
+  TCollection * coll = this->GetCollection(iterator, arg);
+  this->PS(name, coll);
+  delete coll;
 }
 
-int TDomain::PS(const char *name, TCollection *Coll)
+void TDomain::PS(const char *name, TCollection *Coll)
 {
-  int BX, BY;
-  double scale;
   std::ofstream dat(name);
-  TBaseCell *CurrCell;
-  int i, N_;
-
   if (!dat)
   {
-    cerr << "cannot open '" << name << "' for output" << endl;
-    return -1;
+    Output::warn("TDomain::PS", "unable to open ", name, " for output");
+    return;
   }
-
   Output::info("PS","Generating postscript file ", name);
-
-  N_ = Coll->GetN_Cells();
   
   // scale = 5350 / BoundX;
   // if (7820 / BoundY < scale) scale = 7820 / BoundY;
-  scale = 535 / BoundX;
+  double scale = 535 / BoundX;
   if (782 / BoundY < scale) scale = 782 / BoundY;
 
-  BX = (int) (BoundX * scale + .5);
-  BY = (int) (BoundY * scale + .5);
+  int BX = (int) (BoundX * scale + .5);
+  int BY = (int) (BoundY * scale + .5);
 
   dat << "%!PS-Adobe-2.0" << endl;
   dat << "%%Creator: MooN_MD (Volker Behns)" << endl;
@@ -1285,81 +984,19 @@ int TDomain::PS(const char *name, TCollection *Coll)
   dat << "0.5 setlinewidth" << endl;
 
   // loop over all cells
-  for(i=0;i<N_;i++)
+  int n_cells = Coll->GetN_Cells();
+  for(int i = 0; i < n_cells; i++)
   {
-    CurrCell = Coll->GetCell(i);
-    CurrCell->SetClipBoard(i);
-    CurrCell->PS(dat, scale, StartX, StartY);
+    Coll->GetCell(i)->PS(dat, scale, StartX, StartY); // no cell indices
+    //Coll->GetCell(i)->PS(dat, scale, StartX, StartY, i); // with cell indices
   }
 
   dat << "stroke" << endl;
   dat << "showpage" << endl;
   dat << "%%Trailer" << endl;
   dat << "%%Pages: 1" << endl;
-
-  return 0;
 }
 
-int TDomain::MD_raw(const char *name, Iterators iterator, int arg)
-{
-  int N_Tri = 0, N_Quad = 0, info;
-  std::ofstream dat(name);
-  TBaseCell *CurrCell;
-  int OutValue[6];
-
-  if (!dat)
-  {
-    cerr << "cannot open '" << name << "' for output" << endl;
-    return -1;
-  }
-
-  TDatabase::IteratorDB[iterator]->Init(arg);
-
-  // loop over all cells
-  while ((CurrCell = TDatabase::IteratorDB[iterator]->Next(info)))
-    if (CurrCell->GetRefDesc()->GetShapeDesc()->GetType() == Triangle)
-      N_Tri++;
-    else
-      N_Quad++;
-
-  // write heads of files
-  OutValue[0] = 2;           // dimension
-  OutValue[1] = 2;           // number of object classes
-  OutValue[2] = Triangle;
-  OutValue[3] = N_Tri;
-  OutValue[4] = Quadrangle;
-  OutValue[5] = N_Quad;
-
-#ifdef __COMPAQ__
-  SwapIntArray(OutValue, 6);
-#endif
-  dat.write((const char *) OutValue, 6*SizeOfInt);
-
-  // fill data in files
-  if (N_Tri)
-  {
-    TDatabase::IteratorDB[iterator]->Init(arg);
-
-    // loop over all cells
-    while( (CurrCell = TDatabase::IteratorDB[iterator]->Next(info)))
-      if (CurrCell->GetRefDesc()->GetShapeDesc()->GetType() == Triangle)
-        CurrCell->MD_raw(dat);
-  }
-
-  if (N_Quad)
-  {
-    TDatabase::IteratorDB[iterator]->Init(arg);
-
-    // loop over all cells
-    while ((CurrCell = TDatabase::IteratorDB[iterator]->Next(info)))
-      if (CurrCell->GetRefDesc()->GetShapeDesc()->GetType() == Quadrangle)
-        CurrCell->MD_raw(dat);
-  }
-
-  dat.close();
-
-  return 0;
-}
 
 int TDomain::Refine()
 {
@@ -1395,25 +1032,6 @@ int TDomain::RegRefineAll()
   return 0;
 }
 
-int TDomain::RegRefineSub(int ID)
-{
-  TBaseCell *CurrCell;
-  int info;
-
-  RefLevel++;
-
-  TDatabase::IteratorDB[It_Finest]->Init(0);
-
-  // loop over all cells
-  while ((CurrCell = TDatabase::IteratorDB[It_Finest]->Next(info)))
-    if (CurrCell->GetSubGridID() == ID)
-    {
-      CurrCell->SetRegRefine();
-      CurrCell->Refine(RefLevel);
-    }
-
-  return 0;
-}
 
 int TDomain::RefineByIndicator(DoubleFunct2D *Indicator)
 {
@@ -1451,158 +1069,6 @@ int TDomain::RefineByIndicator(DoubleFunct2D *Indicator)
   return Gen1RegGrid();
 }
 
-int TDomain::RefineByErrorEstimator(TCollection *Collection,
-                                    double *eta_K, double eta_max,
-                                    double eta, bool ConfClosure)
-{
-  TBaseCell *cell;
-  int m, N_,changed, refine_strategy,max_cell_level,it=0,max_it=100;
-  double reftol, min_fraction_to_change, coarsetol, decrease_reftol_factor;
-  double sum_local_errors, increase_coarsetol_factor;
-  double fraction_of_error, min_changed;
-
-  // the following are recommendations
-  // all variables in capital letters can be defined in readin.dat
-  refine_strategy=0;
-  reftol = 0.5;
-  coarsetol =0.0;  
-  min_fraction_to_change = 0.1;
-  decrease_reftol_factor = 0.8;
-  increase_coarsetol_factor = 1.1;
-  fraction_of_error = 0.25;
-  max_cell_level = 100000;
-
-  // the actual values are read from readin.dat
-
-  refine_strategy=TDatabase::ParamDB->REFINE_STRATEGY;  // refinement strategy
-  reftol=TDatabase::ParamDB->REFTOL; 
-                                  // tolerance for refinement
-
-  coarsetol=TDatabase::ParamDB->COARSETOL; 
-                                  // tolerance for derefinement
-
-  if (coarsetol>=reftol)
-    coarsetol=0.001*reftol;
-  // minimal fraction of cells to refine
-  min_fraction_to_change=TDatabase::ParamDB->MIN_FRACTION_TO_CHANGE; 
-
-  // decrease reftol if necessary by this
-  decrease_reftol_factor=TDatabase::ParamDB->DECREASE_REFTOL_FACTOR;
-
-  // increase coarsetol if necessary by this
-  increase_coarsetol_factor=TDatabase::ParamDB->INCREASE_COARSETOL_FACTOR; 
-
-  // fraction of global error    
-  fraction_of_error=TDatabase::ParamDB->FRACTION_OF_ERROR;
-
-  // maximal geo level of a cell
-  max_cell_level=TDatabase::ParamDB->MAX_CELL_LEVEL;
-
-  if (refine_strategy==0)         // compare with the maximal local error
-  {
-    reftol = reftol*eta_max;
-    reftol *= reftol;           // since local estimates are stored as square
-    coarsetol = coarsetol*eta_max;
-    coarsetol = coarsetol*coarsetol;
-    N_=Collection->GetN_Cells();       // # cells
-    min_changed=N_*min_fraction_to_change; // minimal number of cells to change
-    changed=-1;
-    while ((changed< min_changed)&&(it<max_it))
-    {
-      changed=0;
-      for(m=0;m<N_;m++)              // loop over all cells
-      {
-        cell=Collection->GetCell(m);
-        // mark cell for refinement
-        if ((eta_K[m]>=reftol)&&(cell->GetGeoLevel()<max_cell_level))
-        {
-          cell->SetRegRefine();    
-          changed++;
-        }
-        if (eta_K[m]<=coarsetol)   // mark cell for coarsening
-        {
-          ;
-        }
-      }
-      if (changed< min_changed)      // not enough cells marked,
-                                     // change tolerances
-      {
-        reftol*=decrease_reftol_factor;
-        coarsetol *=increase_coarsetol_factor;
-      }
-      Output::print<2>("total ", N_, " changed ",  changed);
-      it++;
-    }
-    if (ConfClosure)
-    {
-      Output::print<3>(" before ");
-      MakeConfClosure();
-      Output::print<3>(" after ");
-      
-      return 0;
-    }
-    else
-    {  
-      Refine();                          // refine marked cells
-      return Gen1RegGrid();              // make grid 1--regular 
-    }
-  }
-
-  if (refine_strategy==1)       // mark smalles set of cells whose
-                                // sum of local errors
-  {                             // is prescribed fraction of global error
-    reftol = 0.9*eta_max;       // set refinement tolerance
-    reftol *= reftol;           // since local estimates are stored as square
-    coarsetol = coarsetol*eta_max;
-    coarsetol = coarsetol*coarsetol;
-    N_=Collection->GetN_Cells();       // # cells
-    min_changed=N_*min_fraction_to_change;   // minimal number of cells
-                                             // to be changed
-    changed=-1;
-    sum_local_errors = 0.0;            // sum of local errors of marked cells
-    while ((changed< min_changed)&&(sum_local_errors <=
-            fraction_of_error * eta)&&(it<max_it))
-    {
-      changed=0;
-      for(m=0;m<N_;m++)              // loop over all cells
-      {
-        cell=Collection->GetCell(m);
-        // mark cell for refinement
-        if ((eta_K[m]>=reftol)&&(cell->GetGeoLevel()<max_cell_level))
-        {
-          cell->SetRegRefine();    
-          sum_local_errors += eta_K[m];
-          changed++;
-        }
-        if (eta_K[m]<=coarsetol)   // mark cell for derefinement
-        {
-          ;
-        }
-      }
-      Output::stat<2>("total ", N_ , " changed ",  changed, " global error "
-                  , eta, " error of refined cells ", sqrt(sum_local_errors));
-      if ((changed< min_changed)||(sqrt(sum_local_errors) <=
-           fraction_of_error * eta))
-      {                  // criteria not fulfilled, change tolerances
-        reftol*=decrease_reftol_factor;
-        coarsetol *=increase_coarsetol_factor;
-        sum_local_errors = 0.0;
-      }
-      it++;
-    }
-    if (ConfClosure)
-    {
-      MakeConfClosure();
-      return 0;
-    }
-    else
-    {
-      Refine();
-      return Gen1RegGrid();
-    }
-  }
-  return 0;
-}
 
 #ifdef __2D__
 int TDomain::MakeConfClosure()
@@ -3066,245 +2532,9 @@ void TDomain::MakeBdParamsConsistent(TCollection *coll)
 
 #endif
 
-#ifdef __2D__
-/** set boundary parameters and cell shape according to
-    possibly moving vertices */
-//  TDatabase::IteratorDB[It_Finest]->Init(0);
-//  MaxLevel = TDatabase::IteratorDB[It_Finest]->GetMaxLevel();
-//  
-//  for (CurrLevel=MaxLevel;CurrLevel>0;CurrLevel--)
-//  {
-//    TDatabase::IteratorDB[It_EQ]->Init(CurrLevel);
-//
-//    while ((CurrCell = TDatabase::IteratorDB[It_EQ]->Next(info)))
-//      if (!CurrCell->ExistChildren())
-//        CurrCell->Gen1RegGrid();
-//  }
-void TDomain::CorrectParametersAndShapes()
-{
-  int MaxLevel, CurrLevel;
-  int info, j, N_Edges;
-  TVertex **Vertices;
-  TJoint *joint;
-  TGridCell *ActiveCell;
-
-  TDatabase::IteratorDB[It_Finest]->Init(0);
-  MaxLevel = TDatabase::IteratorDB[It_Finest]->GetMaxLevel();
-  
-  for (CurrLevel=MaxLevel;CurrLevel>=0;CurrLevel--)
-  {
-    TDatabase::IteratorDB[It_EQ]->Init(CurrLevel);
-
-    while ((ActiveCell = (TGridCell *)(TDatabase::IteratorDB[It_EQ]->Next(info))))
-    {
-      Vertices = ActiveCell->GetVertices();
-      N_Edges = ActiveCell->GetN_Edges();
-      for(j=0;j<N_Edges;j++)
-      {
-        joint = ActiveCell->GetJoint(j);
-        if(joint->GetType() == BoundaryEdge)
-        {
-          ((TBoundEdge *)joint)->UpdateParameters(Vertices[j],
-                            Vertices[(j+1)%N_Edges]);
-        }
-        if(joint->GetType() == InterfaceJoint)
-        {
-          ((TInterfaceJoint *)joint)->UpdateParameters(Vertices[j],
-                            Vertices[(j+1)%N_Edges]);
-        }
-      }
-    
-      // if Cell is a quadrilateral
-      if(N_Edges == 4)
-      {
-        if(ActiveCell->ExistChildren())
-          ActiveCell->SetRefDesc(TDatabase::RefDescDB[N_SHAPES+((TQuadrangle *)
-               TDatabase::RefDescDB[Quadrangle]->GetShapeDesc())->
-               CheckQuad(Vertices)]);
-        else
-          ActiveCell->SetRefDesc(TDatabase::RefDescDB[((TQuadrangle *)
-               TDatabase::RefDescDB[Quadrangle]->GetShapeDesc())->
-               CheckQuad(Vertices)]);
-      } // endif
-    } // endwhile
-  } // endfor
-} // CorrectParametersAndShapes
-//  TGridCell *Cell, *ActiveCell;
-//  int i,j,k;
-//  int N_Edges;
-//  TJoint *joint;
-//  TVertex **Vertices;
-//  int ActiveLevel, ActiveRootCell;
-//  int *N_Children, *CurrentChild;
-//  int MaxN_Levels;
-//
-//  ActiveLevel = 0;
-//  ActiveRootCell = 0;
-//  MaxN_Levels = TDatabase::IteratorDB[It_Finest]->GetMaxLevel();
-//  MaxN_Levels = 3;
-//  N_Children = new int[MaxN_Levels];
-//  CurrentChild = new int[MaxN_Levels];
-//  for(k=0;k<MaxN_Levels;k++)
-//  {
-//    N_Children[k] = 0;
-//    CurrentChild[k] = 0;
-//  }
-//
-//  do
-//  {
-//    if (ActiveLevel)
-//      do
-//      {
-//        ActiveCell = (TGridCell *)(ActiveCell->GetParent());
-//        N_Children[ActiveLevel] = 0;
-//        CurrentChild[ActiveLevel--] = 0;
-//      } while (ActiveLevel &&
-//          N_Children[ActiveLevel] == CurrentChild[ActiveLevel]);
-//
-//    if (!ActiveLevel &&
-//          N_Children[ActiveLevel] == CurrentChild[ActiveLevel])
-//    {
-//      if (ActiveRootCell < N_RootCells)
-//      {
-//        ActiveCell = (TGridCell *)(CellTree[ActiveRootCell++]);
-//        N_Children[ActiveLevel] = ActiveCell->GetN_Children();
-//        CurrentChild[ActiveLevel] = 0;
-//      }
-//      else
-//        return;
-//    }
-//
-//    while(N_Children[ActiveLevel])
-//    {
-//      ActiveCell = (TGridCell *)(ActiveCell->GetChild(CurrentChild[ActiveLevel]++));
-//      N_Children[++ActiveLevel] = ActiveCell->GetN_Children();
-//    }
-//
-//    for(k=0;k<MaxN_Levels;k++)
-//      cout << "xyz" << k << " " << N_Children[k] << " " << CurrentChild[k] << endl;
-//
-//    Vertices = ActiveCell->GetVertices();
-//    N_Edges = ActiveCell->GetN_Edges();
-//    for(j=0;j<N_Edges;j++)
-//    {
-//      joint = ActiveCell->GetJoint(j);
-//      if(joint->GetType() == BoundaryEdge)
-//      {
-//        ((TBoundEdge *)joint)->UpdateParameters(Vertices[j],
-//                          Vertices[(j+1)%N_Edges]);
-//      }
-//      if(joint->GetType() == InterfaceJoint)
-//      {
-//        ((TInterfaceJoint *)joint)->UpdateParameters(Vertices[j],
-//                          Vertices[(j+1)%N_Edges]);
-//      }
-//    }
-//
-//    // if Cell is a quadrilateral
-//    if(N_Edges == 4)
-//    {
-//      if(ActiveCell->ExistChildren())
-//        ActiveCell->SetRefDesc(TDatabase::RefDescDB[N_SHAPES+((TQuadrangle *)
-//             TDatabase::RefDescDB[Quadrangle]->GetShapeDesc())->
-//             CheckQuad(Vertices)]);
-//      else
-//        ActiveCell->SetRefDesc(TDatabase::RefDescDB[((TQuadrangle *)
-//             TDatabase::RefDescDB[Quadrangle]->GetShapeDesc())->
-//             CheckQuad(Vertices)]);
-//    }
-//
-//  } while(ActiveCell);
-#endif
-
-/*
-#include <stdio.h>
-
-void SaveTri(struct triangulateio &outt)
-{
-  FILE *f;
-  int i;
-
-  f = fopen ("ch.node", "wt");
-  fprintf(f, "%d   2   0  1\n", outt.numberofpoints);
-  for (i=0; i<=outt.numberofpoints-1; i++)
-    fprintf(f,"%6d  %10.4f  %10.4f  %6d\n",i, outt.pointlist[2*i],
-                   outt.pointlist[2*i+1], outt.pointmarkerlist[i]);
-  fclose(f);
-
-  f = fopen ("ch.ele", "wt");
-  fprintf(f, "%d   3\n", outt.numberoftriangles);
-  for (i=0; i<=outt.numberoftriangles-1; i++)
-    fprintf(f,"%6d  %6d  %6d  %6d\n", i, outt.trianglelist[3*i], 
-             outt.trianglelist[3*i+1], outt.trianglelist[3*i+2]);
-  fclose(f);
- 
-  f = fopen ("ch.neigh", "wt");
-  fprintf(f, "%d   3\n", outt.numberoftriangles);
-  for (i=0; i<=outt.numberoftriangles-1; i++)
-    fprintf(f,"%6d  %6d  %6d  %6d\n", i, outt.neighborlist[3*i], 
-             outt.neighborlist[3*i+1], outt.neighborlist[3*i+2]);
-  fclose(f);
- 
-  f = fopen ("ch.edge", "wt");
-  fprintf(f, "%d   1\n", outt.numberofedges);
-  for (i=0; i<=outt.numberofedges-1; i++)
-    fprintf(f,"%6d  %6d  %6d  %6d\n", i, outt.edgelist[2*i], 
-             outt.edgelist[2*i+1], outt.edgemarkerlist[i]);
-  fclose(f);
-}
-*/
-
-
-int TDomain::RefineallxDirection()
-{
-	TBaseCell *CurrCell;
-	int info;
-	static int s = 0;  // changed from 0 to 1, if refine in y direction  
-
-	RefLevel ++;
-	TDatabase::IteratorDB[It_Finest]->Init(0);
-
-	//loop over all cells
-
-	while((CurrCell=TDatabase::IteratorDB[It_Finest]->Next(info)))
-	{
-	  switch(CurrCell->GetType())
-	  {
-		case Quadrangle:
-	  	case Parallelogram:
-		case Rectangle:
-			CurrCell->SetRefDesc(TDatabase::RefDescDB[N_SHAPES+QuadBis0+s]);
-			CurrCell->Refine(RefLevel);
-		break;
-	  default:
-            cerr << "RefineallxDirection only for Quad cells" << endl;
-             exit(-1);
-          break;	
-	  }
-	}
-
-	s = 1;
-	
-	return 0;
-}
 
 
 #ifdef __3D__
-// int TDomain::Tetgen(const char *FileName)
-// {
-//   TTetGenMeshLoader MeshLoader(FileName);
-//   MeshLoader.Generate(this);
-// 
-//   // initialize iterators
-//   TDatabase::IteratorDB[It_EQ]->SetParam(this);
-//   TDatabase::IteratorDB[It_LE]->SetParam(this);
-//   TDatabase::IteratorDB[It_Finest]->SetParam(this);
-//   TDatabase::IteratorDB[It_Between]->SetParam(this);
-//   TDatabase::IteratorDB[It_OCAF]->SetParam(this);
-// 
-//   return 0;
-// }
-
 /** @brief added by sashi */
 int TDomain::GenerateEdgeInfo()
 {
@@ -3317,7 +2547,7 @@ int TDomain::GenerateEdgeInfo()
   TBaseCell **cells, *CurrCell, *NeibCell, **NeibCells;
   Iterators it=It_Finest;
   TVertex **Vertices_All, *Last, *Current;
-  TShapeDesc *ShapeDesc, *NeibShapeDesc;
+  const TShapeDesc *ShapeDesc, *NeibShapeDesc;
   TEdge *edge, *Neibedge;
   TJoint *joint;
 
@@ -3647,7 +2877,7 @@ size_t TDomain::get_max_n_adaptive_steps() const
   return db["refinement_max_n_adaptive_steps"];
 }
 
-void TDomain::print_info(std::string name) const
+void TDomain::print_info(const std::string& name) const
 {
 #ifdef _MPI
   int my_rank, size;
@@ -3734,18 +2964,16 @@ void determine_n_refinement_steps_multigrid(
   }
 }
 
-std::list<TCollection* > TDomain::refine_and_get_hierarchy_of_collections(
-    const ParameterDatabase& parmoon_db
-#ifdef _MPI
-    , int& maxSubDomainPerDof
-#endif
-    )
+std::list<TCollection*> TDomain::refine_and_get_hierarchy_of_collections(
+    const ParameterDatabase& parmoon_db)
 {
 #ifdef _MPI
   int my_rank, size;
   MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
 #endif
+  gridCollections.clear();
+  gridCollections.push_front(this->GetCollection(It_Finest, 0));
 
   // Split the number of refinement steps - see doc of the method
   // TODO Removing this strange construction is a TODO
@@ -3769,6 +2997,7 @@ std::list<TCollection* > TDomain::refine_and_get_hierarchy_of_collections(
       this->barycentric_refinement();
     else
       this->RegRefineAll();
+    gridCollections.push_front(this->GetCollection(It_Finest, 0));
   }
 
 #ifdef _MPI
@@ -3791,13 +3020,14 @@ std::list<TCollection* > TDomain::refine_and_get_hierarchy_of_collections(
   //(since distributing changed the domain).
   this->GenerateEdgeInfo();
 
-  // calculate largest possible number of processes which share one dof
-  maxSubDomainPerDof = MIN(maxCellsPerVertex, size);
+  // with _MPI the coarser grids are no longer used
+  gridCollections.clear();
+  gridCollections.push_front(this->GetCollection(It_Finest, 0));
 
 #endif
 
-  std::list<TCollection* > gridCollections;
-  gridCollections.push_front(this->GetCollection(It_Finest, 0));
+  
+  
 
   //this is only relevant for multigrid
   for(int level=0; level < n_ref_after; ++level)
@@ -3861,8 +3091,7 @@ void TDomain::buildBoundary(Mesh& m)
   // vector of boundary parts
   this->BdParts = new TBoundPart* [this->N_BoundParts];
 
-  // the number of boundary components is computed from the adjacency of
-  // tetgen mesh. See TTetGenMeshLoaden::CreateAdjacency()
+  // the number of boundary components is computed from the adjacency
   this->N_BoundComps = m.n_boundary_faces;
   meshBoundComps.resize(this->N_BoundComps);
   Output::print("TDomain::buildBoundary() - N_BoundComps: ", this->N_BoundComps);
@@ -3970,7 +3199,7 @@ void TDomain::buildParMooNMesh(Mesh& m)
 /**
  * @brief set the coordinates of the vertices
  *
- * This functions reads the vertices coordinates from meshTetGenOut
+ * This functions reads the vertices coordinates 
  * and creates TVertex*, stored in the vector meshVertices
  * Moreover, bounds for the domain are computed
  */
@@ -4079,7 +3308,7 @@ void TDomain::distributeJoints(Mesh& m)
     const int *TmpFV, *TmpLen;
     int MaxLen;
     
-    TShapeDesc *ShapeDesc = CellTree[i]->GetShapeDesc();
+    const TShapeDesc *ShapeDesc = CellTree[i]->GetShapeDesc();
     ShapeDesc->GetFaceVertex(TmpFV, TmpLen, MaxLen);
 
     for(int j=0;j<4;++j)
@@ -4123,306 +3352,9 @@ void TDomain::distributeJoints(Mesh& m)
   }
 
 }
-
-void TDomain::GenerateFromTetgen(TTetGenMeshLoader& tgml)
-{
-  // check file extensions, call tetgen and generate the volume mesh,
-  // the has list and the adjacency between faces
-  // note: the mesh is contained in the  (tetgenio) meshTetGenOut object
-  tgml.GenerateMesh();
-
-  /*
-  // build the boundary parts
-  this->buildBoundary(tgml);
-
-  // build the mesh
-  this->buildParMooNMesh(tgml);
-  
-  // initialize iterators
-  TDatabase::IteratorDB[It_EQ]->SetParam(this);
-  TDatabase::IteratorDB[It_LE]->SetParam(this);
-  TDatabase::IteratorDB[It_Finest]->SetParam(this);
-  TDatabase::IteratorDB[It_Between]->SetParam(this);
-  TDatabase::IteratorDB[It_OCAF]->SetParam(this);  
-  */
-}
-
-// =======================================
-// note this function needs:
-// list of triangles (faces)
-// number of boundary faces
-// adjacency (1,-1 for boundary faces)
-// list of points
-// Can we use push_back to fill the meshBoundComps vector?
-void TDomain::buildBoundary(TTetGenMeshLoader& tgml)
-{
-  // we consider only 1 boundary part
-  ///@todo do we need to take into account the general case?
-  this->N_BoundParts = 1;
-  // vector of boundary parts
-  this->BdParts = new TBoundPart* [this->N_BoundParts];
-
-  // the number of boundary components is computed from the adjacency of
-  // tetgen mesh. See TTetGenMeshLoaden::CreateAdjacency()
-  this->N_BoundComps = tgml.nBoundaryComponents;
-  meshBoundComps.resize(this->N_BoundComps); 
-  Output::print("TDomain::buildBoundary() - N_BoundComps: ", this->N_BoundComps);
-  this->BdParts[0] = new TBoundPart(this->N_BoundComps);
-  
-  // StartBdCompID[i] gives the iindex of the element in BdParts
-  // where the BdComp i starts. The last element is equal to to N_BoundParts
-  this->StartBdCompID = new int [this->N_BoundParts+1];
-
-  // we now consider only a boundary components,
-  // i.e. StartBdCompID[0] = 0, StartBdCompID[1] = N_BoundComps
-  ///@todo check how we can extend this to multiple boundary markers
-  this->StartBdCompID[0] = 0; 
-  this->StartBdCompID[1] = this->N_BoundComps;
+#endif // 2D
 
 
-  // in order to describe the boundary, each boundary triangle is considered
-  // to be a boundary component of the (single) boundary part.
-  // Hence,
-  // (*) first, we check if the triangle is on the boundary
-  // (*) second, given the vertices, we define a TBdPlane describing the triangle
-  int n_trifaces = tgml.meshTetGenOut.numberoftrifaces;
-  int *trifaces = tgml.meshTetGenOut.trifacelist;
-  int counter=0; // count the number of boundary faces found
-
-  ///@attention misuse of trifacemarkerlist
-  //  0 = boundary faces, i>0 = i-th boundary face
-  ///@todo this should be changed in order to allow physical boundary markers
-  if(tgml.meshTetGenOut.trifacemarkerlist == nullptr)
-    tgml.meshTetGenOut.trifacemarkerlist = new int [n_trifaces];
-
-  for(int i=0;i<n_trifaces;++i)
-  {
-    if(tgml.meshTetGenOut.adjtetlist[2*i+1] == -1 ||
-      tgml.meshTetGenOut.adjtetlist[2*i  ] == -1)
-    {
-      // the face is on the boundary
-      meshBoundComps.at(counter) = new TBdPlane(counter);
-      double p[3], a[3], b[3], n[3];
-      p[0] = tgml.meshTetGenOut.pointlist[3*trifaces[3*i  ]  ];
-      a[0] = tgml.meshTetGenOut.pointlist[3*trifaces[3*i+1]  ] - p[0];
-      b[0] = tgml.meshTetGenOut.pointlist[3*trifaces[3*i+2]  ] - p[0];
-      p[1] = tgml.meshTetGenOut.pointlist[3*trifaces[3*i  ]+1];
-      a[1] = tgml.meshTetGenOut.pointlist[3*trifaces[3*i+1]+1] - p[1];
-      b[1] = tgml.meshTetGenOut.pointlist[3*trifaces[3*i+2]+1] - p[1];
-      p[2] = tgml.meshTetGenOut.pointlist[3*trifaces[3*i  ]+2];
-      a[2] = tgml.meshTetGenOut.pointlist[3*trifaces[3*i+1]+2] - p[2];
-      b[2] = tgml.meshTetGenOut.pointlist[3*trifaces[3*i+2]+2] - p[2];
-      // normalize vector a
-      double fac = sqrt(a[0]*a[0]+a[1]*a[1]+a[2]*a[2]);
-      a[0] /= fac;
-      a[1] /= fac;
-      a[2] /= fac;
-      // normalize vector b
-      fac = sqrt(b[0]*b[0]+b[1]*b[1]+b[2]*b[2]);
-      b[0] /= fac;
-      b[1] /= fac;
-      b[2] /= fac;
-      // cross product of a and b
-      n[0] = a[1]*b[2] - a[2]*b[1];
-      n[1] = a[2]*b[0] - a[0]*b[2];
-      n[2] = a[0]*b[1] - a[1]*b[0];
-      // normalize n
-      fac = sqrt(n[0]*n[0]+n[1]*n[1]+n[2]*n[2]);
-      n[0] /= fac;
-      n[1] /= fac;
-      n[2] /= fac;
-
-      ((TBdPlane*) meshBoundComps[counter])->SetParams(p[0], p[1], p[2],
-                                                       a[0], a[1], a[2],
-                                                       n[0], n[1], n[2]);
-      ++counter;
-      
-      // the id of the boundary face is taken as the attribute of the triangle
-      // note: later, trifacemarkerlist=0 is used to identify inner faces (see below)
-      tgml.meshTetGenOut.trifacemarkerlist[i] = counter;
-    }
-    else // not a boundary face
-      tgml.meshTetGenOut.trifacemarkerlist[i] = 0;
-  }
-
-  // check if the number of boundary components is consistent
-  assert(counter==N_BoundComps);
-  // initialize ParMooN BdParts and the BdComp
-  for(int i=0; i<this->N_BoundComps; i++)
-    this->BdParts[0]->SetBdComp(i, meshBoundComps[i]);
-  
-
-}
-
-void TDomain::buildParMooNMesh(TTetGenMeshLoader& tgml)
-{
-  // create a vector<TVertex*> from the list of pointa
-  this->setVertices(tgml);
-  // allocate memory for CellTree and set the vertices
-  this->allocRootCells(tgml);  
-  // create joints and set joints type
-  this->distributeJoints(tgml);
-}
-
-/**
- * @brief set the coordinates of the vertices
- *
- * This functions reads the vertices coordinates from meshTetGenOut
- * and creates TVertex*, stored in the vector meshVertices
- * Moreover, bounds for the domain are computed
- * 
- * @todo should this function be split in two parts:
- * e.g. setVertices and computeDomainBounds?
- */
-void TDomain::setVertices(TTetGenMeshLoader& tgml)
-{
-  double x, y, z;
-  double xmin=0, xmax=0, ymin=0, ymax=0, zmin=0, zmax=0;
-  meshVertices.resize(tgml.meshTetGenOut.numberofpoints); 
-  
-  for(int i=0;i<tgml.meshTetGenOut.numberofpoints;++i)
-  {
-    x = tgml.meshTetGenOut.pointlist[3*i  ];
-    y = tgml.meshTetGenOut.pointlist[3*i+1];
-    z = tgml.meshTetGenOut.pointlist[3*i+2];
-
-    if(i > 0)
-    {
-      if(xmin > x) xmin = x;
-      if(xmax < x) xmax = x;
-
-      if(ymin > y) ymin = y;
-      if(ymax < y) ymax = y;
-
-      if(zmin > z) zmin = z;
-      if(zmax < z) zmax = z;
-    }
-    else
-    {
-      xmin = xmax = x;
-      ymin = ymax = y;
-      zmin = zmax = z;
-    }
-
-    meshVertices.at(i)=new TVertex (x, y, z);
-  }
-
-  StartX = xmin;
-  BoundX = xmax - xmin;
-
-  StartY = ymin;
-  BoundY = ymax - ymin;
-
-  StartZ = zmin;
-  BoundZ = zmax - zmin;
-
-  Output::print("number of vertices: ", tgml.meshTetGenOut.numberofpoints);
-}
-
-void TDomain::allocRootCells(TTetGenMeshLoader& tgml)
-{
-  TVertex *Vertex;
-  TMacroCell *Cell;
-  // set the number of total cells and allocate the cell array
-  this->N_RootCells = tgml.meshTetGenOut.numberoftetrahedra;
-  Output::print<3>("TDomain::allocRootCells() number of tetrahedra: ",
-		   tgml.meshTetGenOut.numberoftetrahedra);
-
-  this->CellTree = new TBaseCell* [this->N_RootCells];
-  // set the vertices of each cell, reading from meshVertices
-  for(int i=0;i<this->N_RootCells;++i)
-  {
-    Cell = new TMacroCell (TDatabase::RefDescDB[Tetrahedron], 0);
-    this->CellTree[i] = Cell;
-    
-    for(int j=0;j<4;++j)
-    {
-      Vertex = meshVertices.at(tgml.meshTetGenOut.tetrahedronlist[4*i+j]);
-      Cell->SetVertex(j, Vertex);
-    }
-    Cell->SetPhase_ID((int) tgml.meshTetGenOut.tetrahedronattributelist[i]);
-    
-  }
-
-}
-
-///@attention the functions hashTriFaces(), CreateAdjacency() must have been called before
-void TDomain::distributeJoints(TTetGenMeshLoader& tgml)
-{
-  // size of meshjoint
-  meshJoints.resize(tgml.meshTetGenOut.numberoftrifaces);
-  // search face which belongs to current bdComp
-  for(int i=0;i<tgml.meshTetGenOut.numberoftrifaces;++i)
-  {
-    // find element that contain this face
-    if(tgml.meshTetGenOut.trifacemarkerlist[i] == 0)// inner joints
-    {
-      int left = tgml.meshTetGenOut.adjtetlist[2*i];
-      int right = tgml.meshTetGenOut.adjtetlist[2*i+1];
-      
-      meshJoints.at(i) = new TJointEqN (CellTree[left], CellTree[right]);
-    }
-    else // boundary joints
-    {
-      Output::print<5>("boundary joint");
-      int bdcomp = tgml.meshTetGenOut.trifacemarkerlist[i] - 1;
-      TBoundComp3D* BoundComp = meshBoundComps[bdcomp];
-      meshJoints.at(i)=new TBoundFace (BoundComp);
-    }
-  }
-
-  Output::print("number of joints: ", tgml.meshTetGenOut.numberoftrifaces);
-  
-  for(int i=0;i<tgml.meshTetGenOut.numberoftetrahedra;++i)
-  {
-    const int *TmpFV, *TmpLen;
-    int MaxLen;
-    
-    TShapeDesc *ShapeDesc = CellTree[i]->GetShapeDesc();
-    ShapeDesc->GetFaceVertex(TmpFV, TmpLen, MaxLen);
-
-    for(int j=0;j<4;++j)
-    {
-      ///@attention make sure that the vector meshTrifaceHash has been created 
-      int triface =
-	tgml.findTriFace(tgml.meshTetGenOut.tetrahedronlist[4*i+TmpFV[j*MaxLen  ]],
-			 tgml.meshTetGenOut.tetrahedronlist[4*i+TmpFV[j*MaxLen+1]],
-			 tgml.meshTetGenOut.tetrahedronlist[4*i+TmpFV[j*MaxLen+2]]);
-
-      assert (triface != -1);
-
-      CellTree[i]->SetJoint(j, meshJoints.at(triface));
-
-      // correct params
-      if(meshJoints.at(triface)->GetType() == BoundaryFace)
-      {
-
-        TBoundFace *BoundFace = (TBoundFace*) meshJoints.at(triface);
-        TBoundComp3D *BoundComp = BoundFace->GetBoundComp();
-        double x, y, z, t, s;
-        double param1[4], param2[4];
-
-        for(int k=0;k<TmpLen[j];++k)
-        {
-          CellTree[i]->GetVertex(TmpFV[MaxLen*j+k])->GetCoords(x,y,z);
-          BoundComp->GetTSofXYZ(x,y,z, t, s);
-
-          param1[k] = t;
-          param2[k] = s;
-        }
-        BoundFace->SetParameters(param1, param2);
-      }
-    }
-  }
-  // set map type
-  for(int i=0;i<tgml.meshTetGenOut.numberoftrifaces;++i)
-  {
-    meshJoints[i]->SetMapType();
-  }
-}
-
-#endif
-//CW DEBUG
 #ifdef  __3D__
 bool TDomain::check() const
 {

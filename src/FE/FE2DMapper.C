@@ -60,12 +60,10 @@ TFE2DMapper::TFE2DMapper(char *name, char *description,int n0, int n1,
   Aux=new int[n_nodes];
 }
 
-void TFE2DMapper::Map(int *Global, int I_K0, int I_K1, 
-                    int *Indices0, int *Indices1,
-                    int LocEdge0, int LocEdge1,
-                    TFEDesc2D *Desc0, TFEDesc2D *Desc1,
-                    int &Counter, std::vector<THangingNode *> *vect,
-                    std::vector<int> *numbers)
+void TFE2DMapper::Map(int *Global, int I_K0, int I_K1, int *Indices0,
+                      int *Indices1, int, int, TFEDesc2D *, TFEDesc2D *,
+                      int &Counter, std::vector<THangingNode *> *vect,
+                      std::vector<int> *numbers)
 {
   static int i, v, w, N_;
   static THangingNode *hn;

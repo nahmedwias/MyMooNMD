@@ -13,7 +13,7 @@ AnalyticalFunction::AnalyticalFunction(double a)
   : depends_on_time(false), 
     function(std::function<void(const Point&, double time,
                                 FunctionEvaluation&)>(
-        [a, this](const Point& point, double time, FunctionEvaluation& v)
+        [a, this](const Point&, double, FunctionEvaluation& v)
         {
           v.reset();
           v.set(a, 0,
@@ -27,7 +27,7 @@ AnalyticalFunction::AnalyticalFunction(double a)
 AnalyticalFunction::AnalyticalFunction(
     std::function<void(const Point&, FunctionEvaluation&)> f)
   : depends_on_time(false), 
-    function([f](const Point& p, double time, FunctionEvaluation& v)
+    function([f](const Point& p, double, FunctionEvaluation& v)
              { return f(p,v); }),
     constant(false)
 {

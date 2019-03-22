@@ -18,17 +18,17 @@ static double NF_C_Q_UL9SE_2D_Eta[] = {
 static double NF_C_Q_UL9SE_2D_T[] = {
 -1.0 ,-7.0/9.0 ,-5.0/9.0 ,-1.0/3.0 ,-1.0/9.0 ,1.0/9.0 ,1.0/3.0 ,5.0/9.0 ,7.0/9.0 ,1.0 };
 
-void NF_C_Q_UL9SE_2D_EvalAll(TCollection *Coll, TBaseCell *Cell, double *PointValues,
-                          double *Functionals)
+void NF_C_Q_UL9SE_2D_EvalAll(TCollection *, const TBaseCell *,
+                             const double *PointValues, double *Functionals)
 {
   memcpy(Functionals, PointValues, 85*SizeOfDouble);
-};
+}
 
-void NF_C_Q_UL9SE_2D_EvalEdge(TCollection *Coll, TBaseCell *Cell, int Joint, double *PointValues,
-                           double *Functionals)
+void NF_C_Q_UL9SE_2D_EvalEdge(TCollection *, const TBaseCell *, int,
+                              const double *PointValues, double *Functionals)
 {
   memcpy(Functionals, PointValues, 10*SizeOfDouble);
-};
+}
 
 TNodalFunctional2D *NF_C_Q_UL9SE_2D_Obj = new TNodalFunctional2D
         (NF_C_Q_UL9SE_2D, 85, 10, 85, 10, NF_C_Q_UL9SE_2D_Xi, NF_C_Q_UL9SE_2D_Eta,

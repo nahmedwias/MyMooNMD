@@ -284,8 +284,9 @@ class Parameter
     /// A typical use case is `print_description(os, "# ", 60, "")` to print the
     /// description in files as a comment. See also the implementation of 
     /// Parameter::info() for another use case.
-    void print_description(std::ostream& os, std::string prepend = "", 
-                           size_t max_width = 80, std::string key = "") const;
+    void print_description(std::ostream& os, const std::string& prepend = "", 
+                           size_t max_width = 80,
+                           const std::string& key = "") const;
   protected:
     
     /// @brief the type of this parameter (not changeable after construction)

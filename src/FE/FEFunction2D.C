@@ -23,6 +23,8 @@
 #include <MainUtilities.h>
 #include <MooNMD_Io.h>
 #include <AuxParam2D.h>
+#include <GridCell.h>
+#include <ConvDiff.h>
 
 #include <InterfaceJoint.h>
 #include <IsoBoundEdge.h>
@@ -31,8 +33,6 @@
 
 #include <fstream>
 #include <sstream>
-#include <MooNMD_Io.h>
-// #include <malloc.h>
 #include <dirent.h> 
 #include <unistd.h>
 #include <sys/stat.h>
@@ -42,7 +42,7 @@
 #include <BaseCell.h>
 #include <BoundaryAssembling2D.h>
 
-void OnlyDirichlet(int i, double t, BoundCond &cond)
+void OnlyDirichlet(int, double, BoundCond &cond)
 {
   cond = DIRICHLET;
 }
@@ -56,8 +56,10 @@ TFEFunction2D::TFEFunction2D() :
 }
 
 /** constructor with vector initialization */
-TFEFunction2D::TFEFunction2D(const TFESpace2D *fespace2D, std::string name,
-    std::string description, double *values, int length)
+TFEFunction2D::TFEFunction2D(std::shared_ptr<const TFESpace2D> fespace2D,
+                             const std::string& name,
+                             const std::string& description, double *values,
+                             int length)
 : Name(name), Description(description)
 {
   Output::print<5>("Constructor of TFEFunction2D");
@@ -79,8 +81,7 @@ TFEFunction2D::~TFEFunction2D()
 /** Calculate L2-errors to a given function at the boundary */
 /** written by Laura Blank 27.02.18 */
 void TFEFunction2D::GetL2BoundaryError(BoundValueFunct2D *Exact,
-                                       TAuxParam2D *Aux,
-                                       int n_fespaces,
+                                       TAuxParam2D *, int,
                                        const TFESpace2D **fespaces,
                                        double *final_boundary_error_l2,
                                        bool rescale_by_h_E)
@@ -179,39 +180,132 @@ void TFEFunction2D::GetL2BoundaryError(BoundValueFunct2D *Exact,
   }
  }
 
+//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+/** Calculate L2-errors to a given function at the boundary (without the global database)*/
+void TFEFunction2D::GetL2BoundaryError(BoundValueFunct2D *Exact,
+                                       TAuxParam2D *, int,
+                                       const TFESpace2D **fespaces,
+                                       double *final_boundary_error_l2,
+                                       int boundary_component_id,
+                                       bool rescale_by_h_E)
+{
+  int *GlobalNumbers = FESpace2D->GetGlobalNumbers();
+  int *BeginIndex = FESpace2D->GetBeginIndex();
+  int *N_BaseFunct = TFEDatabase2D::GetN_BaseFunctFromFE2D();
+
+  // ########################################################################
+  // loop over all Nitsche edges
+  // ########################################################################
+  TCollection *Coll = fespaces[0]->GetCollection();  // all spaces use the same Coll
+
+  final_boundary_error_l2[0] = 0;
+
+    // Create a list of those boundary edges that are on the boundary component with given ID
+    std::vector<TBoundEdge*> boundaryEdgeList;
+    Coll->get_edge_list_on_component(boundary_component_id, boundaryEdgeList);
+
+    double boundary_error_l2_on_Component = 0;
+
+    for(size_t m = 0; m < boundaryEdgeList.size(); m++)
+    {
+      TBoundEdge *boundedge = boundaryEdgeList[m];
+      TBaseCell *cell = boundedge->GetNeighbour(0);
+      // get basis dimension and FE space data of the current cell
+      // Here it is assumed that only one local FE space is used for the hole mesh!
+      FE2D CurrentElement_FEID = FESpace2D->GetFE2D(0, cell);
+
+      BaseFunct2D *BaseFuncts = TFEDatabase2D::GetBaseFunct2D_IDFromFE2D();
+      // calculate all needed values and derivatives of the basis functions
+      BaseFunct2D BaseFunct = BaseFuncts[CurrentElement_FEID];
+      if(TFEDatabase2D::GetBaseFunct2D(BaseFunct)->GetBaseVectDim() > 1)
+      {
+        ErrMsg("The method "
+            << "TFEFunction2D::GetL2BoundaryErrors"
+            << "is not designed for vector valued functions");
+        OutPut("No errors were computed\n");
+        return;
+      }
+
+      int BaseVectDim = 1;
+      int joint_id = boundedge->get_index_in_neighbour(cell);
+      // get a quadrature formula good enough for the argument of the integral
+      int fe_degree = TFEDatabase2D::GetPolynomialDegreeFromFE2D(CurrentElement_FEID);
+      QuadFormula1D LineQuadFormula = TFEDatabase2D::GetQFLineFromDegree((TDatabase::ParamDB->INPUT_QUAD_RULE < 2*fe_degree)? 2*fe_degree : TDatabase::ParamDB->INPUT_QUAD_RULE);
+      std::vector<double> quadWeights, quadPoints;
+      BoundaryAssembling2D::get_quadrature_formula_data(quadPoints, quadWeights, LineQuadFormula);
+      // compute values of all basis functions and their first partial derivatives at all quadrature points
+      std::vector< std::vector<double> > uorig, u_dx_orig ,u_dy_orig;
+      BoundaryAssembling2D::get_original_values(CurrentElement_FEID, joint_id, cell, quadPoints, BaseVectDim, uorig, u_dx_orig, u_dy_orig, LineQuadFormula);
+
+      int N_ = N_BaseFunct[CurrentElement_FEID];
+
+      double FEFunctValues[MaxN_BaseFunctions2D];
+      int *DOF = GlobalNumbers + BeginIndex[cell->GetCellIndex()];
+      for(int l = 0; l < N_; l++)
+      {
+        FEFunctValues[l] = Values[DOF[l]];
+      }
+
+      double summing_boundary_error_l2_on_edge = 0;
+      double edge_length = boundedge->get_length();
+      double reference_edge_length = 2; // [-1,1] is the reference edge here
+
+      for(size_t j = 0; j < quadPoints.size(); j++)
+      {
+        double value = 0;
+        for(int l = 0; l < N_; l++)
+        {
+          value += FEFunctValues[l] * uorig[j][l]; // compute u_h|T = \sum \alpha_i \Phi_i
+        }
+        auto comp = boundedge->GetBoundComp();
+        int comp_ID = comp->GetID();
+        double t0, t1;
+        boundedge->GetParameters(t0, t1);
+        double t = t0 + 0.5 * (t1-t0) * (quadPoints[j]+1);
+        double ExactVal, Diff;
+        Exact(comp_ID, t, ExactVal);
+        Diff = ExactVal - value;
+
+        if(rescale_by_h_E)
+        {
+          summing_boundary_error_l2_on_edge += quadWeights[j] * edge_length/reference_edge_length * 1/edge_length * Diff * Diff;
+        }
+        else
+        {
+          summing_boundary_error_l2_on_edge += quadWeights[j] * edge_length/reference_edge_length * Diff * Diff;
+        }
+      }
+      boundary_error_l2_on_Component += summing_boundary_error_l2_on_edge;
+    }
+    final_boundary_error_l2[0] +=  boundary_error_l2_on_Component;
+ }
 
 //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 /** calculate errors to given function */
 /** parallel with MPI, Sashi : 10.10.09 */
 void TFEFunction2D::GetErrors(DoubleFunct2D *Exact, int N_Derivatives,
     MultiIndex2D *NeededDerivatives,
-    int N_Errors, ErrorMethod2D *ErrorMeth, 
+    int N_Errors, ErrorMethod *ErrorMeth, 
     CoeffFct2D Coeff, 
     TAuxParam2D *Aux,
     int n_fespaces, const TFESpace2D **fespaces,
-    double *errors, bool is_SDFEM, 
+    double *errors, bool,
     std::function<bool(const TBaseCell*, int)>funct) const
 {
-  bool *SecondDer = new bool[n_fespaces];
+  bool SecondDer[n_fespaces];
   // initialize the array SecondDer as either all true or all false.
   {
     // find out if one of the indices in NeededDerivatives refers to a second
     // order derivative
     bool need_second_derivatives = false;
     for(int i = 0; i < N_Derivatives; ++i)
+    {
       if(NeededDerivatives[i] == D20 || NeededDerivatives[i] == D11 ||
           NeededDerivatives[i] == D02)
         need_second_derivatives = true;
-    if(need_second_derivatives)
-    {
-      for(int i = 0; i < n_fespaces; i++)
-        SecondDer[i] = true;
     }
-    else
-    {
-      for(int i = 0; i < n_fespaces; i++)
-        SecondDer[i] = false;
-    }
+    for(int i = 0; i < n_fespaces; i++)
+      SecondDer[i] = need_second_derivatives;
   }
 
   double *aux;
@@ -237,8 +331,6 @@ void TFEFunction2D::GetErrors(DoubleFunct2D *Exact, int N_Derivatives,
   for(int j = 0; j < MaxN_QuadPoints_2D; j++)
     AuxArray[j] = aux + j*20;
 
-  int *GlobalNumbers = FESpace2D->GetGlobalNumbers();
-  int *BeginIndex = FESpace2D->GetBeginIndex();
   BaseFunct2D *BaseFuncts = TFEDatabase2D::GetBaseFunct2D_IDFromFE2D();
   int *N_BaseFunct = TFEDatabase2D::GetN_BaseFunctFromFE2D();
 
@@ -296,7 +388,7 @@ void TFEFunction2D::GetErrors(DoubleFunct2D *Exact, int N_Derivatives,
 
     TQuadFormula2D *quad_formula = TFEDatabase2D::GetQuadFormula2D(qf_id);
     int N_QuadPoints;
-    double *weights, *xi, *eta;
+    const double *weights, *xi, *eta;
     quad_formula->GetFormulaData(N_QuadPoints, weights, xi, eta);
 
     // get quadrature coordinates on original cell (also AbsDetjk is filled)
@@ -338,28 +430,13 @@ void TFEFunction2D::GetErrors(DoubleFunct2D *Exact, int N_Derivatives,
     if(N_Parameters>0)
       Aux->GetParameters(N_QuadPoints, Coll, cell, i, xi, eta, X, Y, Param);
 
-    if(is_SDFEM ||
-        (TDatabase::ParamDB->BULK_REACTION_DISC == SDFEM))
-    {
-      TDatabase::ParamDB->INTERNAL_LOCAL_DOF = i;
-      int N_Edges = cell->GetN_Edges();
-      for (int ij = 0; ij < N_Edges; ij++)
-      {
-        TDatabase::ParamDB->INTERNAL_VERTEX_X[ij] = cell->GetVertex(ij)->GetX();
-        TDatabase::ParamDB->INTERNAL_VERTEX_Y[ij] = cell->GetVertex(ij)->GetY();
-      }
-      if(N_Edges==3)
-        TDatabase::ParamDB->INTERNAL_VERTEX_X[3] = -4711;
-      TDatabase::ParamDB->INTERNAL_HK_CONVECTION = -1;
-    }
-
     // calculate all needed derivatives of this FE function
     CurrentElement_FEID = FESpace2D->GetFE2D(i, cell);
     BaseFunct = BaseFuncts[CurrentElement_FEID];
     int N_ = N_BaseFunct[CurrentElement_FEID];
 
     double FEFunctValues[MaxN_BaseFunctions2D];
-    int *DOF = GlobalNumbers + BeginIndex[i];
+    int *DOF = FESpace2D->GetGlobalDOF(i);
     for(int l = 0; l < N_; l++)
     {
       FEFunctValues[l] = Values[DOF[l]];
@@ -415,12 +492,12 @@ void TFEFunction2D::GetErrors(DoubleFunct2D *Exact, int N_Derivatives,
       hK = -4711;
     }
 #endif
-    double LocError[4];
-    ErrorMeth(N_QuadPoints, X, Y, AbsDetjk, weights, hK, Derivatives, 
+    double LocError[N_Errors];
+    ErrorMeth(N_QuadPoints, {{X, Y}}, AbsDetjk, weights, hK, Derivatives, 
         ExactVal, AuxArray, LocError);
 
 #ifdef __2D__
-    if (!(ErrorMeth == &SDFEMErrors))
+    if (!(ErrorMeth == &conv_diff_l2_h1_linf_error<2>))
     {
       for(int j = 0; j < N_Errors; j++)
         errors[j] += LocError[j];
@@ -442,7 +519,7 @@ void TFEFunction2D::GetErrors(DoubleFunct2D *Exact, int N_Derivatives,
 #ifdef __2D__
   if (!(ErrorMeth == &L1Error))
   {
-    if (!(ErrorMeth == &SDFEMErrors))
+    if (!(ErrorMeth == &conv_diff_l2_h1_linf_error<2>))
     {
       for(int j = 0; j < N_Errors; j++)
         errors[j] = sqrt(errors[j]);
@@ -465,7 +542,6 @@ void TFEFunction2D::GetErrors(DoubleFunct2D *Exact, int N_Derivatives,
     OutPut("Maximal pointwise error appeared in: " <<  x_coord_max_error << " " <<  y_coord_max_error << " value: " << errors[N_Errors]  << endl);
 
   delete [] AuxArray[0];
-  delete [] SecondDer;
   delete [] ExactVal[0];
   delete [] Derivatives[0];
   delete [] Param[0];
@@ -547,7 +623,7 @@ double TFEFunction2D::get_L2_norm() const
     auto basis_functions = fe.GetBaseFunct2D();
     auto n_local_basis_functions = basis_functions->GetDimension();
     int N_QuadPoints;
-    double *weights, *xi, *eta;
+    const double *weights, *xi, *eta;
     // get quadrature coordinates on original cell (also AbsDetjk is filled)
     double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D];
     double AbsDetjk[MaxN_QuadPoints_2D];
@@ -700,8 +776,8 @@ void TFEFunction2D::FindGradient(double x, double y, double *values) const
 /** determine the value of function and its first derivatives at
   the given point which lies within !! the cell *cell (not on the boundary
   of that cell !!) */
-void TFEFunction2D::FindGradientLocal(TBaseCell *cell, int cell_no, double x,
-    double y, double *values) const
+void TFEFunction2D::FindGradientLocal(const TBaseCell *cell, int cell_no, 
+                                      double x, double y, double *values) const
 {
   int j,k;
   double xi, eta, eps = 1e-20;
@@ -819,8 +895,8 @@ void TFEFunction2D::FindGradientLocal(TBaseCell *cell, int cell_no, double x,
   cell *cell. This also works for vector valued basis functions as are used 
   for Raviart-Thomas elements.
  */
-void TFEFunction2D::FindValueLocal(TBaseCell *cell, int cell_no, double x,
-    double y, double *values) const
+void TFEFunction2D::FindValueLocal(const TBaseCell *cell, int cell_no, double x,
+                                   double y, double *values) const
 {
   int i, j, k;
   double xi, eta;
@@ -934,7 +1010,7 @@ void TFEFunction2D::Interpolate(DoubleFunct2D *Exact)
   int N_DOFs, N_LocalDOFs;
   int *BeginIndex, *GlobalNumbers;
   int N_Points;
-  double *xi, *eta;
+  const double *xi, *eta;
   int *DOF;
   TRefTrans2D *rt;
   double X[MaxN_PointsForNodal2D], Y[MaxN_PointsForNodal2D];
@@ -1085,7 +1161,7 @@ void TFEFunction2D::Interpolate(DoubleFunct2D *Exact)
 /** calculate parameters which are connected to a mesh cell */
 void TFEFunction2D::GetMeshCellParams(DoubleFunct2D* Exact, int N_Derivatives, 
     MultiIndex2D* NeededDerivatives,
-    int N_Errors, ErrorMethod2D* ErrorMeth,
+    int N_Errors, ErrorMethod* ErrorMeth,
     CoeffFct2D Coeff, TAuxParam2D* Aux,
     int n_fespaces,
     const TFESpace2D** fespaces,
@@ -1098,7 +1174,8 @@ void TFEFunction2D::GetMeshCellParams(DoubleFunct2D* Exact, int N_Derivatives,
   BaseFunct2D BaseFunct, *BaseFuncts;
   TCollection *Coll;
   TBaseCell *cell;
-  double *weights, *xi, *eta;
+  const double *weights;
+  const double *xi, *eta;
   double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D];
   double AbsDetjk[MaxN_QuadPoints_2D];
   double *Param[MaxN_QuadPoints_2D], *aux;
@@ -1217,7 +1294,7 @@ void TFEFunction2D::GetMeshCellParams(DoubleFunct2D* Exact, int N_Derivatives,
     if(Coeff)
       Coeff(N_Points, X, Y, Param, AuxArray);
 
-    ErrorMeth(N_Points, X, Y, AbsDetjk, weights, hK, Derivatives,
+    ErrorMeth(N_Points, {{X, Y}}, AbsDetjk, weights, hK, Derivatives,
         ExactVal, AuxArray, LocError);
 
     for(j=0;j<N_Errors;j++)
@@ -1252,7 +1329,7 @@ void TFEFunction2D::InterpolateSuper(DoubleFunct2D *Exact)
   int N_DOFs, N_LocalDOFs;
   int *BeginIndex, *GlobalNumbers;
   int N_Points;
-  double *xi, *eta;
+  const double *xi, *eta;
   int *DOF;
   RefTrans2D F_K = TriaAffin; //avoid uninit warning
   TRefTrans2D *rt;
@@ -1419,7 +1496,7 @@ void TFEFunction2D::InterpolateSuper(DoubleFunct2D *Exact)
  */
 void TFEFunction2D::GetErrorsForVectorValuedFunction(
     DoubleFunct2D * const * const Exact, 
-    ErrorMethod2D * const ErrorMeth, 
+    ErrorMethod * const ErrorMeth, 
     double * const errors) const
 {
   // set all errors to zero at first
@@ -1448,8 +1525,8 @@ void TFEFunction2D::GetErrorsForVectorValuedFunction(
 
     TQuadFormula2D *qf = TFEDatabase2D::GetQuadFormula2D(quad_formula_id);
     int n_points; // number of quadrature points in one cell
-    double *xi,*eta; // coordinates of quadrature points in reference cell
-    double *weights; // quadrature weights
+    const double *xi,*eta; // coordinates of quadrature points in reference cell
+    const double *weights; // quadrature weights
     qf->GetFormulaData(n_points, weights, xi, eta);
     // modulus of determinant of reference transformation for each quadrature
     // point
@@ -1530,7 +1607,7 @@ void TFEFunction2D::GetErrorsForVectorValuedFunction(
     double hK=1; // we set it one here since it is not needed in 
     // ErrorMeth=L2H1Errors
     double LocError[3]; // L^2 error in value, divergence and first derivative
-    ErrorMeth(n_points, X, Y, AbsDetjk, weights, hK, Derivatives, 
+    ErrorMeth(n_points, {{X, Y}}, AbsDetjk, weights, hK, Derivatives, 
         ExactVal, nullptr, LocError);
     for(int j = 0; j < 3; j++) 
     {
@@ -1551,7 +1628,8 @@ void TFEFunction2D::GetErrorsForVectorValuedFunction(
 
 
 /** write the solution into a data file - written by Sashi **/
-void TFEFunction2D::WriteSol(std::string directory, std::string basename)
+void TFEFunction2D::WriteSol(const std::string& directory,
+                             const std::string& basename)
 {
   int i, N_Joints, N_Cells;
   static int img=0;
@@ -1656,7 +1734,7 @@ void TFEFunction2D::Interpolate(TFEFunction2D *OldFeFunction)
   int N_Points, *DOF;
   int *IntIndex;
 
-  double *xi, *eta;
+  const double *xi, *eta;
   double X[MaxN_PointsForNodal2D], Y[MaxN_PointsForNodal2D];
   double AbsDetjk[MaxN_PointsForNodal2D];
   double PointValues[MaxN_PointsForNodal2D];
@@ -1791,6 +1869,100 @@ void TFEFunction2D::Interpolate(TFEFunction2D *OldFeFunction)
 }
 
 /** ************************************************************************* */
+void TFEFunction2D::add(AnalyticFunction f)
+{
+  int N_Points;
+  const double *xi, *eta;
+  // begin code
+
+  TCollection *Coll = FESpace2D->GetCollection();
+  int N_Cells = Coll->GetN_Cells();
+  int N_DOFs = FESpace2D->GetN_DegreesOfFreedom();
+  std::vector<int> IntIndex(N_DOFs, 0);
+
+  for(int i = 0; i < N_Cells; i++)
+  {
+    const TBaseCell * cell = Coll->GetCell(i);
+    const TFE2D& Element = FESpace2D->get_fe(i);
+    auto nf = Element.GetNodalFunctional2D();
+    nf->GetPointsForAll(N_Points, xi, eta);
+    int N_LocalDOFs = Element.GetN_DOF();
+    
+    if(Element.GetBaseFunct2D()->GetBaseVectDim() != 1)
+      ErrThrow("TFEFunction2D::add not implemented for vector-valued basis "
+               "functions");
+
+    BF2DRefElements RefElement = Element.GetBaseFunct2D()->GetRefElement();
+    int N_Edges = (RefElement == BFUnitSquare) ? 4 : 3; // else BFUnitTriangle
+    RefTrans2D RefTrans = Element.GetRefTransID();
+    bool IsIsoparametric = false;
+    if(TDatabase::ParamDB->USE_ISOPARAMETRIC)
+    {
+      for(int j = 0; j < N_Edges; j++)
+      {
+        const TJoint * joint = cell->GetJoint(j);
+        JointType jointtype = joint->GetType();
+        if(jointtype == BoundaryEdge)
+        {
+          auto bdjoint = static_cast<const TBoundEdge *>(joint);
+          BoundTypes bdtype = bdjoint->GetBoundComp()->GetType();
+          if(bdtype != Line)
+            IsIsoparametric = true;
+        }
+        if(jointtype == InterfaceJoint)
+        {
+          auto ifjoint = static_cast<const TInterfaceJoint*>(joint);
+          BoundTypes bdtype = ifjoint->GetBoundComp()->GetType();
+          if(bdtype != Line)
+            IsIsoparametric = true;
+        }
+        if(jointtype == IsoInterfaceJoint || jointtype == IsoBoundEdge)
+          IsIsoparametric = true;
+      }
+    }
+
+    if(IsIsoparametric)
+    {
+      RefTrans = (RefElement == BFUnitSquare) ? QuadIsoparametric 
+                                              : TriaIsoparametric;
+    }
+
+    TFEDatabase2D::SetCellForRefTrans(cell, RefTrans);
+    std::vector<double> X(N_Points, 0.);
+    std::vector<double> Y(N_Points, 0.);
+    std::vector<double> AbsDetjk(N_Points, 0.);
+    TFEDatabase2D::GetOrigFromRef(RefTrans, N_Points, xi, eta, X.data(),
+                                  Y.data(), AbsDetjk.data());
+    std::vector<double> PointValues(N_Points, 0.);
+
+    for(int j = 0; j < N_Points; j++)
+    {
+      PointValues[j] = f(cell, i, {{X[j], Y[j]}});
+    }
+    std::vector<double> FunctionalValues(N_LocalDOFs, 0.);
+    nf->GetAllFunctionals(Coll, (TGridCell *)cell, PointValues.data(),
+        FunctionalValues.data());
+
+    int * DOF = FESpace2D->GetGlobalDOF(i);
+
+    for(int j = 0; j < N_LocalDOFs; j++)
+    {
+      if(IntIndex[DOF[j]] == 0)
+        Values[DOF[j]] += FunctionalValues[j];
+      IntIndex[DOF[j]] ++;
+    }
+  }
+
+  for(int i = 0; i < N_DOFs; i++)
+  {
+    if(IntIndex[i] == 0)
+    {     
+      ErrThrow("TFEFunction2D::add: unable to set dof ", i);
+    }
+  }
+}
+
+/** ************************************************************************* */
 void TFEFunction2D::compute_integral_and_measure(double& integral, 
     double& measure) const
 {
@@ -1809,8 +1981,9 @@ void TFEFunction2D::compute_integral_and_measure(double& integral,
 
     // calculate values on original element (i.e. prepare reference 
     // transformation)
-    bool SecondDer = false; // defined in include/General/Constants.h
-    double *weights, *xi, *eta;//quadrature weights and points in reference cell
+    bool SecondDer = false;
+    // quadrature weights and points in reference cell
+    const double *weights, *xi, *eta;
     // ugly, we need to change GetOrig!!
     double X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D]; // quadrature points
     double AbsDetjk[MaxN_QuadPoints_2D]; // determinant of transformation
@@ -1885,7 +2058,7 @@ void TFEFunction2D::project_into_L20(double a)
     int * DOF = FESpace2D->GetGlobalDOF(i);
     TNodalFunctional2D *nf = TFEDatabase2D::GetNodalFunctional2DFromFE2D(feID);
     int n_points; // number of evaluation points to compute nodal functionals
-    double *xi, *eta; // coordinates of evaluation points in reference cell
+    const double *xi, *eta; //coordinates of evaluation points in reference cell
     nf->GetPointsForAll(n_points, xi, eta);
     double *point_values = new double[n_points];
     for(int j = 0; j < n_points; j++)
@@ -1972,7 +2145,7 @@ void TFEFunction2D::MinMax(double & min, double & max) const
   }
 }
 
-void TFEFunction2D::PrintMinMax(std::string name) const
+void TFEFunction2D::PrintMinMax(const std::string& name) const
 {
   double min, max;
   this->MinMax(min, max);
@@ -2003,7 +2176,7 @@ void TFEFunction2D::SetDirichletBC(BoundCondFunct2D *BoundaryCondition,
   TBoundEdge *boundedge;
   TIsoBoundEdge *isoboundedge;
   TNodalFunctional2D *nf;
-  TBoundComp2D* BoundComp;
+  const TBoundComp2D* BoundComp;
   BoundCond Cond0, Cond1;
   double PointValues[MaxN_PointsForNodal2D];
   double FunctionalValues[MaxN_BaseFunctions2D];
@@ -2014,7 +2187,7 @@ void TFEFunction2D::SetDirichletBC(BoundCondFunct2D *BoundaryCondition,
   int *BeginIndex, *GlobalNumbers;
   int *DOF;
   int *EdgeDOF, N_EdgePoints;
-  double *EdgePoints;
+  const double *EdgePoints;
   double eps=1e-4;
 
   BeginIndex = FESpace2D->GetBeginIndex();
@@ -2167,7 +2340,7 @@ void  TFEFunction2D::GetMassAndMean(double *OutVal)
   int *BeginIndex, *GlobalNumbers, *DOF, N_BF;
 
   double Mult, r_axial, val, mass, volume;
-  double *weights, *xi, *eta;
+  const double *weights, *xi, *eta;
   double values[MaxN_QuadPoints_2D][MaxN_BaseFunctions2D];
   double AbsDetjk[MaxN_QuadPoints_2D], X[MaxN_QuadPoints_2D], Y[MaxN_QuadPoints_2D];
 

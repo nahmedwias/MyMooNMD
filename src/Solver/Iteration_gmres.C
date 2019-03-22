@@ -82,7 +82,7 @@ class TriangularMatrix
     // one vector for each row
     std::vector<std::vector<double>> entries;
     
-    TriangularMatrix(const unsigned int size) : entries(size)
+    explicit TriangularMatrix(const unsigned int size) : entries(size)
     {
       Output::print<5>("TriangularMatrix constructor ", size);
       //unsigned int n_elements = (size*size+size)/2 + size-1;
@@ -514,7 +514,7 @@ Iteration_gmres<LinearOperator, Vector>::flexible_gmres(const LinearOperator& A,
 #ifndef _MPI
     beta = r.norm();
 #elif _MPI
-    beta = r.norm_global(comms);
+    beta = r.norm(comms);
 #endif
     
     if(std::abs(beta - resid) > 0.01*beta)

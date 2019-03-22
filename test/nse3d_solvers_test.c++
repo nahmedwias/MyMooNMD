@@ -15,7 +15,7 @@
  * We're only testing examples whose analytic solution is in the ansatz space,
  * thus we expect very small errors every time.
  * Fixed are discretization_type 1 (galerkin), LAPLACETYPE 0,
- * NSE_NONLINEAR_FORM 0 and SC_NONLIN_ITE_TYPE_SADDLE = 0.
+ * 'nse_nonlinear_form' 0 and SC_NONLIN_ITE_TYPE_SADDLE = 0.
  * Note that for these discretizations it is futile to choose any other NSTYPE
  * than 1 (see e.g. MooNMD documentation p. 35), but we vary them anyway, just
  * for the sake of testing the different types.
@@ -36,11 +36,12 @@
  * @date 2016/04/04
  */
 
-#include <NSE3D.h>
+#include "NavierStokes.h"
 
 #include <Database.h>
 #include <FEDatabase3D.h>
 #include <Multigrid.h>
+#include "LocalAssembling.h"
 
 #ifdef _MPI
 #include <mpi.h>
@@ -48,9 +49,10 @@ double bound = 0;
 double timeC = 0;
 #endif
 
-void compare(const NSE3D& nse3d, std::array<double, int(5)> errors, double tol)
+void compare(const NavierStokes<3>& nse3d, std::array<double, int(5)> errors,
+             double tol)
 {
-  std::array<double, int(5)> computed_errors = nse3d.get_errors();
+  std::array<double, 8> computed_errors = nse3d.get_errors();
 
   // check the L2-error of the velcoity
   if( fabs(computed_errors[0]-errors[0]) > tol ||
@@ -74,15 +76,9 @@ void compare(const NSE3D& nse3d, std::array<double, int(5)> errors, double tol)
     ErrThrow("H1 norm of pressure: ", computed_errors[4], "  ", errors[4]);
   }
 }
-#ifndef _MPI
-void check(ParameterDatabase& db, const std::list<TCollection* >& colls, int velocity_order,
+void check(ParameterDatabase& db, const TDomain& domain, int velocity_order,
            int pressure_order, int nstype, std::array<double, int(5)> errors,
            double tol)
-#else
-void check(ParameterDatabase& db, const std::list<TCollection* >& colls, int maxSubDomainPerDof,
-           int velocity_order, int pressure_order, int nstype,
-           std::array<double, int(5)> errors, double tol)
-#endif
 {
 #ifdef _MPI
   int my_rank, size;
@@ -102,17 +98,11 @@ void check(ParameterDatabase& db, const std::list<TCollection* >& colls, int max
   TDatabase::ParamDB->PRESSURE_SPACE = pressure_order;
   TDatabase::ParamDB->NSTYPE = nstype;
 
-  Example_NSE3D example_obj(db);
-
   //Perform usual checks on the parameter consistency
   check_parameters_consistency_NSE(db);
 
   // Construct the nse3d problem object.
-#ifndef _MPI
-  NSE3D nse3d(colls, db, example_obj);
-#else
-  NSE3D nse3d(colls, db, example_obj, maxSubDomainPerDof);
-#endif
+  NavierStokes<3> nse3d(domain, db);
 
   nse3d.assemble_linear_terms();
 
@@ -125,7 +115,7 @@ void check(ParameterDatabase& db, const std::list<TCollection* >& colls, int max
     nse3d.solve();
 
     // checking the first nonlinear iteration
-    nse3d.assemble_non_linear_term();;
+    nse3d.assemble_nonlinear_term();;
     if(nse3d.stop_it(k))
       break;
   }
@@ -293,6 +283,7 @@ int main(int argc, char* argv[])
   ParameterDatabase db = ParameterDatabase::parmoon_default_database();
   db.merge(Solver<>::default_solver_database());
   db.merge(ParameterDatabase::default_nonlinit_database());
+  db.merge(LocalAssembling3D::default_local_assembling_database());
 
   db["problem_type"].set<size_t>(5);
   
@@ -301,8 +292,8 @@ int main(int argc, char* argv[])
   TDatabase::ParamDB->FLOW_PROBLEM_TYPE = 5; // flow problem type
 
   db["space_discretization_type"] = "galerkin"; //Galerkin discretization, nothing else implemented
+  db["nse_nonlinear_form"] = "convective";
   TDatabase::ParamDB->LAPLACETYPE = 0;
-  TDatabase::ParamDB->NSE_NONLINEAR_FORM = 0;
   TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE = 0;
 
   TDatabase::ParamDB->Par_P0 = 0; // process responsible for the output
@@ -332,27 +323,15 @@ int main(int argc, char* argv[])
     TDomain domain_hex(db);
 
     // Intial refinement and grabbing of grids for multigrid.
-#ifdef _MPI
-    int maxSubDomainPerDof = 0;
-#endif
-    std::list<TCollection* > grid_collections
-    = domain_hex.refine_and_get_hierarchy_of_collections(
-        db
-    #ifdef _MPI
-        , maxSubDomainPerDof
-    #endif
-        );
-
+    domain_hex.refine_and_get_hierarchy_of_collections(db);
     db.merge(Example_NSE3D::default_example_database());
 
     if(std::string(argv[1]) == std::string("cell_vanka_jacobi"))
     {//the cell vanka case - test only on Q2/P1-disc element (MPI parallelized & disc press)
       db["example"] = -1;
       size_t nstype = 4; //nstype should not matter much here
-#ifndef _MPI
-      check(db, grid_collections, 22, -4711, nstype, errors, tol);
-#else
-      check(db, grid_collections, maxSubDomainPerDof, 22, -4711, nstype, errors, tol);
+      check(db, domain_hex, 22, -4711, nstype, errors, tol);
+#ifdef _MPI
       MPI_Finalize();
 #endif
       return 0;
@@ -366,23 +345,15 @@ int main(int argc, char* argv[])
       Parameter p("petsc_arguments",
          std::string("-pc_type lu -pc_factor_mat_solver_package umfpack "
                      "-ksp_monitor"), "");
-    db["petsc_arguments"].impose(p);
-#ifndef _MPI
-      check(db, grid_collections, 2, -4711, nstype, errors, tol);
-#else
-      check(db, grid_collections, maxSubDomainPerDof, 2, -4711, nstype, errors, tol);
-#endif
+      db["petsc_arguments"].impose(p);
+      check(db, domain_hex, 2, -4711, nstype, errors, tol);
     }
     {
       if(my_rank==0)
         Output::print<1>("\n>>>>> Q2/P1^disc element on hexahedral grid. <<<<<");
       db["example"] = -3;
       size_t nstype = 2;
-#ifndef _MPI
-      check(db, grid_collections, 22, -4711, nstype, errors, tol);
-#else
-      check(db, grid_collections, maxSubDomainPerDof, 22, -4711, nstype, errors, tol);
-#endif
+      check(db, domain_hex, 22, -4711, nstype, errors, tol);
     }
 #ifndef _MPI//only for seq, 3rd order elements are not yet adapted for parallel
     {
@@ -390,7 +361,7 @@ int main(int argc, char* argv[])
         Output::print<1>("\n>>>>> Q3/Q2 element on hexahedral grid. <<<<<");
       db["example"] = -4;
       size_t nstype = 3;
-      check(db, grid_collections, 3, -4711, nstype, errors, tol);
+      check(db, domain_hex, 3, -4711, nstype, errors, tol);
     }
 #endif
   }
@@ -404,27 +375,14 @@ int main(int argc, char* argv[])
     db["geo_file"]= "Default_UnitCube_Tetra";
     TDomain domain_tet(db);
     // Intial refinement and grabbing of grids for multigrid.
-#ifdef _MPI
-    int maxSubDomainPerDof = 0;
-#endif
-    std::list<TCollection* > grid_collections
-    = domain_tet.refine_and_get_hierarchy_of_collections(
-        db
-    #ifdef _MPI
-        , maxSubDomainPerDof
-    #endif
-        );
+    domain_tet.refine_and_get_hierarchy_of_collections(db);
 
     {
       db["example"] = -3;
       size_t nstype = 4;
       if(my_rank==0)
         Output::print<1>("\n>>>>> P2/P1 element on tetrahedral grid. <<<<<");
-#ifndef _MPI
-      check(db, grid_collections, 2,-4711, nstype, errors, tol);
-#else
-      check(db, grid_collections, maxSubDomainPerDof, 2,-4711, nstype, errors, tol);
-#endif
+      check(db, domain_tet, 2,-4711, nstype, errors, tol);
     }
 #ifndef _MPI
     {
@@ -434,7 +392,7 @@ int main(int argc, char* argv[])
         Output::print<1>("\n>>>>> P3/P2 element on tetrahedral grid. <<<<<");
       db["example"] = -4;
       size_t nstype = 4;
-      check(db, grid_collections, 3,-4711, nstype, errors, tol);
+      check(db, domain_tet, 3,-4711, nstype, errors, tol);
     }
 #endif
   }

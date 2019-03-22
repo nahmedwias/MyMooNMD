@@ -30,7 +30,7 @@ int TBdWall::SetParams(double drx, double dry, double drz)
 }
 
 int TBdWall::GetXYZofTS(double T, double S,
-                        double &X, double &Y, double &Z)
+                        double &X, double &Y, double &Z) const
 {
   double x,y; //z;
 
@@ -46,10 +46,10 @@ int TBdWall::GetXYZofTS(double T, double S,
 /** return parameters and coordinates of a given linear
     combination of vertices */
 int TBdWall::GetXYZandTS(int N_Points, double *LinComb,
-                         double *xp, double *yp, double *zp,
+                         double *, double *, double *,
                          double *tp, double *sp,
                          double &X, double &Y, double &Z,
-                         double &T, double &S)
+                         double &T, double &S) const
 {
   int i;
   double t, s, v;
@@ -75,7 +75,7 @@ int TBdWall::GetXYZandTS(int N_Points, double *LinComb,
 }
 
 int TBdWall::GetTSofXYZ(double X, double Y, double Z,
-                        double &T, double &S)
+                        double &T, double &S) const
 {
   double x,y,t;
 

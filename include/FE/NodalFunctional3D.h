@@ -82,25 +82,28 @@ class TNodalFunctional3D
                        EvalJointNF *evalface);
 
     /** return information for points for all functionals */
-    void GetPointsForAll(int &n_points, double* &xi, double* &eta,
-                         double* &zeta);
+    void GetPointsForAll(int &n_points, const double* &xi, const double* &eta,
+                         const double* &zeta) const;
 
     /** return information for points for face functionals 
         on joint j */
-    void GetPointsForFace(int j, int &n_points, double* &xi, double* &eta,
-                          double* &zeta);
+    void GetPointsForFace(int j, int &n_points, const double* &xi,
+                          const double* &eta, const double* &zeta) const;
 
     /** return information for points for face functionals */
-    void GetPointsForFace(int &n_points, double* &t, double* &s);
+    void GetPointsForFace(int &n_points, const double* &t, const double* &s)
+      const;
 
     /** return values for all nodal functionals */
     void GetAllFunctionals(TCollection *Coll, TBaseCell *Cell,
-                           double *PointValues, double *Functionals)
+                           const double *PointValues, double *Functionals)
+      const
     { EvalAll(Coll, Cell, PointValues, Functionals); }
 
     /** return values for face nodal functional */
     void GetFaceFunctionals(TCollection *Coll, TBaseCell *Cell, int Joint,
-                            double *PointValues, double *Functionals)
+                            const double *PointValues, double *Functionals)
+      const
     { EvalFace(Coll, Cell, Joint, PointValues, Functionals); }
 
     /** return ID for this set */

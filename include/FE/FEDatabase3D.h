@@ -11,6 +11,9 @@
 #ifndef __FEDATABASE3D__
 #define __FEDATABASE3D__
 
+class THNDesc;
+class TRefTrans3D;
+
 #include <Constants.h>
 #include <Enumerations.h>
 
@@ -49,18 +52,26 @@ class TFEDatabase3D
 
     /** get triangle quadrature formula for given acuracy */
     static QuadFormula2D QFTriaFromDegree[MAXDEGREE];
+    /** highest accuracy for which a quadrature formula is available */
+    static int HighestAccuracyTria;
 
     /** get quadrilateral quadrature formula for given acuracy */
     static QuadFormula2D QFQuadFromDegree[MAXDEGREE];
+    /** highest accuracy for which a quadrature formula is available */
+    static int HighestAccuracyQuad;
 
 //======================================================================
 //      3D arrays for easier access of information
 //======================================================================
      /** get tetrahedron quadrature formula for given acuracy */
      static QuadFormula3D QFTetraFromDegree[MAXDEGREE];
+     /** highest accuracy for which a quadrature formula is available */
+     static int HighestAccuracyTetra;
 
      /** get hexahedron quadrature formula for given acuracy */
      static QuadFormula3D QFHexaFromDegree[MAXDEGREE];
+     /** highest accuracy for which a quadrature formula is available */
+     static int HighestAccuracyHexa;
 
      /** get hexahedron quadrature formula for given acuracy */
      static QuadFormula3D QFConvolutionHexaFromDegree[MAXDEGREE];
@@ -227,11 +238,21 @@ class TFEDatabase3D
 
     /** get triangle quadrature formula for given acuracy */
     static QuadFormula2D GetQFTriaFromDegree(int accuracy)
-       { return QFTriaFromDegree[accuracy]; };
+    {
+      if(accuracy<=HighestAccuracyTria)
+         return QFTriaFromDegree[accuracy];
+      else
+        return QFTriaFromDegree[HighestAccuracyTria];
+    };
 
     /** get quadrilateral quadrature formula for given acuracy */
     static QuadFormula2D GetQFQuadFromDegree(int accuracy)
-       { return QFQuadFromDegree[accuracy]; };
+    {
+      if(accuracy<=HighestAccuracyQuad)
+         return QFQuadFromDegree[accuracy];
+      else
+        return QFQuadFromDegree[HighestAccuracyQuad];
+    };
 
 //======================================================================
 //      QuadFormula3D
@@ -247,11 +268,21 @@ class TFEDatabase3D
 
      /** get tetrahedron quadrature formula for given acuracy */
      static QuadFormula3D GetQFTetraFromDegree(int accuracy)
-       { return QFTetraFromDegree[accuracy]; };
+     {
+       if(accuracy<=HighestAccuracyTetra)
+         return QFTetraFromDegree[accuracy];
+       else
+        return QFTetraFromDegree[HighestAccuracyTetra];
+     };
      
      /** get hexahedron quadrature formula for given acuracy */
      static QuadFormula3D GetQFHexaFromDegree(int accuracy)
-       { return QFHexaFromDegree[accuracy]; };   
+     {
+       if(accuracy<=HighestAccuracyHexa)
+         return QFHexaFromDegree[accuracy];
+       else
+        return QFHexaFromDegree[HighestAccuracyHexa];
+     };
 
      /** get hexahedron quadrature formula for convolution */
      static QuadFormula3D GetQFConvolutionHexaFromDegree(int accuracy)
@@ -449,7 +480,7 @@ class TFEDatabase3D
                                        TFE3DMapper1Reg *mapper)
      { FE3DMapper1Reg[FE1][FE2] = mapper; };
 
-    static void SetCellForRefTrans(TBaseCell *cell, RefTrans3D reftrans);
+    static void SetCellForRefTrans(const TBaseCell *cell, RefTrans3D reftrans);
 
 //======================================================================
 //      HNDesc
@@ -472,18 +503,20 @@ class TFEDatabase3D
      }
 
      /** calculate points on original element */
-     static void GetOrigFromRef(RefTrans3D RefTrans, int n_points, 
-                        double *xi, double *eta, double *zeta,
-                        double *X, double *Y, double *Z, double *absdetjk);
+     static void GetOrigFromRef(RefTrans3D RefTrans, int n_points,
+                                const double *xi, const double *eta,
+                                const double *zeta,
+                                double *X, double *Y, double *Z,
+                                double *absdetjk);
 
      /** calculate base functions with derivatives and coordinates
          from reference to original element */
      static RefTrans3D GetOrig(int N_LocalUsedElements, FE3D *LocalUsedElements,
                          TCollection *Coll, TBaseCell *cell,
                          bool *Needs2ndDer,
-                         int &N_Points, double* &xi, double* &eta, double* &zeta, 
-                         double* &weights, double* X, double* Y, double* Z,
-                         double* absdetjk);
+                         int &N_Points, const double* &xi, const double* &eta,
+                         const double* &zeta, const double* &weights,
+                         double* X, double* Y, double* Z, double* absdetjk);
 
      /** calculate points on reference element */
      static void GetRefFromOrig(RefTrans3D RefTrans,
@@ -568,7 +601,7 @@ class TFEDatabase3D
         to original element */
     static void GetOrigValues(RefTrans3D RefTrans,
                 double xi, double eta, double zeta,
-                TBaseFunct3D *bf, TCollection *Coll, TBaseCell *cell,
+                TBaseFunct3D *bf, TCollection *Coll, const TBaseCell *cell,
                 double *uref, double *uxiref, double *uetaref, double *uzetaref,
                 double *uorig, double *uxorig, double *uyorig, double *uzorig);
 

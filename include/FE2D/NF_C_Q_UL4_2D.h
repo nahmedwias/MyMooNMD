@@ -150,8 +150,8 @@ static double NF_C_Q_UL4_2D_W26[] = {
 };
 
 
-void NF_C_Q_UL4_2D_EvalAll(TCollection *Coll, TBaseCell *Cell, double *PointValues,
-                          double *Functionals)
+void NF_C_Q_UL4_2D_EvalAll(TCollection *, const TBaseCell *,
+                           const double *PointValues, double *Functionals)
 {
   // point values on the boundary: 0 - 15
   memcpy(Functionals, PointValues, 16*SizeOfDouble);
@@ -430,13 +430,13 @@ void NF_C_Q_UL4_2D_EvalAll(TCollection *Coll, TBaseCell *Cell, double *PointValu
                    +NF_C_Q_UL4_2D_W26[22]*PointValues[38]
                    +NF_C_Q_UL4_2D_W26[23]*PointValues[39]
                    +NF_C_Q_UL4_2D_W26[24]*PointValues[40];
-};
+}
 
-void NF_C_Q_UL4_2D_EvalEdge(TCollection *Coll, TBaseCell *Cell, int Joint, double *PointValues,
-                           double *Functionals)
+void NF_C_Q_UL4_2D_EvalEdge(TCollection *, const TBaseCell *, int,
+                            const double *PointValues, double *Functionals)
 {
   memcpy(Functionals, PointValues, 5*SizeOfDouble);
-};
+}
 
 /*
 TNodalFunctional2D(NodalFunctional2D id,

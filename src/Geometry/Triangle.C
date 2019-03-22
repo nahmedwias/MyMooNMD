@@ -31,7 +31,7 @@ TTriangle::TTriangle()
 }
 
 // Methods
-double TTriangle::GetDiameter(TVertex **Verts)
+double TTriangle::GetDiameter(TVertex **Verts) const
 {
   double diffX1 = Verts[0]->GetX() - Verts[1]->GetX();
   double diffY1 = Verts[0]->GetY() - Verts[1]->GetY();
@@ -45,7 +45,7 @@ double TTriangle::GetDiameter(TVertex **Verts)
                   diffX3*diffX3 + diffY3*diffY3)));
 }
 
-double TTriangle::GetShortestEdge(TVertex **Verts)
+double TTriangle::GetShortestEdge(TVertex **Verts) const
 {
   double diffX1 = Verts[0]->GetX() - Verts[1]->GetX();
   double diffY1 = Verts[0]->GetY() - Verts[1]->GetY();
@@ -65,7 +65,7 @@ double TTriangle::GetShortestEdge(TVertex **Verts)
   return(len);
 }
 
-double TTriangle::GetLengthWithReferenceMap(TVertex **Verts)
+double TTriangle::GetLengthWithReferenceMap(TVertex **Verts) const
 {
   double x0, x1, x2, y0, y1, y2;
   double xc1, xc2, yc1, yc2;
@@ -88,7 +88,7 @@ double TTriangle::GetLengthWithReferenceMap(TVertex **Verts)
   return sqrt(fabs(xc1*yc2-xc2*yc1));
 }
 
-double TTriangle::GetMeasure(TVertex **Verts)
+double TTriangle::GetMeasure(TVertex **Verts) const
 {
   double x1,x2,x3,y1,y2,y3;
 

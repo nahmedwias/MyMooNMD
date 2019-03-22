@@ -15,6 +15,7 @@
 #include <AllRefTrans3D.h>
 #include <Database.h>
 #include <string.h>
+#include <GridCell.h>
 
 #include <BoundFace.h>
 #include <IsoInterfaceJoint3D.h>
@@ -31,7 +32,7 @@
 #include <stdlib.h>
 
 //helper method for printing "registered something" infos
-void print_registered_message_3D(std::string entities)
+void print_registered_message_3D(const std::string& entities)
 {
 #ifdef _MPI
   int my_rank;
@@ -54,7 +55,9 @@ QuadFormula1D TFEDatabase3D::QFLineFromDegree[MAXDEGREE] = { Gauss1Line };
 int TFEDatabase3D::HighestAccuracyLine = 0;
 
 QuadFormula2D TFEDatabase3D::QFTriaFromDegree[MAXDEGREE] = { BaryCenterTria };
+int TFEDatabase3D::HighestAccuracyTria = 0;
 QuadFormula2D TFEDatabase3D::QFQuadFromDegree[MAXDEGREE] = { VertexQuad };
+int TFEDatabase3D::HighestAccuracyQuad = 0;
 
 TFE3D *TFEDatabase3D::FEs3D[N_FEs3D] = { nullptr };
 TFEDesc3D *TFEDatabase3D::FEDescs3D[N_FEDescs3D] = { nullptr };
@@ -121,9 +124,11 @@ BF3DRefElements TFEDatabase3D::RefElementFromFE3D[N_FEs3D] = { BFUnitTetrahedron
 
 /** get tetrahedron quadrature formula for given acuracy */
 QuadFormula3D TFEDatabase3D::QFTetraFromDegree[MAXDEGREE] = { BaryCenterTetra };
+int TFEDatabase3D::HighestAccuracyTetra = 0;
 
 /** get hexahedron quadrature formula for given acuracy */
 QuadFormula3D TFEDatabase3D::QFHexaFromDegree[MAXDEGREE] = { VertexHexa };
+int TFEDatabase3D::HighestAccuracyHexa = 0;
 
 /** get hexahedron quadrature formula for convolution */
 QuadFormula3D TFEDatabase3D::QFConvolutionHexaFromDegree[MAXDEGREE] = { VerticesAndOrigin };
@@ -989,6 +994,8 @@ void TFEDatabase3D::GenerateArrays()
   QFHexaFromDegree[16] = Gauss9Hexa;
   QFHexaFromDegree[17] = Gauss9Hexa;
   
+  HighestAccuracyHexa = 17;
+  
   QFConvolutionHexaFromDegree[0] = VerticesAndOrigin;
   QFConvolutionHexaFromDegree[1] = VerticesAndOrigin15;
   QFConvolutionHexaFromDegree[2] = VerticesAndOrigin57;
@@ -1004,6 +1011,8 @@ void TFEDatabase3D::GenerateArrays()
   QFTetraFromDegree[8] = P8Tetra;
   QFTetraFromDegree[9] = P8Tetra;
   QFTetraFromDegree[10] = P8Tetra;
+  
+  HighestAccuracyTetra = 10;
 
   QFQuadFromDegree[0] = Gauss2Quad;
   QFQuadFromDegree[1] = Gauss2Quad;
@@ -1023,6 +1032,8 @@ void TFEDatabase3D::GenerateArrays()
   QFQuadFromDegree[15] = Gauss8Quad;
   QFQuadFromDegree[16] = Gauss9Quad;
   QFQuadFromDegree[17] = Gauss9Quad;
+  
+  HighestAccuracyQuad = 17;
 
   QFTriaFromDegree[0] = MidPointTria;
   QFTriaFromDegree[1] = MidPointTria;
@@ -1044,6 +1055,8 @@ void TFEDatabase3D::GenerateArrays()
   QFTriaFromDegree[17] = Degree19Tria;
   QFTriaFromDegree[18] = Degree19Tria;
   QFTriaFromDegree[19] = Degree19Tria;
+  
+  HighestAccuracyTria = 19;
   
   QFLineFromDegree[0] = Gauss1Line;
   QFLineFromDegree[1] = Gauss1Line;
@@ -1080,8 +1093,8 @@ RefTrans3D TFEDatabase3D::GetOrig(int N_LocalUsedElements,
                           FE3D *LocalUsedElements,
                           TCollection *Coll,
                           TBaseCell *cell, bool *Needs2ndDer,
-                          int &N_Points, double* &xi, double* &eta,
-                          double* &zeta, double* &weights,
+                          int &N_Points, const double* &xi, const double* &eta,
+                          const double* &zeta, const double* &weights,
                           double* X, double* Y, double* Z, double* absdetjk)
 {
   int i,MaxPolynomialDegree, PolynomialDegree, N_Faces, N_terms;
@@ -1444,7 +1457,7 @@ RefTrans3D TFEDatabase3D::GetOrig(int N_LocalUsedElements,
 
 /** calculate points on original element */
 void TFEDatabase3D::GetOrigFromRef(RefTrans3D RefTrans, int n_points,
-                   double *xi, double *eta, double *zeta,
+                   const double *xi, const double *eta, const double *zeta,
                    double *X, double *Y, double *Z, double *absdetjk)
 {
   TRefTrans3D *rt;
@@ -1485,7 +1498,7 @@ void TFEDatabase3D::GetOrigFromRef(RefTrans3D RefTrans, int n_points,
     on the original element */
 void TFEDatabase3D::GetOrigValues(RefTrans3D RefTrans,
                 double xi, double eta, double zeta,
-                TBaseFunct3D *bf, TCollection *Coll, TBaseCell *cell,
+                TBaseFunct3D *bf, TCollection *Coll, const TBaseCell *cell,
                 double *uref, double *uxiref, double *uetaref, double *uzetaref,
                 double *uorig, double *uxorig, double *uyorig, double *uzorig)
 {
@@ -1530,7 +1543,7 @@ void TFEDatabase3D::GetOrigValues(RefTrans3D RefTrans,
 }
 
 /** set cell for reference transformation */
-void TFEDatabase3D::SetCellForRefTrans(TBaseCell *cell, 
+void TFEDatabase3D::SetCellForRefTrans(const TBaseCell *cell, 
                                      RefTrans3D reftrans)
 {
   TRefTrans3D *rt;
@@ -1596,7 +1609,7 @@ double *TFEDatabase3D::GetProlongationMatrix3D (FE3D parent,
   double *ret, *ret2;
   int j,k,l;
   int N_Coarse, N_Points, N_Children; // int N_Fine;
-  double *xi, *eta, *zeta;
+  const double *xi, *eta, *zeta;
   double X[MaxN_PointsForNodal3D], Y[MaxN_PointsForNodal3D];
   double Z[MaxN_PointsForNodal3D];
   double AbsDetjk[MaxN_PointsForNodal3D];
@@ -1606,7 +1619,8 @@ double *TFEDatabase3D::GetProlongationMatrix3D (FE3D parent,
   TRefDesc *RefDesc;
   TBaseFunct3D *BaseFunctions;
   BaseFunct3D Coarse, Fine;
-  TGridCell *RefCell, *cell;
+  TGridCell *RefCell;
+  const TGridCell * cell;
   TNodalFunctional3D *nf;
   BF3DRefElements RefElement;
   RefTrans3D F_K = TetraAffin; //avoid uninit warning
@@ -1694,7 +1708,7 @@ double *TFEDatabase3D::GetProlongationMatrix3D (FE3D parent,
         ret = new double[MaxN_BaseFunctions3D*MaxN_BaseFunctions3D];
         ret2 = new double[MaxN_BaseFunctions3D*MaxN_BaseFunctions3D];
   
-        cell = (TGridCell *)RefCell->GetChild(j);
+        cell = (const TGridCell *)((const TGridCell *)RefCell)->GetChild(j);
         FineElement = TFEDatabase3D::GetFE3D(child);
         Fine = FineElement->GetBaseFunct3D_ID();
 //        N_Fine = FineElement->GetBaseFunct3D()->GetDimension();
@@ -1780,7 +1794,7 @@ double *TFEDatabase3D::GetRestrictionMatrix3D (FE3D parent,
   double **CoarseBFData, **FineBFData, *PointData;
   double *FinePointData;
   int N_QuadPoints;
-  double *xi, *eta, *zeta, *weights, w; // double sum;
+  const double *xi, *eta, *zeta, *weights; // double sum;
   double X[MaxN_QuadPoints_3D], Y[MaxN_QuadPoints_3D];
   double Z[MaxN_QuadPoints_3D];
   double AbsDetjk[MaxN_QuadPoints_3D];
@@ -1814,7 +1828,7 @@ double *TFEDatabase3D::GetRestrictionMatrix3D (FE3D parent,
     for(k=0;k<N_QuadPoints;k++)
     {
       PointData = CoarseBFData[k];
-      w = weights[k];
+      double w = weights[k];
       for(i=0;i<N_Coarse;i++)
       {
         for(j=0;j<N_Coarse;j++)
@@ -1850,7 +1864,7 @@ double *TFEDatabase3D::GetRestrictionMatrix3D (FE3D parent,
       {
         FinePointData = FineBFData[k];
         PointData = CoarseBFData[k];
-        w = weights[k];
+        double w = weights[k];
         for(l1=0;l1<N_Coarse;l1++)
         {
           for(l2=0;l2<N_Fine;l2++)
@@ -1906,19 +1920,20 @@ double *TFEDatabase3D::GetRestrictionMatrix3D (FE3D parent,
   
         F_K = FineElement->GetRefTransID();
   
+        const TBaseCell * child_cell = ((const TGridCell*)RefCell)->GetChild(j);
         switch(F_K)
         {
           case HexaAffin:
           case HexaTrilinear:
           case HexaIsoparametric:
             rt = TFEDatabase3D::GetRefTrans3D(HexaAffin);
-            ((THexaAffin *)rt)->SetCell(RefCell->GetChild(j));
+            ((THexaAffin *)rt)->SetCell(child_cell);
             F_K = HexaAffin;
             break;
           case TetraAffin:
           case TetraIsoparametric:
             rt = TFEDatabase3D::GetRefTrans3D(TetraAffin);
-            ((TTetraAffin *)rt)->SetCell(RefCell->GetChild(j));
+            ((TTetraAffin *)rt)->SetCell(child_cell);
             break;
         }
         TFEDatabase3D::GetOrigFromRef(F_K ,N_QuadPoints, xi, eta, zeta,
@@ -1931,7 +1946,7 @@ double *TFEDatabase3D::GetRestrictionMatrix3D (FE3D parent,
         {
           FinePointData = FineBFData[k];
           PointData = AllPointValues[k];
-          w = weights[k]*AbsDetjk[k];
+          double w = weights[k]*AbsDetjk[k];
           for(l1=0;l1<N_Coarse;l1++)
           {
             for(l2=0;l2<N_Fine;l2++)

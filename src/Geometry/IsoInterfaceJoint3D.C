@@ -62,7 +62,7 @@ TIsoInterfaceJoint3D::~TIsoInterfaceJoint3D()
    
 
 // Methods
-TJoint *TIsoInterfaceJoint3D::NewInst(double newtT_0, double newT_1, TBaseCell *Me)
+TJoint *TIsoInterfaceJoint3D::NewInst(double, double, TBaseCell *Me)
 {
   return new TIsoInterfaceJoint3D(BoundComp, Me);
 }
@@ -80,7 +80,7 @@ void TIsoInterfaceJoint3D::SetVertices(int n_vertices, TVertex **vertices)
   Vertices = vertices;
 }
 
-void TIsoInterfaceJoint3D::GenerateVertices(int n_vertices)
+void TIsoInterfaceJoint3D::GenerateVertices(int)
 {
 }
 

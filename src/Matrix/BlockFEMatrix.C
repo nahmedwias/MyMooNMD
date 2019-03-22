@@ -10,10 +10,11 @@
 #include <limits>
 #include <algorithm>
 
+bool determine_need_for_pressure_row_correction(
 #ifdef __2D__
-bool determine_need_for_pressure_row_correction(std::vector<const TFESpace2D*> spaces);
+  const std::vector<std::shared_ptr<const TFESpace2D>>& spaces);
 #else //__3D__
-bool determine_need_for_pressure_row_correction(std::vector<const TFESpace3D*> spaces);
+  const std::vector<std::shared_ptr<const TFESpace3D>>& spaces);
 #endif
 
 /* ************************************************************************* */
@@ -21,15 +22,13 @@ bool determine_need_for_pressure_row_correction(std::vector<const TFESpace3D*> s
 /* ************************************************************************* */
 
 #ifdef __2D__
-BlockFEMatrix::BlockFEMatrix(
-    std::vector< const TFESpace2D*  > spaces) :
+BlockFEMatrix::BlockFEMatrix(const std::vector<std::shared_ptr<const TFESpace2D>>& spaces)
 #else
-    BlockFEMatrix::BlockFEMatrix(
-        std::vector< const TFESpace3D*  > spaces) :
+BlockFEMatrix::BlockFEMatrix(const std::vector<std::shared_ptr<const TFESpace3D>>& spaces)
 #endif
-    BlockMatrix(), //base class object is default (empty) constructed
-    test_spaces_rowwise_(spaces),
-    ansatz_spaces_columnwise_(spaces)
+: BlockMatrix(), //base class object is default (empty) constructed
+  test_spaces_rowwise_(spaces),
+  ansatz_spaces_columnwise_(spaces)
 {
   Output::print<5>("BlockFEMatrix constructor");
   // class invariant: testspaces are not allowed to hold hanging nodes,
@@ -54,30 +53,23 @@ BlockFEMatrix::BlockFEMatrix(
   for(size_t i = 0; i < n_cell_rows_ ; ++i )
   {
     //hold the testspace each cell in this row will have
-#ifdef __2D__
-    const TFESpace2D& testspace_of_row = *spaces[i];
-#else
-    const TFESpace3D& testspace_of_row = *spaces[i];
-#endif
+    auto testspace_of_row = spaces[i];
     //hold the number of rows each cell in this row will have
-    size_t n_rows_of_cell = testspace_of_row.GetN_DegreesOfFreedom();
+    size_t n_rows_of_cell = testspace_of_row->GetN_DegreesOfFreedom();
 
     for(size_t j = 0; j < n_cell_columns_ ; ++j )
     {
       //hold the ansatzspace each cell in this column will have
-#ifdef __2D__
-      const TFESpace2D& ansatzspace_of_column = *spaces[j];
-#else
-      const TFESpace3D& ansatzspace_of_column = *spaces[j];
-#endif
+      auto ansatzspace_of_column = spaces[j];
       //hold the number of columns each cell in this column will have
-      size_t n_columns_of_cell = ansatzspace_of_column.GetN_DegreesOfFreedom();
+      size_t n_columns_of_cell = ansatzspace_of_column->GetN_DegreesOfFreedom();
 
       // construct the new cell info and the zero matrix it will hold
       CellInfo newInfo(n_rows_of_cell, n_columns_of_cell);
 
       //Create a new FEMatrix block. "True" is a swatich to make an empty TStructure.
-      newInfo.block_ = std::make_shared<FEMatrix>(&testspace_of_row, &ansatzspace_of_column, true);
+      newInfo.block_ = std::make_shared<FEMatrix>(testspace_of_row,
+                                                  ansatzspace_of_column, true);
 
       // the next color is get_n_colors() (because the colors 0 to
       // get_n_colors() -1 are already assigned)
@@ -109,24 +101,25 @@ ansatz_spaces_columnwise_()
 //named constructors
 #ifdef __2D__
 /* ************************************************************************* */
-BlockFEMatrix BlockFEMatrix::CD2D( const TFESpace2D& space )
+BlockFEMatrix BlockFEMatrix::CD2D(std::shared_ptr<const TFESpace2D> space )
 {
-  BlockFEMatrix my_matrix({&space});
+  BlockFEMatrix my_matrix({space});
   //replace block by a block with non-empty TStructure
-  my_matrix.replace_blocks(FEMatrix(&space), {{0,0}} , {false});
+  my_matrix.replace_blocks(FEMatrix(space), {{0,0}} , {false});
   return my_matrix;
 }
 
-BlockFEMatrix BlockFEMatrix::NSE2D_Type1( const TFESpace2D& velocity,
-                                         const TFESpace2D& pressure)
+BlockFEMatrix BlockFEMatrix::NSE2D_Type1(
+  std::shared_ptr<const TFESpace2D> velocity,
+  std::shared_ptr<const TFESpace2D> pressure)
 {
-  BlockFEMatrix my_matrix({&velocity, &velocity, &pressure});
+  BlockFEMatrix my_matrix({velocity, velocity, pressure});
 
   //create new blocks with correct structures filled with 0
-  FEMatrix velo_velo(&velocity, &velocity); //A block
-  FEMatrix velo_velo_zero(&velocity, &velocity, true); //velocity zero block
+  FEMatrix velo_velo(velocity, velocity); //A block
+  FEMatrix velo_velo_zero(velocity, velocity, true); //velocity zero block
 
-  FEMatrix pressure_velo_1(&pressure, &velocity);
+  FEMatrix pressure_velo_1(pressure, velocity);
   FEMatrix pressure_velo_2(pressure_velo_1); // copy constructed, shares TStructure!
 
   // fill in the velo-velo blocks
@@ -145,19 +138,20 @@ BlockFEMatrix BlockFEMatrix::NSE2D_Type1( const TFESpace2D& velocity,
 }
 
 BlockFEMatrix BlockFEMatrix::NSE2D_Type2(
-    const TFESpace2D& velocity, const TFESpace2D& pressure)
+  std::shared_ptr<const TFESpace2D> velocity,
+  std::shared_ptr<const TFESpace2D> pressure)
 
 {
-  BlockFEMatrix my_matrix({&velocity, &velocity, &pressure});
+  BlockFEMatrix my_matrix({velocity, velocity, pressure});
 
   //create new blocks with correct structures filled with 0
-  FEMatrix velo_velo(&velocity, &velocity); //A block
-  FEMatrix velo_velo_zero(&velocity, &velocity, true); //velocity zero block
+  FEMatrix velo_velo(velocity, velocity); //A block
+  FEMatrix velo_velo_zero(velocity, velocity, true); //velocity zero block
 
-  FEMatrix pressure_velo_1(&pressure, &velocity);
+  FEMatrix pressure_velo_1(pressure, velocity);
   FEMatrix pressure_velo_2(pressure_velo_1); // copy constructed, shares TStructure!
 
-  FEMatrix velo_pressure_1(&velocity, &pressure);
+  FEMatrix velo_pressure_1(velocity, pressure);
   FEMatrix velo_pressure_2(velo_pressure_1); // copy constructed, shares TStructure!
 
   // fill in the velo-velo blocks
@@ -178,17 +172,18 @@ BlockFEMatrix BlockFEMatrix::NSE2D_Type2(
 }
 
 BlockFEMatrix BlockFEMatrix::NSE2D_Type3(
-    const TFESpace2D& velocity, const TFESpace2D& pressure)
+  std::shared_ptr<const TFESpace2D> velocity,
+  std::shared_ptr<const TFESpace2D> pressure)
 {
-  BlockFEMatrix my_matrix({&velocity, &velocity, &pressure});
+  BlockFEMatrix my_matrix({velocity, velocity, pressure});
 
   //create new blocks with correct structures filled with 0
-  FEMatrix velo_velo_0_0(&velocity, &velocity); //A blocks
+  FEMatrix velo_velo_0_0(velocity, velocity); //A blocks
   FEMatrix velo_velo_0_1(velo_velo_0_0);
   FEMatrix velo_velo_1_0(velo_velo_0_0);
   FEMatrix velo_velo_1_1(velo_velo_0_0); //all copy constructed, share one TStructure
 
-  FEMatrix pressure_velo_1(&pressure, &velocity);
+  FEMatrix pressure_velo_1(pressure, velocity);
   FEMatrix pressure_velo_2(pressure_velo_1); // copy constructed, shares TStructure!
 
   // fill in the velo-velo blocks
@@ -210,20 +205,21 @@ BlockFEMatrix BlockFEMatrix::NSE2D_Type3(
 }
 
 BlockFEMatrix BlockFEMatrix::NSE2D_Type4(
-    const TFESpace2D& velocity, const TFESpace2D& pressure)
+  std::shared_ptr<const TFESpace2D> velocity,
+  std::shared_ptr<const TFESpace2D> pressure)
 {
-  BlockFEMatrix my_matrix({&velocity, &velocity, &pressure});
+  BlockFEMatrix my_matrix({velocity, velocity, pressure});
 
   //create new blocks with correct structures filled with 0
-  FEMatrix velo_velo_0_0(&velocity, &velocity); //A blocks
+  FEMatrix velo_velo_0_0(velocity, velocity); //A blocks
   FEMatrix velo_velo_0_1(velo_velo_0_0);
   FEMatrix velo_velo_1_0(velo_velo_0_0);
   FEMatrix velo_velo_1_1(velo_velo_0_0); //all copy constructed, share one TStructure
 
-  FEMatrix pressure_velo_1(&pressure, &velocity);
+  FEMatrix pressure_velo_1(pressure, velocity);
   FEMatrix pressure_velo_2(pressure_velo_1); // copy constructed, shares TStructure!
 
-  FEMatrix velo_pressure_1(&velocity, &pressure);
+  FEMatrix velo_pressure_1(velocity, pressure);
   FEMatrix velo_pressure_2(velo_pressure_1); // copy constructed, shares TStructure!
 
   // fill in the velo-velo blocks
@@ -246,23 +242,24 @@ BlockFEMatrix BlockFEMatrix::NSE2D_Type4(
 }
 
 BlockFEMatrix BlockFEMatrix::NSE2D_Type14(
-    const TFESpace2D& velocity, const TFESpace2D& pressure)
+  std::shared_ptr<const TFESpace2D> velocity,
+  std::shared_ptr<const TFESpace2D> pressure)
 {
-  BlockFEMatrix my_matrix({&velocity, &velocity, &pressure});
+  BlockFEMatrix my_matrix({velocity, velocity, pressure});
 
   //create new blocks with correct structures filled with 0
-  FEMatrix velo_velo_0_0(&velocity, &velocity); //A blocks
+  FEMatrix velo_velo_0_0(velocity, velocity); //A blocks
   FEMatrix velo_velo_0_1(velo_velo_0_0);
   FEMatrix velo_velo_1_0(velo_velo_0_0);
   FEMatrix velo_velo_1_1(velo_velo_0_0); //all copy constructed, share one TStructure
 
-  FEMatrix pressure_velo_1(&pressure, &velocity);
+  FEMatrix pressure_velo_1(pressure, velocity);
   FEMatrix pressure_velo_2(pressure_velo_1); // copy constructed, shares TStructure!
 
-  FEMatrix velo_pressure_1(&velocity, &pressure);
+  FEMatrix velo_pressure_1(velocity, pressure);
   FEMatrix velo_pressure_2(velo_pressure_1); // copy constructed, shares TStructure!
 
-  FEMatrix pressure_pressure(&pressure, &pressure);
+  FEMatrix pressure_pressure(pressure, pressure);
 
   // fill in the velo-velo blocks
   my_matrix.replace_blocks(velo_velo_0_0, {{0,0}}, {false});
@@ -284,37 +281,41 @@ BlockFEMatrix BlockFEMatrix::NSE2D_Type14(
   return my_matrix;
 }
 
-BlockFEMatrix BlockFEMatrix::Darcy2D( const TFESpace2D& velocity, const TFESpace2D& pressure)
+BlockFEMatrix BlockFEMatrix::Darcy2D(
+  std::shared_ptr<const TFESpace2D> velocity,
+  std::shared_ptr<const TFESpace2D> pressure)
 {
-  BlockFEMatrix my_matrix({&velocity, &pressure});
+  BlockFEMatrix my_matrix({velocity, pressure});
 
   //fill in the blocks with correct matrices constructed solely for them
-  my_matrix.replace_blocks(FEMatrix(&velocity, &velocity), {{0,0}}, {false});
-  my_matrix.replace_blocks(FEMatrix(&velocity, &pressure), {{0,1}}, {false});
-  my_matrix.replace_blocks(FEMatrix(&pressure, &velocity), {{1,0}}, {false});
-  my_matrix.replace_blocks(FEMatrix(&pressure, &pressure), {{1,1}}, {false});
+  my_matrix.replace_blocks(FEMatrix(velocity, velocity), {{0,0}}, {false});
+  my_matrix.replace_blocks(FEMatrix(velocity, pressure), {{0,1}}, {false});
+  my_matrix.replace_blocks(FEMatrix(pressure, velocity), {{1,0}}, {false});
+  my_matrix.replace_blocks(FEMatrix(pressure, pressure), {{1,1}}, {false});
 
   return my_matrix;
 }
 
-BlockFEMatrix BlockFEMatrix::Mass_NSE2D(const TFESpace2D& velocity)
+BlockFEMatrix BlockFEMatrix::Mass_NSE2D(
+  std::shared_ptr<const TFESpace2D> velocity)
 {
-  BlockFEMatrix my_matrix({&velocity, &velocity});
+  BlockFEMatrix my_matrix({velocity, velocity});
   
-  my_matrix.replace_blocks(FEMatrix(&velocity, &velocity), {{0,0}, {1, 1}}, 
+  my_matrix.replace_blocks(FEMatrix(velocity, velocity), {{0,0}, {1, 1}}, 
                            {false, false});
 
   return my_matrix;
 
 }
 
-BlockFEMatrix BlockFEMatrix::Mass_Matrix_NSE2D(const TFESpace2D& velocity, 
-                              const TFESpace2D& pressure)
+BlockFEMatrix BlockFEMatrix::Mass_Matrix_NSE2D(
+  std::shared_ptr<const TFESpace2D> velocity,
+  std::shared_ptr<const TFESpace2D> pressure)
 {
-  BlockFEMatrix my_matrix({&velocity, &velocity, &pressure});
+  BlockFEMatrix my_matrix({velocity, velocity, pressure});
   
   //create new blocks with correct structures filled with 0
-  FEMatrix velo_velo_0_0(&velocity, &velocity); //A blocks
+  FEMatrix velo_velo_0_0(velocity, velocity); //A blocks
   FEMatrix velo_velo_0_1(velo_velo_0_0);
   FEMatrix velo_velo_1_0(velo_velo_0_0);
   FEMatrix velo_velo_1_1(velo_velo_0_0); //
@@ -328,14 +329,15 @@ BlockFEMatrix BlockFEMatrix::Mass_Matrix_NSE2D(const TFESpace2D& velocity,
   return my_matrix;
 }
 
-BlockFEMatrix BlockFEMatrix::Mass_NSE2D_Type1( const TFESpace2D& velocity,
-                                         const TFESpace2D& pressure)
+BlockFEMatrix BlockFEMatrix::Mass_NSE2D_Type1(
+  std::shared_ptr<const TFESpace2D> velocity,
+  std::shared_ptr<const TFESpace2D> pressure)
 {
-  BlockFEMatrix my_matrix({&velocity, &velocity, &pressure});
+  BlockFEMatrix my_matrix({velocity, velocity, pressure});
 
   //create new blocks with correct structures filled with 0
-  FEMatrix velo_velo(&velocity, &velocity); //A block
-  FEMatrix velo_velo_zero(&velocity, &velocity, true); //velocity zero block
+  FEMatrix velo_velo(velocity, velocity); //A block
+  FEMatrix velo_velo_zero(velocity, velocity, true); //velocity zero block
 
   // fill in the velo-velo blocks
   my_matrix.replace_blocks(velo_velo, {{0,0},{1,1}}, {false, false});
@@ -345,14 +347,15 @@ BlockFEMatrix BlockFEMatrix::Mass_NSE2D_Type1( const TFESpace2D& velocity,
 }
 
 BlockFEMatrix BlockFEMatrix::Mass_NSE2D_Type2(
-    const TFESpace2D& velocity, const TFESpace2D& pressure)
+  std::shared_ptr<const TFESpace2D> velocity,
+  std::shared_ptr<const TFESpace2D> pressure)
 
 {
-  BlockFEMatrix my_matrix({&velocity, &velocity, &pressure});
+  BlockFEMatrix my_matrix({velocity, velocity, pressure});
 
   //create new blocks with correct structures filled with 0
-  FEMatrix velo_velo(&velocity, &velocity); //A block
-  FEMatrix velo_velo_zero(&velocity, &velocity, true); //velocity zero block
+  FEMatrix velo_velo(velocity, velocity); //A block
+  FEMatrix velo_velo_zero(velocity, velocity, true); //velocity zero block
 
   // fill in the velo-velo blocks
   my_matrix.replace_blocks(velo_velo, {{0,0},{1,1}}, {false, false});
@@ -363,12 +366,13 @@ BlockFEMatrix BlockFEMatrix::Mass_NSE2D_Type2(
 
 
 BlockFEMatrix BlockFEMatrix::Mass_NSE2D_Type3(
-    const TFESpace2D& velocity, const TFESpace2D& pressure)
+  std::shared_ptr<const TFESpace2D> velocity,
+  std::shared_ptr<const TFESpace2D> pressure)
 {
-  BlockFEMatrix my_matrix({&velocity, &velocity, &pressure});
+  BlockFEMatrix my_matrix({velocity, velocity, pressure});
 
   //create new blocks with correct structures filled with 0
-  FEMatrix velo_velo_0_0(&velocity, &velocity); //A blocks
+  FEMatrix velo_velo_0_0(velocity, velocity); //A blocks
   FEMatrix velo_velo_0_1(velo_velo_0_0);
   FEMatrix velo_velo_1_0(velo_velo_0_0);
   FEMatrix velo_velo_1_1(velo_velo_0_0); //all copy constructed, share one TStructure
@@ -385,12 +389,13 @@ BlockFEMatrix BlockFEMatrix::Mass_NSE2D_Type3(
 }
 
 BlockFEMatrix BlockFEMatrix::Mass_NSE2D_Type4(
-    const TFESpace2D& velocity, const TFESpace2D& pressure)
+  std::shared_ptr<const TFESpace2D> velocity,
+  std::shared_ptr<const TFESpace2D> pressure)
 {
-  BlockFEMatrix my_matrix({&velocity, &velocity, &pressure});
+  BlockFEMatrix my_matrix({velocity, velocity, pressure});
 
   //create new blocks with correct structures filled with 0
-  FEMatrix velo_velo_0_0(&velocity, &velocity); //A blocks
+  FEMatrix velo_velo_0_0(velocity, velocity); //A blocks
   FEMatrix velo_velo_0_1(velo_velo_0_0);
   FEMatrix velo_velo_1_0(velo_velo_0_0);
   FEMatrix velo_velo_1_1(velo_velo_0_0); //all copy constructed, share one TStructure
@@ -407,34 +412,50 @@ BlockFEMatrix BlockFEMatrix::Mass_NSE2D_Type4(
 }
 #elif __3D__
 //3D named constructors
-BlockFEMatrix BlockFEMatrix::CD3D( const TFESpace3D& space )
+BlockFEMatrix BlockFEMatrix::CD3D(std::shared_ptr<const TFESpace3D> space )
 {
-  BlockFEMatrix my_matrix({&space});
+  BlockFEMatrix my_matrix({space});
   //replace block by a block with non-empty TStructure
-  my_matrix.replace_blocks(FEMatrix(&space), {{0,0}} , {false});
+  my_matrix.replace_blocks(FEMatrix(space), {{0,0}} , {false});
   return my_matrix;
 }
 
-BlockFEMatrix BlockFEMatrix::NSE3D_Type1( const TFESpace3D& velocity, const TFESpace3D& pressure)
+BlockFEMatrix BlockFEMatrix::Darcy3D(std::shared_ptr<const TFESpace3D> velocity,
+                                     std::shared_ptr<const TFESpace3D> pressure)
 {
-  BlockFEMatrix my_matrix({&velocity, &velocity, &velocity, &pressure});
+  BlockFEMatrix my_matrix({velocity, pressure});
+
+  //fill in the blocks with correct matrices constructed solely for them
+  my_matrix.replace_blocks(FEMatrix(velocity, velocity), {{0,0}}, {false});
+  my_matrix.replace_blocks(FEMatrix(velocity, pressure), {{0,1}}, {false});
+  my_matrix.replace_blocks(FEMatrix(pressure, velocity), {{1,0}}, {false});
+  my_matrix.replace_blocks(FEMatrix(pressure, pressure), {{1,1}}, {false});
+
+  return my_matrix;
+}
+
+BlockFEMatrix BlockFEMatrix::NSE3D_Type1(
+  std::shared_ptr<const TFESpace3D> velocity,
+  std::shared_ptr<const TFESpace3D> pressure)
+{
+  BlockFEMatrix my_matrix({velocity, velocity, velocity, pressure});
 
   // create new blocks with correct structures filled with 0
-  FEMatrix velo_velo_0_0(&velocity, &velocity);
+  FEMatrix velo_velo_0_0(velocity, velocity);
   
   // fill in the velo-velo blocks
   my_matrix.replace_blocks(velo_velo_0_0, {{0,0}, {1,1}, {2,2}},
                                           {false, false, false});
 
   // zero velocity blocks
-  FEMatrix velo_velo_zero(&velocity, &velocity, true);
+  FEMatrix velo_velo_zero(velocity, velocity, true);
   my_matrix.replace_blocks(velo_velo_zero, {{0,1}, {0,2}, {1,0},
                                             {1,2}, {2,0}, {2,1}},
                                             {false, false, false,
                                              false, false, false});
 
 
-  FEMatrix pressure_velo_1(&pressure, &velocity);
+  FEMatrix pressure_velo_1(pressure, velocity);
   FEMatrix pressure_velo_2(pressure_velo_1);
   FEMatrix pressure_velo_3(pressure_velo_1); // copy constructed, shares TStructure!
  
@@ -450,28 +471,30 @@ BlockFEMatrix BlockFEMatrix::NSE3D_Type1( const TFESpace3D& velocity, const TFES
   return my_matrix;
 }
 
-BlockFEMatrix BlockFEMatrix::NSE3D_Type2( const TFESpace3D& velocity, const TFESpace3D& pressure)
+BlockFEMatrix BlockFEMatrix::NSE3D_Type2(
+  std::shared_ptr<const TFESpace3D> velocity,
+  std::shared_ptr<const TFESpace3D> pressure)
 {
-  BlockFEMatrix my_matrix({&velocity, &velocity, &velocity, &pressure});
+  BlockFEMatrix my_matrix({velocity, velocity, velocity, pressure});
   // create new blocks with correct structures filled with 0
-  FEMatrix velo_velo_0_0(&velocity, &velocity);
+  FEMatrix velo_velo_0_0(velocity, velocity);
   
   // fill in the velo-velo blocks
   my_matrix.replace_blocks(velo_velo_0_0, {{0,0}, {1,1}, {2,2}},
                                           {false, false, false});
 
   // zero velocity blocks
-  FEMatrix velo_velo_zero(&velocity, &velocity, true);
+  FEMatrix velo_velo_zero(velocity, velocity, true);
   my_matrix.replace_blocks(velo_velo_zero, {{0,1}, {0,2}, {1,0},
                                             {1,2}, {2,0}, {2,1}},
                                             {false, false, false,
                                              false, false, false});
   
-  FEMatrix pressure_velo_1(&pressure, &velocity);
+  FEMatrix pressure_velo_1(pressure, velocity);
   FEMatrix pressure_velo_2(pressure_velo_1); 
   FEMatrix pressure_velo_3(pressure_velo_1); // copy constructed, shares TStructure!
 
-  FEMatrix velo_pressure_1(&velocity, &pressure);
+  FEMatrix velo_pressure_1(velocity, pressure);
   FEMatrix velo_pressure_2(velo_pressure_1); 
   FEMatrix velo_pressure_3(velo_pressure_1); // copy constructed, shares TStructure!
 
@@ -491,12 +514,14 @@ BlockFEMatrix BlockFEMatrix::NSE3D_Type2( const TFESpace3D& velocity, const TFES
   return my_matrix;
 }
 
-BlockFEMatrix BlockFEMatrix::NSE3D_Type3( const TFESpace3D& velocity, const TFESpace3D& pressure)
+BlockFEMatrix BlockFEMatrix::NSE3D_Type3(
+  std::shared_ptr<const TFESpace3D> velocity,
+  std::shared_ptr<const TFESpace3D> pressure)
 {
-  BlockFEMatrix my_matrix({&velocity, &velocity, &velocity, &pressure});
+  BlockFEMatrix my_matrix({velocity, velocity, velocity, pressure});
 
   // create new blocks with correct structures filled with 0
-  FEMatrix velo_velo_0_0(&velocity, &velocity); //A block
+  FEMatrix velo_velo_0_0(velocity, velocity); //A block
   FEMatrix velo_velo_0_1(velo_velo_0_0);
   FEMatrix velo_velo_0_2(velo_velo_0_0);
   FEMatrix velo_velo_1_0(velo_velo_0_0);
@@ -516,7 +541,7 @@ BlockFEMatrix BlockFEMatrix::NSE3D_Type3( const TFESpace3D& velocity, const TFES
   my_matrix.replace_blocks(velo_velo_2_1, {{2,1}}, {false});
   my_matrix.replace_blocks(velo_velo_2_2, {{2,2}}, {false});
 
-  FEMatrix pressure_velo_1(&pressure, &velocity);
+  FEMatrix pressure_velo_1(pressure, velocity);
   FEMatrix pressure_velo_2(pressure_velo_1); 
   FEMatrix pressure_velo_3(pressure_velo_1); // copy constructed, shares TStructure!
   
@@ -532,12 +557,14 @@ BlockFEMatrix BlockFEMatrix::NSE3D_Type3( const TFESpace3D& velocity, const TFES
   return my_matrix;
 }
 
-BlockFEMatrix BlockFEMatrix::NSE3D_Type4( const TFESpace3D& velocity, const TFESpace3D& pressure)
+BlockFEMatrix BlockFEMatrix::NSE3D_Type4(
+  std::shared_ptr<const TFESpace3D> velocity,
+  std::shared_ptr<const TFESpace3D> pressure)
 {
-  BlockFEMatrix my_matrix({&velocity, &velocity, &velocity, &pressure});
+  BlockFEMatrix my_matrix({velocity, velocity, velocity, pressure});
 
   // create new blocks with correct structures filled with 0
-  FEMatrix velo_velo_0_0(&velocity, &velocity); //A block
+  FEMatrix velo_velo_0_0(velocity, velocity); //A block
   FEMatrix velo_velo_0_1(velo_velo_0_0);
   FEMatrix velo_velo_0_2(velo_velo_0_0);
   FEMatrix velo_velo_1_0(velo_velo_0_0);
@@ -557,11 +584,11 @@ BlockFEMatrix BlockFEMatrix::NSE3D_Type4( const TFESpace3D& velocity, const TFES
   my_matrix.replace_blocks(velo_velo_2_1, {{2,1}}, {false});
   my_matrix.replace_blocks(velo_velo_2_2, {{2,2}}, {false});
   
-  FEMatrix pressure_velo_1(&pressure, &velocity);
+  FEMatrix pressure_velo_1(pressure, velocity);
   FEMatrix pressure_velo_2(pressure_velo_1); 
   FEMatrix pressure_velo_3(pressure_velo_1); // copy constructed, shares TStructure!
   
-  FEMatrix velo_pressure_1(&velocity, &pressure);
+  FEMatrix velo_pressure_1(velocity, pressure);
   FEMatrix velo_pressure_2(velo_pressure_1); 
   FEMatrix velo_pressure_3(velo_pressure_1); // copy constructed, shares TStructure!
   
@@ -581,12 +608,14 @@ BlockFEMatrix BlockFEMatrix::NSE3D_Type4( const TFESpace3D& velocity, const TFES
 
 }
 
-BlockFEMatrix BlockFEMatrix::NSE3D_Type14( const TFESpace3D& velocity, const TFESpace3D& pressure)
+BlockFEMatrix BlockFEMatrix::NSE3D_Type14(
+  std::shared_ptr<const TFESpace3D> velocity,
+  std::shared_ptr<const TFESpace3D> pressure)
 {
-  BlockFEMatrix my_matrix({&velocity, &velocity, &velocity, &pressure});
+  BlockFEMatrix my_matrix({velocity, velocity, velocity, pressure});
 
   // create new blocks with correct structures filled with 0
-  FEMatrix velo_velo_0_0(&velocity, &velocity); //A block
+  FEMatrix velo_velo_0_0(velocity, velocity); //A block
   FEMatrix velo_velo_0_1(velo_velo_0_0);
   FEMatrix velo_velo_0_2(velo_velo_0_0);
   FEMatrix velo_velo_1_0(velo_velo_0_0);
@@ -606,11 +635,11 @@ BlockFEMatrix BlockFEMatrix::NSE3D_Type14( const TFESpace3D& velocity, const TFE
   my_matrix.replace_blocks(velo_velo_2_1, {{2,1}}, {false});
   my_matrix.replace_blocks(velo_velo_2_2, {{2,2}}, {false});
   
-  FEMatrix pressure_velo_1(&pressure, &velocity);
+  FEMatrix pressure_velo_1(pressure, velocity);
   FEMatrix pressure_velo_2(pressure_velo_1); 
   FEMatrix pressure_velo_3(pressure_velo_1); // copy constructed, shares TStructure!
   
-  FEMatrix velo_pressure_1(&velocity, &pressure);
+  FEMatrix velo_pressure_1(velocity, pressure);
   FEMatrix velo_pressure_2(velo_pressure_1); 
   FEMatrix velo_pressure_3(velo_pressure_1); // copy constructed, shares TStructure!
   
@@ -626,7 +655,7 @@ BlockFEMatrix BlockFEMatrix::NSE3D_Type14( const TFESpace3D& velocity, const TFE
   my_matrix.replace_blocks(pressure_velo_3, {{3,2}}, {false});
   my_matrix.replace_blocks(velo_pressure_3, {{2,3}}, {false});  
   
-  FEMatrix pressure_pressure(&pressure, &pressure);
+  FEMatrix pressure_pressure(pressure, pressure);
   // fill in the pressure-pressure block
   my_matrix.replace_blocks(pressure_pressure, {{3,3}}, {false});
   
@@ -634,11 +663,12 @@ BlockFEMatrix BlockFEMatrix::NSE3D_Type14( const TFESpace3D& velocity, const TFE
 
 }
 
-BlockFEMatrix BlockFEMatrix::Mass_NSE3D(const TFESpace3D& velocity)
+BlockFEMatrix BlockFEMatrix::Mass_NSE3D(
+  std::shared_ptr<const TFESpace3D> velocity)
 {
-  BlockFEMatrix my_matrix({&velocity, &velocity, &velocity});
+  BlockFEMatrix my_matrix({velocity, velocity, velocity});
 
-  my_matrix.replace_blocks(FEMatrix(&velocity, &velocity),
+  my_matrix.replace_blocks(FEMatrix(velocity, velocity),
                            {{0,0}, {1,1}, {2,2}},
                            {false, false, false});
 
@@ -646,17 +676,19 @@ BlockFEMatrix BlockFEMatrix::Mass_NSE3D(const TFESpace3D& velocity)
 
 }
 
-BlockFEMatrix BlockFEMatrix::Mass_NSE3D_Type1( const TFESpace3D& velocity, const TFESpace3D& pressure)
+BlockFEMatrix BlockFEMatrix::Mass_NSE3D_Type1(
+  std::shared_ptr<const TFESpace3D> velocity,
+  std::shared_ptr<const TFESpace3D> pressure)
 { 
-  BlockFEMatrix my_matrix({&velocity, &velocity, &velocity, &pressure});
+  BlockFEMatrix my_matrix({velocity, velocity, velocity, pressure});
    
    // create new blocks with correct structures filled with 0
-  FEMatrix velo_velo_0_0(&velocity, &velocity);
+  FEMatrix velo_velo_0_0(velocity, velocity);
   // fill in velocity-velocity blocks
   my_matrix.replace_blocks(velo_velo_0_0, {{0,0}, {1,1}, {2,2}},
                                           {false, false, false});
   // zero velocity blocks
-  FEMatrix velo_velo_zero(&velocity, &velocity, true);
+  FEMatrix velo_velo_zero(velocity, velocity, true);
   // zero blocks
   my_matrix.replace_blocks(velo_velo_zero, {{0,1}, {0,2}, {1,0},
                                             {1,2}, {2,0}, {2,1}},
@@ -666,18 +698,20 @@ BlockFEMatrix BlockFEMatrix::Mass_NSE3D_Type1( const TFESpace3D& velocity, const
   return my_matrix;
 }
 
-BlockFEMatrix BlockFEMatrix::Mass_NSE3D_Type2( const TFESpace3D& velocity, const TFESpace3D& pressure)
+BlockFEMatrix BlockFEMatrix::Mass_NSE3D_Type2(
+  std::shared_ptr<const TFESpace3D> velocity,
+  std::shared_ptr<const TFESpace3D> pressure)
 {
-  BlockFEMatrix my_matrix({&velocity, &velocity, &velocity, &pressure});
+  BlockFEMatrix my_matrix({velocity, velocity, velocity, pressure});
   // create new blocks with correct structures filled with 0
-  FEMatrix velo_velo_0_0(&velocity, &velocity);
+  FEMatrix velo_velo_0_0(velocity, velocity);
   
   // fill in the velo-velo blocks
   my_matrix.replace_blocks(velo_velo_0_0, {{0,0}, {1,1}, {2,2}},
                                           {false, false, false});
 
     // zero velocity blocks
-  FEMatrix velo_velo_zero(&velocity, &velocity, true);
+  FEMatrix velo_velo_zero(velocity, velocity, true);
   my_matrix.replace_blocks(velo_velo_zero, {{0,1}, {0,2}, {1,0},
                                             {1,2}, {2,0}, {2,1}},
                                             {false, false, false,
@@ -686,12 +720,14 @@ BlockFEMatrix BlockFEMatrix::Mass_NSE3D_Type2( const TFESpace3D& velocity, const
   return my_matrix;
 }
 
-BlockFEMatrix BlockFEMatrix::Mass_NSE3D_Type3( const TFESpace3D& velocity, const TFESpace3D& pressure)
+BlockFEMatrix BlockFEMatrix::Mass_NSE3D_Type3(
+  std::shared_ptr<const TFESpace3D> velocity,
+  std::shared_ptr<const TFESpace3D> pressure)
 {
-  BlockFEMatrix my_matrix({&velocity, &velocity, &velocity, &pressure});
+  BlockFEMatrix my_matrix({velocity, velocity, velocity, pressure});
 
   // create new blocks with correct structures filled with 0
-  FEMatrix velo_velo_0_0(&velocity, &velocity); //A block
+  FEMatrix velo_velo_0_0(velocity, velocity); //A block
   FEMatrix velo_velo_0_1(velo_velo_0_0);
   FEMatrix velo_velo_0_2(velo_velo_0_0);
   FEMatrix velo_velo_1_0(velo_velo_0_0);
@@ -714,12 +750,14 @@ BlockFEMatrix BlockFEMatrix::Mass_NSE3D_Type3( const TFESpace3D& velocity, const
   return my_matrix;
 }
 
-BlockFEMatrix BlockFEMatrix::Mass_NSE3D_Type4( const TFESpace3D& velocity, const TFESpace3D& pressure)
+BlockFEMatrix BlockFEMatrix::Mass_NSE3D_Type4(
+  std::shared_ptr<const TFESpace3D> velocity,
+  std::shared_ptr<const TFESpace3D> pressure)
 {
-  BlockFEMatrix my_matrix({&velocity, &velocity, &velocity, &pressure});
+  BlockFEMatrix my_matrix({velocity, velocity, velocity, pressure});
 
   // create new blocks with correct structures filled with 0
-  FEMatrix velo_velo_0_0(&velocity, &velocity); //A block
+  FEMatrix velo_velo_0_0(velocity, velocity); //A block
   FEMatrix velo_velo_0_1(velo_velo_0_0);
   FEMatrix velo_velo_0_2(velo_velo_0_0);
   FEMatrix velo_velo_1_0(velo_velo_0_0);
@@ -880,7 +918,7 @@ void BlockFEMatrix::apply_scaled_submatrix(const BlockVector & x, BlockVector & 
 void BlockFEMatrix::handle_discovery_of_vector_actives(const int nActive, 
                                                      const int spaceNumber) const
 {
-  if(nActive != this->get_row_space(spaceNumber).GetN_ActiveDegrees())
+  if(nActive != this->get_row_space(spaceNumber)->GetN_ActiveDegrees())
   {
     ErrThrow("Number of actives in this vector's block ", spaceNumber,
              " does not fit the number of non-actives in the corresponding test space",
@@ -992,28 +1030,6 @@ std::vector<std::shared_ptr<const FEMatrix>> BlockFEMatrix::get_blocks() const
 
 /* ************************************************************************* */
 
-std::vector<std::shared_ptr<FEMatrix>> BlockFEMatrix::get_blocks_TERRIBLY_UNSAFE()
-{
-  std::vector<std::shared_ptr<FEMatrix>> block_ptrs;
-
-  for(size_t i =0 ; i < n_cell_columns_ ; ++i)
-  {
-    for(size_t j =0 ; j < n_cell_rows_ ; ++j)
-    {
-      //juggle the pointers around until we can store it the way we want...
-      std::shared_ptr<FEMatrix> shared //cast FEMatrix
-      = std::dynamic_pointer_cast<FEMatrix>(cell_grid_[i][j].block_);
-
-      // make a weak pointer from it and push it back
-      block_ptrs.push_back(shared);
-    }
-  }
-
-  return block_ptrs;
-}
-
-/* ************************************************************************* */
-
 std::vector<std::shared_ptr<FEMatrix>> BlockFEMatrix::get_blocks_uniquely(
     bool include_zeroes)
 {
@@ -1033,7 +1049,7 @@ std::vector<std::shared_ptr<FEMatrix>> BlockFEMatrix::get_blocks_uniquely(
 /* ************************************************************************* */
 
 std::vector<std::shared_ptr<FEMatrix>> BlockFEMatrix::get_blocks_uniquely(
-    std::vector<std::vector<size_t>> cells, bool include_zeroes)
+    const std::vector<std::vector<size_t>>& cells, bool include_zeroes)
 {
   // stuff the input into a tuple which includes transposed states
   // - for our purpose it is not necessary, but thus we can make use
@@ -1249,7 +1265,7 @@ std::shared_ptr<TMatrix> BlockFEMatrix::get_combined_submatrix(
       {//determine the row to be swept
         int n_rows_before = 0;
         for(size_t br = r_first; br < n_cell_rows_-1; ++br)
-          n_rows_before += this->get_row_space(br).GetN_DegreesOfFreedom();
+          n_rows_before += this->get_row_space(br)->GetN_DegreesOfFreedom();
         int row_glob = n_rows_before + p_dof;
         auto b_row = sub_cmat->get_row_array().at(row_glob);
         auto e_row = sub_cmat->GetRowPtr()[row_glob+1];
@@ -1301,9 +1317,9 @@ BlockFEMatrix BlockFEMatrix::get_sub_blockfematrix(size_t first, size_t last) co
   }
   // step 1: construct a new block fematrix with correct fe spaces
 #ifdef __2D__
-    std::vector< const TFESpace2D*  > spaces;
+    std::vector<std::shared_ptr<const TFESpace2D>> spaces;
 #elif __3D__
-    std::vector< const TFESpace3D*  > spaces;
+    std::vector<std::shared_ptr<const TFESpace3D>> spaces;
 #endif
   for( size_t sp = first; sp < last + 1; ++sp)
   {
@@ -1375,7 +1391,7 @@ size_t BlockFEMatrix::get_n_row_actives(size_t cell_row) const
 }
 
 /* ************************************************************************* */
-void BlockFEMatrix::print_matrix_info(std::string name) const
+void BlockFEMatrix::print_matrix_info(const std::string& name) const
 {
   //Gather some information to be printed.
   int n_spaces_row = this->get_n_cell_rows();
@@ -1404,10 +1420,9 @@ void BlockFEMatrix::print_matrix_info(std::string name) const
 
 /* ************************************************************************* */
 
-void BlockFEMatrix::replace_blocks(
-    const TMatrix& new_block,
-    const std::vector<std::vector<size_t>>& cell_positions,
-    const std::vector<bool>& transposed_states)
+void BlockFEMatrix::replace_blocks(const TMatrix&,
+                                   const std::vector<std::vector<size_t>>&,
+                                   const std::vector<bool>&)
 {
   ErrThrow("Don't try to put a TMatrix into an FEMatrix!");
 }
@@ -1438,15 +1453,15 @@ void BlockFEMatrix::replace_blocks(
 
     //check if the spaces fit the cell grid
 #ifdef __2D__
-    const TFESpace2D* grid_test_space = &get_test_space(cell_row,cell_column);
-    const TFESpace2D* grid_ansatz_space = &get_ansatz_space(cell_row,cell_column);
-    const TFESpace2D* block_test_space = new_block.GetTestSpace2D();
-    const TFESpace2D* block_ansatz_space = new_block.GetAnsatzSpace2D();
+    const TFESpace2D* grid_test_space = get_test_space(cell_row,cell_column).get();
+    const TFESpace2D* grid_ansatz_space = get_ansatz_space(cell_row,cell_column).get();
+    const TFESpace2D* block_test_space = new_block.GetTestSpace2D().get();
+    const TFESpace2D* block_ansatz_space = new_block.GetAnsatzSpace2D().get();
 #elif __3D__
-    const TFESpace3D* grid_test_space = &get_test_space(cell_row,cell_column);
-    const TFESpace3D* grid_ansatz_space = &get_ansatz_space(cell_row,cell_column);
-    const TFESpace3D* block_test_space = new_block.GetTestSpace3D();
-    const TFESpace3D* block_ansatz_space = new_block.GetAnsatzSpace3D();
+    const TFESpace3D* grid_test_space = get_test_space(cell_row,cell_column).get();
+    const TFESpace3D* grid_ansatz_space = get_ansatz_space(cell_row,cell_column).get();
+    const TFESpace3D* block_test_space = new_block.GetTestSpace3D().get();
+    const TFESpace3D* block_ansatz_space = new_block.GetAnsatzSpace3D().get();
 #endif
     if (!transposed_states.at(i))
     {//non-transposed state
@@ -1620,30 +1635,34 @@ BlockFEMatrix& BlockFEMatrix::operator=(BlockFEMatrix other)
 
 /* ************************************************************************* */
 #ifdef __2D__
-const TFESpace2D& BlockFEMatrix::get_test_space(size_t cell_row, size_t cell_column) const
+std::shared_ptr<const TFESpace2D> BlockFEMatrix::get_test_space(
+  size_t cell_row, size_t cell_column) const
 #elif __3D__
-const TFESpace3D& BlockFEMatrix::get_test_space(size_t cell_row, size_t cell_column) const
+std::shared_ptr<const TFESpace3D> BlockFEMatrix::get_test_space(
+  size_t cell_row, size_t cell_column) const
 #endif
 {
   if(cell_column >= n_cell_columns_) //just to not let the cell_column go unnoticed
   {
     ErrThrow("That cell_column is out of bounds.")
   }
-  return *test_spaces_rowwise_.at(cell_row);
+  return test_spaces_rowwise_.at(cell_row);
 }
 
 /* ************************************************************************* */
 #ifdef __2D__
-const TFESpace2D& BlockFEMatrix::get_ansatz_space(size_t cell_row, size_t cell_column) const
+std::shared_ptr<const TFESpace2D> BlockFEMatrix::get_ansatz_space(
+  size_t cell_row, size_t cell_column) const
 #elif __3D__
-const TFESpace3D& BlockFEMatrix::get_ansatz_space(size_t cell_row, size_t cell_column) const
+std::shared_ptr<const TFESpace3D> BlockFEMatrix::get_ansatz_space(
+  size_t cell_row, size_t cell_column) const
 #endif
 {
   if(cell_row >= n_cell_rows_)
   {
     ErrThrow("That cell_row is out of bounds.")
   }
-  return *ansatz_spaces_columnwise_.at(cell_column);
+  return ansatz_spaces_columnwise_.at(cell_column);
 }
 
 /* ************************************************************************* */
@@ -1656,7 +1675,7 @@ const TFESpace3D& BlockFEMatrix::get_ansatz_space(size_t cell_row, size_t cell_c
 // are code dupes of the non-active base class methods...
 void BlockFEMatrix::add_scaled_actives(
     const FEMatrix& summand, double scaling_factor,
-    std::vector<grid_place_and_mode> row_column_transpose_tuples)
+    std::vector<grid_place_and_mode>& row_column_transpose_tuples)
 {
   // first of all check the input, modify if reparable or throw if not so.
   check_grid_fit(summand, row_column_transpose_tuples);
@@ -1716,8 +1735,9 @@ std::shared_ptr<TMatrix> BlockFEMatrix::create_block_shared_pointer(const TMatri
 }
 /* ************************************************************************* */
 
-void BlockFEMatrix::scale_blocks_actives( double scaling_factor,
-                   std::vector<grid_place_and_mode> row_column_transpose_tuples)
+void BlockFEMatrix::scale_blocks_actives(
+  double scaling_factor,
+  std::vector<grid_place_and_mode>& row_column_transpose_tuples)
 {
   // first of all check the input, modify if reparable or throw if not so.
   check_and_edit_input( row_column_transpose_tuples );
@@ -1791,10 +1811,11 @@ void BlockFEMatrix::add_blockfe_matrix(const BlockFEMatrix& Matrix, double facto
 // Implementation of a helper method, which is used to figure out,
 // whether this is an enclosed flow problem, and hence pressure correction is
 // needed.
+bool determine_need_for_pressure_row_correction(
 #ifdef __2D__
-bool determine_need_for_pressure_row_correction(std::vector<const TFESpace2D*> spaces)
+  const std::vector<std::shared_ptr<const TFESpace2D>>& spaces)
 #else //__3D__
-bool determine_need_for_pressure_row_correction(std::vector<const TFESpace3D*> spaces)
+  const std::vector<std::shared_ptr<const TFESpace3D>>& spaces)
 #endif
 {
   int my_rank = 0;
@@ -1810,10 +1831,10 @@ bool determine_need_for_pressure_row_correction(std::vector<const TFESpace3D*> s
   // CHECK IF SADDLE POINT PROBLEM
   //determine which space is the last in the sequence of equals
   #ifdef __2D__
-  auto p = std::adjacent_find(spaces.begin(), spaces.end(), std::not_equal_to<const TFESpace2D*>());
+  auto p = std::adjacent_find(spaces.begin(), spaces.end(), std::not_equal_to<std::shared_ptr<const TFESpace2D>>());
   auto first_space = spaces.front();
   #else //__3D__
-  auto p = std::adjacent_find(spaces.begin(), spaces.end(), std::not_equal_to<const TFESpace3D*>());
+  auto p = std::adjacent_find(spaces.begin(), spaces.end(), std::not_equal_to<std::shared_ptr<const TFESpace3D>>());
   auto first_space = spaces.front();
   #endif
 
@@ -1836,7 +1857,7 @@ bool determine_need_for_pressure_row_correction(std::vector<const TFESpace3D*> s
 #ifdef _MPI
     bool sbuf = is_enclosed_flow;
     bool rbuf = false;
-    MPI_Allreduce(&sbuf, &rbuf, 1, MPI::BOOL, MPI_LAND, MPI_COMM_WORLD);
+    MPI_Allreduce(&sbuf, &rbuf, 1, MPI_CXX_BOOL, MPI_LAND, MPI_COMM_WORLD);
     //rbuf will contain "true", if any of the processes held "true" before
     is_enclosed_flow = rbuf;
 #endif

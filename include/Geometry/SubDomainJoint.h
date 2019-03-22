@@ -34,7 +34,7 @@ class TSubDomainJoint : public TJointEqN
 
   public:
     // Constructors
-    TSubDomainJoint(TBaseCell *neighb0);
+    explicit TSubDomainJoint(TBaseCell *neighb0);
 
     /** constructor with one initial neighbour */
     TSubDomainJoint(TBaseCell *neighb0, TBaseCell *neighb1);

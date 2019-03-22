@@ -8,11 +8,13 @@
  * @author Clemens Bartsch, Naveed Ahmed
  */
 #include <AlgebraicFluxCorrection.h>
-#include <Time_CD3D.h>
+#include "TimeConvectionDiffusion.h"
 #include <Database.h>
 #include <FEDatabase3D.h>
 #include <TimeDiscRout.h>
+#include <TimeDiscretizations.h>
 #include <MainUtilities.h>
+#include <ConvDiff.h>
 
 #ifdef _MPI
 #include <mpi.h>
@@ -55,7 +57,7 @@ std::vector<std::vector<double>> target_norms_none =
 };
 
 
-void check_solution_norms(Time_CD3D &tcd, int m)
+void check_solution_norms(TimeConvectionDiffusion<3> &tcd, int m)
 {
 
   if(m%10 == 0)
@@ -63,10 +65,10 @@ void check_solution_norms(Time_CD3D &tcd, int m)
     MultiIndex3D allDerivatives[4] = { D000, D100, D010, D001 };
     TAuxParam3D aux(1, 0, 0, 0, nullptr, nullptr, nullptr, nullptr, nullptr, 0, nullptr);
     std::array<double, 5> locError = {};
-    const TFESpace3D* space = tcd.get_function().GetFESpace3D();
+    const TFESpace3D* space = tcd.get_function().GetFESpace3D().get();
 
-    tcd.get_function().GetErrors(tcd.get_example().get_exact(0), 4, allDerivatives, 2,
-                            L2H1Errors, tcd.get_example().get_coeffs(), &aux, 1, &space,
+    tcd.get_function().GetErrors(tcd.get_example().get_exact(0), 4, allDerivatives, 4,
+                            conv_diff_l2_h1_linf_error<3>, tcd.get_example().get_coeffs(), &aux, 1, &space,
                             locError.data());
 
   #ifdef _MPI
@@ -74,23 +76,25 @@ void check_solution_norms(Time_CD3D &tcd, int m)
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
     std::vector<double> errorsReduced(4);
-    MPI_Reduce(locError.data(), errorsReduced.data(), 2, MPI_DOUBLE, MPI_SUM, 0,
+    MPI_Reduce(locError.data(), errorsReduced.data(), 3, MPI_DOUBLE, MPI_SUM, 0,
                MPI_COMM_WORLD);
-    MPI_Reduce(&locError[2], &errorsReduced[2], 1, MPI_DOUBLE, MPI_MAX, 0,
+    MPI_Reduce(&locError[3], &errorsReduced[3], 1, MPI_DOUBLE, MPI_MAX, 0,
                MPI_COMM_WORLD);
     if(rank == 0)
     {//this is only performed on root - just root willl have the correct values
       locError[0] = sqrt(errorsReduced[0]);
       locError[1] = sqrt(errorsReduced[1]);
-      locError[2] = errorsReduced[2];
+      locError[2] = sqrt(errorsReduced[2]);
+      locError[3] = errorsReduced[3];
   #endif // _MPI
 
     Output::print("Norms in step ", m); //This is how the reference values were produced.
-    Output::dash(std::setprecision(10), locError[0], ", ", locError[1], ", ", locError[2]);
+    Output::dash(std::setprecision(10), locError[0], ", ", locError[1], ", ", locError[3]);
 
     int control_step = m/10 - 1;
     double tol = 1e-9;
 
+    cout<<TDatabase::TimeDB->CURRENTTIME<<endl;
     if( fabs(locError[0] - target_norms[control_step][0]) > tol )
       ErrThrow("L2 norm at timestep ", TDatabase::TimeDB->CURRENTTIME,  " is not correct, ",
                locError[0], " != ", target_norms[control_step][0]);
@@ -99,9 +103,9 @@ void check_solution_norms(Time_CD3D &tcd, int m)
       ErrThrow("H1 norm at timestep ", TDatabase::TimeDB->CURRENTTIME,  " is not correct, ",
                locError[1], " != ", target_norms[control_step][1]);
 
-    if( fabs(locError[2]  - target_norms[control_step][2]) > tol )
+    if( fabs(locError[3]  - target_norms[control_step][2]) > tol )
       ErrThrow("L^inf norm at timestep ", TDatabase::TimeDB->CURRENTTIME,  " is not correct, ",
-               locError[2], " != ", target_norms[control_step][2]);
+               locError[3], " != ", target_norms[control_step][2]);
     Output::print("Solution norms checked succesfully.");
 
 #ifdef _MPI
@@ -112,7 +116,7 @@ void check_solution_norms(Time_CD3D &tcd, int m)
 
 
  //test crank-nicolson linear fem-fct scheme
-int main(int argc, char* argv[])
+int main(int argc, char** argv)
 {
 
   TDatabase Database;
@@ -128,6 +132,8 @@ int main(int argc, char* argv[])
     ParameterDatabase db = ParameterDatabase::parmoon_default_database();
     db.merge(Example3D::default_example_database());
     db.merge(ParameterDatabase::default_output_database());
+    db.merge(LocalAssembling3D::default_local_assembling_database());
+    db.merge(TimeDiscretization::default_TimeDiscretization_database());
     db["problem_type"] = 1;
     db["example"] = 0;
     db["diffusion_coefficient"] = 1e-6;
@@ -138,9 +144,13 @@ int main(int argc, char* argv[])
     db["space_discretization_type"] = "galerkin";
     TDatabase::ParamDB->ANSATZ_ORDER=1;
 
-    TDatabase::TimeDB->STARTTIME = 0;
-    TDatabase::TimeDB->ENDTIME = 1;
+    db["time_end"] = 1;
+    db["time_discretization"] = "crank_nicolson";
+    TDatabase::TimeDB->TIME_DISC = 2;
     TDatabase::TimeDB->TIMESTEPLENGTH = 0.01;
+    db["time_start"] = 0;
+    TDatabase::TimeDB->CURRENTTIME = db["time_start"];
+    db["time_step_length"] = 0.01;
     SetTimeDiscParameters(0);
 
     db.add("boundary_file", "Default_UnitCube", "");
@@ -155,48 +165,34 @@ int main(int argc, char* argv[])
     db["residual_reduction"] =  0.0;
 
     TDomain domain(db);
-#ifdef _MPI
-  int maxSubDomainPerDof = 0;
-#endif
-    std::list<TCollection* > gridCollections
-      = domain.refine_and_get_hierarchy_of_collections( db
-#ifdef _MPI
-    , maxSubDomainPerDof
-#endif
-          );
+    domain.refine_and_get_hierarchy_of_collections(db);
 
     // example object
     Example_TimeCD3D example_obj(db);
     // tcd3d system object
-#ifdef _MPI
-    Time_CD3D tcd(gridCollections, db, example_obj, maxSubDomainPerDof);
-#else
-    Time_CD3D tcd(gridCollections, db, example_obj);
-#endif
+    TimeConvectionDiffusion<3> tcd(domain, db, example_obj);
 
-
+    TimeDiscretization& tss = tcd.get_time_stepping_scheme();
+    tss.current_step_ = 0;
+    tss.current_time_ = db["time_start"];
+    // assemble the matrices and right hand side at the start time
     tcd.assemble_initial_time();
-
-    int step = 0;
-    //int imag = 0;
-
-    while(TDatabase::TimeDB->CURRENTTIME <
-      TDatabase::TimeDB->ENDTIME-1e-10)
+    while(tss.current_time_ < tss.get_end_time()-1e-10)
     {
-      step ++;
-      TDatabase::TimeDB->INTERNAL_STARTTIME
-         = TDatabase::TimeDB->CURRENTTIME;
+      tss.current_step_++;
+      TDatabase::TimeDB->INTERNAL_STARTTIME = tss.current_time_;
+      tss.set_time_disc_parameters();
       SetTimeDiscParameters(1);
-
-      double tau = TDatabase::TimeDB->TIMESTEPLENGTH;
+      double tau = tss.get_step_length();
+      tss.current_time_ += tau;
+      // this is used at several places, e.g., in the example file etc.
       TDatabase::TimeDB->CURRENTTIME += tau;
       if(rank == 0)
-        Output::print<1>("CURRENT TIME: ", TDatabase::TimeDB->CURRENTTIME);
+        Output::print<1>("CURRENT TIME: ", tss.current_time_);
       tcd.assemble();
       tcd.solve();
 
-      //tcd.output(step,imag);
-      check_solution_norms(tcd, step);
+      check_solution_norms(tcd, tss.current_step_);
     }
 
   }

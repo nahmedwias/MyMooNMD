@@ -23,7 +23,7 @@ void test_BdData_fromBdCondition_and_AnalyticalFunction()
   
 }
 
-int main(int argc, char **argv)
+int main(int, char **)
 {
   // at first we create a few joints in 2D and 3D to have object on which we 
   // can later call BoundaryCondition::get_condition.
@@ -155,8 +155,7 @@ int main(int argc, char **argv)
   }
 #endif // 2D
 #ifdef __3D__
-  auto from_parametrization3d = [](unsigned int c, double t, double s, 
-                                   double time)
+  auto from_parametrization3d = [](unsigned int c, double t, double s, double)
                                  { return c == 0 ? t+s : 1-t-s; };
   BoundaryData bd_param2d(from_parametrization3d);
   p = Point(1.5, 1., 0.5);
@@ -165,7 +164,7 @@ int main(int argc, char **argv)
   
   
   Output::print("testing boundary data which depends on the coordinates");
-  auto from_coordinates = [](const Point & p, double time)
+  auto from_coordinates = [](const Point & p, double)
                           { return p.x() > 0.3 ? 1. : -1.; };
   BoundaryData bd_coord(from_coordinates);
   p = Point(1.5, 1., 0.5);

@@ -35,9 +35,8 @@ void THexaTrilinear::GetOrigFromRef(double xi, double eta, double zeta, double &
 }
 
 /** transfer a set of point from reference to original element */
-void THexaTrilinear::GetOrigFromRef(
-                int N_Points,
-                double *xi, double *eta, double *zeta,
+void THexaTrilinear::GetOrigFromRef(int N_Points,
+                const double *xi, const double *eta, const double *zeta,
                 double *X, double *Y, double *Z, double *absdetjk)
 {
   int i;
@@ -77,7 +76,7 @@ void THexaTrilinear::GetOrigFromRef(
 }
 
 /** transfer from reference element to original element */
-void THexaTrilinear::GetOrigFromRef(double *ref, double *orig)
+void THexaTrilinear::GetOrigFromRef(const double *ref, double *orig)
 {
   orig[0] = xc0 + xc1*ref[0] + xc2*ref[1] + xc3*ref[2] + xc4*ref[0]*ref[1]
                 + xc5*ref[0]*ref[2] + xc6*ref[1]*ref[2]
@@ -143,16 +142,17 @@ void THexaTrilinear::GetRefFromOrig(double X, double Y, double Z,
 }
 
 /** transfer from original element to reference element */
-void THexaTrilinear::GetRefFromOrig(double *orig, double *ref)
+void THexaTrilinear::GetRefFromOrig(const double *orig, double *ref)
 {
   GetRefFromOrig(orig[0], orig[1], orig[2], ref[0], ref[1], ref[2]);
 }
 
 /** calculate functions and derivatives from reference element
     to original element */
-void THexaTrilinear::GetOrigValues(BaseFunct3D BaseFunct,
-                               int N_Points, double *xi, double *eta, double *zeta,
-                               int N_Functs, QuadFormula3D QuadFormula)
+void THexaTrilinear::GetOrigValues(BaseFunct3D BaseFunct, int N_Points,
+                                   const double *xi, const double *eta,
+                                   const double *zeta, int N_Functs,
+                                   QuadFormula3D QuadFormula)
 {
   int i,j;
   double **refvaluesD000, **origvaluesD000;
@@ -430,9 +430,9 @@ void THexaTrilinear::GetOrigValues(BaseFunct3D BaseFunct,
 /** calculate functions and derivatives from reference element
     to original element, for all given elements */
 void THexaTrilinear::GetOrigValues(int N_Sets, BaseFunct3D *BaseFuncts,
-                               int N_Points, double *xi, double *eta, double *zeta, 
-                               QuadFormula3D QuadFormula,
-                               bool *Needs2ndDer)
+                                   int N_Points, const double *xi,
+                                   const double *eta, const double *zeta,
+                                   QuadFormula3D QuadFormula, bool *)
 {
   int i,j,k;
   double **refvaluesD000, **origvaluesD000;
@@ -730,10 +730,13 @@ void THexaTrilinear::GetOrigValues(int N_Sets, BaseFunct3D *BaseFuncts,
 /** calculate functions and derivatives from reference element
     to original element */
 void THexaTrilinear::GetOrigValues(double xi, double eta, double zeta,
-                               int N_BaseFunct,
-                               double *uref, double *uxiref, double *uetaref, double *uzetaref,
-                               double *uorig, double *uxorig, double *uyorig, double *uzorig, 
-                               int _BaseVectDim)
+                                   int N_BaseFunct,
+                                   const double *uref, const double *uxiref,
+                                   const double *uetaref,
+                                   const double *uzetaref,
+                                   double *uorig, double *uxorig,
+                                   double *uyorig, double *uzorig,
+                                   int _BaseVectDim)
 {
   int i;
   double dx1, dx2, dx3;
@@ -774,7 +777,7 @@ void THexaTrilinear::GetOrigValues(double xi, double eta, double zeta,
   } // endfor i
 }
 
-void THexaTrilinear::SetCell(TBaseCell *cell)
+void THexaTrilinear::SetCell(const TBaseCell *cell)
 {
 
   Cell = cell;
@@ -835,7 +838,7 @@ void THexaTrilinear::SetCell(TBaseCell *cell)
 
 /** return outer normal unit vector */
 void THexaTrilinear::GetOuterNormal(int j, double s, double t,
-                                    double &n1, double &n2, double &n3)
+                                    double &n1, double &n2, double &n3) const
 {
 //   double len;
   double Xi, Eta, Zeta;
@@ -930,7 +933,7 @@ void THexaTrilinear::GetOuterNormal(int j, double s, double t,
 /** return two tangent vectors */
 void THexaTrilinear::GetTangentVectors(int j, double p1, double p2,
         double &t11, double &t12, double &t13,
-        double &t21, double &t22, double &t23)
+        double &t21, double &t22, double &t23) const
 {
   double Xi, Eta, Zeta;
 
@@ -1009,8 +1012,8 @@ void THexaTrilinear::GetTangentVectors(int j, double p1, double p2,
 } // end THexaTrilinear::GetTangentVectors
 
 
-void THexaTrilinear::PiolaMapOrigFromRef(int N_Functs, double *refD000, 
-                                         double *origD000)
+void THexaTrilinear::PiolaMapOrigFromRef(double, double, double, int,
+                                         const double *, double *)
 {
   ErrMsg("Piola Map for HexaTrilinear reference map not yet implemented");
   exit(1);

@@ -19,7 +19,7 @@
 #include<Example3D.h>
 #include <functional>
 
-class NSE3D; //forward declaration
+template <int d> class NavierStokes; //forward declaration
 
 class Example_NSE3D : public Example3D
 {
@@ -29,23 +29,36 @@ class Example_NSE3D : public Example3D
      * This intializes a (Navier-)Stokes example in 3D. It is chosen according
      * to example_code.
      */
-    Example_NSE3D(const ParameterDatabase& user_input_parameter_db);
+    explicit Example_NSE3D(const ParameterDatabase& user_input_parameter_db);
 
     /** @brief initialize your own example
      * 
      * Create an example with all vectors already defined.
      */
-    Example_NSE3D(std::vector <DoubleFunct3D*> exact,
-                  std::vector <BoundCondFunct3D*> bc,
-                  std::vector <BoundValueFunct3D*> bd, CoeffFct3D coeffs)
+    Example_NSE3D(const std::vector<DoubleFunct3D*>& exact,
+                  const std::vector<BoundCondFunct3D*>& bc,
+                  const std::vector<BoundValueFunct3D*>& bd,
+                  const CoeffFct3D& coeffs)
       : Example3D(exact, bc, bd, coeffs) {};
 
     /// Apply the function stored as post processing routine.
-    void do_post_processing(NSE3D& nse3d) const;
+    void do_post_processing(NavierStokes<3>& nse3d) const;
 
     /// Return kinematic viscosity, if set.
     double get_nu() const;
   
+    /// Return effective viscosity, if set.
+    double get_effective_viscosity() const;
+
+    /// Return permeability, if set.
+    double get_inverse_permeability() const;
+
+    /// Return neumann boundary ids, if set
+    std::vector<size_t> get_neumann_id() const;
+
+    /// Return nitsche boundary ids, if set
+    std::vector<size_t> get_nitsche_id() const;
+
     //Declaration of special member functions - rule of zero
 
     //! Default copy constructor. Performs deep copy.
@@ -66,7 +79,7 @@ class Example_NSE3D : public Example3D
   private:
     /// Function doing the post processing for a stationary example.
     /// TODO put NSE3D argument const as soon as FEFunctions can be copied properly!
-    std::function<void(NSE3D &)> post_processing_stat;
+    std::function<void(NavierStokes<3>&)> post_processing_stat;
     /// TODO Function doing the post processing for a time dependent example.
 };
 

@@ -29,7 +29,7 @@ class TMacroCell : public TGridCell
     { SubGridID = subgridid; }
 
      /** @brief return subgrid ID */
-    virtual int GetSubGridID()
+    virtual int GetSubGridID() const override
     { return SubGridID; }
 };
 

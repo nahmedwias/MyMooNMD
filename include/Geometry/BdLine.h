@@ -29,26 +29,25 @@ class TBdLine : public TBoundComp2D
 
   public:
     // Constructor
-    TBdLine(int id);
+    explicit TBdLine(int id);
 
     // Methods
     /** set all parameters to the given values */
     void SetParams (double xstart, double ystart, double delx, double dely);
 
     /** return the coordinates of parameter value T */
-    virtual int GetXYofT(double T, double &X, double &Y);
+    virtual int GetXYofT(double T, double &X, double &Y) const override;
 
     /** return the parameter value T of coordinates (X, Y) */
-    virtual int GetTofXY(double X, double Y, double &T);
+    virtual int GetTofXY(double X, double Y, double &T) const override;
 
     /** read parameter from input stream */
-    virtual int ReadIn(std::istream &dat);
+    virtual int ReadIn(std::istream &dat) override;
 
     /** get number of initial vertices on this component */
-    virtual int GetN_InitVerts()
+    virtual int GetN_InitVerts() override
     { return 2; }
-    virtual int GenInitVerts(double *&points, int I_points,
-                             int *&edges, int I_edges)
+    virtual int GenInitVerts(double *&, int, int *&, int) override
     { return 0; }
 };
 

@@ -21,8 +21,8 @@
 #include <DiscreteForm2D.h>
 #include <FEDatabase2D.h>
 #include <FEVectFunct2D.h>
-#include <NSE2D_FixPo.h>
 #include <TNSE2D_Routines.h>
+#include <NSE2DSUPG.h>
 #endif
 
 #ifdef __3D__
@@ -44,7 +44,7 @@
 #include <stdio.h>
 
 #ifdef __MAC64__
-#include <malloc/malloc.h>
+#include <malloc/malloc.h> // defines _MALLOC_MALLOC_H_
 #else
 #include <malloc.h>
 #endif
@@ -124,8 +124,8 @@ int VertexNumber(int IEH, int NVE)
   return ret;
 }
 
-void StreamFunction(TFESpace2D *velo, double *u1, double *u2,
-                    TFESpace2D *stream, double *psi)
+void StreamFunction(const TFESpace2D *velo, double *u1, double *u2,
+                    const TFESpace2D *stream, double *psi)
 {
   int IEH,IEL,k,l, N_Cells, NVE, NVE2, NVT, VertNum, m, l1;
   TCollection *Coll;
@@ -509,9 +509,9 @@ void StreamFunction(TFESpace2D *velo, double *u1, double *u2,
   delete CellList;
 }
 
-void ComputeVorticityDivergence(TFESpace2D *velo, TFEFunction2D *u1, 
+void ComputeVorticityDivergence(const TFESpace2D *, TFEFunction2D *u1,
                                 TFEFunction2D *u2,
-                                TFESpace2D *vorticity_space, 
+                                const TFESpace2D *vorticity_space,
                                 double *vort,  double *div)
 {
   int i, j, N_Cells, index, *DOF, N_loc_dofVort, N_Vort;
@@ -522,7 +522,8 @@ void ComputeVorticityDivergence(TFESpace2D *velo, TFEFunction2D *u1,
   TFE2D *Element;
   TNodalFunctional2D *nf;
   RefTrans2D RefTrans;
-  double *xi_ref, *eta_ref, AbsDetjkVort[MaxN_QuadPoints_2D];
+  const double *xi_ref, *eta_ref;
+  double AbsDetjkVort[MaxN_QuadPoints_2D];
   double X_orig[MaxN_PointsForNodal2D], Y_orig[MaxN_PointsForNodal2D];
   double val[3];
 
@@ -625,10 +626,10 @@ void ComputeVorticityDivergence(TFESpace2D *velo, TFEFunction2D *u1,
 }
 
 // determine L2 and H1 error, 2D
-void L2H1Errors(int N_Points, double *X, double *Y, double *AbsDetjk, 
-                double *Weights, double hK, 
+void L2H1Errors(int N_Points, std::array<double*, 2>, double *AbsDetjk, 
+                const double *Weights, double,
                 double **Der, double **Exact,
-                double **coeffs, double *LocError)
+                double **, double *LocError)
 {
   LocError[0] = 0.0;
   LocError[1] = 0.0;
@@ -653,10 +654,10 @@ void L2H1Errors(int N_Points, double *X, double *Y, double *AbsDetjk,
 }
 
 // determine L2-error, divergence error and H1 error, 2D
-void L2DivH1Errors(int N_Points, double *X, double *Y, double *AbsDetjk, 
-                  double *Weights, double hK, 
+void L2DivH1Errors(int N_Points, std::array<double*, 2>, double *AbsDetjk, 
+                  const double *Weights, double,
                   double **Der, double **Exact,
-                  double **coeffs, double *LocError)
+                  double **, double *LocError)
 {
   int i;
   double *deriv, *exactval, w, t;
@@ -697,12 +698,8 @@ void L2DivH1Errors(int N_Points, double *X, double *Y, double *AbsDetjk,
 
 
 
-// determine L2, H1 and SDFEM error
-// there are problems with includiung ConvDiff2D_Routines.h
-double Mesh_size_in_convection_direction(double hK, double b1, double b2);
-
-void SDFEMErrors(int N_Points, double *X, double *Y, double *AbsDetjk, 
-                 double *Weights, double hK, double **Der, double **Exact,
+void SDFEMErrors(int N_Points, std::array<double*, 2>, double *AbsDetjk, 
+                 const double *Weights, double hK, double **Der, double **Exact,
                  double **coeffs, double *LocError)
 {
   int i;
@@ -735,7 +732,7 @@ void SDFEMErrors(int N_Points, double *X, double *Y, double *AbsDetjk,
     // if (Y[i]>TDatabase::ParamDB->P6) continue;
 
     // SUPG parameter
-    delta = Compute_SDFEM_delta(hK, c0, c1, c2, c3, c5);
+    delta = Compute_SDFEM_delta<2>(hK, c0, {{c1, c2}}, c3, c5);
     
     deriv = Der[i];
     exactval = Exact[i];
@@ -772,7 +769,7 @@ void SDFEMErrors(int N_Points, double *X, double *Y, double *AbsDetjk,
 
 // determine L2, H1 and SDFEM error, in (0,P6)^2
 void SDFEMErrorsSmooth(int N_Points, double *X, double *Y, double *AbsDetjk, 
-                 double *Weights, double hK, double **Der, double **Exact,
+                 const double *Weights, double hK, double **Der, double **Exact,
                  double **coeffs, double *LocError)
 {
   int i, sd_type = TDatabase::ParamDB->SDFEM_TYPE;
@@ -849,7 +846,7 @@ void SDFEMErrorsSmooth(int N_Points, double *X, double *Y, double *AbsDetjk,
 // example JohnMaubachTobiska1997 (x-0.5)^2+(y-0.5)^2 > r^2 
 void SDFEMErrorsSmooth_JohnMaubachTobiska1997
 (int N_Points, double *X, double *Y, double *AbsDetjk, 
- double *Weights, double hK, double **Der, double **Exact,
+ const double *Weights, double hK, double **Der, double **Exact,
  double **coeffs, double *LocError)
 {
     int i, sd_type = TDatabase::ParamDB->SDFEM_TYPE;
@@ -959,8 +956,8 @@ void SDFEMErrorsSmooth_JohnMaubachTobiska1997
 
 // determine errors to interpolant
 // paper with Julia Novo
-void SDFEMErrorsInterpolant(int N_Points, double *X, double *Y, double *AbsDetjk, 
-                 double *Weights, double hK, double **Der, double **Exact,
+void SDFEMErrorsInterpolant(int N_Points, double *, double *, double *AbsDetjk, 
+                 const double *Weights, double hK, double **Der, double **Exact,
                  double **coeffs, double *LocError)
 {
   int i;
@@ -1005,7 +1002,7 @@ void SDFEMErrorsInterpolant(int N_Points, double *X, double *Y, double *AbsDetjk
     c2 = coeff[2];
     // double c3 = coeff[3];
     c5 = MAX(fabs(c1),fabs(c2));
-    delta = Compute_SDFEM_delta(hK, coeff[0], coeff[1], coeff[2], coeff[3], c5);
+    delta = Compute_SDFEM_delta<2>(hK, coeff[0], {{coeff[1], coeff[2]}}, coeff[3], c5);
     if (TDatabase::ParamDB->INTERNAL_PROBLEM_IDENTITY == 120814)
       delta = TDatabase::ParamDB->INTERNAL_P1_Array[TDatabase::ParamDB->INTERNAL_LEVEL];
 
@@ -1043,8 +1040,8 @@ void SDFEMErrorsInterpolant(int N_Points, double *X, double *Y, double *AbsDetjk
 }
 
 // determine L2, H1 and SDFEM error for Oseen
-void SPGErrorsOseen(int N_Points, double *X, double *Y, double *AbsDetjk, 
-                 double *Weights, double hK, double **Der, double **Exact,
+void SPGErrorsOseen(int N_Points, double *, double *, double *AbsDetjk, 
+                 const double *Weights, double hK, double **Der, double **Exact,
                  double **coeffs, double *LocError)
 {
   int i;
@@ -1101,8 +1098,8 @@ void SPGErrorsOseen(int N_Points, double *X, double *Y, double *AbsDetjk,
 }
 
 // determine L2, H1 and pressure part of SUPG error for Oseen
-void SPGErrorsOseenPressure(int N_Points, double *X, double *Y, double *AbsDetjk, 
-                 double *Weights, double hK, double **Der, double **Exact,
+void SPGErrorsOseenPressure(int N_Points, double *, double *, double *AbsDetjk, 
+                 const double *Weights, double hK, double **Der, double **Exact,
                  double **coeffs, double *LocError)
 {
   int i;
@@ -1157,10 +1154,10 @@ void SPGErrorsOseenPressure(int N_Points, double *X, double *Y, double *AbsDetjk
 
 
 // determine L1 error, 2D
-void L1Error(int N_Points, double *X, double *Y, double *AbsDetjk, 
-             double *Weights, double hK, 
+void L1Error(int N_Points, std::array<double*, 2> xy, double *AbsDetjk, 
+             const double *Weights, double hK, 
              double **Der, double **Exact,
-             double **coeffs, double *LocError)
+             double **, double *LocError)
 {
   int i, index;
   double *deriv, *exactval, w, t, area, v[3], va[3], xa[3], ya[3];
@@ -1224,8 +1221,8 @@ void L1Error(int N_Points, double *X, double *Y, double *AbsDetjk,
       for (i=0;i<3;i++)
       {
           va[i] = v[(index+1+i)%3]; 
-          xa[i] = X[(index+1+i)%3]; 
-          ya[i] = Y[(index+1+i)%3]; 
+          xa[i] = xy[0][(index+1+i)%3]; 
+          ya[i] = xy[1][(index+1+i)%3]; 
       }     
       //for (i=0;i<3;i++)
       //          OutPut(xa[i] << " " << ya[i] << " " << va[i] << endl);
@@ -1265,10 +1262,10 @@ void L1Error(int N_Points, double *X, double *Y, double *AbsDetjk,
 }
 
 // determine deformation tensor error
-void DeformationTensorError(int N_Points, double *X, double *Y,
-                double *AbsDetjk, double *Weights, double hK, 
+void DeformationTensorError(int N_Points, double *, double *,
+                double *AbsDetjk, const double *Weights, double,
                 double **Der, double **Exact,
-                double **coeffs, double *LocError)
+                double **, double *LocError)
 {
   int i;
   double *deriv_x, *exactval, *deriv_y, *exactval1, w, t;
@@ -1301,55 +1298,12 @@ void DeformationTensorError(int N_Points, double *X, double *Y,
   // cout << "LocError[0]: " << LocError[0] << endl;
   // cout << "LocError[1]: " << LocError[1] << endl;
 }
-// compute the subgrid dissipation 
-void SubGridDissipation(int N_Points, double *X, double *Y,
-                double *AbsDetjk, double *Weights, double hK, 
-                double **Der, double **Exact,
-                double **coeffs, double *LocError)
-{
-  int i;
-  double *deriv_x, *deriv_y, w, t, s;
-  double delta, mu, gradu[4];
 
-  LocError[0] = 0.0;
-  delta =  CharacteristicFilterWidth(hK);
-
-  for(i=0;i<N_Points;i++)
-  {
-    // first component
-    deriv_x = Der[i];
-    // second component
-    deriv_y = Der[i+N_Points];
-
-    gradu[0] = deriv_x[1];
-    gradu[1] = deriv_x[2];
-    gradu[2] = deriv_y[1];
-    gradu[3] = deriv_y[2];    
-    mu = TurbulentViscosity(delta,gradu,nullptr,nullptr);
-    
-    // weight
-    w = Weights[i]*AbsDetjk[i];
-
-    // left upper term
-    t = deriv_x[1];
-    s = w*t*t;
-    // right upper and left lower term
-    t = deriv_x[2]+deriv_y[1];
-    s += w*t*t/2.0;
-    // right lower term
-    t = deriv_y[2];
-    s += w*t*t;
-    LocError[0] -= s*mu;
-  } // endfor i
-
-  // cout << "LocError[0]: " << LocError[0] << endl;
-  // cout << "LocError[1]: " << LocError[1] << endl;
-}
 // determine L2 and H1 error, 2D
-void H1Norm(int N_Points, double *X, double *Y, double *AbsDetjk, 
-            double *Weights, double hK, 
+void H1Norm(int N_Points, double *, double *, double *AbsDetjk, 
+            const double *Weights, double,
             double **Der, double **Exact,
-            double **coeffs, double *LocError)
+            double **, double *LocError)
 {
   int i;
   double *deriv, *exactval, w, t;
@@ -1375,10 +1329,10 @@ void H1Norm(int N_Points, double *X, double *Y, double *AbsDetjk,
   // cout << "LocError[1]: " << LocError[1] << endl;
 }
 // compute the error in the divergence
-void DivergenceError(int N_Points, double *X, double *Y,
-		     double *AbsDetjk, double *Weights, double hK, 
-		     double **Der, double **Exact,
-		     double **coeffs, double *LocError)
+void DivergenceError(int N_Points, double *, double *,
+		     double *AbsDetjk, const double *Weights, double,
+		     double **Der, double **,
+		     double **, double *LocError)
 {
   int i;
   double *deriv_x, *deriv_y, w, t;
@@ -1405,9 +1359,9 @@ void DivergenceError(int N_Points, double *X, double *Y,
 }
 
 // compute the error in the grad-div term for Oseen
-void DivergenceErrorGradDivOseen(int N_Points, double *X, double *Y,
-         double *AbsDetjk, double *Weights, double hK, 
-         double **Der, double **Exact,
+void DivergenceErrorGradDivOseen(int N_Points, double *, double *,
+         double *AbsDetjk, const double *Weights, double hK, 
+         double **Der, double **,
          double **coeffs, double *LocError)
 {
   int i;
@@ -1441,8 +1395,8 @@ void DivergenceErrorGradDivOseen(int N_Points, double *X, double *Y,
 
 
 // mesh cell parameters for shock capturing scheme DC_CD
-void Parameters_DC_CD(int N_Points, double *X, double *Y, double *AbsDetjk, 
-           double *Weights, double hK, 
+void Parameters_DC_CD(int N_Points, double *, double *, double *AbsDetjk, 
+           const double *Weights, double,
            double **Der, double **Exact,
            double **coeffs, double *LocError)
 {
@@ -1486,8 +1440,8 @@ void Parameters_DC_CD(int N_Points, double *X, double *Y, double *AbsDetjk,
 }
 
 // mesh cell values for gradient and residual 
-void Parameters_Gradient_Residual(int N_Points, double *X, double *Y, double *AbsDetjk,
-           double *Weights, double hK,
+void Parameters_Gradient_Residual(int N_Points, double *, double *, double *AbsDetjk,
+           const double *Weights, double,
            double **Der, double **Exact,
            double **coeffs, double *LocError)
 {
@@ -1526,7 +1480,7 @@ void Parameters_Gradient_Residual(int N_Points, double *X, double *Y, double *Ab
 #endif // 2D
 
 #ifdef __3D__
-void ComputeVorticityDivergence(TFESpace3D *velo, TFEFunction3D *u1, 
+void ComputeVorticityDivergence(TFESpace3D *, TFEFunction3D *u1, 
                                 TFEFunction3D *u2, TFEFunction3D *u3,
                                 TFESpace3D *vorticity_space, 
                                 TFEFunction3D *vort1, 
@@ -1542,7 +1496,7 @@ void ComputeVorticityDivergence(TFESpace3D *velo, TFEFunction3D *u1,
   TFE3D *Element;
   TNodalFunctional3D *nf;
   RefTrans3D RefTrans;
-  double *xi_ref, *eta_ref, *zeta_ref;  //values[4];
+  const double *xi_ref, *eta_ref, *zeta_ref;  //values[4];
   double AbsDetjkVort[MaxN_QuadPoints_3D];
   double X_orig[MaxN_PointsForNodal3D], Y_orig[MaxN_PointsForNodal3D];
   double Z_orig[MaxN_PointsForNodal3D];
@@ -1641,11 +1595,11 @@ void ComputeVorticityDivergence(TFESpace3D *velo, TFEFunction3D *u1,
 
 
 // determine L2 and H1 error, 3D
-void L2H1Errors(int N_Points, double *X, double *Y, double *Z, 
+void L2H1Errors(int N_Points, std::array<double*, 3>,
                 double *AbsDetjk, 
-                double *Weights, double hK, 
+                const double *Weights, double,
                 double **Der, double **Exact,
-                double **coeffs, double *LocError)
+                double **, double *LocError)
 {
   int i;
   double *deriv, *exactval, w, t;
@@ -1675,9 +1629,9 @@ void L2H1Errors(int N_Points, double *X, double *Y, double *Z,
 }
 void L2H1ErrorsSmooth(int N_Points, double *X, double *Y, double *Z, 
                 double *AbsDetjk, 
-                double *Weights, double hK, 
+                const double *Weights, double,
                 double **Der, double **Exact,
-                double **coeffs, double *LocError)
+                double **, double *LocError)
 {
   int i;
   double *deriv, *exactval, w, t;
@@ -1710,9 +1664,10 @@ void L2H1ErrorsSmooth(int N_Points, double *X, double *Y, double *Z,
   // cout << "LocError[1]: " << LocError[1] << endl;
 }
 
-void L2DivH1Errors(int N_Points, double *X, double *Y, double *Z, 
-                   double *AbsDetjk, double *Weights, double hK, double **Der,
-                   double **Exact, double **coeffs, double *LocError)
+void L2DivH1Errors(int N_Points, std::array<double*, 3>,
+                   double *AbsDetjk, const double *Weights, double,
+                   double **Der, double **Exact, double **,
+                   double *LocError)
 {
   LocError[0] = 0.0;
   LocError[1] = 0.0;
@@ -1759,21 +1714,18 @@ void L2DivH1Errors(int N_Points, double *X, double *Y, double *Z,
 }
 
 // determine L1 error, 3D
-void L1Error(int N_Points, double *X, double *Y, double *Z, 
-                double *AbsDetjk, 
-                double *Weights, double hK, 
-                double **Der, double **Exact,
-                double **coeffs, double *LocError)
+void L1Error(int, std::array<double*, 3>, double *, const double *, double,
+             double **, double **, double **, double *LocError)
 {
     OutPut("computation of L1-error not implemented !!!" <<endl);
     LocError[0] = 0;
 }
 
 // determine deformation tensor error
-void DeformationTensorError(int N_Points, double *X, double *Y, double *Z,
-                double *AbsDetjk, double *Weights, double hK, 
+void DeformationTensorError(int N_Points, double *, double *, double *,
+                double *AbsDetjk, const double *Weights, double, 
                 double **Der, double **Exact,
-                double **coeffs, double *LocError)
+                double **, double *LocError)
 {
   int i;
   double *deriv_x, *exactval, *deriv_y, *exactval1, *deriv_z, *exactval2, w, t;
@@ -1817,75 +1769,12 @@ void DeformationTensorError(int N_Points, double *X, double *Y, double *Z,
   // cout << "LocError[0]: " << LocError[0] << endl;
   // cout << "LocError[1]: " << LocError[1] << endl;
 }
-// compute the subgrid dissipation 
-void SubGridDissipation(int N_Points, double *X, double *Y, double *Z,
-                double *AbsDetjk, double *Weights, double hK, 
-                double **Der, double **Exact,
-                double **coeffs, double *LocError)
-{
-  int i;
-  double *deriv_x, *deriv_y, *deriv_z, w, t, s;
-  double delta, mu, gradu[9], u[3];
 
-  LocError[0] = 0.0;
-  delta =  CharacteristicFilterWidth(hK);
-
-  for(i=0;i<N_Points;i++)
-  {
-    // first component
-    deriv_x = Der[i];
-    // second component
-    deriv_y = Der[i+N_Points];
-    // third component
-    deriv_z = Der[i+2*N_Points];
-
-    u[0] =  deriv_x[0];
-    u[1] =  deriv_y[0];
-    u[2] =  deriv_z[0];
-    gradu[0] = deriv_x[1];
-    gradu[1] = deriv_x[2];
-    gradu[2] = deriv_x[3];
-    gradu[3] = deriv_y[1];
-    gradu[4] = deriv_y[2];
-    gradu[5] = deriv_y[3];
-    gradu[6] = deriv_z[1];
-    gradu[7] = deriv_z[2];
-    gradu[8] = deriv_z[3];
-    mu = TurbulentViscosity3D(delta,gradu,u,nullptr,nullptr,nullptr,nullptr,-4711);
-    Output::print("change according to the CommonRoutineTNSE3D.h");exit(0);
-    // weight
-    w = Weights[i]*AbsDetjk[i];
-   
-    // left upper term
-    t = deriv_x[1];
-    s = w*t*t;
-    // 12 and 21 term 
-    t = deriv_x[2]+deriv_y[1];
-    s += w*t*t/2.0;
-    // 22 term
-    t = deriv_y[2];
-    s += w*t*t;
-    // 13 and 31 term
-    t = deriv_x[3]+deriv_z[1];
-    s += w*t*t/2.0;
-    // 23 and 32 term
-    t = deriv_y[3]+deriv_z[2];
-    s += w*t*t/2.0;
-    // 33 term
-    t = deriv_z[3];
-    s += w*t*t;
-    LocError[0] -= s*mu;
-
-  } // endfor i
-
-  // cout << "LocError[0]: " << LocError[0] << endl;
-  // cout << "LocError[1]: " << LocError[1] << endl;
-}
 // compute the error in the divergence
-void DivergenceError(int N_Points, double *X, double *Y, double *Z,
-		     double *AbsDetjk, double *Weights, double hK, 
-		     double **Der, double **Exact,
-		     double **coeffs, double *LocError)
+void DivergenceError(int N_Points, double *, double *, double *,
+		     double *AbsDetjk, const double *Weights, double,
+		     double **Der, double **,
+		     double **, double *LocError)
 {
   int i;
   double *deriv_x, *deriv_y, *deriv_z, w, t;
@@ -1913,9 +1802,9 @@ void DivergenceError(int N_Points, double *X, double *Y, double *Z,
   //cout << "LocError[0]: " << LocError[0] << endl;
 }
 // mesh cell parameters for shock capturing scheme DC_CD
-void Parameters_DC_CD(int N_Points, double *X, double *Y, double *Z,
+void Parameters_DC_CD(int N_Points, double *, double *, double *,
                       double *AbsDetjk, 
-                      double *Weights, double hK, 
+                      const double *Weights, double,
                       double **Der, double **Exact,
                       double **coeffs, double *LocError)
 {
@@ -2048,7 +1937,7 @@ TFEFunction3D *velocity3, double *Qcrit)
 // ========================================================================
 // put l infinity norm of u in coeff5
 // ========================================================================
-void LInfU(int N_Points, double **Coeffs, double **Params, TBaseCell *cell)
+void LInfU(int N_Points, double **, double **Params, TBaseCell *)
 {
   int i;
   double max, u1, u2, u, *param;
@@ -2070,8 +1959,7 @@ void LInfU(int N_Points, double **Coeffs, double **Params, TBaseCell *cell)
     Params[i][2] = max;
 }
 
-void linfb(int N_Points, double **Coeffs, double **Params,
-           TBaseCell *cell)
+void linfb(int N_Points, double **Coeffs, double **, TBaseCell *)
 {
   int i;
   double max, *coeff, b1, b2, b;
@@ -2091,8 +1979,7 @@ void linfb(int N_Points, double **Coeffs, double **Params,
   for(i=0;i<N_Points;i++)
     Coeffs[i][5] = max;
 }
-void ave_l2b_quad_points(int N_Points, double **Coeffs, double **Params,
-           TBaseCell *cell)
+void ave_l2b_quad_points(int N_Points, double **Coeffs, double **, TBaseCell *)
 {
   int i;
   double max, *coeff, b1, b2, b;
@@ -2118,8 +2005,7 @@ void ave_l2b_quad_points(int N_Points, double **Coeffs, double **Params,
 #endif // 2D
 
 #ifdef __3D__
-void linfb(int N_Points, double **Coeffs, double ** Params,
-           TBaseCell *cell)
+void linfb(int N_Points, double **Coeffs, double **, TBaseCell *)
 {
   int i;
   double max, *coeff, b1, b2, b3, b;
@@ -2143,8 +2029,7 @@ void linfb(int N_Points, double **Coeffs, double ** Params,
     Coeffs[i][6] = max;
 }
 
-void  ave_l2b_quad_points(int N_Points, double **Coeffs, double ** Params,
-           TBaseCell *cell)
+void ave_l2b_quad_points(int N_Points, double **Coeffs, double **, TBaseCell *)
 {
   int i;
   double max, *coeff, b1, b2, b3, b;
@@ -2170,507 +2055,8 @@ void  ave_l2b_quad_points(int N_Points, double **Coeffs, double ** Params,
 }
 #endif // 3D
 
-#ifdef __2D__
-// ====================================================================
-// get velocity and pressure space from user defined parameters  
-// ====================================================================
-int GetVelocityAndPressureSpace(TCollection *coll,
-                                BoundCondFunct2D *BoundCondition,
-                                TCollection *mortarcoll,
-                                TFESpace2D* &velocity_space,
-                                TFESpace2D* &pressure_space,
-                                int *pressure_space_code,
-                                int velo_order, int pressure_order)
-{
-  int order;
 
-  char nameString[] = "name";
-  char uString[] = "u";
-  char pString[] = "p";
-  BoundCondFunct2D *Neumann;
-
-  switch (velo_order)
-  {
-    // nonconforming first order
-    case -1:
-      velocity_space = new TFESpace2D(coll,nameString,uString,BoundCondition, 
-                                      Non_USpace,1, mortarcoll);
-    break;
-    case -2:
-      velocity_space = new TFESpace2D(coll,nameString,uString,BoundCondition, 
-                                      Non_USpace,2, mortarcoll);
-    break;
-    case -3:
-      velocity_space = new TFESpace2D(coll,nameString,uString,BoundCondition, 
-                                      Non_USpace,3, mortarcoll);
-    break;
-    case -4:
-      velocity_space = new TFESpace2D(coll,nameString,uString,BoundCondition, 
-                                      Non_USpace,4, mortarcoll);
-    break;
-    case -5:
-      velocity_space = new TFESpace2D(coll,nameString,uString,BoundCondition, 
-                                      Non_USpace,5, mortarcoll);
-    break;
-    case -101:
-      velocity_space = new TFESpace2D(coll,nameString,uString,BoundCondition, 
-                                      Non_USpace,101, mortarcoll);
-    break;
-      
-    // standard conforming without bubbles
-    case 1:
-    case 2:
-    case 3:
-    case 4:
-    case 5:
-    case 12:
-    case 13:
-    case 14:
-    case 15:
-      if (velo_order >10)
-        order = velo_order -10;
-      else
-        order = velo_order;
-      velocity_space = new TFESpace2D(coll,nameString,uString,BoundCondition, 
-                                      ContP_USpace,order, mortarcoll);
-      break;
-
-    // conforming fe spaces with bubbles on triangles 
-    case 22:
-    case 23:
-    case 24:
-      order = velo_order - 20;
-      velocity_space = new TFESpace2D(coll,nameString,uString,BoundCondition, 
-                                      DiscP_USpace,order, mortarcoll);
-      
-      break;
-     case 32:
-        velocity_space = new TFESpace2D(coll,nameString,uString,BoundCondition, 
-                                        ContP_USpace, -2, mortarcoll);
-        break;
-     case -11:
-     case -12:
-     case -13:          
-        order = -velo_order - 10 ;
-          velocity_space = new TFESpace2D(coll,nameString,pString,BoundCondition, 
-                                          DiscP_PSpace,order, mortarcoll);
-       break;
-    case 101:
-      velocity_space = new TFESpace2D(coll,nameString,uString,BoundCondition, 
-                                      ContP_USpace,101, mortarcoll);
-      break;
-
-    case 100:
-    case 201:
-    case 302:
-    case 403:
-    case 504:
-        velocity_space = new TFESpace2D(coll,nameString,uString,BoundCondition,
-                                        ContP_USpace, velo_order, mortarcoll);
-      break;
-    case 222:
-      // Scott-Vogelius
-        velocity_space = new TFESpace2D(coll,nameString,uString,BoundCondition,
-                                         DiscP_USpace, 222, mortarcoll);
-        // need of special quadrature rule
-        TDatabase::ParamDB->INTERNAL_QUAD_RULE = -22;
-        if ((pressure_order!=-4711)&&(pressure_order!=-11))
-        {
-          OutPut("Wrong pressure space for Scott-Vogelius fe " << pressure_order << endl);
-          exit(4711);
-        }
-        break;
-
-    default:
-      OutPut("INVALID VELOCITY_SPACE !!!" << velo_order << endl);
-      exit(4711);
-      break;
-  } 
-  
-  /*// equal order interpolation
-  if (TDatabase::ParamDB->NSTYPE==14)
-  {
-      pressure_order = velo_order;
-      }*/
-
-  *pressure_space_code = pressure_order;
-  Neumann = BoundConditionNoBoundCondition;
-  switch (pressure_order)
-  {
-    // some standard pairs if no PRESSURE_SPACE is defined by the user
-    case -4711:
-      switch (velo_order)
-      {
-        // nonconforming pw (bi)linear velo/ pw constant pressure
-        // conforming pw (bi)linear velo/ pw constant pressure (not stable !!!)
-        case -1:
-        case -101:
-          pressure_space = new TFESpace2D(coll,nameString,pString,
-                                Neumann, DiscP_PSpace,0, mortarcoll);
-          *pressure_space_code = 0;
-        break;
-
-        case -2:
-        case -3:
-        case -4:
-        case -5:
-          order = -velo_order -1;
-          pressure_space = new TFESpace2D(coll,nameString,pString,Neumann, 
-                                          DiscP_PSpace,order, mortarcoll);
-          *pressure_space_code = -order -10;
-        break;
-
-        case 1:
-          pressure_space = new TFESpace2D(coll,nameString,pString,Neumann, 
-                                          DiscP_PSpace,0, mortarcoll);
-          *pressure_space_code = 0;
-          break;
-        // standard conforming velo and continuous pressure
-	      case 2:
-        case 3:
-        case 4:
-        case 5:
-          order = velo_order -1 ;
-          pressure_space = new TFESpace2D(coll,nameString,pString,Neumann, 
-                                          ContP_PSpace,order, mortarcoll);
-          *pressure_space_code = order;
-          break;
-        // standard conforming velo and discontinuous pressure
-        // this is not stable on triangles !!!
-        case 12:
-        case 13:
-        case 14:
-        case 15:
-          order = velo_order - 11 ;
-          pressure_space = new TFESpace2D(coll,nameString,pString,Neumann, 
-                                          DiscP_PSpace,order, mortarcoll);
-          *pressure_space_code = -(velo_order - 1);
-          break;
-          // conforming fe spaces with bubbles on triangles 
-        case 22:
-        case 23:
-        case 24:
-          order = velo_order - 21 ;
-          pressure_space = new TFESpace2D(coll,nameString,pString,Neumann, 
-                                          DiscP_PSpace,order, mortarcoll);
-          *pressure_space_code = -(velo_order - 11);
-         break;
-
-        case 101:
-          pressure_space = new TFESpace2D(coll,nameString,pString,
-                                Neumann, 
-                                ContP_PSpace,1, mortarcoll);
-          *pressure_space_code = 1;
-          break;
-
-        case 100:
-        case 201:
-        case 302:
-        case 403:
-        case 504:
-          order = (velo_order%100);
-          pressure_space = new TFESpace2D(coll,nameString,pString,Neumann, 
-                                          DiscP_PSpace,order, mortarcoll);
-          if(order==0)
-            *pressure_space_code = 0;
-          else
-            *pressure_space_code = -order - 10;
-          break;
-        case 222:
-          // Scott-Vogelius
-          pressure_space = new TFESpace2D(coll,nameString,pString,Neumann,
-                                                    DiscP_PSpace,222, mortarcoll);
-          *pressure_space_code = -11;
-        break;
-      }
-      break;
-      // end standard
-
-    // first order Crouzeix/Raviart oder Rannacher/Turek
-    case -1:
-      pressure_space = new TFESpace2D(coll,nameString,pString,Neumann, 
-                                      Non_USpace,1, mortarcoll);
-      break;
-      
-    // piecewise constant
-    case 0:
-      pressure_space = new TFESpace2D(coll,nameString,pString,Neumann, 
-                                      DiscP_PSpace,0, mortarcoll);
-      *pressure_space_code = 0;
-      break;
-    // standard continuous without bubbles
-    case 1:
-    case 2:
-    case 3:
-    case 4:
-    case 5:
-    case 12:
-    case 13:
-    case 14:
-      if (pressure_order >10)
-        order = pressure_order - 10;
-      else
-        order = pressure_order;
-      pressure_space = new TFESpace2D(coll,nameString,pString,Neumann, 
-                                      ContP_USpace,order, mortarcoll);
-      break;
-
-    // conforming fe spaces with bubbles on triangles 
-    case 22:
-    case 23:
-    case 24:
-      order =  pressure_order - 20;
-      pressure_space = new TFESpace2D(coll,nameString,pString,Neumann, 
-                                      DiscP_USpace,order, mortarcoll);
-      
-      break;
-    // discontinuous piecewise polynomials 
-    case -11:
-    case -12:
-    case -13:
-    case -14:
-      order = -pressure_order - 10;
-      pressure_space = new TFESpace2D(coll,nameString,pString,Neumann, 
-                                      DiscP_PSpace,order, mortarcoll);
-      break;
-
-    case 100:
-    case 201:
-    case 302:
-    case 403:
-    case 504:
-        pressure_space = new TFESpace2D(coll,nameString,uString,Neumann,
-                                        ContP_USpace, pressure_order, mortarcoll);
-      break;
-    default:
-      OutPut("INVALID PRESSURE_SPACE !!!" << endl);
-      exit(4711);
-      break;
-
-  }
-  return 0;
-}
-#endif // 2D
-
-
-#ifdef __3D__
-
-// ====================================================================
-// get velocity and pressure space from user defined parameters  
-// ====================================================================
-int GetVelocityAndPressureSpace3D(TCollection *coll,
-                                BoundCondFunct3D *BoundCondition,
-                                TFESpace3D* &velocity_space,
-                                TFESpace3D* &pressure_space,
-                                int *pressure_space_code,
-                                int velo_order, int pressure_order)
-{
-  int order;
-
-  char name[] = "name";
-  char ustring[] = "u";
-  char pstring[] = "p";
-
-  switch (velo_order)
-  {
-    // nonconforming first order
-    case -1:
-      velocity_space = new TFESpace3D(coll,name,ustring,BoundCondition, 
-                                      Non_USpace,1);
-      break;
-      
-    case -2:
-      velocity_space = new TFESpace3D(coll,name,ustring,BoundCondition, 
-                                      Non_USpace,2);
-      break;
-      
-    // standard conforming without bubbles
-    case 1:
-    case 2:
-    case 3:
-    case 4:
-    case 12:
-    case 13:
-    case 14:
-      if (velo_order >10)
-        order = velo_order -10;
-      else
-        order = velo_order;
-      velocity_space = new TFESpace3D(coll,name,ustring,BoundCondition, 
-                                      ContP_USpace,order);
-      break;
-
-    // conforming fe spaces with bubbles on tetrahedra
-    case 22:
-      order = velo_order - 20;
-      velocity_space = new TFESpace3D(coll,name,ustring,BoundCondition, 
-                                           DiscP_USpace,order);
-      break;
-      case 23:
-      OutPut("INVALID VELOCITY_SPACE !!! " << velo_order << endl);
-      exit(4711);      
-      break;
-    // bubble spaces on hexahedra
-    case 32:
-       velocity_space = new TFESpace3D(coll, name, ustring, BoundCondition, 
-                                       ContP_USpace, -2);
-       break;
-    default: 
-      OutPut("INVALID VELOCITY_SPACE !!! " <<  velo_order << endl);
-      exit(4711);
-      break;
-  } 
-  
-  *pressure_space_code = pressure_order;
-  switch (pressure_order)
-  {
-    // some standard pairs if no PRESSURE_SPACE is defined by the user
-    case -4711:
-      switch (velo_order)
-      {
-        // nonconforming pw (bi)linear velo/ pw constant pressure
-        // conforming pw (bi)linear velo/ pw constant pressure (not stable !!!)
-        case -1:
-        case 1:
-          pressure_space = new TFESpace3D(coll,name,pstring,BoundCondition, 
-                                          DiscP_PSpace,0);
-          *pressure_space_code = 0;
-          break;
-
-        case -2:
-          order = -velo_order - 1;
-          pressure_space = new TFESpace3D(coll,name,pstring,BoundCondition, 
-                                          DiscP_PSpace,order);
-          *pressure_space_code = velo_order - 9;
-          break;
-
-        // standard conforming velo and continuous pressure
-        case 2:
-        case 3:
-        case 4:
-          order = velo_order -1 ;
-          pressure_space = new TFESpace3D(coll,name,pstring,BoundCondition, 
-                                          ContP_PSpace,order);
-          *pressure_space_code = order;
-          break;
-        // standard conforming velo and discontinuous pressure
-        // this is not stable on triangles !!!
-        case 12:
-        case 13:
-        case 14:
-          order = velo_order - 11 ;
-          pressure_space = new TFESpace3D(coll,name,pstring,BoundCondition, 
-                                          DiscP_PSpace,order);
-          *pressure_space_code = -(velo_order - 1);
-          break;
-          // conforming fe spaces with bubbles on tetrahedra
-        case 22:
-        case 23:
-          order = velo_order - 21 ;
-          pressure_space = new TFESpace3D(coll,name,pstring,BoundCondition, 
-                                          DiscP_PSpace,order);
-          *pressure_space_code = -(velo_order - 11);
-         break;
-      }
-      break;
-      // end standard
-
-    // first order Crouzeix/Raviart oder Rannacher/Turek
-    case -1:
-      pressure_space = new TFESpace3D(coll,name,pstring,BoundCondition, 
-                                      Non_USpace,1);
-      break;
-      
-    // piecewise constant
-    case 0:
-      pressure_space = new TFESpace3D(coll,name,pstring,BoundCondition, 
-                                      DiscP_PSpace,0);
-      *pressure_space_code = 0;
-      break;
-    // standard continuous without bubbles
-    case 1:
-    case 2:
-    case 3:
-    case 4:
-    case 12:
-    case 13:
-    case 14:
-      if (pressure_order >10)
-        order = pressure_order - 10;
-      else
-        order = pressure_order;
-      pressure_space = new TFESpace3D(coll,name,pstring,BoundCondition, 
-                                      ContP_USpace,order);
-      break;
-
-    // conforming fe spaces with bubbles on triangles 
-    case 22:
-    case 23:
-      OutPut("INVALID PRESSURE_SPACE !!!" << endl);
-      exit(4711);
-      
-      break;
-    // discontinuous piecewise polynomials 
-    case -11:
-    case -12:
-      order = -pressure_order - 10;
-      pressure_space = new TFESpace3D(coll,name,pstring,BoundCondition, 
-                                      DiscP_PSpace,order);
-      break;
-
-    default:
-      OutPut("INVALID PRESSURE_SPACE !!!" << endl);
-      exit(4711);
-      break;
-
-  }
-  return 0;
-}
-// ====================================================================
-// get velocity and pressure space for MG_TYPE 2 
-// ====================================================================
-int GetVelocityAndPressureSpaceLow3D(TCollection *coll,
-                                     BoundCondFunct3D *BoundCondition,
-                                     TFESpace3D* &velocity_space,
-                                     int *velocity_space_code,
-                                     TFESpace3D* &pressure_space,
-                                     int *pressure_space_code,
-                                     int velo_order, int pressure_order)
-{
-  char name[] = "name";
-  char ustring[] = "u";
-  char pstring[] = "p";
-
-  switch (velo_order)
-  {
-    // nonconforming first order
-    case 3:
-       velocity_space = new TFESpace3D(coll,name,ustring,BoundCondition, 
-                                       ContP_USpace,velo_order-1);
-       *velocity_space_code = 2;
-       pressure_space = new TFESpace3D(coll,name,pstring,BoundCondition, 
-                                       ContP_PSpace,velo_order-2);
-       *pressure_space_code = 1;
-       break;
-    case 13:
-       velocity_space = new TFESpace3D(coll,name,ustring,BoundCondition, 
-                                      ContP_USpace,velo_order-11);
-      *velocity_space_code = 12;
-      pressure_space = new TFESpace3D(coll,name,pstring,BoundCondition, 
-                                      DiscP_PSpace,velo_order-12);
-      *pressure_space_code = -(velo_order - 2);
-      break;
-     default:
-        OutPut("MG_TYPE 2 only for VELOCITY_SPACE 3 and 13 !!!" << endl);
-        exit(4711);
-  }
-   return 0;
-}
-
-#endif // 3D
-
-
-void ExactNull(double x, double y, double z, double *values)
+void ExactNull(double, double, double, double *values)
 {
   values[0] =0;
   values[1] =0;
@@ -2679,7 +2065,7 @@ void ExactNull(double x, double y, double z, double *values)
   values[4] =0;
 }
 
-void ExactNull(double x, double y, double *values)
+void ExactNull(double, double, double *values)
 {
   values[0] =0;
   values[1] =0;
@@ -2688,109 +2074,81 @@ void ExactNull(double x, double y, double *values)
   //values[0] = x*(1-x)*y*(1-y);
 }
 
-int ComputeNewTimeStep(double err)
-{
-  double old_step,new_step;
-
-
-  // compute new time step length
-  old_step=TDatabase::TimeDB->TIMESTEPLENGTH;
-  new_step = TDatabase::TimeDB->TIMESTEPLENGTH_TOL  * old_step *old_step /sqrt(err);
-  new_step = sqrt(new_step); 
-  OutPut(" new timestep " << new_step);
-
-  cout << new_step << endl;
-  // check if new time step length is too small or too large
-  if (new_step<TDatabase::TimeDB->MIN_TIMESTEPLENGTH)
-    new_step=TDatabase::TimeDB->MIN_TIMESTEPLENGTH;
-  if (new_step>TDatabase::TimeDB->MAX_TIMESTEPLENGTH)
-    new_step=TDatabase::TimeDB->MAX_TIMESTEPLENGTH;
-  if(TDatabase::TimeDB->CURRENTTIME+new_step > TDatabase::TimeDB->ENDTIME)
-    new_step = TDatabase::TimeDB->ENDTIME - TDatabase::TimeDB->CURRENTTIME;
-
-  // set new time step length
-  TDatabase::TimeDB->TIMESTEPLENGTH = new_step;
-
-  OutPut(" accepted  " << new_step << endl);
-
-  return 0;
-
-}
-void BoundConditionVMM(int BdComp, double t, BoundCond &cond)
+void BoundConditionVMM(int, double, BoundCond &cond)
 {
    cond = NEUMANN;
 }
 
-void BoundConditionNoBoundCondition(int BdComp, double t, BoundCond &cond)
+void BoundConditionNoBoundCondition(int, double, BoundCond &cond)
 {
    cond = NEUMANN;
 }
-void BoundConditionNoBoundCondition(double x, double y, double z, BoundCond &cond)
+void BoundConditionNoBoundCondition(double, double, double, BoundCond &cond)
 {
    cond = NEUMANN;
 }
-void BoundaryValueHomogenous(int BdComp, double Param, double &value)
+void BoundaryValueHomogenous(int, double, double &value)
 {
   value = 0;
 }
-void BoundaryValueHomogenous(double x, double y, double z, double &value)
+void BoundaryValueHomogenous(double, double, double, double &value)
 {
   value = 0;
 }
-void BoundaryValueNoBoundaryValue(int BdComp, double Param, double &value)
+void BoundaryValueNoBoundaryValue(int, double, double &value)
 {
   value = 0;
 }
 
-void BoundConditionNSE(int BdComp, double t, BoundCond &cond)
+void BoundConditionNSE(int, double, BoundCond &cond)
 {
    cond = DIRICHLET;
 }
 
-void BoundaryConditionPressSep(int i, double t, BoundCond &cond)
+void BoundaryConditionPressSep(int, double, BoundCond &cond)
 {
    cond = NEUMANN;
 }
 
-void BoundaryValuePressSep(int BdComp, double Param, double &value)
+void BoundaryValuePressSep(int, double, double &value)
 {
   value = 0;
 }
-void BoundaryConditionPressSep3D(double x, double y, double z, BoundCond &cond)
+void BoundaryConditionPressSep3D(double, double, double, BoundCond &cond)
 {
   cond = NEUMANN;
 }
 
-void BoundaryValuePressSep3D(double x, double y, double z, double &value)
+void BoundaryValuePressSep3D(double, double, double, double &value)
 {
   value = 0;
 }
 
-void BoundaryConditionNewton(double x, double y, double z, BoundCond &cond)
+void BoundaryConditionNewton(double, double, double, BoundCond &cond)
 {
   cond = DIRICHLET;
 }
 
-void BoundaryValueNewton(double x, double y, double z, double &value)
+void BoundaryValueNewton(double, double, double, double &value)
 {
   value = 0;
 }
 
 // boundary condition for assembling in the FEM-FCT scheme
-void BoundCondition_FEM_FCT(int i, double t, BoundCond &cond)
+void BoundCondition_FEM_FCT(int, double, BoundCond &cond)
 {
     cond = NEUMANN;
 }
 
-void BoundValue_FEM_FCT(int BdComp, double Param, double &value)
+void BoundValue_FEM_FCT(int, double, double &value)
 {
     value = 0;
 }
-void BoundCondition_FEM_FCT(double x, double y, double z, BoundCond &cond)
+void BoundCondition_FEM_FCT(double, double, double, BoundCond &cond)
 {
     cond = NEUMANN;
 }
-void BoundValue_FEM_FCT(double x, double y, double z, double &value)
+void BoundValue_FEM_FCT(double, double, double, double &value)
 {
   value = 0;
 }
@@ -3098,7 +2456,7 @@ void ReadData(char *name, int N_Array, double **sol, int *N_Unknowns)
 }
 
 // save sol into a file
-void SaveData(std::string basename, double *sol, int nDOF)
+void SaveData(const std::string& basename, double *sol, int nDOF)
 {
   std::string filename = basename + "init";
   std::ofstream ofile;
@@ -3114,7 +2472,7 @@ void SaveData(std::string basename, double *sol, int nDOF)
   OutPut("saving data into file: " << filename << endl);
 }
 
-void ReadData(std::string filename, double *sol, int nDOF)
+void ReadData(const std::string& filename, double *sol, int nDOF)
 {
   std::ifstream ifile(filename.c_str());
   if(!ifile)
@@ -3202,7 +2560,7 @@ void SetDirichletNodesFromNeumannNodes(TSquareMatrix3D **SQMATRICES,
 }
 
 
-double graddiv_parameterOseen(double hK, double nu, double b1, double b2)
+double graddiv_parameterOseen(double hK, double, double, double)
 {
   double tau;
   

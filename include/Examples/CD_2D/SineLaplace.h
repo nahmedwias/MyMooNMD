@@ -19,7 +19,7 @@ void Exact(double x, double y, double *values)
 }
 
 // kind of boundary condition (for FE space needed)
-void BoundCondition(int BdComp, double t, BoundCond &cond)
+void BoundCondition(int BdComp, double, BoundCond &cond)
 {
   if(BdComp==1)
     cond = NEUMANN;
@@ -42,22 +42,25 @@ void BoundValue(int BdComp, double Param, double &value)
     value = 0;
 }
 
-void BilinearCoeffs(int n_points, double *x, double *y,
-        double **parameters, double **coeffs)
+void BilinearCoeffs(int n_points, double *x, double *y, double **,
+                    double **coeffs)
 {
   const double eps=1/TDatabase::ParamDB->PE_NR;
   double exact[4];
   for(int i = 0; i < n_points; i++)
   {
     coeffs[i][0] = eps;
-    coeffs[i][1] = 0;
-    coeffs[i][2] = 0;
+    coeffs[i][1] = 0;// parameters[i][0]; 
+    coeffs[i][2] = 0;//parameters[i][1];
     coeffs[i][3] = 0;
     
     Exact(x[i], y[i], exact);
+
     coeffs[i][4] = -coeffs[i][0]*exact[3]; // diffusion
     coeffs[i][4] += coeffs[i][1]*exact[1] + coeffs[i][2]*exact[2]; // convection
     coeffs[i][4] += coeffs[i][3]*exact[0]; // reaction
+
+  // coeffs[i][4] = 0;
   }
 }
 

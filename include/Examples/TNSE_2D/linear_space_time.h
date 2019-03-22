@@ -11,21 +11,21 @@ void ExampleFile()
 // ========================================================================
 // initial solution
 // ========================================================================
-void InitialU1(double x, double y, double *values)
+void InitialU1(double, double y, double *values)
 {
   double t=TDatabase::TimeDB->CURRENTTIME;
 
   values[0] = t*y;
 }
 
-void InitialU2(double x, double y, double *values)
+void InitialU2(double x, double, double *values)
 {
   double t=TDatabase::TimeDB->CURRENTTIME;
 
   values[0] = 2*t*x;
 }
 
-void InitialP(double x, double y, double *values)
+void InitialP(double, double, double *values)
 {
   values[0] = 0;
 }
@@ -34,7 +34,7 @@ void InitialP(double x, double y, double *values)
 // ========================================================================
 // exact solution
 // ========================================================================
-void ExactU1(double x, double y, double *values)
+void ExactU1(double, double y, double *values)
 {
   double t=TDatabase::TimeDB->CURRENTTIME;
 
@@ -44,7 +44,7 @@ void ExactU1(double x, double y, double *values)
   values[3] = 0;
 }
 
-void ExactU2(double x, double y, double *values)
+void ExactU2(double x, double, double *values)
 {
   double t=TDatabase::TimeDB->CURRENTTIME;
 
@@ -54,7 +54,7 @@ void ExactU2(double x, double y, double *values)
   values[3] = 0;
 }
 
-void ExactP(double x, double y, double *values)
+void ExactP(double, double, double *values)
 {
   values[0] = 0;
   values[1] = 0;
@@ -64,7 +64,7 @@ void ExactP(double x, double y, double *values)
 // ========================================================================
 // boundary conditions
 // ========================================================================
-void BoundCondition(int i, double t, BoundCond &cond)
+void BoundCondition(int, double, BoundCond &cond)
 {
   cond = DIRICHLET;
 }
@@ -114,8 +114,7 @@ void U2BoundValue(int BdComp, double Param, double &value)
 // ========================================================================
 // coefficients for Stokes form: A, B1, B2, f1, f2
 // ========================================================================
-void LinCoeffs(int n_points, double *X, double *Y,
-               double **parameters, double **coeffs)
+void LinCoeffs(int n_points, double *X, double *Y, double **, double **coeffs)
 {
   static double nu = 1/TDatabase::ParamDB->RE_NR;
   double t = TDatabase::TimeDB->CURRENTTIME;

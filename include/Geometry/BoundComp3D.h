@@ -19,7 +19,7 @@ class TBoundComp3D : public TBoundComp
 {
   public:
     // Constructor
-    TBoundComp3D(int id);
+    explicit TBoundComp3D(int id);
     TBoundComp3D(int id,int ref);
 
     // Destructor
@@ -28,10 +28,10 @@ class TBoundComp3D : public TBoundComp
     // Methods
     /** return the coordinates {X, Y, Z} of parameter values T and S*/
     virtual int GetXYZofTS(double T, double S, double &X, double &Y,
-                          double &Z) = 0;
+                          double &Z) const = 0;
     /** return the parameter values T and S of coordinates (X, Y, Z) */
     virtual int GetTSofXYZ(double X, double Y, double Z, double &T,
-                           double &S) = 0;
+                           double &S) const = 0;
 
     /** return parameters and coordinates of a given linear
         combination of vertices */
@@ -39,10 +39,10 @@ class TBoundComp3D : public TBoundComp
                             double *xp, double *yp, double *zp,
                             double *tp, double *sp,
                             double &X, double &Y, double &Z,
-                            double &T, double &S) = 0;
+                            double &T, double &S) const = 0;
 
     virtual void get_normal_vector(double x, double y, double z,
-				   double& nx, double& ny, double &nz) = 0;
+				   double& nx, double& ny, double &nz) const = 0;
 
 };
 

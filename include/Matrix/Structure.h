@@ -119,9 +119,9 @@ class TStructure
     /// @name construct square structures using one finite element space
     /// @brief ansatz and test space is the same 
     //@{
-    TStructure(const TFESpace1D * space);
-    TStructure(const TFESpace2D * Space);
-    TStructure(const TFESpace3D * space);
+    explicit TStructure(std::shared_ptr<const TFESpace1D> space);
+    explicit TStructure(std::shared_ptr<const TFESpace2D> space);
+    explicit TStructure(std::shared_ptr<const TFESpace3D> space);
     //@}
     
     /// @name construct rectangular structures using two finite element spaces
@@ -132,8 +132,12 @@ class TStructure
     /// @param[in] is_empty If true, the structure will not have any entries.
     /// A matrix which owns this structure thus represents the zero-map between two FE spaces.
     //@{
-    TStructure(const TFESpace2D * testspace, const TFESpace2D * ansatzspace, bool is_empty = false);
-    TStructure(const TFESpace3D * testspace, const TFESpace3D * ansatzspace, bool is_empty = false);
+    TStructure(std::shared_ptr<const TFESpace2D> testspace,
+               std::shared_ptr<const TFESpace2D> ansatzspace,
+               bool is_empty = false);
+    TStructure(std::shared_ptr<const TFESpace3D> testspace,
+               std::shared_ptr<const TFESpace3D> ansatzspace,
+               bool is_empty = false);
     //@}
     
     /**
@@ -143,8 +147,8 @@ class TStructure
      * These grids must be part of the same hierarchy and the corresponding 
      * levels must be given. 
      */
-    TStructure(const TFESpace2D * testspace, int test_level, 
-               const TFESpace2D * ansatzspace, int ansatz_level);
+    TStructure(std::shared_ptr<const TFESpace2D> testspace, int test_level, 
+               std::shared_ptr<const TFESpace2D> ansatzspace, int ansatz_level);
     
 
     /**
@@ -268,6 +272,10 @@ class TStructure
      */
     int *GetKCol()
     { return &columns[0]; }
+    
+    /** @brief return a copy of the columns vector */
+    std::vector<int> get_columns() const
+    { return columns; }
 
     /** @brief return array hangingColums */
     const int *GetHangingKCol() const
@@ -353,7 +361,7 @@ class TStructure
      * 
      * @param filename a file with this name will be created (overwritten)s
      */
-    void draw(std::string filename) const;
+    void draw(const std::string& filename) const;
     
     /**
      * @brief return a structure for the matrix-matrix-product A*B
@@ -392,34 +400,6 @@ class TStructure
      */
     friend bool operator==(const TStructure &lhs, const TStructure &rhs);
     friend bool operator!=(const TStructure &lhs, const TStructure &rhs);
-    
-    
-#ifdef __MORTAR__ // \todo can this mortar stuff be removed?
-  protected:
-    int *AnsatzMortarSpaceGlobNo;
-    int *TestMortarSpaceGlobNo;
-
-    int *AnsatzNonMortarSpaceGlobNo;
-    int *TestNonMortarSpaceGlobNo;
-  public:
-    /** generate the matrix Structure2D, one space with 1D and the other
-     with 2D collection */
-    TStructure(TFESpace1D *testspace, TFESpace2D *ansatzspace);
-    
-    /** generate the matrix Structure2D, one space with 1D and the other
-     with 2D collection */
-    TStructure(TFESpace1D *testspace, TFESpace2D *ansatzspace,
-        int **ansatzcelljoints);
-
-    /** generate the matrix Structure2D, one space with 1D and the other
-     with 2D collection */
-    TStructure(TFESpace1D *testspace, TFESpace2D *ansatzspace,
-        TNonMortarData *NonMortarFEData);
-
-    TStructure(TFESpace2D *testspace, TFESpace1D *ansatzspace,
-        TNonMortarData *NonMortarFEData);
-#endif
-    
 };
 
 #endif

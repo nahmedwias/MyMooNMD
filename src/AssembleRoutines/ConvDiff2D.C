@@ -24,212 +24,8 @@ extern double bound;
 /** ========================================================================= */
 /** ========================================================================= */
 // CD2D: stationary convection diffusion problems
-
-// Galerkin
-void BilinearAssembleGalerkin(double Mult, double *coeff, double* param, 
-                              double hK, double **OrigValues, int *N_BaseFuncts,
-                              double ***LocMatrices, double **LocRhs)
-{
-  double val, *MatrixRow;
-  double ansatz00, ansatz10, ansatz01;
-  double test00, test10, test01;
-  int j;
-  
-  double **Matrix = LocMatrices[0];
-  double *Rhs = LocRhs[0];
-
-  const int N_ = N_BaseFuncts[0];
-
-  double *Orig0 = OrigValues[0];
-  double *Orig1 = OrigValues[1];
-  double *Orig2 = OrigValues[2];
-
-  // coefficients
-  const double c0 = coeff[0]; // eps
-  const double c1 = coeff[1]; // b_1
-  const double c2 = coeff[2]; // b_2
-  const double c3 = coeff[3]; // c
-  const double c4 = coeff[4]; // f
-
-  for(int i=0;i<N_;i++)
-  {
-    MatrixRow = Matrix[i];
-    // test function
-    test10 = Orig0[i]; // xi derivative
-    test01 = Orig1[i]; // eta derivative
-    test00 = Orig2[i]; // function
-    
-    // assemble rhs
-    // quad_weigth * test_function * f
-    Rhs[i] += Mult*test00*c4;
-
-    for(j=0;j<N_;j++)
-    {
-      ansatz10 = Orig0[j]; // xi derivative
-      ansatz01 = Orig1[j]; // eta derivative
-      ansatz00 = Orig2[j]; // function
-
-      // assemble viscous term
-      // eps (test_x ansatz_x + test_y ansatz_y)
-      val = c0*(test10*ansatz10+test01*ansatz01);
-      // assemble convective term
-      // (b_1 ansatz_x + b_2 ansatz_y) test
-      val += (c1*ansatz10+c2*ansatz01)*test00;
-      // assemble reactive term
-      // c  ansatz test
-      val += c3*ansatz00*test00;
-
-      // quad weigth
-      val *= Mult;
-
-      // update matrix entry
-      MatrixRow[j] += val;
-    } // endfor j
-  } // endfor i
-}
-
-// SDFEM - Streamline Diffusion Finite Element Method, SUPG - Streamline Upwind 
-// Petrov Galerkin
-void BilinearAssemble_SD(double Mult, double *coeff, double* param, double hK,
-                         double **OrigValues, int *N_BaseFuncts,
-                         double ***LocMatrices, double **LocRhs)
-{
-  double val, *MatrixRow;
-  double ansatz00, ansatz10, ansatz01, ansatz20, ansatz02;
-  double test00, test10, test01;
-  int j;
-  double bgradv;
-
-  double **Matrix = LocMatrices[0];
-  double *Rhs = LocRhs[0];
-
-  const int N_ = N_BaseFuncts[0];
-
-  const double *Orig0 = OrigValues[0];
-  const double *Orig1 = OrigValues[1];
-  const double *Orig2 = OrigValues[2];
-  const double *Orig3 = OrigValues[3];
-  const double *Orig4 = OrigValues[4];
-
-  const double c0 = coeff[0]; // nu
-  const double c1 = coeff[1]; // b_1
-  const double c2 = coeff[2]; // b_2
-  const double c3 = coeff[3]; // c
-  const double c4 = coeff[4]; // f
-  const double c5 = coeff[5]; // \|b\|_infty (in the entire cell)
-
-  const double delta = Compute_SDFEM_delta(hK, c0, c1, c2, c3, c5);
-
-  for(int i=0;i<N_;i++)
-  {
-    MatrixRow = Matrix[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
-
-    bgradv = c1*test10+c2*test01;
-
-    Rhs[i] += Mult*(test00+delta*bgradv)*c4;
-
-    for(j=0;j<N_;j++)
-    {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
-      ansatz00 = Orig2[j];
-      ansatz20 = Orig3[j];
-      ansatz02 = Orig4[j];
-      
-      // assemble viscous term
-      val = c0*(test10*ansatz10+test01*ansatz01);
-      // assemble convective term
-      val += (c1*ansatz10+c2*ansatz01)*test00;
-      // assemble reactive term
-      val += c3*ansatz00*test00;
-      // assemble stabilization
-      val += delta * ( -c0*(ansatz20 + ansatz02)
-                       +c1*ansatz10 + c2*ansatz01
-                       +c3*ansatz00 ) * bgradv;
-      
-      // quad weigth
-      val *=Mult;
-      
-      // update matrix entry
-      MatrixRow[j] += val;
-    } // endfor j
-  } // endfor i
-}
-
-// GLS - Galerkin Least Squares
-void BilinearAssemble_GLS(double Mult, double *coeff, double* param, double hK,
-                          double **OrigValues, int *N_BaseFuncts,
-                          double ***LocMatrices, double **LocRhs)
-{
-  double **Matrix, *Rhs, val, *MatrixRow;
-  double ansatz00, ansatz10, ansatz01, ansatz20, ansatz02;
-  double test00, test10, test01, test20, test02;
-  double *Orig0, *Orig1, *Orig2, *Orig3, *Orig4;
-  int i,j, N_;
-  double c0, c1, c2, c3, c4, c5;
-  double delta, Lu;
-
-  Matrix = LocMatrices[0];
-  Rhs = LocRhs[0];
-
-  N_ = N_BaseFuncts[0];
-
-  Orig0 = OrigValues[0];
-  Orig1 = OrigValues[1];
-  Orig2 = OrigValues[2];
-  Orig3 = OrigValues[3];
-  Orig4 = OrigValues[4];
-
-  c0 = coeff[0];                                  // nu
-  c1 = coeff[1];                                  // b_1
-  c2 = coeff[2];                                  // b_2
-  c3 = coeff[3];                                  // c
-  c4 = coeff[4];                                  // f
-  c5 = coeff[5];                                  // \|b\|_infty
-
-  delta = Compute_SDFEM_delta(hK, c0, c1, c2, c3, c5);
-
-  for(i=0;i<N_;i++)
-  {
-    MatrixRow = Matrix[i];
-    test10 = Orig0[i];
-    test01 = Orig1[i];
-    test00 = Orig2[i];
-    test20 = Orig3[i];
-    test02 = Orig4[i];
-      
-    Lu = (-c0*(test20+test02)+c1*test10+c2*test01 +c3*test00);
-    Rhs[i] += Mult*(test00+delta*Lu)*c4;
-
-    for(j=0;j<N_;j++)
-    {
-      ansatz10 = Orig0[j];
-      ansatz01 = Orig1[j];
-      ansatz00 = Orig2[j];
-      ansatz20 = Orig3[j];
-      ansatz02 = Orig4[j];
-
-      val = c0*(test10*ansatz10+test01*ansatz01);
-      val += (c1*ansatz10+c2*ansatz01)*test00;
-      val += c3*ansatz00*test00;
-
-      val += delta * (-c0*(ansatz20+ansatz02)
-             +c1*ansatz10+c2*ansatz01
-             +c3*ansatz00) * Lu;
-
-      val *=Mult;
-
-      MatrixRow[j] += val;
-
-    }                                             // endfor j
-  }                                               // endfor i
-}
-
-void BilinearAssemble_Axial3D(double Mult, double *coeff, double *param,
-                              double hK, double **OrigValues, int *N_BaseFuncts,
+void BilinearAssemble_Axial3D(double Mult, double *coeff, double *,
+                              double, double **OrigValues, int *N_BaseFuncts,
                               double ***LocMatrices, double **LocRhs)
 {
   double **Matrix, *Rhs, val, *MatrixRow;
@@ -308,9 +104,9 @@ void BilinearAssemble_Axial3D(double Mult, double *coeff, double *param,
 
 
 
-void BilinearAssemble_UPW1(double Mult, double *coeff, double *param, double hK,
+void BilinearAssemble_UPW1(double Mult, double *coeff, double *, double,
                            double **OrigValues, int *N_BaseFuncts,
-                           double ***LocMatrices, double **LocRhs)
+                           double ***LocMatrices, double **)
 {
   double **Matrix, val, *MatrixRow;
   double ansatz10, ansatz01;
@@ -349,7 +145,7 @@ void BilinearAssemble_UPW1(double Mult, double *coeff, double *param, double hK,
 }
 
 
-void BilinearAssemble_UPW2(double Mult, double *coeff, double *param, double hK,
+void BilinearAssemble_UPW2(double Mult, double *coeff, double *, double,
                            double **OrigValues, int *N_BaseFuncts,
                            double ***LocMatrices, double **LocRhs)
 {
@@ -405,10 +201,9 @@ void BilinearAssemble_UPW2(double Mult, double *coeff, double *param, double hK,
 // TCD2D: time dependent convection diffusion problems
 
 // Galerkin
-void LocalMatrixM(double Mult, double *coeff, double *param,
-                           double hK, 
+void LocalMatrixM(double Mult, double *, double *, double, 
                            double **OrigValues, int *N_BaseFuncts,
-                           double ***LocMatrices, double **LocRhs)
+                           double ***LocMatrices, double **)
 {
   double **Matrix, *MatrixRow;
   double ansatz00;
@@ -435,8 +230,7 @@ void LocalMatrixM(double Mult, double *coeff, double *param,
     } // endfor j
   } // endfor i
 }
-void LocalMatrixARhs(double Mult, double *coeff, double *param,
-                            double hK, 
+void LocalMatrixARhs(double Mult, double *coeff, double *, double, 
                             double **OrigValues, int *N_BaseFuncts,
                             double ***LocMatrices, double **LocRhs)
 {
@@ -497,8 +291,7 @@ void LocalMatrixARhs(double Mult, double *coeff, double *param,
 
 
 // SUPG
-void LocalMatrixARhs_SUPG(double Mult, double *coeff, double *param,
-                            double hK, 
+void LocalMatrixARhs_SUPG(double Mult, double *coeff, double *, double hK, 
                             double **OrigValues, int *N_BaseFuncts,
                             double ***LocMatrices, double **LocRhs)
 {
@@ -549,7 +342,7 @@ void LocalMatrixARhs_SUPG(double Mult, double *coeff, double *param,
   else
     bb = fabs(c22);
   // this is tau
-  tau = Compute_SDFEM_delta(hK, c00, c11, c22, c33, bb);
+  tau = Compute_SDFEM_delta<2>(hK, c00, {{c11, c22}}, c33, bb);
   // scale appropriately, after it is used for the SOLD scheme
   // do not apply for paper with J. Novo
   // this is \tilde tau
@@ -596,10 +389,9 @@ void LocalMatrixARhs_SUPG(double Mult, double *coeff, double *param,
     } // endfor j
   } // endfor i
 }
-void LocalMatrixM_SUPG(double Mult, double *coeff, double *param,
-                            double hK, 
+void LocalMatrixM_SUPG(double Mult, double *coeff, double *, double hK, 
                             double **OrigValues, int *N_BaseFuncts,
-                            double ***LocMatrices, double **LocRhs)
+                            double ***LocMatrices, double **)
 {
   double **Matrix, *MatrixRow;
   double ansatz00;
@@ -637,7 +429,7 @@ void LocalMatrixM_SUPG(double Mult, double *coeff, double *param,
   else
     bb = fabs(c22);
   // this is \tilde tau
-  tau = Compute_SDFEM_delta(hK, c00, c11, c22, c33, bb);
+  tau = Compute_SDFEM_delta<2>(hK, c00, {{c11, c22}}, c33, bb);
   // scale appropriately
   //OutPut(tau << " ");
   // do not apply for paper with J. Novo
@@ -681,7 +473,7 @@ void LocalMatrixM_SUPG(double Mult, double *coeff, double *param,
 void BilinearAssemble_SOLD(double Mult, double *coeff, double *param,
 double hK,
 double **OrigValues, int *N_BaseFuncts,
-double ***LocMatrices, double **LocRhs)
+double ***LocMatrices, double **)
 {
   double **Matrix, val, *MatrixRow;
   double ansatz00, ansatz10, ansatz01, ansatz20, ansatz02;
@@ -708,9 +500,10 @@ double ***LocMatrices, double **LocRhs)
   c4 = coeff[4];                                  // f
   c5 = coeff[5];                                  // \|b\|_infty
 
-  delta = Compute_SDFEM_delta(hK, c0, c1, c2, c3, c5);
+  delta = Compute_SDFEM_delta<2>(hK, c0, {{c1, c2}}, c3, c5);
 
-  sigma = Compute_SOLD_sigma(hK, c0, c1, c2, c3, c4, c5, delta, param, 0, 0, 0);
+  sigma = Compute_SOLD_sigma<2>(hK, c0, {{c1, c2}}, c3, c4, c5, delta, param,
+                                0, 0, 0);
 
   for(i=0;i<N_;i++)
   {
@@ -756,7 +549,7 @@ double ***LocMatrices, double **LocRhs)
 void BilinearAssemble_SOLD_Orthogonal(double Mult, double *coeff,
 double *param, double hK,
 double **OrigValues, int *N_BaseFuncts,
-double ***LocMatrices, double **LocRhs)
+double ***LocMatrices, double **)
 {
   double **Matrix, val, *MatrixRow;
   double ansatz00, ansatz10, ansatz01, ansatz20, ansatz02;
@@ -783,8 +576,9 @@ double ***LocMatrices, double **LocRhs)
   c4 = coeff[4];                                  // f
   c5 = coeff[5];                                  // \|b\|_infty
 
-  delta = Compute_SDFEM_delta(hK, c0, c1, c2, c3, c5);
-  sigma = Compute_SOLD_sigma(hK, c0, c1, c2, c3, c4, c5, delta, param, 0, 0, 0);
+  delta = Compute_SDFEM_delta<2>(hK, c0, {{c1, c2}}, c3, c5);
+  sigma = Compute_SOLD_sigma<2>(hK, c0, {{c1, c2}}, c3, c4, c5, delta, param,
+                                0, 0, 0);
   norm_b = c1*c1+c2*c2;
 
   if (TDatabase::ParamDB->SOLD_PARAMETER_TYPE==CS99)
@@ -867,8 +661,9 @@ double ***LocMatrices, double **LocRhs)
   c4 = coeff[4];                                  // f
   c5 = coeff[5];                                  // \|b\|_infty
 
-  delta = Compute_SDFEM_delta(hK, c0, c1, c2, c3, c5);
-  sigma = Compute_SOLD_sigma(hK, c0, c1, c2, c3, c4, c5, delta, nullptr, 0, 0, 0);
+  delta = Compute_SDFEM_delta<2>(hK, c0, {{c1, c2}}, c3, c5);
+  sigma = Compute_SOLD_sigma<2>(hK, c0, {{c1, c2}}, c3, c4, c5, delta, nullptr,
+                                0, 0, 0);
 
   // current finite element solution of equation
   u[0] = param[0];                                // u
@@ -1059,7 +854,7 @@ double ***LocMatrices, double **LocRhs)
 void RhsAssemble_LP96(double Mult, double *coeff, double *param,
 double hK,
 double **OrigValues, int *N_BaseFuncts,
-double ***LocMatrices, double **LocRhs)
+double ***, double **LocRhs)
 {
   double *Rhs, val;
   double test00, test10, test01;
@@ -1085,7 +880,7 @@ double ***LocMatrices, double **LocRhs)
 
   u = param[0];
 
-  delta = Compute_SDFEM_delta(hK, c0, c1, c2, c3, c5);
+  delta = Compute_SDFEM_delta<2>(hK, c0, {{c1, c2}}, c3, c5);
   rho = hK* TDatabase::ParamDB->SOLD_CONST;
   for(i=0;i<N_;i++)
   {
@@ -1109,7 +904,7 @@ double ***LocMatrices, double **LocRhs)
 void RhsAssemble_RhsAdjointEnergyEstimate(double Mult, double *coeff, double *param,
 double hK,
 double **OrigValues, int *N_BaseFuncts,
-double ***LocMatrices, double **LocRhs)
+double ***, double **LocRhs)
 {
   double *Rhs, val;
   double test00, test10, test01, test20, test02;
@@ -1174,10 +969,9 @@ double ***LocMatrices, double **LocRhs)
 // assemble rhs for adjoint problem with total variation squared
 /******************************************************************************/
 
-void RhsAssemble_RhsAdjointTV2(double Mult, double *coeff, double *param,
-double hK,
+void RhsAssemble_RhsAdjointTV2(double Mult, double *, double *param, double,
 double **OrigValues, int *N_BaseFuncts,
-double ***LocMatrices, double **LocRhs)
+double ***, double **LocRhs)
 {
   double *Rhs, val;
   double test10, test01;
@@ -1213,10 +1007,9 @@ double ***LocMatrices, double **LocRhs)
 // RhsAssemble_RhsAdjointTV
 // assemble rhs for adjoint problem with total variation
 /******************************************************************************/
-void RhsAssemble_RhsAdjointTV(double Mult, double *coeff, double *param,
-double hK,
+void RhsAssemble_RhsAdjointTV(double Mult, double *, double *param, double,
 double **OrigValues, int *N_BaseFuncts,
-double ***LocMatrices, double **LocRhs)
+double ***, double **LocRhs)
 {
   double *Rhs, val;
   double test10, test01;
@@ -1262,9 +1055,9 @@ double ***LocMatrices, double **LocRhs)
 // assemble rhs for adjoint problem with total variation plus crosswind derivative
 /******************************************************************************/
 void RhsAssemble_RhsAdjointNormBL1_NormBorthL1(double Mult, double *coeff, double *param,
-double hK,
+double,
 double **OrigValues, int *N_BaseFuncts,
-double ***LocMatrices, double **LocRhs)
+double ***, double **LocRhs)
 {
   double *Rhs, val;
   double test10, test01;
@@ -1314,9 +1107,9 @@ double ***LocMatrices, double **LocRhs)
 // assemble rhs for adjoint problem with total variation plus crosswind derivative
 /******************************************************************************/
 void RhsAssemble_RhsAdjointNormResidualL1_NormBorthL1(double Mult, double *coeff, double *param,
-double hK,
+double,
 double **OrigValues, int *N_BaseFuncts,
-double ***LocMatrices, double **LocRhs)
+double ***, double **LocRhs)
 {
   double *Rhs, val;  
   double test00, test10, test01, test20, test02;
@@ -1379,9 +1172,9 @@ double ***LocMatrices, double **LocRhs)
 /******************************************************************************/
 
 void RhsAssemble_RhsAdjointAll(double Mult, double *coeff, double *param,
-double hK,
+double,
 double **OrigValues, int *N_BaseFuncts,
-double ***LocMatrices, double **LocRhs)
+double ***, double **LocRhs)
 {
   double *Rhs, val, aux_val;
   double alpha1, alpha2, beta1, beta2;
@@ -1606,9 +1399,9 @@ double ***LocMatrices, double **LocRhs)
 // assemble rhs for adjoint problem with L2 error to prescribed solution
 /******************************************************************************/
 void RhsAssemble_RhsAdjointL2Error(double Mult, double *coeff, double *param,
-double hK,
+double,
 double **OrigValues, int *N_BaseFuncts,
-double ***LocMatrices, double **LocRhs)
+double ***, double **LocRhs)
 {
   double *Rhs;
   double ansatz, test, u, u_h;
@@ -1642,9 +1435,9 @@ double ***LocMatrices, double **LocRhs)
 // assemble rhs for adjoint problem with H1-semi norm error to prescribed solution
 /******************************************************************************/
 void RhsAssemble_RhsAdjointH1Error(double Mult, double *coeff, double *param,
-double hK,
+double,
 double **OrigValues, int *N_BaseFuncts,
-double ***LocMatrices, double **LocRhs)
+double ***, double **LocRhs)
 {
   double *Rhs, val;
   double test10, test01;
@@ -1692,10 +1485,9 @@ double ***LocMatrices, double **LocRhs)
 //
 /******************************************************************************/
 
-void BilinearAssemble_MH_Kno06(double Mult, double *coeff, double *param,
-double hK,
+void BilinearAssemble_MH_Kno06(double Mult, double *coeff, double *, double,
 double **OrigValues, int *N_BaseFuncts,
-double ***LocMatrices, double **LocRhs)
+double ***LocMatrices, double **)
 {
   double **Matrix, val, *MatrixRow;
   double ansatz00, ansatz10, ansatz01;

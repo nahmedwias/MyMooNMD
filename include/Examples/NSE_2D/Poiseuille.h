@@ -11,7 +11,7 @@ void ExampleFile()
 // ========================================================================
 // exact solution
 // ========================================================================
-void ExactU1(double x, double y, double *values)
+void ExactU1(double, double y, double *values)
 {
   values[0] = 4*y*(1-y);
   values[1] = 0;
@@ -19,7 +19,7 @@ void ExactU1(double x, double y, double *values)
   values[3] = -8;
 }
 
-void ExactU2(double x, double y, double *values)
+void ExactU2(double, double, double *values)
 {
   values[0] = 0;
   values[1] = 0;
@@ -27,7 +27,7 @@ void ExactU2(double x, double y, double *values)
   values[3] = 0;
 }
 
-void ExactP(double x, double y, double *values)
+void ExactP(double x, double, double *values)
 {
   values[0] = x-0.5;
   values[1] = 1;
@@ -38,7 +38,7 @@ void ExactP(double x, double y, double *values)
 // ========================================================================
 // boundary conditions
 // ========================================================================
-void BoundCondition(int i, double t, BoundCond &cond)
+void BoundCondition(int, double, BoundCond &cond)
 {
   cond = DIRICHLET;
 }
@@ -60,7 +60,7 @@ void U1BoundValue(int BdComp, double Param, double &value)
   }
 }
 
-void U2BoundValue(int BdComp, double Param, double &value)
+void U2BoundValue(int BdComp, double, double &value)
 {
   switch(BdComp)
   {
@@ -80,8 +80,7 @@ void U2BoundValue(int BdComp, double Param, double &value)
 // ========================================================================
 // coefficients for Stokes form: A, B1, B2, f1, f2
 // ========================================================================
-void LinCoeffs(int n_points, double *x, double *y,
-               double **parameters, double **coeffs)
+void LinCoeffs(int n_points, double *, double *, double **, double **coeffs)
 {
   static double eps = 1./TDatabase::ParamDB->RE_NR;
   int i;
@@ -94,13 +93,16 @@ void LinCoeffs(int n_points, double *x, double *y,
     coeff[0] = eps;
     coeff[1] = 1+8*eps; // f1
     coeff[2] = 0; // f2
+    coeff[3] = 0.;//g
+    // additional coefficient (used only in the Brinkman problem)
+    coeff[4] = 0.;
   }
 }
 
 // ========================================================================
 // coefficients for Stokes form: A, B1, B2, f1, f2
 // ========================================================================
-void NonLinCoeffs(int n_points, double *x, double *y,
+void NonLinCoeffs(int n_points, double *, double *,
                   double **parameters, double **coeffs)
 {
   static double eps = 1./TDatabase::ParamDB->RE_NR;
@@ -115,6 +117,7 @@ void NonLinCoeffs(int n_points, double *x, double *y,
     coeff[0] = eps;
     coeff[1] = param[0];
     coeff[2] = param[1];
+
   }
 }
 

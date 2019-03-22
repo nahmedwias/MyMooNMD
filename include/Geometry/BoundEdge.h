@@ -39,13 +39,6 @@ class TBoundEdge : public TJoint
     virtual int CheckMatchingRef(TBaseCell *Me, int J_i,
                   struct StoreGeom &Tmp);
 
-    #ifdef __MORTAR__
-      /** check the refinement pattern on both sides for matching,
-          special version for moratr cells */
-      virtual int CheckMatchingRef(TBaseCell *Me, int J_i,
-                    StoreGeomMortar &Tmp);
-    #endif
-
     /** create a new instance of this class */
     virtual TJoint *NewInst(double T_0, double T_1, TBaseCell *Me);
     virtual TJoint *NewInst();
@@ -86,7 +79,7 @@ class TBoundEdge : public TJoint
       GetXYofT( this->T_1, x1, y1);
       double length =  sqrt((x1-x0)*(x1-x0) + (y1-y0)*(y1-y0));
       nx =  (y1-y0)/length;
-      ny = (x0-x1)/length;
+      ny = (x0-x1)/length; //(x1-x0)/length; //
     }
 
     void get_tangent(double &tx, double &ty)
@@ -105,7 +98,7 @@ class TBoundEdge : public TJoint
 
 #ifdef __2D__
     /** update parameters according to the new vertex positions */
-    void UpdateParameters(TVertex *Begin, TVertex *End);
+    void UpdateParameters(const TVertex *Begin, const TVertex *End);
 #endif
 
     /** @brief return the coordinates {X,Y} of parameter value T */
@@ -116,7 +109,7 @@ class TBoundEdge : public TJoint
     { BoundComp->GetTofXY(X, Y, T); }
 
     /** return boundary component */
-    TBoundComp2D *GetBoundComp() const
+    const TBoundComp2D *GetBoundComp() const
     { return BoundComp; }
 
     /** return whether this is an interior joint */

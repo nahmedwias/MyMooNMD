@@ -30,19 +30,26 @@ public:
      * This intializes a Brinkman example in 3D. It is chosen according
      * to example_code.
      */
-    Example_Brinkman3D(const ParameterDatabase& user_input_parameter_db);
+    explicit Example_Brinkman3D(
+      const ParameterDatabase& user_input_parameter_db);
     
     /** @brief initialize your own example
      *
      * Create an example with all vectors already defined.
      */
-    Example_Brinkman3D(std::vector <DoubleFunct3D*> exact,
-                       std::vector <BoundCondFunct3D*> bc,
-                       std::vector <BoundValueFunct3D*> bd, CoeffFct3D coeffs)
+    Example_Brinkman3D(const std::vector<DoubleFunct3D*>& exact,
+                       const std::vector<BoundCondFunct3D*>& bc,
+                       const std::vector<BoundValueFunct3D*>& bd,
+                       const CoeffFct3D& coeffs)
     : Example3D(exact, bc, bd, coeffs) {};
     
     /// Apply the function stored as post processing routine.
     void do_post_processing(Brinkman3D& brinkman3d) const;
+
+    /// Get physical parameter from the database
+    double get_viscosity() const;
+    double get_effective_viscosity() const;
+    double get_permeablity() const;
 
     /// Get residual-based equal-order stabilization weight, if set in the .dat-file.
     double get_stab() const;

@@ -31,22 +31,22 @@ class TIsoJointEqN : public TJointEqN
   public:
     // Constructors
     /** constructor with one initial neighbour */
-    TIsoJointEqN(TBaseCell *neighb0);
+    explicit TIsoJointEqN(TBaseCell *neighb0);
     /** constructor with two initial neighbours */
     TIsoJointEqN(TBaseCell *neighb0, TBaseCell *neighb1);
 
     // Methods
     /** create a new instance of this class */
-    virtual TJoint *NewInst(double T_0, double T_1, TBaseCell *Me)
+    virtual TJoint *NewInst(double, double, TBaseCell *Me)
     { return new TIsoJointEqN(Me); }
     virtual TJoint *NewInst()
     { return new TIsoJointEqN(nullptr); }
 
     /** return number of additional vertices */
-    int GetN_Vertices()
+    int GetN_Vertices() const
     { return N_Vertices; }
 
-    TVertex **GetVertices()
+    TVertex **GetVertices() const
     { return Vertices; }
 
     void SetVertices(int n_vertices, TVertex **vertices);

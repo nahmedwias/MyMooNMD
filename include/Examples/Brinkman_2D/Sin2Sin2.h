@@ -1,5 +1,9 @@
 // Brinkman problem with sine2-sine2-velocity from Jarle Sogn resp. Mardal, Thai, Winther
 
+double viscosity = -1;
+double effective_viscosity = -1;
+double permeability = -1;
+
 void ExampleFile()
 {
   Output::print<1>("Example: Sin2Sin2.h");
@@ -36,7 +40,7 @@ void ExactU2(double x, double y, double *values)
                 - 4*Pi*Pi*Pi*sin(Pi*y)*sin(Pi*y)*cos(Pi*x)*sin(Pi*x);         //Delta u2=u2_xx + u2_yy
 }
 
-void ExactP(double x, double y, double *values)
+void ExactP(double x, double, double *values)
 {
     values[0] = -sin(2*Pi*x);                     //p
     values[1] = -2*Pi*cos(2*Pi*x);                //p_x
@@ -49,7 +53,7 @@ void ExactP(double x, double y, double *values)
 // boundary conditions (Parametrisierung des Randes); Param \in [0,1]
 // ========================================================================
 
-void BoundCondition(int i, double Param, BoundCond &cond)
+void BoundCondition(int i, double, BoundCond &cond)
 {
     cond = DIRICHLET; // default
 
@@ -72,7 +76,7 @@ void BoundCondition(int i, double Param, BoundCond &cond)
     }
 }
 
-void U1BoundValue(int BdComp, double Param, double &value)
+void U1BoundValue(int BdComp, double, double &value)
 {
     
     // loop to impose Neumann boundary conditions
@@ -111,7 +115,7 @@ void U1BoundValue(int BdComp, double Param, double &value)
     }
 }
 
-void U2BoundValue(int BdComp, double Param, double &value)
+void U2BoundValue(int BdComp, double, double &value)
 {
     
     // loop to impose Neumann boundary conditions
@@ -258,8 +262,7 @@ void U2BoundValue(int BdComp, double Param, double &value)
 // ========================================================================
 // coefficients for Stokes form: A, B1, B2, f1, f2
 // ========================================================================
-void LinCoeffs(int n_points, double *X, double *Y,
-               double **parameters, double **coeffs)
+void LinCoeffs(int n_points, double *X, double *Y, double **, double **coeffs)
 {
     double val_u1[4];
     double val_u2[4];
@@ -271,9 +274,9 @@ void LinCoeffs(int n_points, double *X, double *Y,
         ExactU2(X[i], Y[i], val_u2);
         ExactP(X[i], Y[i], val_p);
         
-        coeffs[i][4]= TDatabase::ParamDB->VISCOSITY;
-        coeffs[i][5]= TDatabase::ParamDB->EFFECTIVE_VISCOSITY;
-        coeffs[i][6]= TDatabase::ParamDB->PERMEABILITY;
+        coeffs[i][4] = viscosity;
+        coeffs[i][5] = effective_viscosity;
+        coeffs[i][6] = permeability;
          
         coeffs[i][0] = (coeffs[i][5] / coeffs[i][4]) * coeffs[i][6];
         coeffs[i][1] = -coeffs[i][5]*val_u1[3] + val_p[1] + (coeffs[i][4]/coeffs[i][6])*val_u1[0];//-coeffs[i][5]*val1[3] + val3[1] + (coeffs[i][4]/coeffs[i][6])*val1[0];  //0;// f1

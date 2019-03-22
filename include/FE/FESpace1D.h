@@ -19,31 +19,6 @@
 #include <FESpace.h>
 #include <FE1D.h>
 
-
-
-typedef struct 
-{
-  /** Total No. Dof on the interface */
- int  N_NonMortaDofs;
-
- /** Map of NonMort Dof to Global Dof */
- int *GlobalDof_NonMortaEdgeDof;
-
- /** No. of Dof on each nonmortar edge */ 
- int *N_DofPerEdge;
-
- /**  NonMort Dof  local GlobalNo on the interface*/
- int *EdgeNonMotLocGlobalNo;
-
- /**  NonMort Dof  local GlobalNo on the interface*/
- int *EdgeNonMotGlobalNo;
-
- /**  NonMort Dof  local beginindex on the interface*/
- int *EdgeNonMotBeginIndex;
- 
-} TNonMortarData;
-
-
 /** class for all 1D finite element spaces */
 class TFESpace1D : public TFESpace
 {
@@ -66,15 +41,16 @@ class TFESpace1D : public TFESpace
 
   public:
     /** constructor */
-    TFESpace1D(TCollection *coll, std::string name, std::string description);
+    TFESpace1D(TCollection *coll, const std::string& name,
+               const std::string& description);
 
     /** constructor for building a space with elements of order k */
-    TFESpace1D(TCollection *coll, std::string name, std::string description,
-               int k);
+    TFESpace1D(TCollection *coll, const std::string& name,
+               const std::string& description, int k);
 
     /** constructor for building a space with the given elements */
-    TFESpace1D(TCollection *coll, std::string name, std::string description,
-               FE1D *fes);
+    TFESpace1D(TCollection *coll, const std::string& name,
+               const std::string& description, FE1D *fes);
 
     /** destructor */
     ~TFESpace1D();

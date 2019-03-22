@@ -41,24 +41,6 @@ int SpacesNumbers_UPW1[2] = { 0, 0 };
 //
 //static MultiIndex3D AllDerivatives[4] = { D000, D100, D010, D001 };
 
-/**
- * Assembling routing for standard galerkin. Fits type AssembleFct3D.
- */
-void BilinearAssemble(double Mult, double *coeff, double hK,
-double **OrigValues, int *N_BaseFuncts,
-double ***LocMatrices, double **LocRhs);
-
-/**
- * Assembling routing for standard galerkin. Fits type AssembleFctParam3D.
- * @param param This is not used in the function body, only added to fit type AssembleFctParam3D.
- */
-void BilinearAssembleGalerkin(double Mult, double *coeff, double* param,
-                              double hK, double **OrigValues, int *N_BaseFuncts,
-                              double ***LocMatrices, double **LocRhs);
-
-void BilinearAssemble_SD(double Mult, double *coeff, double* param,
-                         double hK, double **OrigValues, int *N_BaseFuncts,
-                         double ***LocMatrices, double **LocRhs);
 
 /*
 void BilinearAssemble_UPW1(double Mult, double *coeff, double hK,

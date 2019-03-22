@@ -25,15 +25,15 @@
 #include <Domain.h>
 #include <Database.h>
 #include <FEDatabase2D.h>
-#include <CD2D_AFC.h>
+#include <ConvectionDiffusion_AFC.h>
 #include <Multigrid.h>
 
-#include <LocalAssembling2D.h>
+#include <LocalAssembling.h>
 #include <MainUtilities.h> //for error measuring
 
 // compare the computed errors in the CD2D object with the given ones in 
 // the array
-void compareErrors(const CD2D_AFC& cd2d, std::array<double, 4> errors)
+void compareErrors(const ConvectionDiffusion_AFC<2>& cd2d, std::array<double, 4> errors)
 {
   const double eps = 1e-11;
   
@@ -63,7 +63,7 @@ void compareErrors(const CD2D_AFC& cd2d, std::array<double, 4> errors)
 // Here the actual computations take place
 void check_cd2d(TDomain & domain, ParameterDatabase& db, std::array<double,4> errors)
 {  
-  CD2D_AFC cd2d(domain, db);
+  ConvectionDiffusion_AFC<2> cd2d(domain, db);
   cd2d.assemble(0);
   cd2d.solve(0);
   //maximum number of iterations for non lienar loop
@@ -113,18 +113,13 @@ int main(int argc, char* argv[])
   
   //AFC only applicable to P1 elements
   TDatabase::ParamDB->ANSATZ_ORDER = 1; //P1 elements
-  db["space_discretization_type"] = "galerkin"; //Galerkin Desicreitzation
+  //db["space_discretization_type"] = "galerkin"; //Galerkin Desicreitzation
   
   //maximum number of iterations for non linear loop
   db["afc_nonlinloop_maxit"]=1000;
  
-  
   // refine grid up to the coarsest level
-  size_t n_ref = domain.get_n_initial_refinement_steps();
-  for(unsigned int i=0; i < n_ref; i++)
-  {
-    domain.RegRefineAll();  
-  }
+  domain.refine_and_get_hierarchy_of_collections(db);
   
   //Computation for P1 elements
   //P1 elements and Dynamic Damping WITHOUT Anderson Acceleration
@@ -237,11 +232,7 @@ int main(int argc, char* argv[])
   db["geo_file"].set<>("UnitSquare");
   TDomain domain_quad(db);
   // refine grid up to the coarsest level
-  n_ref = domain_quad.get_n_initial_refinement_steps();
-  for(unsigned int i=0; i < n_ref; i++)
-  {
-    domain_quad.RegRefineAll();  
-  }
+  domain_quad.refine_and_get_hierarchy_of_collections(db);
   
   //Q1 elements and Dynamic Damping WITHOUT Anderson Acceleration
   //=========================================================================

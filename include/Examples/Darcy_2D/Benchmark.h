@@ -11,7 +11,7 @@ void ExampleFile()
 // ========================================================================
 // exact solution
 // ========================================================================
-void ExactU1(double x, double y, double *values)
+void ExactU1(double, double y, double *values)
 {
   values[0] = y;
   values[1] = 0;
@@ -19,7 +19,7 @@ void ExactU1(double x, double y, double *values)
   values[3] = 0;
 }
 
-void ExactU2(double x, double y, double *values)
+void ExactU2(double x, double, double *values)
 {
   values[0] = x;
   values[1] = 1;
@@ -27,7 +27,7 @@ void ExactU2(double x, double y, double *values)
   values[3] = 0;
 }
 
-void ExactP(double x, double y, double *values)
+void ExactP(double, double, double *values)
 {
   values[0] = 0;
   values[1] = 0;
@@ -38,7 +38,7 @@ void ExactP(double x, double y, double *values)
 // ========================================================================
 // boundary conditions
 // ========================================================================
-void BoundCondition(int bdComp, double t, BoundCond &cond)  
+void BoundCondition(int bdComp, double, BoundCond &cond)  
 {
   cond = (bdComp == 0) ? NEUMANN : DIRICHLET;
 }
@@ -91,7 +91,7 @@ void UNBoundValue(int BdComp, double t, double &value)
 // coefficients for Stokes form: A, B1, B2, f1, f2
 // ========================================================================
 void LinCoeffs(int n_points, double *X, double *Y,
-               double **parameters, double **coeffs)
+               double **, double **coeffs)
 {
   const double eps = 1./TDatabase::ParamDB->SIGMA_PERM;
   double u1[4], u2[4], p[4];

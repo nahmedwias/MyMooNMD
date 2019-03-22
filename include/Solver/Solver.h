@@ -42,7 +42,7 @@ class Solver
     /// solution as arguments. In case of a direct solver you can use the 
     /// already computed factorization a second time through calling `solve` 
     /// with only the right hand side and the solution as arguments.
-    Solver(const ParameterDatabase& param_db);
+    explicit Solver(const ParameterDatabase& param_db);
     
     /// @brief update the solver and preconditioner objects
     ///
@@ -68,6 +68,9 @@ class Solver
     /// many times for different right hand sides.
     void solve(const Vector& rhs, Vector& solution);
     
+
+    void solve_augmented(const Vector& rhs, Vector& solution);
+
     /// @brief solve the sytem matrix*solution = rhs
     ///
     /// This is only a wrapper for 

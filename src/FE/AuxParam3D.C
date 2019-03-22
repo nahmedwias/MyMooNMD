@@ -46,9 +46,15 @@ TAuxParam3D::TAuxParam3D(
   N_BaseFunct = new int[N_FEValues];
 }
 
+TAuxParam3D::TAuxParam3D()
+ : TAuxParam3D(0, 0, 0, 0, nullptr, nullptr, nullptr, nullptr, nullptr, 0,
+               nullptr)
+{
+}
+
 
 /** set aux parameters giving a keyword*/
-TAuxParam3D::TAuxParam3D(std::string name, TFEFunction3D **fefunctions3d)
+TAuxParam3D::TAuxParam3D(const std::string& name, TFEFunction3D **fefunctions3d)
 {
   if(name=="Velocity") // for Navier-Stokes
   {
@@ -98,13 +104,12 @@ TAuxParam3D::TAuxParam3D(std::string name, TFEFunction3D **fefunctions3d)
 
 /** return all parameters at all quadrature points */
 void TAuxParam3D::GetParameters(int N_Points, TBaseCell *cell, int cellnum,
-                              double *Xi, double *Eta, double *Zeta,
-                              double *X, double *Y, double *Z,
-                              double **Parameters)
+                                const double *, const double *,
+                                const double *, double *X, double *Y,
+                                double *Z, double **Parameters)
 {
   int i, j, k, l, n;
   double *param, *currparam, s;
-  const TFESpace3D *fespace;
   TFEFunction3D *fefunction;
   FE3D FE_Id;
   BaseFunct3D BaseFunct_Id;
@@ -119,7 +124,7 @@ void TAuxParam3D::GetParameters(int N_Points, TBaseCell *cell, int cellnum,
     fefunction = FEFunctions3D[FEValue_FctIndex[j]];
     Values[j] = fefunction->GetValues();
 
-    fespace = fefunction->GetFESpace3D();
+    auto fespace = fefunction->GetFESpace3D();
     FE_Id = fespace->GetFE3D(cellnum, cell);
     BaseFunct_Id = TFEDatabase3D::GetFE3D(FE_Id)->GetBaseFunct3D_ID();
 
@@ -180,7 +185,7 @@ TAuxParam3D::~TAuxParam3D()
 }
 
 
-void Velocity_Fct(double *inputList, double *outputValues)
+void Velocity_Fct(const double *inputList, double *outputValues)
 {
   outputValues[0] = inputList[3];                // u1old
   outputValues[1] = inputList[4];                // u2old

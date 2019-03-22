@@ -49,7 +49,7 @@ static void C_T_B2_2D_DeriveEta(double xi, double eta, double *values)
 }
 
 // values of the derivatives in xi-xi direction
-static void C_T_B2_2D_DeriveXiXi(double xi, double eta, double *values)
+static void C_T_B2_2D_DeriveXiXi(double, double eta, double *values)
 {
   values[0] = 4;
   values[1] = -8+40*eta;
@@ -75,7 +75,7 @@ static void C_T_B2_2D_DeriveXiEta(double xi, double eta, double *values)
 }
 
 // values of the derivatives in eta-eta direction
-static void C_T_B2_2D_DeriveEtaEta(double xi, double eta, double *values)
+static void C_T_B2_2D_DeriveEtaEta(double xi, double, double *values)
 {
   values[0] = 4;
   values[1] = 40*xi;

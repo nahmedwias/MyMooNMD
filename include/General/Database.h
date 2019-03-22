@@ -16,7 +16,7 @@ class TDatabase;
 #  include "mpi.h"
 #endif
 
-#ifdef _HYBRID
+#ifdef _OMP
   #include <omp.h>
 #endif
 
@@ -31,7 +31,8 @@ class TDatabase;
 // forward declaration
 class ParameterDatabase;
 
-struct TParaDB
+// typedef struct Foo { ... } Foo; --> see https://stackoverflow.com/a/612350
+typedef struct TParamDB
 {
   int VERSION;
 
@@ -283,7 +284,6 @@ struct TParaDB
   double START_RE_NR;
   double RE_NR_INCREMENT;
   int FLOW_PROBLEM_TYPE;
-  int NSE_NONLINEAR_FORM;
   int NSTYPE;
   int LAPLACETYPE;
   int DEFECT_CORRECTION_TYPE;
@@ -295,11 +295,7 @@ struct TParaDB
   // function LinCoeffs(), the following parameters can not be set in the 
   // new 'local' Brinkman database.
   //======================================================================
-  double VISCOSITY;
-  double EFFECTIVE_VISCOSITY;
-  double PERMEABILITY;
-
-  /** Parameter for residual-based equal-order stabilization of Brinkman problems                  */
+   /** Parameter for residual-based equal-order stabilization of Brinkman problems                  */
   double equal_order_stab_weight_PkPk;
 
   /** Parameter for Grad-Div stabilization of Brinkman problems                  */
@@ -309,9 +305,9 @@ struct TParaDB
     discrete formulation for Brinkman problems. It is internally set 
     according to the input (string) assigned to the parameters 
     EqualOrder_PressureStab_type and Galerkin_type. That is, 
-    it is NOT readed from the input-file via ReadParam.C. 
-    By default it is SIGN_MATRIX_BI = 1, i.e., unsymmetry;
-    -1 would corresdpond to symmetry and additionally the implementation 
+    it is NOT read from the input-file via ReadParam.C. 
+    By default it is SIGN_MATRIX_BI = 1, i.e., nonsymmetry;
+    -1 would correspond to symmetry and additionally the implementation 
     could be widened to allow for scalings that do not have absolute value 1.
     In detail, this parameter decides wether the divergence constraint is 
     added or subtracted and adapts stabilizations if apparent. 
@@ -326,9 +322,15 @@ struct TParaDB
     h_T^2/(mueff+sigma h_T^2) (l_T = 1) or h_T^2/(mueff+sigma L_0^2) (l_T = -1). 
     The quantity L_0 should be chosen as some characteristic length, e.g the 
     diameter of the domain. i
-    By default, L_0 = 1 and can ba set in the inputfile. */
+    By default, L_0 = 1 and can be set in the input file. */
   int l_T;
   double L_0;
+
+/**
+Parameter enables the use of a function on the rhs of the divergence constraint 
+in Brinkman2d.
+*/
+bool SOURCE_SINK_FUNCTION;
  
   //======================================================================
   /** PARAMETERS FOR DARCY PROBLEM                  */
@@ -553,6 +555,7 @@ struct TParaDB
   int    INTERNAL_PRESSURE_SPACE;
   int    INTERNAL_SLIP_WITH_FRICTION;
   int    INTERNAL_SLIP_WITH_FRICTION_IDENTITY;
+  int    INTERNAL_SLIP_WEAK_FORM;
   int    INPUT_QUAD_RULE;
   int    INTERNAL_QUAD_HEXA;
   int    INTERNAL_QUAD_TETRA;
@@ -603,11 +606,6 @@ struct TParaDB
   int    INTERNAL_DISC_FLAG;
   int    INTERNAL_START_PARAM;
   
-  // parameter for tetgen
-  double TETGEN_QUALITY;
-  double TETGEN_VOLUMEN;
-  int 	 TETGEN_STEINER;
-
   //======================================================================
   /** parameters for individual use in parallel computations */
   //======================================================================
@@ -744,12 +742,13 @@ struct TParaDB
   MPI_Comm Comm;
  #endif
   
-  ~TParaDB();
-};
+  TParamDB() = default;
+  ~TParamDB();
+  
+  void read_parameters(const char *ParamFile);
+} TParamDB;
 
-typedef struct TParaDB TParamDB;
-
-struct TTimDB
+typedef struct TTimeDB
 {
   double CURRENTTIME;
   double CURRENTTIMESTEPLENGTH;
@@ -773,7 +772,6 @@ struct TTimDB
   double TIMESTEPLENGTH_PARA_RTOL;
   int FIRST_SSC_STEP;
   int RESET_CURRENTTIME;
-  double RESET_CURRENTTIME_STARTTIME;
   double STEADY_STATE_TOL;
   double SCALE_DIVERGENCE_CONSTRAINT;
 
@@ -794,9 +792,7 @@ struct TTimDB
   int TIME_DISC;
   int TIME_DISC2;
 
-  // start and end time
-  double STARTTIME;
-  double ENDTIME;
+  // extrapolate
   double EXTRAPOLATE_WEIGHT;
   double EXTRAPOLATE_STEPS;
   int    EXTRAPOLATE_PRESSURE;
@@ -872,9 +868,9 @@ struct TTimDB
   double RK_e[5];
   int RK_ord;   // Ordnung des RK-Verfahrens    mlh
   int RK_ord_e;   // Ordnung des eingebetteten RK-Verfahrens  mlh
-};
-
-typedef struct TTimDB TTimeDB;
+  
+  void read_parameters(const char *ParamFile);
+} TTimeDB;
 
 /** database of needed refinement, mapping and
     shape descriptors as well as iterators */
@@ -901,26 +897,25 @@ class TDatabase
 
   public:
     // Constructors
-    /** initialize the database */
-    TDatabase();
+    /** @brief initialize the database.
+     * 
+     * If ParamFile is nullptr, all parameters are set to their default values
+     * using the method 'SetDefaultParameters'. If a valid file is given as 
+     * 'ParamFile', the respective default values are overwritten.
+     */
+    explicit TDatabase(const char *ParamFile = nullptr);
     
     ~TDatabase();
 
-    // Methods
-#ifdef __MORTAR__
-    /** add descriptor for mortar refinement with base edge 0 */
-    void AddMortar0(int Mortar_Ni, int N);
-    /** add descriptor for mortar refinement with base edge 1 */
-    void AddMortar1(int Mortar_Ni, int N);
-#endif
-
     // set default parameters
-
     static void SetDefaultParameters();
 
     static void WriteParamDB(char *ExecutedFile);
 
     static void WriteTimeDB();
+  
+  protected:
+    void read_parameters(const char *ParamFile);
 };
 
 

@@ -30,7 +30,7 @@ int TBdSpline::GetN_Splines ()
   return N_Splines;
 }
 
-int TBdSpline::GetXYofT(double T, double &X, double &Y)
+int TBdSpline::GetXYofT(double T, double &X, double &Y) const
 {
   double phi1, phi2, phi3, phi4;
   int ISpline;
@@ -60,7 +60,7 @@ int TBdSpline::GetXYofT(double T, double &X, double &Y)
   return 0;
 }
 
-int TBdSpline::GetTofXY(double X, double Y, double &T)
+int TBdSpline::GetTofXY(double, double, double &) const
 {
   return -1;
 }

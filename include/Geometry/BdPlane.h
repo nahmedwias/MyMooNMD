@@ -34,8 +34,8 @@ class TBdPlane : public TBoundComp3D
 
   public:
     // Constructor
-    TBdPlane(int id);
-    TBdPlane(int id,int ref);
+    explicit TBdPlane(int id);
+    TBdPlane(int id, int ref);
     
     virtual ~TBdPlane () {};
 
@@ -47,15 +47,15 @@ class TBdPlane : public TBoundComp3D
 
     void GetParams (double &p_x, double &p_y, double &p_z,
                     double &a_x, double &a_y, double &a_z,
-                    double &n_x, double &n_y, double &n_z);
+                    double &n_x, double &n_y, double &n_z) const;
     
     /** return the coordinates of parameter value T, S */
     virtual int GetXYZofTS(double T, double S,
-                           double &X, double &Y, double &Z);
+                           double &X, double &Y, double &Z) const override;
 
     /** return the parameter value T, S of coordinates */
     virtual int GetTSofXYZ(double X, double Y, double Z,
-                           double &T, double &S);
+                           double &T, double &S) const override;
 
 /** 
     @brief return local parameters (t,s) and coordinates (x,y,z) 
@@ -76,13 +76,14 @@ class TBdPlane : public TBoundComp3D
                             double *xp, double *yp, double *zp,
                             double *tp, double *sp,
                             double &X, double &Y, double &Z,
-                            double &T, double &S);
+                            double &T, double &S) const override;
 
     /** read parameter from input file */
-    virtual int ReadIn(std::istream &dat);
+    virtual int ReadIn(std::istream &dat) override;
 
-    virtual void get_normal_vector(double x, double y, double z,
-				   double& nx, double& ny, double &nz){
+    virtual void get_normal_vector(double, double, double, double& nx,
+                                   double& ny, double &nz) const override
+    {
       nx = N_x;
       ny = N_y;
       nz = N_z;

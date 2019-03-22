@@ -8,7 +8,7 @@
 #include <Domain.h>
 #include <Database.h>
 #include <FEDatabase3D.h>
-#include <CD3D.h>
+#include "ConvectionDiffusion_AFC.h"
 #include <Example_CD3D.h>
 #include <MeshPartition.h>
 #include <Chrono.h>
@@ -49,9 +49,16 @@ int main(int argc, char* argv[])
   Chrono timer;
 
   // Construct the ParMooN Databases.
-  TDatabase Database;
+  TDatabase Database(argv[1]);
   ParameterDatabase parmoon_db = ParameterDatabase::parmoon_default_database();
   parmoon_db.read(argv[1]);
+  
+  //open OUTFILE, this is where all output is written to (addionally to console)
+  if(my_rank==0)
+  {
+    Output::set_outfile(parmoon_db["outfile"], parmoon_db["script_mode"]);
+  }
+  Output::setVerbosity(parmoon_db["verbosity"]);
   
 #ifdef _MPI
   TDatabase::ParamDB->Comm = comm;
@@ -59,15 +66,7 @@ int main(int argc, char* argv[])
 
   TFEDatabase3D feDatabase;
 
-  // Construct domain, thereby read in controls from the input file.
-  TDomain domain(parmoon_db, argv[1]);
-
-  //open OUTFILE, this is where all output is written to (addionally to console)
-  if(my_rank==0)
-  {
-    Output::set_outfile(parmoon_db["outfile"]);
-  }
-  Output::setVerbosity(parmoon_db["verbosity"]);
+  TDomain domain(parmoon_db);
 
   if(my_rank==0) //Only one process should do that.
   {
@@ -75,20 +74,8 @@ int main(int argc, char* argv[])
     Database.WriteParamDB(argv[0]);
   }
 
-  // write grid into an Postscript file
-  if(parmoon_db["output_write_ps"] && my_rank==0)
-    domain.PS("Domain.ps", It_Finest, 0);
-
-  // Intial refinement and grabbing of grids for multigrid.
-#ifdef _MPI
-  int maxSubDomainPerDof = 0;
-#endif
-  std::list<TCollection* > gridCollections
-  = domain.refine_and_get_hierarchy_of_collections(parmoon_db
-  #ifdef _MPI
-      , maxSubDomainPerDof
-  #endif
-      );
+  // Intial refinement
+  domain.refine_and_get_hierarchy_of_collections(parmoon_db);
   
   //print information on the mesh partition on the finest grid
   domain.print_info("cd3d domain");
@@ -98,23 +85,18 @@ int main(int argc, char* argv[])
 
   timer.restart_and_print("setup(domain, example, database)");
   // Construct the cd3d problem object.
-#ifdef _MPI
-  CD3D cd3d(gridCollections, parmoon_db, example, maxSubDomainPerDof);
-#else
-  CD3D cd3d(gridCollections, parmoon_db, example);
-#endif
+  ConvectionDiffusion_AFC<3> cd3d(domain, parmoon_db);
   timer.restart_and_print("constructing CD3D object");
   
   //=========================================================================
   //Start the actual computations.
   //=========================================================================
 
-  cd3d.assemble(); // assemble matrix and rhs
+  cd3d.assemble(0); // assemble matrix and rhs
   timer.restart_and_print("Assembling");
   
-  cd3d.solve();    // solve the system
+  cd3d.solve(0);    // solve the system
   timer.restart_and_print("Solving");
-/*
   if( cd3d.get_db()["algebraic_flux_correction"].is("afc") )
   {//nonlinear loop necessary
     size_t Max_It = cd3d.get_db()["afc_nonlinloop_maxit"];
@@ -126,7 +108,7 @@ int main(int argc, char* argv[])
       if ((converged)||(k>= Max_It))
 	break;
     }
-  }*/
+  }
   
   cd3d.output();   // produce nice output
   timer.restart_and_print("output");

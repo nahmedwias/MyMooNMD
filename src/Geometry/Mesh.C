@@ -2,11 +2,11 @@
 
 #include "Mesh.h"
 #include "MooNMD_Io.h"
-#include <tetgen.h>
+#include <assert.h>
 
 // default initialization of the mesh (dimension = 0, no elements)
 Mesh::Mesh() {
-  dimension = 0;
+  dimension = -1;
   vertex.resize(0);
   edge.resize(0);
   triangle.resize(0);
@@ -22,8 +22,8 @@ Mesh::Mesh() {
 
 // initialize from a file
 // note: dimension is set to 2, but it will be changed (if necessary) reading the file
-Mesh::Mesh(std::string filename) {
-  dimension = 2;
+Mesh::Mesh(const std::string& filename) {
+  dimension = -1;
   vertex.resize(0);
   edge.resize(0);
   triangle.resize(0);
@@ -39,8 +39,8 @@ Mesh::Mesh(std::string filename) {
   readFromFile(filename);
 }
 
-Mesh::Mesh(std::string filename,std::string filenameBoundary) {
-  dimension = 2;
+Mesh::Mesh(const std::string& filename, const std::string& filenameBoundary) {
+  dimension = -1;
   vertex.resize(0);
   edge.resize(0);
   triangle.resize(0);
@@ -57,26 +57,9 @@ Mesh::Mesh(std::string filename,std::string filenameBoundary) {
   setBoundary(filenameBoundary);
 }
 
-Mesh::Mesh(tetgenio& tgio) {
-  dimension = 3;
-  vertex.resize(0);
-  edge.resize(0);
-  triangle.resize(0);
-  quad.resize(0);
-  tetra.resize(0);
-  hexa.resize(0);
-  meshTrifaceHash.resize(0);
-  faceToTetra.resize(0);
-  hasBothTriaAndQuads = false;
-  n_boundary_faces = 0;
-  boundaryFacesMarker.resize(0);
-  
-  readFromTetgen(tgio);
-}
-
 
 // read the mesh data from a file (.mesh)
-void Mesh::readFromFile(std::string filename)
+void Mesh::readFromFile(const std::string& filename)
 {
   std::ifstream ifile;
   ifile.open(filename.c_str());
@@ -98,9 +81,14 @@ void Mesh::readFromFile(std::string filename)
   if (line.length()>0)
     sscanf(line.c_str(),"%d",&dimension);
   else
-    ifile >> dimension; 
+    ifile >> dimension;
+  
   Output::print<4>("Read dimension: ",dimension);
-
+  if(dimension == 1 || dimension > 3)
+  {
+    Output::print<1>(" ** ERROR: I could not read the mesh dimension. Check the .mesh file **");
+    exit(1);
+  }
   // read nodes
   unsigned int numberOfNodes;
   do {
@@ -110,6 +98,7 @@ void Mesh::readFromFile(std::string filename)
   ifile >> numberOfNodes;
   Output::print<4>("Read n of nodes: ",numberOfNodes);
 
+  
   vertex.resize(numberOfNodes);  
   for (unsigned int i=0; i<numberOfNodes; i++) {
     if (dimension==2) {
@@ -251,6 +240,12 @@ void Mesh::readFromFile(std::string filename)
   ifile.seekg(current_line_number);
   ifile.close();
   
+  if(numberOfHexa != 0)
+  {
+    // why is this not implemented???
+    ErrThrow("Missing implementation for reading mesh files with Hexahedra");
+  }
+  
   if(numberOfTetra + numberOfHexa == 0 && dimension == 3)
   {
     // this should be 2D and is reset here after a check.
@@ -264,39 +259,6 @@ void Mesh::readFromFile(std::string filename)
   }
 }
 
-
-// read a tetgenio object (Tetgen output) and create the mesh
-void Mesh::readFromTetgen(tetgenio& meshTetGenOut)
-{
-  dimension = 3; 
-  Output::print("Read dimension: ",dimension);
-
-  vertex.resize(meshTetGenOut.numberofpoints);
-
-  for (unsigned int i=0; i<vertex.size(); i++) {
-    vertex[i].x = meshTetGenOut.pointlist[3*i  ];
-    vertex[i].y = meshTetGenOut.pointlist[3*i+1];
-    vertex[i].z = meshTetGenOut.pointlist[3*i+2];
-  }
-
-  triangle.resize(meshTetGenOut.numberoftrifaces);
-  for (unsigned int i=0; i<triangle.size(); i++) {
-    // add + 1 since the list in Mesh starts from 1, while the Tetgen list starts from 0
-    triangle[i].nodes[0] = meshTetGenOut.trifacelist[3*i  ]+1;
-    triangle[i].nodes[1] = meshTetGenOut.trifacelist[3*i+1]+1;
-    triangle[i].nodes[2] = meshTetGenOut.trifacelist[3*i+2]+1;
-    triangle[i].reference =  meshTetGenOut.trifacemarkerlist[i];
-  }
-
-  tetra.resize(meshTetGenOut.numberoftetrahedra);
-  for (unsigned int i=0; i<tetra.size(); i++) {
-    for (unsigned int k=0; k<4; k++) {
-      tetra[i].nodes[k] = meshTetGenOut.tetrahedronlist[4*i+k]+1;
-    }
-    tetra[i].reference = 0;
-  }
-  
-}
 
 /** 
     This function creates a map between
@@ -406,7 +368,7 @@ void Mesh::createFaceToTetrahedraMap()
 	// e.g. faceToTetra[triface][0]=k, then set faceToTetra[triface][1] equal to i
 	assert(this->faceToTetra[triface][1] == -1);
         this->faceToTetra[triface][1]= i;
-	Output::print<3>("tetrahedra ",i," faces: ",
+	Output::print<5>("tetrahedra ",i," faces: ",
 		      this->faceToTetra[triface][0]," ",this->faceToTetra[triface][1]);
       }
       
@@ -545,7 +507,7 @@ void Mesh::createInnerFaces()
 	new_triangle.nodes[2] = c;
 	new_triangle.reference = 0;
 	triangle.push_back(new_triangle);
-	Output::print<4>(" Create face ",a," ",b," ",c);
+	Output::print<5>(" Create face ",a," ",b," ",c);
 	// update the hash vector (to avoid creating twice the same face)
 	localHash[hash].resize(2);
 	localHash[hash][0] = 1;
@@ -573,7 +535,7 @@ void Mesh::createInnerFaces()
 	{
 	  // face is missing
 	  n_created_faces++;
-	  Output::print<4>(" Create face ",a," ",b," ",c);
+	  Output::print<5>(" Create face ",a," ",b," ",c);
 	  meshTriangle new_triangle;
 	  new_triangle.nodes[0] = a;
 	  new_triangle.nodes[1] = b;
@@ -593,13 +555,13 @@ void Mesh::createInnerFaces()
   
 }
 // read a PRM file into a Boundary class
-void Mesh::setBoundary(std::string PRM)
+void Mesh::setBoundary(const std::string& PRM)
 {
   boundary.initFromFile(PRM);
 }
 
 // write the mesh onto a .mesh file
-void Mesh::writeToMesh(std::string filename)
+void Mesh::writeToMesh(const std::string& filename)
 {
   std::ofstream ofile;
   ofile.open(filename.c_str(),std::ios::out);
@@ -688,7 +650,7 @@ void Mesh::writeToMesh(std::string filename)
 // write the mesh onto a .(x)GEO file
 // note: in 2D it needs the boundary description. If the boundary
 // has not been initialized, the function returns an error
-void Mesh::writeToGEO(std::string geoFilename)
+void Mesh::writeToGEO(const std::string& geoFilename)
 {
   bool writeXgeo = false;
   std::ofstream geofile;

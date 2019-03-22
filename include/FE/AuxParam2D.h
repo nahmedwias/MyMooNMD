@@ -27,21 +27,12 @@ class TAuxParam2D
 // =======================================================================
 //  numbers of stored objects
 // =======================================================================
-    /** number of stored FESpace2D */
-    int N_FESpace2D;
-
-    /** number of stored FEFunction2D */
-    int N_FEFunction2D;
-
     /** number of stored parameter function (ParamFct) */
     int N_ParamFct;
 
 // =======================================================================
 //  array of pointers to stored objects
 // =======================================================================
-    /** array of stored FESpace2D */
-    const TFESpace2D **FESpaces2D;
-
     /** array of stored FEFunction2D */
     TFEFunction2D **FEFunctions2D;
 
@@ -75,19 +66,17 @@ class TAuxParam2D
     /** storage for temporary FE values */
     double *Temp;
 
-    double **Values;
+    const double **Values;
     double ***OrigValues;
     int **Index;
     int *N_BaseFunct;
 
   public:
     /** constructor */
-    TAuxParam2D(int n_fespace2d, int n_fefunction2d, int n_paramfct,
-                int n_fevalues,
-                const TFESpace2D **fespaces2d, TFEFunction2D **fefunctions2d,
-                ParamFct **parameterfct,
-                int *fevalue_fctindex, MultiIndex2D *fevalue_multiindex,
-                int n_parameters, int *beginparameter);
+    TAuxParam2D(int n_paramfct, int n_fevalues, TFEFunction2D **fefunctions2d,
+                ParamFct **parameterfct, int *fevalue_fctindex,
+                MultiIndex2D *fevalue_multiindex, int n_parameters,
+                int *beginparameter);
 
     /** @brief standard constructor
      * 
@@ -103,15 +92,15 @@ class TAuxParam2D
 
     /** return all parameters at all quadrature points */
     void GetParameters(int n_points, TCollection *Coll,
-                       TBaseCell *cell, int cellnum,
-                       double *xi, double *eta,
+                       const TBaseCell *cell, int cellnum,
+                       const double *xi, const double *eta,
                        double *x, double *y,
                        double **Parameters);
 
     /** return all parameters at boundary points */
     void GetParameters(int N_Points, TCollection *Coll,
-                       TBaseCell *cell, int cellnum,
-                       double *s, int joint,
+                       const TBaseCell *cell, int cellnum,
+                       const double *s, int joint,
                        double **Parameters);
 
     int GetN_Parameters() const

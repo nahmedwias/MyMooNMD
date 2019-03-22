@@ -29,7 +29,7 @@ class TBoundFace : public TJoint
     // Constructors
     TBoundFace(TBoundComp3D *bdcomp, double *param1, double *param2);
 
-    TBoundFace(TBoundComp3D *bdcomp);
+    explicit TBoundFace(TBoundComp3D *bdcomp);
 
     // Methods
     /** check whether the refinement pattern on both side patch,
@@ -67,6 +67,11 @@ class TBoundFace : public TJoint
     void SetParameters(double *param1, double *param2);
 
     double Get_h(int cell_measure);
+
+    void set_index_in_neighbour(TBaseCell *neigh, int index);
+    int get_index_in_neighbour(const TBaseCell*const neigh) const;
+
+
 };
 
 #endif

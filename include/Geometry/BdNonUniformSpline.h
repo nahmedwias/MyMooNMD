@@ -54,26 +54,25 @@ class TBdNonUniformSpline : public TBoundComp2D
     //double *GetBoundPoints(QuadFormula *formula, int &N_NewPt);
 
     /** return the coordinates of parameter value T */
-    virtual int GetXYofT(double T, double &X, double &Y);
+    virtual int GetXYofT(double T, double &X, double &Y) const override;
 
     /** return the parameter value T of coordinates (X, Y) */
-    virtual int GetTofXY(double X, double Y, double &T);
+    virtual int GetTofXY(double X, double Y, double &T) const override;
 
     /** read parameter from input stream */
-    virtual int ReadIn(std::istream &dat);
+    virtual int ReadIn(std::istream &dat) override;
 
     /** get number of initial vertices on this component */
-    virtual int GetN_InitVerts()
+    virtual int GetN_InitVerts() override
     { return 4; }
-    virtual int GenInitVerts(double *&points, int I_points,
-                             int *&edges, int I_edges)
+    virtual int GenInitVerts(double *&, int, int *&, int) override
     { return -1; }
     
     /** return the X-coordinate of parameter value T from [0;1] on the ISpline-th subspline */
-    double GetLocalXofT(int ISpline, double LocalT);
+    double GetLocalXofT(int ISpline, double LocalT) const;
     
     /** return the Y-coordinate of parameter value T from [0;1] on the ISpline-th subspline */
-    double GetLocalYofT(int ISpline, double LocalT);
+    double GetLocalYofT(int ISpline, double LocalT) const;
     
     /** Generate all parameters according to the info about the pisition of boundary points */
     /** and the values of derivatives at the ends of boundary; the parameter is the cumulative */
@@ -87,13 +86,13 @@ class TBdNonUniformSpline : public TBoundComp2D
 
     /** for BEM */
     /** (x-x_middle)/t */
-    double AdXofT(int ISpline, double LocalT);
+    double AdXofT(int ISpline, double LocalT) const;
     /** (y-y_middle)/t */
-    double AdYofT(int ISpline, double LocalT);
+    double AdYofT(int ISpline, double LocalT) const;
     /** x'(t) */
-    double GetLocalDXofT(int ISpline, double LocalT);
+    double GetLocalDXofT(int ISpline, double LocalT) const;
     /** y'(t) */
-    double GetLocalDYofT(int ISpline, double LocalT);
+    double GetLocalDYofT(int ISpline, double LocalT) const;
 };
 
 #endif

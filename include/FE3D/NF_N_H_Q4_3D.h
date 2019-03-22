@@ -2970,11 +2970,11 @@ static double NF_N_H_Q4_3D_CellWeight9[] = {
           0.006082492059829040467503153
       };
 
-void NF_N_H_Q4_3D_EvalAll(TCollection *Coll, TBaseCell *Cell,
-                          double *PointValues, double *Functionals)
+void NF_N_H_Q4_3D_EvalAll(TCollection *, const TBaseCell *Cell,
+                          const double *PointValues, double *Functionals)
 {
-  TJoint *joint;
-  TBaseCell *neigh;
+  const TJoint *joint;
+  const TBaseCell *neigh;
   int maptype;
 
   Functionals[0] = 
@@ -5814,7 +5814,7 @@ void NF_N_H_Q4_3D_EvalAll(TCollection *Coll, TBaseCell *Cell,
     maptype = joint->GetMapType();
     if(maptype == 1 || maptype == 2)
     {
-      neigh = (TBaseCell *)(joint->GetNeighbour(Cell));
+      neigh = (const TBaseCell *)(joint->GetNeighbour(Cell));
       if(neigh != nullptr && neigh-Cell < 0)
       {
         Functionals[6] = -Functionals[6];
@@ -5825,7 +5825,7 @@ void NF_N_H_Q4_3D_EvalAll(TCollection *Coll, TBaseCell *Cell,
     }
     if(maptype == 2 || maptype == 3)
     {
-      neigh = (TBaseCell *)(joint->GetNeighbour(Cell));
+      neigh = (const TBaseCell *)(joint->GetNeighbour(Cell));
       if(neigh != nullptr && neigh-Cell < 0)
       {
         Functionals[12] = -Functionals[12];
@@ -5839,7 +5839,7 @@ void NF_N_H_Q4_3D_EvalAll(TCollection *Coll, TBaseCell *Cell,
     maptype = joint->GetMapType();
     if(maptype == 1 || maptype == 2)
     {
-      neigh = (TBaseCell *)(joint->GetNeighbour(Cell));
+      neigh = (const TBaseCell *)(joint->GetNeighbour(Cell));
       if(neigh != nullptr && neigh-Cell < 0)
       {
         Functionals[7] = -Functionals[7];
@@ -5850,7 +5850,7 @@ void NF_N_H_Q4_3D_EvalAll(TCollection *Coll, TBaseCell *Cell,
     }
     if(maptype == 2 || maptype == 3)
     {
-      neigh = (TBaseCell *)(joint->GetNeighbour(Cell));
+      neigh = (const TBaseCell *)(joint->GetNeighbour(Cell));
       if(neigh != nullptr && neigh-Cell < 0)
       {
         Functionals[13] = -Functionals[13];
@@ -5864,7 +5864,7 @@ void NF_N_H_Q4_3D_EvalAll(TCollection *Coll, TBaseCell *Cell,
     maptype = joint->GetMapType();
     if(maptype == 1 || maptype == 2)
     {
-      neigh = (TBaseCell *)(joint->GetNeighbour(Cell));
+      neigh = (const TBaseCell *)(joint->GetNeighbour(Cell));
       if(neigh != nullptr && neigh-Cell < 0)
       {
         Functionals[8] = -Functionals[8];
@@ -5875,7 +5875,7 @@ void NF_N_H_Q4_3D_EvalAll(TCollection *Coll, TBaseCell *Cell,
     }
     if(maptype == 2 || maptype == 3)
     {
-      neigh = (TBaseCell *)(joint->GetNeighbour(Cell));
+      neigh = (const TBaseCell *)(joint->GetNeighbour(Cell));
       if(neigh != nullptr && neigh-Cell < 0)
       {
         Functionals[14] = -Functionals[14];
@@ -5889,7 +5889,7 @@ void NF_N_H_Q4_3D_EvalAll(TCollection *Coll, TBaseCell *Cell,
     maptype = joint->GetMapType();
     if(maptype == 1 || maptype == 2)
     {
-      neigh = (TBaseCell *)(joint->GetNeighbour(Cell));
+      neigh = (const TBaseCell *)(joint->GetNeighbour(Cell));
       if(neigh != nullptr && neigh-Cell < 0)
       {
         Functionals[9] = -Functionals[9];
@@ -5900,7 +5900,7 @@ void NF_N_H_Q4_3D_EvalAll(TCollection *Coll, TBaseCell *Cell,
     }
     if(maptype == 2 || maptype == 3)
     {
-      neigh = (TBaseCell *)(joint->GetNeighbour(Cell));
+      neigh = (const TBaseCell *)(joint->GetNeighbour(Cell));
       if(neigh != nullptr && neigh-Cell < 0)
       {
         Functionals[15] = -Functionals[15];
@@ -5914,7 +5914,7 @@ void NF_N_H_Q4_3D_EvalAll(TCollection *Coll, TBaseCell *Cell,
     maptype = joint->GetMapType();
     if(maptype == 1 || maptype == 2)
     {
-      neigh = (TBaseCell *)(joint->GetNeighbour(Cell));
+      neigh = (const TBaseCell *)(joint->GetNeighbour(Cell));
       if(neigh != nullptr && neigh-Cell < 0)
       {
         Functionals[10] = -Functionals[10];
@@ -5925,7 +5925,7 @@ void NF_N_H_Q4_3D_EvalAll(TCollection *Coll, TBaseCell *Cell,
     }
     if(maptype == 2 || maptype == 3)
     {
-      neigh = (TBaseCell *)(joint->GetNeighbour(Cell));
+      neigh = (const TBaseCell *)(joint->GetNeighbour(Cell));
       if(neigh != nullptr && neigh-Cell < 0)
       {
         Functionals[16] = -Functionals[16];
@@ -5939,7 +5939,7 @@ void NF_N_H_Q4_3D_EvalAll(TCollection *Coll, TBaseCell *Cell,
     maptype = joint->GetMapType();
     if(maptype == 1 || maptype == 2)
     {
-      neigh = (TBaseCell *)(joint->GetNeighbour(Cell));
+      neigh = (const TBaseCell *)(joint->GetNeighbour(Cell));
       if(neigh != nullptr && neigh-Cell < 0)
       {
         Functionals[11] = -Functionals[11];
@@ -5950,7 +5950,7 @@ void NF_N_H_Q4_3D_EvalAll(TCollection *Coll, TBaseCell *Cell,
     }
     if(maptype == 2 || maptype == 3)
     {
-      neigh = (TBaseCell *)(joint->GetNeighbour(Cell));
+      neigh = (const TBaseCell *)(joint->GetNeighbour(Cell));
       if(neigh != nullptr && neigh-Cell < 0)
       {
         Functionals[17] = -Functionals[17];
@@ -5962,11 +5962,11 @@ void NF_N_H_Q4_3D_EvalAll(TCollection *Coll, TBaseCell *Cell,
   }
 }
 
-void NF_N_H_Q4_3D_EvalFace(TCollection *Coll, TBaseCell *Cell, int Joint, 
-                           double *PointValues, double *Functionals)
+void NF_N_H_Q4_3D_EvalFace(TCollection *, const TBaseCell *Cell, int Joint, 
+                           const double *PointValues, double *Functionals)
 {
-  TJoint *joint;
-  TBaseCell *neigh;
+  const TJoint *joint;
+  const TBaseCell *neigh;
   int maptype;
 
   Functionals[0] = 
@@ -6235,7 +6235,7 @@ void NF_N_H_Q4_3D_EvalFace(TCollection *Coll, TBaseCell *Cell, int Joint,
     maptype = joint->GetMapType();
     if(maptype == 1 || maptype == 2)
     {
-      neigh = (TBaseCell *)(joint->GetNeighbour(Cell));
+      neigh = (const TBaseCell *)(joint->GetNeighbour(Cell));
       if(neigh != nullptr && neigh-Cell < 0)
       {
         Functionals[1] = -Functionals[1];
@@ -6246,7 +6246,7 @@ void NF_N_H_Q4_3D_EvalFace(TCollection *Coll, TBaseCell *Cell, int Joint,
     }
     if(maptype == 2 || maptype == 3)
     {
-      neigh = (TBaseCell *)(joint->GetNeighbour(Cell));
+      neigh = (const TBaseCell *)(joint->GetNeighbour(Cell));
       if(neigh != nullptr && neigh-Cell < 0)
       {
         Functionals[2] = -Functionals[2];

@@ -85,7 +85,7 @@ TInterfaceJoint3D::~TInterfaceJoint3D()
   
   
 // Methods
-TJoint *TInterfaceJoint3D::NewInst(double newtT_0, double newT_1, TBaseCell *Me)
+TJoint *TInterfaceJoint3D::NewInst(double, double, TBaseCell *Me)
 {
   return new TInterfaceJoint3D(BoundComp, Me);
 }

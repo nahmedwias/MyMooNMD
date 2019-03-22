@@ -62,8 +62,7 @@ static void D_H_P2_3D_DeriveZeta(double xi, double eta, double zeta,
   values[9] = 6*zeta;
 }
 
-static void D_H_P2_3D_DeriveXiXi(double xi, double eta, double zeta,
-                             double *values)
+static void D_H_P2_3D_DeriveXiXi(double, double, double, double *values)
 {
   values[0] = 0;
   values[1] = 0;
@@ -77,8 +76,7 @@ static void D_H_P2_3D_DeriveXiXi(double xi, double eta, double zeta,
   values[9] = 0;
 }
 
-static void D_H_P2_3D_DeriveXiEta(double xi, double eta, double zeta,
-                             double *values)
+static void D_H_P2_3D_DeriveXiEta(double, double, double, double *values)
 {
   values[0] = 0;
   values[1] = 0;
@@ -92,8 +90,7 @@ static void D_H_P2_3D_DeriveXiEta(double xi, double eta, double zeta,
   values[9] = 0;
 }
 
-static void D_H_P2_3D_DeriveXiZeta(double xi, double eta, double zeta,
-                             double *values)
+static void D_H_P2_3D_DeriveXiZeta(double, double, double, double *values)
 {
   values[0] = 0;
   values[1] = 0;
@@ -107,8 +104,7 @@ static void D_H_P2_3D_DeriveXiZeta(double xi, double eta, double zeta,
   values[9] = 0;
 }
 
-static void D_H_P2_3D_DeriveEtaEta(double xi, double eta, double zeta,
-                             double *values)
+static void D_H_P2_3D_DeriveEtaEta(double, double, double, double *values)
 {
   values[0] = 0;
   values[1] = 0;
@@ -122,8 +118,7 @@ static void D_H_P2_3D_DeriveEtaEta(double xi, double eta, double zeta,
   values[9] = 0;
 }
 
-static void D_H_P2_3D_DeriveEtaZeta(double xi, double eta, double zeta,
-                             double *values)
+static void D_H_P2_3D_DeriveEtaZeta(double, double, double, double *values)
 {
   values[0] = 0;
   values[1] = 0;
@@ -137,8 +132,7 @@ static void D_H_P2_3D_DeriveEtaZeta(double xi, double eta, double zeta,
   values[9] = 0;
 }
 
-static void D_H_P2_3D_DeriveZetaZeta(double xi, double eta, double zeta,
-                             double *values)
+static void D_H_P2_3D_DeriveZetaZeta(double, double, double, double *values)
 {
   values[0] = 0;
   values[1] = 0;

@@ -29,7 +29,7 @@ void TBdSphere::SetParams (double m_x, double m_y, double m_z,
 }
 
 int TBdSphere::GetXYZofTS(double T, double S,
-                        double &X, double &Y, double &Z)
+                        double &X, double &Y, double &Z) const
 {
   X = M_x + R * cos(S)*cos(T);
   Y = M_y + R * cos(S)*sin(T);
@@ -42,9 +42,9 @@ int TBdSphere::GetXYZofTS(double T, double S,
     combination of vertices */
 int TBdSphere::GetXYZandTS(int N_Points, double *LinComb,
                           double *xp, double *yp, double *zp,
-                          double *tp, double *sp,
+                          double *, double *,
                           double &X, double &Y, double &Z,
-                          double &T, double &S)
+                          double &T, double &S) const
 {
   double v;
   int i;
@@ -78,7 +78,7 @@ int TBdSphere::GetXYZandTS(int N_Points, double *LinComb,
 }
 
 int TBdSphere::GetTSofXYZ(double X, double Y, double Z,
-                        double &T, double &S)
+                        double &T, double &S) const
 {
   S = asin((Z-M_z)/R);
   T = atan2((Y-M_y), (X-M_x));

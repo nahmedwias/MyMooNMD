@@ -11,7 +11,7 @@
 #include <BoundEdge.h>
 #include <BoundFace.h>
 #include <Edge.h>
-
+#include <Point.h>
 
 
 // Constructor
@@ -75,7 +75,6 @@ TBaseCell::~TBaseCell()
     switch (CurrJoint->GetType())
     {
       case JointEqN:
-      case MortarBaseJoint:
       case InterfaceJoint:
       case IsoInterfaceJoint:
       case InnerInterfaceJoint:
@@ -98,7 +97,7 @@ TBaseCell::~TBaseCell()
   delete[] Joints;
 }
 
-double TBaseCell::Get_hK(int cell_measure)
+double TBaseCell::Get_hK(int cell_measure) const
 {
   switch (cell_measure)
   {
@@ -184,7 +183,7 @@ void TBaseCell::SetNormalOrientation()
   for (int i=0; i<nEdges;i++)
   {
     normalOrientation[i] = 1;
-    TJoint *joint = Joints[i];
+    const TJoint *joint = Joints[i];
     if(joint->InnerJoint())
     {
       neighbCell = joint->GetNeighbour(this);
@@ -213,10 +212,10 @@ bool TBaseCell::IsBoundaryCell( int BoundComp_id ) const
             {
 #ifdef __2D__
                const TBoundEdge *boundedge = (const TBoundEdge *)joint;
-                TBoundComp *BoundComp = boundedge->GetBoundComp();
+                const TBoundComp *BoundComp = boundedge->GetBoundComp();
 #elif __3D__
                const TBoundFace *boundface = (const TBoundFace *)joint;
-                TBoundComp *BoundComp = boundface->GetBoundComp();
+                const TBoundComp *BoundComp = boundface->GetBoundComp();
 #endif //__3D__
                 if (BoundComp->GetID() == BoundComp_id)
                 {
@@ -229,6 +228,126 @@ bool TBaseCell::IsBoundaryCell( int BoundComp_id ) const
 return false;   
 }
 //LB ====================================================
+
+#ifdef __3D__
+void TBaseCell::computeNormalAndTransformationData(int m,
+					std::vector<double>& normal,
+					double &transformationDeterminant) const
+{
+    const int *faceVertexMap, *faceVertexMapLength;
+    int maxNVerticesPerFace;
+    // For the current cell, get information of faces and local vertices
+    // faceVertexMap should be seen as an array of arrays, e.g.
+    // faceVertexMap = { {a,b,c},{b,c,d},{a,c,d},{a,b,d}}
+    // where faceVertexMap[i] contains the id of vertices defining face i
+    // faceVertexMapLength is an array specifying the length of each list
+    // note: in the case that faces of an element have differennt number of
+    // vertices (e.g. a pyramid), the faceVertexMap lists have all lenght equal to
+    // maxNVerticesPerFace, and these are filled with 0 for the faces with less vertices
+    this->RefDesc->GetShapeDesc()->GetFaceVertex(faceVertexMap,faceVertexMapLength,maxNVerticesPerFace);
+    // simplify: number of vertices on face m (m=joint_id)
+    size_t nFaceVertices = faceVertexMapLength[ m ];
+    std::vector< Point > faceVertices(nFaceVertices,Point((unsigned int) 3));
+    for (size_t l1=0; l1<nFaceVertices; l1++) {
+        double _x,_y,_z;
+        this->GetVertex(faceVertexMap[ m*maxNVerticesPerFace+l1 ])->GetCoords(_x,_y,_z);
+        faceVertices[l1].x() = _x;
+        faceVertices[l1].y() = _y;
+        faceVertices[l1].z() = _z;
+    }
+    
+    normal.resize(3);
+    double xc1, yc1, zc1, xc2, yc2, zc2;
+    switch(faceVertices.size()) {
+       case 3:
+            // compute the 2 vectors that span the plane containing the current face
+            xc1 = faceVertices[1].x() - faceVertices[0].x();
+            xc2 = faceVertices[2].x() - faceVertices[0].x();
+            
+            yc1 = faceVertices[1].y() - faceVertices[0].y();
+            yc2 = faceVertices[2].y() - faceVertices[0].y();
+            
+            zc1 = faceVertices[1].z() - faceVertices[0].z();
+            zc2 = faceVertices[2].z() - faceVertices[0].z();
+
+            // plane spanned by vectors v1=(xc1, yc1, zc1) and v2=(xc2, yc2, zc2)
+            // Area of the triangle: 0.5*||v1 x v2||
+            // normed Normal vector = v1 x v2/||v1 x v2||
+            // Area of reference triangle (0,0)-(0,1)-(1,0): 1/2*g*h=0.5
+            // Determinant of tranform.: A(triangle)/A(ref triangle) = ||v1 x v2||
+            normal[0] = yc1*zc2 - zc1*yc2;
+            normal[1] = zc1*xc2 - xc1*zc2;
+            normal[2] = xc1*yc2 - yc1*xc2;
+            // determinant of reference trafo in order to get a normed normal vector
+            transformationDeterminant =
+            sqrt(normal[0]*normal[0] + normal[1]*normal[1] + normal[2]*normal[2]);
+            normal[0] /= transformationDeterminant;
+            normal[1] /= transformationDeterminant;
+            normal[2] /= transformationDeterminant;
+            
+            break;
+            
+        case 4:
+            // We consider a quadrilateral (P0,P1,P2,P3) as composed by 2 triangles
+            // T1: P0,P1,P2
+            // T2: P2,P3,P0
+            // and we do the same as above (twice)
+            // normed normal: ( (P1-P0) x (P2-P0) ) / || (P1-P0) x (P2-P0) ||
+            // area: || (P1-P0) x (P2-P0) || / 2 + || (P3-P2) x (P0-P2) || / 2
+            // area reference element [-1,1]x[-1,1]: 4
+            // first triangle
+            xc1 = faceVertices[1].x() - faceVertices[0].x();
+            xc2 = faceVertices[2].x() - faceVertices[0].x();
+            
+            yc1 = faceVertices[1].y() - faceVertices[0].y();
+            yc2 = faceVertices[2].y() - faceVertices[0].y();
+            
+            zc1 = faceVertices[1].z() - faceVertices[0].z();
+            zc2 = faceVertices[2].z() - faceVertices[0].z();
+            
+            // normal vector (the same (except for length) for T1 and T2)
+            normal[0] = yc1*zc2 - zc1*yc2;
+            normal[1] = zc1*xc2 - xc1*zc2;
+            normal[2] = xc1*yc2 - yc1*xc2;
+            
+            // determinant of reference transformation in order to get a normed normal vector
+            double areaT1 =
+            sqrt(normal[0]*normal[0] + normal[1]*normal[1] + normal[2]*normal[2]);
+            areaT1 /= 2.0;
+            // second triangle
+            xc1 = faceVertices[3].x() - faceVertices[2].x();
+            xc2 = faceVertices[0].x() - faceVertices[2].x();
+            
+            yc1 = faceVertices[3].y() - faceVertices[2].y();
+            yc2 = faceVertices[0].y() - faceVertices[2].y();
+            
+            zc1 = faceVertices[3].z() - faceVertices[2].z();
+            zc2 = faceVertices[0].z() - faceVertices[2].z();
+            
+            
+            // normal vector (the same (except for length) for T1 and T2)
+            normal[0] = yc1*zc2 - zc1*yc2;
+            normal[1] = zc1*xc2 - xc1*zc2;
+            normal[2] = xc1*yc2 - yc1*xc2;
+            
+            // determinant of reference trasformation in order to get a normed normal vector
+            double areaT2 =
+            sqrt(normal[0]*normal[0] + normal[1]*normal[1] + normal[2]*normal[2]);
+            normal[0] /= areaT2;
+            normal[1] /= areaT2;
+            normal[2] /= areaT2;
+            
+            areaT2 /= 2.0;
+            
+            // note: the reference element is [-1,1] x [-1,1]
+            transformationDeterminant = (areaT1+areaT2)/4.;
+            
+            break;
+            
+    } // tria or quads
+    
+}
+#endif
 
 // Methods
 #ifdef  _MPI

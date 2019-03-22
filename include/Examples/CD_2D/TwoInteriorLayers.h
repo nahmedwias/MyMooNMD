@@ -9,7 +9,7 @@ void ExampleFile()
   Output::print<1>("Example: TwoInteriorLayers.h");
 }
 // exact solution
-void Exact(double x, double y, double *values)
+void Exact(double, double, double *values)
 {
 
   values[0]= 0;
@@ -19,7 +19,7 @@ void Exact(double x, double y, double *values)
 }
 
 // kind of boundary condition (for FE space needed)
-void BoundCondition(int i, double t, BoundCond &cond)
+void BoundCondition(int i, double, BoundCond &cond)
 {
     if (i==3)
 	cond = NEUMANN;
@@ -41,8 +41,8 @@ void BoundValue(int BdComp, double Param, double &value)
       value = 0;
 }
 
-void BilinearCoeffs(int n_points, double *X, double *Y,
-        double **parameters, double **coeffs)
+void BilinearCoeffs(int n_points, double *X, double *Y, double **,
+                    double **coeffs)
 {
   static double eps=1/TDatabase::ParamDB->PE_NR;
   int i;

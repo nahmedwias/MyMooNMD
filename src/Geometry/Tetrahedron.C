@@ -70,7 +70,7 @@ TTetrahedron::TTetrahedron()
 }
 
 // Methods
-double TTetrahedron::GetDiameter(TVertex **Verts)
+double TTetrahedron::GetDiameter(TVertex **Verts) const
 {
 //  int i;
   double len, diam = 0;
@@ -97,7 +97,7 @@ double TTetrahedron::GetDiameter(TVertex **Verts)
   return sqrt(diam);
 }
 
-double TTetrahedron::GetShortestEdge(TVertex **Verts)
+double TTetrahedron::GetShortestEdge(TVertex **Verts) const
 {
 //  int i;
   double len, diam = 1e10;
@@ -124,7 +124,7 @@ double TTetrahedron::GetShortestEdge(TVertex **Verts)
   return sqrt(diam);
 }
 
-double TTetrahedron::GetLengthWithReferenceMap(TVertex **Verts)
+double TTetrahedron::GetLengthWithReferenceMap(TVertex **Verts) const
 {
   double x0, x1, x2, x3, y0, y1, y2, y3, z0, z1, z2, z3;
   double xc1, xc2, xc3,yc1, yc2, yc3, zc1, zc2, zc3;
@@ -155,7 +155,7 @@ double TTetrahedron::GetLengthWithReferenceMap(TVertex **Verts)
 	return(pow(detjk,1.0/3.0));
 }
 
-double TTetrahedron::GetMeasure(TVertex **Verts)
+double TTetrahedron::GetMeasure(TVertex **Verts) const
 {
   double x1,x2,x3,x4,y1,y2,y3,y4,z1,z2,z3,z4;
 

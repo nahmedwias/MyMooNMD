@@ -30,7 +30,7 @@ class TRefTriBis10Desc : public TRefDesc
   public:
     // Constructor
     /** build the descriptor for refining a triangle by bisecting edge 0 */
-    TRefTriBis10Desc(TShapeDesc *shape);
+    explicit TRefTriBis10Desc(TShapeDesc *shape);
 
     // Methods
 };

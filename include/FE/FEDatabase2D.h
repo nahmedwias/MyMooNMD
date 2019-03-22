@@ -11,12 +11,17 @@
 #ifndef __FEDATABASE2D__
 #define __FEDATABASE2D__
 
+class TRefTrans1D;
+class TQuadFormula3D;
+
 #include <FE1D.h>
 
 #include <FE2D.h>
 #include <FE2DMapper1Reg.h>
 #include <HNDesc.h>
 #include <RefTrans2D.h>
+#include <ShapeDesc.h>
+#include <RefDesc.h>
 
 #include <QuadFormulaQuad.h>
 #include <QuadFormulaTria.h>
@@ -583,7 +588,7 @@ class TFEDatabase2D
         to original element */
     static void GetOrigValues(RefTrans2D RefTrans,
                 double xi, double eta, TBaseFunct2D *bf,
-                TCollection *Coll, TGridCell *cell,
+                TCollection *Coll, const TGridCell *cell,
                 double *uref, double *uxiref, double *uetaref,
                 double *uorig, double *uxorig, double *uyorig);
     
@@ -603,16 +608,16 @@ class TFEDatabase2D
 
      /** calculate points on original element */
      static void GetOrigFromRef(RefTrans2D RefTrans, int n_points, 
-                        double *xi, double *eta,
+                        const double *xi, const double *eta,
                         double *X, double *Y, double *absdetjk);
 
      /** calculate base functions with derivatives and coordinates
          from reference to original element */
      static RefTrans2D GetOrig(int N_LocalUsedElements, FE2D *LocalUsedElements,
                          TCollection *Coll,
-                         TBaseCell *cell, bool *Needs2ndDer,
-                         int &N_Points, double* &xi, double* &eta, 
-                         double* &weights, double* X, double* Y,
+                         const TBaseCell *cell, bool *Needs2ndDer,
+                         int &N_Points, const double* &xi, const double* &eta, 
+                         const double* &weights, double* X, double* Y,
                          double* absdetjk);
 
      /** calculate points on reference element */
@@ -621,7 +626,7 @@ class TFEDatabase2D
                         double &xi, double &eta);
 
      /** set cell for reference transformation */
-     static void SetCellForRefTrans(TBaseCell *cell,
+     static void SetCellForRefTrans(const TBaseCell *cell,
                                     RefTrans2D reftrans);
 
 //======================================================================

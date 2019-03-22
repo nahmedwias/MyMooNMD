@@ -214,7 +214,7 @@ static void C_T_B2_3D_DeriveZeta(double xi, double eta, double zeta,
       values[14] = 256.0*t30;
 }
 
-static void C_T_B2_3D_DeriveXiXi(double xi, double eta, double zeta,
+static void C_T_B2_3D_DeriveXiXi(double, double eta, double zeta,
                              double *values)
 {
 
@@ -338,7 +338,7 @@ static void C_T_B2_3D_DeriveXiZeta(double xi, double eta, double zeta,
 
      }
 
-static void C_T_B2_3D_DeriveEtaEta(double xi, double eta, double zeta,
+static void C_T_B2_3D_DeriveEtaEta(double xi, double, double zeta,
                              double *values)
 {
  double t1 = 6.0*zeta;
@@ -415,7 +415,7 @@ static void C_T_B2_3D_DeriveEtaZeta(double xi, double eta, double zeta,
       values[14] = 256.0*t22;
     }
 
-static void C_T_B2_3D_DeriveZetaZeta(double xi, double eta, double zeta,
+static void C_T_B2_3D_DeriveZetaZeta(double xi, double eta, double,
                              double *values)
 {
 

@@ -77,14 +77,14 @@ static double *NF_C_H_Q2_3D_ZetaArray[6] = {
 static double NF_C_H_Q2_3D_T[9] = { 0, 0.5, 1,   0, 0.5,   1, 0, 0.5, 1 };
 static double NF_C_H_Q2_3D_S[9] = { 0,   0, 0, 0.5, 0.5, 0.5, 1,   1, 1 };
 
-void NF_C_H_Q2_3D_EvalAll(TCollection *Coll, TBaseCell *Cell,
-                          double *PointValues, double *Functionals)
+void NF_C_H_Q2_3D_EvalAll(TCollection *, const TBaseCell *,
+                          const double *PointValues, double *Functionals)
 {
   memcpy(Functionals, PointValues, 27*SizeOfDouble);
 }
 
-void NF_C_H_Q2_3D_EvalFace(TCollection *Coll, TBaseCell *Cell, int Joint, 
-                           double *PointValues, double *Functionals)
+void NF_C_H_Q2_3D_EvalFace(TCollection *, const TBaseCell *, int,
+                           const double *PointValues, double *Functionals)
 {
   memcpy(Functionals, PointValues, 9*SizeOfDouble);
 }

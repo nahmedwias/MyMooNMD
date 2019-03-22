@@ -65,7 +65,7 @@ class TDiscreteForm3D
 
     /** function doing the real assembling using parameters from 
         argument list */
-    AssembleFctParam3D *AssembleParam;
+    AssembleFctParam AssembleParam;
 
     /** function for manipulating the coefficients */
     ManipulateFct3D *Manipulate;
@@ -82,7 +82,7 @@ class TDiscreteForm3D
                     MultiIndex3D *derivatives, int *fespacenumber,
                     int n_matrices, int n_rhs,
                     int *rowspace, int *columnspace, int *rhsspace,
-                    AssembleFct3D *assemble, CoeffFct3D coeffs,
+                    AssembleFct3D *assemble, const CoeffFct3D& coeffs,
                     ManipulateFct3D *manipulate);
 
     /** constructor with assembling using parameters */
@@ -90,7 +90,8 @@ class TDiscreteForm3D
                     MultiIndex3D *derivatives, int *fespacenumber,
                     int n_matrices, int n_rhs,
                     int *rowspace, int *columnspace, int *rhsspace,
-                    AssembleFctParam3D *assembleparam, CoeffFct3D coeffs,
+                    const AssembleFctParam& assembleparam,
+                    const CoeffFct3D& coeffs,
                     ManipulateFct3D *manipulate);
 
     /** destructor */
@@ -132,7 +133,7 @@ class TDiscreteForm3D
 		return Assemble;
 	}
 
-	AssembleFctParam3D* getAssembleParam() const {
+	AssembleFctParam getAssembleParam() const {
 		return AssembleParam;
 	}
 

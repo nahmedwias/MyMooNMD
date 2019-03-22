@@ -20,8 +20,10 @@
 #include <NodalFunctional1D.h>
 #include <stdlib.h>
 /** constructor with vector initialization */
-TFEFunction1D::TFEFunction1D(TFESpace1D *fespace1D, std::string name,
-                             std::string description, double *values, int length)
+TFEFunction1D::TFEFunction1D(std::shared_ptr<TFESpace1D> fespace1D,
+                             const std::string& name,
+                             const std::string& description, double *values,
+                             int length)
 : Name(name), Description(description)
 {
   FESpace1D=fespace1D;
@@ -41,7 +43,7 @@ void TFEFunction1D::Interpolate(DoubleFunct2D *Exact)
   int N_Points;
   int *DOF;
 
-  double *xi, *eta;
+  const double *xi, *eta;
   double X[MaxN_PointsForNodal1D], Y[MaxN_PointsForNodal1D];
   double AbsDetjk[MaxN_PointsForNodal1D];
   double PointValues[MaxN_PointsForNodal1D];
@@ -118,7 +120,7 @@ void TFEFunction1D::Interpolate(int ConstCoord, double x, DoubleFunct2D *Exact)
   int N_Points;
   int *DOF;
 
-  double *xi, *eta;
+  const double *xi, *eta;
   double Y[MaxN_PointsForNodal1D];
   double AbsDetjk[MaxN_PointsForNodal1D];
   double PointValues[MaxN_PointsForNodal1D];
@@ -195,7 +197,7 @@ void TFEFunction1D::Interpolate(double x, double y, DoubleFunct3D *Exact)
   int N_Points;
   int *DOF;
 
-  double *xi, *eta;
+  const double *xi, *eta;
   double Z[MaxN_PointsForNodal1D];
   double AbsDetjk[MaxN_PointsForNodal1D];
   double PointValues[MaxN_PointsForNodal1D];
@@ -262,7 +264,7 @@ void TFEFunction1D::InterpolateNodalPts(int N_Coord, double *Coords, DoubleFunct
   int N_Points, disp, N_GlobNodalPts;
   int *IndexArray, *NodalPtIndex;
 
-  double *xi, *eta;
+  const double *xi, *eta;
   double Z[MaxN_PointsForNodal1D];
   double AbsDetjk[MaxN_PointsForNodal1D];
 //  double PointValues[MaxN_PointsForNodal1D];
@@ -353,7 +355,7 @@ void TFEFunction1D::GridToData()
   int N_Points;
   int *DOF;
 
-  double *xi, *eta;
+  const double *xi, *eta;
   double Y[MaxN_PointsForNodal1D];
   double AbsDetjk[MaxN_PointsForNodal1D];
   double PointValues[MaxN_PointsForNodal1D];

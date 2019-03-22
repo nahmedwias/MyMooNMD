@@ -51,7 +51,7 @@ class TInnerInterfaceJoint : public TJointEqN
   
   // Constructors
   /** constructor with one initial neighbour */
-  TInnerInterfaceJoint(TBaseCell *neighb0);
+  explicit TInnerInterfaceJoint(TBaseCell *neighb0);
   TInnerInterfaceJoint(TBaseCell *neighb0, TBaseCell *neighb1);
   
   // Methods

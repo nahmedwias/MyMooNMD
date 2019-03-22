@@ -21,12 +21,12 @@ TQuadFormula::TQuadFormula()
   Accuracy = -1;
 }
 
-double *TQuadFormula::GetCoords(int i)
+const double *TQuadFormula::GetCoords(int) const
 {
   return nullptr;
 }
 
-std::ostream& operator << (std::ostream &s, TQuadFormula *qf)
+std::ostream& operator << (std::ostream &s, const TQuadFormula *qf)
 {
   int i,N_;
 

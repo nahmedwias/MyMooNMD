@@ -27,7 +27,7 @@ void TBdLine::SetParams (double xstart, double ystart,
   delY = dely;
 }
 
-int TBdLine::GetXYofT(double T, double &X, double &Y)
+int TBdLine::GetXYofT(double T, double &X, double &Y) const
 {
   if (T < -0.001 || T > 1.001)
   { 
@@ -42,7 +42,7 @@ int TBdLine::GetXYofT(double T, double &X, double &Y)
   return 0;
 }
 
-int TBdLine::GetTofXY(double X, double Y, double &T)
+int TBdLine::GetTofXY(double X, double Y, double &T) const
 {
   double T_X = -123, T_Y = -123;
   bool testX = false, testY = false;

@@ -34,9 +34,10 @@ class TQuadFormula1D : public TQuadFormula
     TQuadFormula1D(int n_points, double* weights, double* xi, int acc);
 
     /** return coordinates of the formula */
-    virtual double *GetCoords(int i);
+    virtual const double *GetCoords(int i) const override;
     /** return all data of the quadrature formula */
-    void GetFormulaData(int &n_points, double* &weights, double* &xi);
+    void GetFormulaData(int &n_points, const double* &weights,
+                        const double* &xi);
 
     /** return accuracy of this formula */
     int GetAccuracy()

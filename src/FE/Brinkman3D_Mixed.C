@@ -26,7 +26,7 @@
 // ======================================================================
 // For NSTYPE: 14
 void Brinkman3DType1Galerkin(double Mult, double *coeff,
-                             double *param, double hK,
+                             double *, double,
                              double **OrigValues, int *N_BaseFuncts,
                              double ***LocMatrices, double **LocRhs)
 {
@@ -155,7 +155,7 @@ void Brinkman3DType1Galerkin(double Mult, double *coeff,
 // ======================================================================
 // For NSTYPE: 4
 void Brinkman3DType2Galerkin(double Mult, double *coeff,
-                             double *param, double hK,
+                             double *, double,
                              double **OrigValues, int *N_BaseFuncts,
                              double ***LocMatrices, double **LocRhs)
 {
@@ -290,7 +290,7 @@ void Brinkman3DType2Galerkin(double Mult, double *coeff,
 //       C contains integrands build by p and q!
 
 void ResidualStabPkPk_for_Brinkman3DType1Galerkin(double Mult, double *coeff,
-                                                double *param, double hK,
+                                                double *, double hK,
                                                 double **OrigValues, int *N_BaseFuncts,
                                                 double ***LocMatrices, double **LocRhs)
 {
@@ -487,9 +487,8 @@ void ResidualStabPkPk_for_Brinkman3DType1Galerkin(double Mult, double *coeff,
 // Brinkman Problem with GradDiv Stabilization
 // ======================================================================
 // For NSTYPE: 14
-void GradDivStab_for_Brinkman3DType1Galerkin(double Mult, double *coeff,
-                                             double *param, double hK,
-                                             double **OrigValues, int *N_BaseFuncts,
-                                             double ***LocMatrices, double **LocRhs)
+void GradDivStab_for_Brinkman3DType1Galerkin(double, double *, double *, double,
+                                             double **, int *, double ***,
+                                             double **)
 {
 }

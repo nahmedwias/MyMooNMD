@@ -2,7 +2,7 @@
 #include <cmath>
 #include <AnalyticalFunction.h>
 
-int main(int argc, char **argv)
+int main(int, char **)
 {
   // empty object to indicate no such function exists.
   AnalyticalFunction f;

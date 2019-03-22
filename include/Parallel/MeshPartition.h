@@ -9,6 +9,8 @@
 #ifndef __MESH_PARTITION__
 #define __MESH_PARTITION__
 
+#ifdef  _MPI
+
 class TDomain;
 class TVertex;
 
@@ -18,8 +20,6 @@ void Sort(TVertex **Array, int length);
 
 int GetIndex(TVertex **Array, int Length, TVertex *Element);
 }
-
-#ifdef  _MPI
 
 /** @brief Not implemented.*/
 void Partition_Mesh(MPI_Comm comm, TDomain *Domain, int &MaxCpV);
@@ -62,6 +62,6 @@ int Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxCpV);
  */
 void Domain_Crop(MPI_Comm comm, TDomain *Domain);
 
-#endif
-#endif
+#endif // _MPI
+#endif // __MESH_PARTITION__
 

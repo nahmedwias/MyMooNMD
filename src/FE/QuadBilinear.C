@@ -30,8 +30,9 @@ void TQuadBilinear::GetOrigFromRef(double xi, double eta, double &X, double &Y)
 }
 
 /** transfer a set of point from reference to original element */
-void TQuadBilinear::GetOrigFromRef(int N_Points, double *xi, double *eta,
-                                double *X, double *Y, double *absdetjk)
+void TQuadBilinear::GetOrigFromRef(int N_Points, const double *xi,
+                                   const double *eta,
+                                   double *X, double *Y, double *absdetjk)
 {
   int i;
   double Xi, Eta;
@@ -48,7 +49,7 @@ void TQuadBilinear::GetOrigFromRef(int N_Points, double *xi, double *eta,
 }
 
 /** transfer from reference element to original element */
-void TQuadBilinear::GetOrigFromRef(double *ref, double *orig)
+void TQuadBilinear::GetOrigFromRef(const double *ref, double *orig)
 {
   orig[0] = xc0 + xc1*ref[0] + xc2*ref[1] + xc3*ref[0]*ref[1];
   orig[1] = yc0 + yc1*ref[0] + yc2*ref[1] + yc3*ref[0]*ref[1];
@@ -85,16 +86,16 @@ void TQuadBilinear::GetRefFromOrig(double x, double y, double &xi, double &eta)
 }
 
 /** transfer from original element to reference element */
-void TQuadBilinear::GetRefFromOrig(double *orig, double *ref)
+void TQuadBilinear::GetRefFromOrig(const double *orig, double *ref)
 {
   GetRefFromOrig(orig[0], orig[1], ref[0], ref[1]);
 }
 
 /** calculate functions and derivatives from reference element
     to original element */
-void TQuadBilinear::GetOrigValues(BaseFunct2D BaseFunct,
-                               int N_Points, double *xi, double *eta,
-                               int N_Functs, QuadFormula2D QuadFormula)
+void TQuadBilinear::GetOrigValues(BaseFunct2D BaseFunct, int N_Points,
+                                  const double *xi, const double *eta,
+                                  int N_Functs, QuadFormula2D QuadFormula)
 {
   int i=0,j,BaseVectDim, M;
   double **refvaluesD00, **origvaluesD00;
@@ -240,10 +241,9 @@ void TQuadBilinear::GetOrigValues(BaseFunct2D BaseFunct,
       refD01 = refvaluesD01[i];
       origD01 = origvaluesD01[i];
       
-      this->PiolaMapOrigFromRefNotAffine(N_Functs, refD00, origD00, xi[j], 
-                                           eta[j]);
-      this->PiolaMapOrigFromRefNotAffine(N_Functs, refD00, refD10, refD01, 
-                                         origD10, origD01, xi[j], eta[j]);
+      this->PiolaMapOrigFromRef(xi[j], eta[j], N_Functs, refD00, origD00);
+      this->PiolaMapOrigFromRef(xi[j], eta[j], N_Functs, refD00, refD10,
+                                refD01, origD10, origD01);
     }
   }
 // */
@@ -325,9 +325,9 @@ void TQuadBilinear::GetOrigValues(BaseFunct2D BaseFunct,
 /** calculate functions and derivatives from reference element
     to original element, for all given elements */
 void TQuadBilinear::GetOrigValues(int N_Sets, BaseFunct2D *BaseFuncts,
-                               int N_Points, double *xi, double *eta,
-                               QuadFormula2D QuadFormula,
-                               bool *Needs2ndDer)
+                                  int N_Points, const double *xi,
+                                  const double *eta, QuadFormula2D QuadFormula,
+                                  bool *Needs2ndDer)
 {
   int i,j,k,BaseVectDim;  // M;
   double **refvaluesD00, **origvaluesD00;
@@ -385,8 +385,7 @@ void TQuadBilinear::GetOrigValues(int N_Sets, BaseFunct2D *BaseFuncts,
       if(BaseVectDim == 1)
         memcpy(origD00, refD00, N_Functs*SizeOfDouble);
       else
-        this->PiolaMapOrigFromRefNotAffine(N_Functs, refD00, origD00, xi[j], 
-                                           eta[j]);
+        this->PiolaMapOrigFromRef(xi[j], eta[j], N_Functs, refD00, origD00);
     } // endfor j
 
     refvaluesD10=TFEDatabase2D::GetRefElementValues(BaseFunct, QuadFormula, D10);
@@ -502,8 +501,8 @@ void TQuadBilinear::GetOrigValues(int N_Sets, BaseFunct2D *BaseFuncts,
         else // BaseVectDim == 2
         {
           refD00 = refvaluesD00[j];
-          this->PiolaMapOrigFromRefNotAffine(N_Functs, refD00, refD10, refD01, 
-                                             origD10, origD01, Xi, Eta);
+          this->PiolaMapOrigFromRef(Xi, Eta, N_Functs, refD00, refD10, refD01,
+                                    origD10, origD01);
         }
       } // endfor j
         
@@ -663,10 +662,11 @@ void TQuadBilinear::GetOrigValues(int N_Sets, BaseFunct2D *BaseFuncts,
 
 /** calculate functions and derivatives from reference element
     to original element */
-void TQuadBilinear::GetOrigValues(double xi, double eta, 
-                int N_BaseFunct,
-                double *uref, double *uxiref, double *uetaref,
-                double *uorig, double *uxorig, double *uyorig, int _BaseVectDim)
+void TQuadBilinear::GetOrigValues(double xi, double eta, int N_BaseFunct,
+                                  const double *uref, const double *uxiref,
+                                  const double *uetaref,
+                                  double *uorig, double *uxorig,
+                                  double *uyorig, int _BaseVectDim)
 {
   int i;
   double rec_detjk;
@@ -696,19 +696,21 @@ void TQuadBilinear::GetOrigValues(double xi, double eta,
   {
     // Piola transformation
     // D00
-    this->PiolaMapOrigFromRefNotAffine(N_BaseFunct, uref, uorig, xi, eta);
+    this->PiolaMapOrigFromRef(xi, eta, N_BaseFunct, uref, uorig);
     // D10, D01
     if (uxiref!=nullptr && uetaref!=nullptr && uxorig!=nullptr && uyorig!=nullptr)
     {
-      this->PiolaMapOrigFromRefNotAffine(N_BaseFunct, uref, uxiref, uetaref,
-                                         uxorig, uyorig, xi, eta);
+      this->PiolaMapOrigFromRef(xi, eta, N_BaseFunct, uref, uxiref, uetaref,
+                                uxorig, uyorig);
     }
   }
 }
 
 void TQuadBilinear::GetOrigValues(int joint, double zeta, int N_BaseFunct,
-                                  double *uref, double *uxiref, double *uetaref,
-                                  double *uorig, double *uxorig, double *uyorig,
+                                  const double *uref, const double *uxiref,
+                                  const double *uetaref,
+                                  double *uorig, double *uxorig,
+                                  double *uyorig,
                                   int _BaseVectDim)
 {
   double xi=0, eta=0;
@@ -735,7 +737,7 @@ void TQuadBilinear::GetOrigValues(int joint, double zeta, int N_BaseFunct,
 }
 
 
-void TQuadBilinear::SetCell(TBaseCell *cell)
+void TQuadBilinear::SetCell(const TBaseCell *cell)
 {
 
 #ifdef __3D__
@@ -768,8 +770,8 @@ void TQuadBilinear::SetCell(TBaseCell *cell)
 }
 
 /** return outer normal vector */
-void TQuadBilinear::GetOuterNormal(int j, double zeta,
-                                   double &n1, double &n2)
+void TQuadBilinear::GetOuterNormal(int j, double, double &n1, double &n2)
+  const
 {
   double len;
 
@@ -808,8 +810,8 @@ void TQuadBilinear::GetOuterNormal(int j, double zeta,
 }
 
 /** return tangent */
-void TQuadBilinear::GetTangent(int j, double zeta,
-                                   double &t1, double &t2)
+void TQuadBilinear::GetTangent(int j, double, double &t1, double &t2)
+  const
 {
   // factor 0.5 since edge parameter runs from -1 to +1
   switch(j)
@@ -842,7 +844,7 @@ void TQuadBilinear::GetTangent(int j, double zeta,
 }
 
 /** return volume of cell */
-double TQuadBilinear::GetVolume()
+double TQuadBilinear::GetVolume() const
 {
   double a1, a2, b1, b2, c1, c2, d1, d2;
   double locvol;
@@ -868,9 +870,8 @@ double TQuadBilinear::GetVolume()
   return locvol;
 }
 
-void TQuadBilinear::PiolaMapOrigFromRefNotAffine(int N_Functs, double *refD00, 
-                                                 double *origD00, double xi, 
-                                                 double eta)
+void TQuadBilinear::PiolaMapOrigFromRef(double xi, double eta, int N_Functs,
+                                        const double *refD00, double *origD00)
 {
   double rec_detjk = 1./((xc1+xc3*eta)*(yc2+yc3*xi)-(xc2+xc3*xi)*(yc1+yc3*eta));
   double a11 = (xc1+xc3*eta)*rec_detjk;
@@ -888,12 +889,11 @@ void TQuadBilinear::PiolaMapOrigFromRefNotAffine(int N_Functs, double *refD00,
   }
 }
 
-void TQuadBilinear::PiolaMapOrigFromRefNotAffine(int N_Functs, double *refD00, 
-                                                 double *refD10, 
-                                                 double *refD01, 
-                                                 double *origD10, 
-                                                 double *origD01, double xi,
-                                                 double eta)
+void TQuadBilinear::PiolaMapOrigFromRef(double xi, double eta, int N_Functs,
+                                        const double *refD00,
+                                        const double *refD10,
+                                        const double *refD01,
+                                        double *origD10, double *origD01)
 {
   // Piola transformation
   // phi = 1/|J| DF phi_hat

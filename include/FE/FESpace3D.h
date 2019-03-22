@@ -59,9 +59,6 @@ class TFESpace3D : public TFESpace
    BoundCondFunct3D* boundCondition_;
 
 #ifdef  _MPI
-     /** Maximum number of subdomains associated with any dof */
-    int MaxSubDomainPerDof;
-
    /// There belongs a ParFECommunicator to this space. Store it!
    std::shared_ptr<TParFECommunicator3D> comm_;
 
@@ -72,20 +69,22 @@ class TFESpace3D : public TFESpace
 
   public:
     /** constructor */
-    TFESpace3D(TCollection *coll, std::string name, std::string description);
+    TFESpace3D(TCollection *coll, const std::string& name,
+               const std::string& description);
 
     /** constructor for building a space with elements of order k */
-    TFESpace3D(TCollection *coll, std::string name, std::string description,
+    TFESpace3D(TCollection *coll, const std::string& name,
+               const std::string& description,
                BoundCondFunct3D *BoundaryCondition, int k);
 
     /** constructor for building a space with the given elements */
-    TFESpace3D(TCollection *coll, std::string name, std::string description,
-               BoundCondFunct3D *BoundaryCondition,
-               FE3D *fes);
+    TFESpace3D(TCollection *coll, const std::string& name,
+               const std::string& description,
+               BoundCondFunct3D *BoundaryCondition, FE3D *fes);
 
-    TFESpace3D(TCollection *coll, std::string name, std::string description,
-               BoundCondFunct3D *BoundaryCondition, SpaceType type,
-               int ord);
+    TFESpace3D(TCollection *coll, const std::string& name,
+               const std::string& description,
+               BoundCondFunct3D *BoundaryCondition, SpaceType type, int ord);
 
     /** destructor */
     ~TFESpace3D();
@@ -95,9 +94,12 @@ class TFESpace3D : public TFESpace
 
     /** construct space */
     void ConstructSpace(BoundCondFunct3D *BoundaryCondition);
+        
+    /** @brief get dimension of the vector basis function */
+    virtual int GetBaseVectDim() const; 
 
    /** @return The boundary condition function pointer. */
-   BoundCondFunct3D* getBoundCondition() const
+   BoundCondFunct3D* get_boundary_condition() const
    { return boundCondition_; }
 
     /** return number of active degrees of freedom */
@@ -125,7 +127,7 @@ class TFESpace3D : public TFESpace
     { return HangingNodeArray; }
 
     /** return the FE Id for element i, corresponding to cell */
-    FE3D GetFE3D(int i, TBaseCell *cell) const;
+    FE3D GetFE3D(int i, const TBaseCell *cell) const;
     
     /** @brief return the Finite Element on a given cell */
     const TFE3D& get_fe(unsigned int cell_number) const;
@@ -142,17 +144,32 @@ class TFESpace3D : public TFESpace
      */
     bool CheckMesh() const;
 
-#ifdef  _MPI
     /**
-     * As soon as the maxSubDomainPerDof is known, the parallel infrastructure
-     * can be initialized.
-     */
-    void initialize_parallel(int maxSubDomainPerDof);
+     * @brief get degree of FE space on a given cell
+     **/
+    int getFEDegree(TBaseCell *cell) const;
+      
+    /**
+     * @brief get quadrature data on the m-th face of a given cell
+    **/
+    void getFaceQuadratureData(TBaseCell *cell, int m,
+			       std::vector<double>& qWeights,std::vector<double>& qPointsT,
+			       std::vector<double>& qPointsS,
+			       std::vector< std::vector<double> >& basisFunctionsValues,
+			       int _deg = -1) const;
 
-    /** return  MaxSubDomainPerDof */
-    int GetMaxSubDomainPerDof()
-    { return MaxSubDomainPerDof; }
+    /**
+     * @brief get the right quadrature formula for a given space on m-th face of a given cell
+    **/
+    QuadFormula2D getFaceQuadratureFormula(TBaseCell *cell, int m, int d=-1) const;
+      
+    /**
+     * @brief get quadrature value on the m-th face of a given cell for a given quad formula
+    **/
+    void getFaceQuadratureValue(TBaseCell *cell, int m, QuadFormula2D FaceQuadFormula,
+				std::vector< std::vector<double> >& basisFunctionsValues) const;
 
+#ifdef  _MPI
     const TParFECommunicator3D& get_communicator() const
     { return *comm_; }
 

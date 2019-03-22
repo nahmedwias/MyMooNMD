@@ -11,7 +11,7 @@
 #include "../../include/AssembleRoutines/Upwind3D.h"
 
 #include <Database.h>
-#include <LocalAssembling3D.h>
+#include <LocalAssembling.h>
 #include <FEFunction3D.h>
 #include <FE3D.h>
 #include <SquareMatrix3D.h>
@@ -65,7 +65,6 @@ void UpwindForNavierStokes3D(TSquareMatrix3D *sqmatrix, TFEFunction3D *u1,
 //  int n_mat, m_mat;
   double *u1vect, *u2vect, *u3vect;
   int *GlobalNumbers, *BeginIndex, *DOF;
-  const TFESpace3D *fespace;
   double matrix[8][8];
   double val1=0, val2=0, val3=0, flux, RE2=RE*0.5;
   double xcoords[8], ycoords[8], zcoords[8];
@@ -76,7 +75,7 @@ void UpwindForNavierStokes3D(TSquareMatrix3D *sqmatrix, TFEFunction3D *u1,
   int *ColInd, *RowPtr;
   double *Entries;
   int ActiveBound, DirichletBound, end;
-  TShapeDesc *desc;
+  const TShapeDesc *desc;
   FE3D CurrentElement;
   const int *TmpEV, *TmpEF;
   int MaxLen;
@@ -98,7 +97,7 @@ void UpwindForNavierStokes3D(TSquareMatrix3D *sqmatrix, TFEFunction3D *u1,
   Entries = sqmatrix->GetEntries();
 
   // get finite element space for velocity
-  fespace = u1->GetFESpace3D();
+  auto fespace = u1->GetFESpace3D();
   
   // get arrays with the numbering of the dof
   GlobalNumbers = fespace->GetGlobalNumbers();
@@ -320,8 +319,8 @@ void UpwindForNavierStokes3D(TSquareMatrix3D *sqmatrix, TFEFunction3D *u1,
 }
 
 
-void UpwindForConvDiff(TSquareMatrix3D *sqmatrix, double *RHS,
-                       const TFESpace3D *fespace, const LocalAssembling3D& la)
+void UpwindForConvDiff(TSquareMatrix3D *sqmatrix, double *,
+                       const TFESpace3D *fespace, const LocalAssembling<3>& la)
 {
   static double RE=TDatabase::ParamDB->RE_NR;
   double UPWIND_ORDER=TDatabase::ParamDB->UPWIND_ORDER;
@@ -329,7 +328,7 @@ void UpwindForConvDiff(TSquareMatrix3D *sqmatrix, double *RHS,
   int  UPW_APPL = TDatabase::ParamDB->UPWIND_APPLICATION;
   TBaseCell *cell;
   TCollection *coll;
-  TShapeDesc *desc;
+  const TShapeDesc *desc;
   int i,j,k,l,m,n, N_Edges, N_Cells, N_Vertices, N_Faces;
 //  int n_mat, m_mat;
   int *GlobalNumbers, *BeginIndex, *DOF;

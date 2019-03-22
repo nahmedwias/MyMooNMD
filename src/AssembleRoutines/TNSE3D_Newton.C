@@ -17,7 +17,7 @@
 // Type 3, GL00Convolution, (grad u, grad v)`
 // ======================================================================
 void TimeNSType3GalerkinNewton3D(double Mult, double *coeff, 
-                double *param, double hK, 
+                double *param, double,
                 double **OrigValues, int *N_BaseFuncts,
                 double ***LocMatrices, double **LocRhs)
 {
@@ -173,7 +173,7 @@ void TimeNSType3GalerkinNewton3D(double Mult, double *coeff,
 // Type 3, GL00Convolution, D(u):D(v)
 // ======================================================================
 void TimeNSType3GalerkinNewtonDD3D(double Mult, double *coeff, 
-                double *param, double hK, 
+                double *param, double,
                 double **OrigValues, int *N_BaseFuncts,
                 double ***LocMatrices, double **LocRhs)
 {
@@ -342,7 +342,7 @@ void TimeNSType3GalerkinNewtonDD3D(double Mult, double *coeff,
 // Type 3, Upwind (no convection term), (grad u, grad v)
 // ======================================================================
 void TimeNSType3UpwindNewton3D(double Mult, double *coeff, 
-                double *param, double hK, 
+                double *param, double,
                 double **OrigValues, int *N_BaseFuncts,
                 double ***LocMatrices, double **LocRhs)
 {
@@ -491,7 +491,7 @@ void TimeNSType3UpwindNewton3D(double Mult, double *coeff,
 // Type 3, Upwind (no convection term), D(u):D(v)
 // ======================================================================
 void TimeNSType3UpwindNewtonDD3D(double Mult, double *coeff, 
-                double *param, double hK, 
+                double *, double,
                 double **OrigValues, int *N_BaseFuncts,
                 double ***LocMatrices, double **LocRhs)
 {
@@ -1271,7 +1271,7 @@ void TimeNSType3GL00AuxProblemNewtonDD3D(double Mult, double *coeff,
 // Type 4, GL00Convolution, (grad u, grad v)
 // ======================================================================
 void TimeNSType4GalerkinNewton3D(double Mult, double *coeff, 
-                double *param, double hK, 
+                double *param, double, 
                 double **OrigValues, int *N_BaseFuncts,
                 double ***LocMatrices, double **LocRhs)
 {
@@ -1414,7 +1414,7 @@ void TimeNSType4GalerkinNewton3D(double Mult, double *coeff,
 // Type 4, GL00Convolution, D(u):D(v)
 // ======================================================================
 void TimeNSType4GalerkinNewtonDD3D(double Mult, double *coeff, 
-                double *param, double hK, 
+                double *param, double,
                 double **OrigValues, int *N_BaseFuncts,
                 double ***LocMatrices, double **LocRhs)
 {
@@ -1601,7 +1601,7 @@ void TimeNSType4GalerkinNewtonDD3D(double Mult, double *coeff,
 // Type 4, Upwind (no convection terms), (grad u, grad v)
 // ======================================================================
 void TimeNSType4UpwindNewton3D(double Mult, double *coeff, 
-                double *param, double hK, 
+                double *, double,
                 double **OrigValues, int *N_BaseFuncts,
                 double ***LocMatrices, double **LocRhs)
 {
@@ -1736,7 +1736,7 @@ void TimeNSType4UpwindNewton3D(double Mult, double *coeff,
 // Type 4, Upwind (no convection terms), D(u):D(v)
 // ======================================================================
 void TimeNSType4UpwindNewtonDD3D(double Mult, double *coeff, 
-                double *param, double hK, 
+                double *, double,
                 double **OrigValues, int *N_BaseFuncts,
                 double ***LocMatrices, double **LocRhs)
 {
@@ -2899,9 +2899,9 @@ void TimeNSType4VMS_ProjectionNewtonDD3D(double Mult, double *coeff,
 // Type 4, Standard Galerkin, (grad u, grad v), only nonlinear part
 // ======================================================================
 void TimeNSType3_4NLGalerkinNewton3D(double Mult, double *coeff, 
-                double *param, double hK, 
+                double *param, double, 
                 double **OrigValues, int *N_BaseFuncts,
-                double ***LocMatrices, double **LocRhs)
+                double ***LocMatrices, double **)
 {
   double **MatrixA11, **MatrixA12, **MatrixA13, **MatrixA21;
   double **MatrixA22, **MatrixA23, **MatrixA31, **MatrixA32;
@@ -2998,9 +2998,9 @@ void TimeNSType3_4NLGalerkinNewton3D(double Mult, double *coeff,
 // Type 4, Standard Galerkin, D(u):D(v), only nonlinear diagonal blocks
 // ======================================================================
 void TimeNSType3_4NLGalerkinNewtonDD3D(double Mult, double *coeff, 
-                double *param, double hK, 
+                double *param, double, 
                 double **OrigValues, int *N_BaseFuncts,
-                double ***LocMatrices, double **LocRhs)
+                double ***LocMatrices, double **)
 {
   double **MatrixA11, **MatrixA22, **MatrixA33;
   double val1;
@@ -3061,9 +3061,9 @@ void TimeNSType3_4NLGalerkinNewtonDD3D(double Mult, double *coeff,
 // Type 4, Upwind (no convection term), (grad u, grad v)
 // ======================================================================
 void TimeNSType3_4NLUpwindNewton3D(double Mult, double *coeff, 
-                double *param, double hK, 
+                double *param, double,
                 double **OrigValues, int *N_BaseFuncts,
-                double ***LocMatrices, double **LocRhs)
+                double ***LocMatrices, double **)
 {
   double **MatrixA11, **MatrixA12, **MatrixA13, **MatrixA21;
   double **MatrixA22, **MatrixA23, **MatrixA31, **MatrixA32;
@@ -3154,9 +3154,9 @@ void TimeNSType3_4NLUpwindNewton3D(double Mult, double *coeff,
 // Type 4, Upwind (no convection term), D(u):D(v)
 // ======================================================================
 void TimeNSType3_4NLUpwindNewtonDD3D(double Mult, double *coeff, 
-                double *param, double hK, 
+                double *, double,
                 double **OrigValues, int *N_BaseFuncts,
-                double ***LocMatrices, double **LocRhs)
+                double ***LocMatrices, double **)
 {
   double **MatrixA11, **MatrixA22, **MatrixA33;
   double val;
@@ -3224,7 +3224,7 @@ void TimeNSType3_4NLUpwindNewtonDD3D(double Mult, double *coeff,
 void TimeNSType3_4NLSmagorinskyNewton3D(double Mult, double *coeff, 
                 double *param, double hK, 
                 double **OrigValues, int *N_BaseFuncts,
-                double ***LocMatrices, double **LocRhs)
+                double ***LocMatrices, double **)
 {
   double **MatrixA11, **MatrixA22, **MatrixA33;
   double val;
@@ -3296,7 +3296,7 @@ void TimeNSType3_4NLSmagorinskyNewton3D(double Mult, double *coeff,
 void TimeNSType3_4NLSmagorinskyNewtonDD3D(double Mult, double *coeff, 
                 double *param, double hK, 
                 double **OrigValues, int *N_BaseFuncts,
-                double ***LocMatrices, double **LocRhs)
+                double ***LocMatrices, double **)
 {
   double **MatrixA11, **MatrixA12, **MatrixA13, **MatrixA21;
   double **MatrixA22, **MatrixA23, **MatrixA31, **MatrixA32;
@@ -3413,7 +3413,7 @@ void TimeNSType3_4NLSmagorinskyNewtonDD3D(double Mult, double *coeff,
 void TimeNSType3_4NLVMS_ProjectionNewtonDD3D(double Mult, double *coeff, 
                 double *param, double hK, 
                 double **OrigValues, int *N_BaseFuncts,
-                double ***LocMatrices, double **LocRhs)
+                double ***LocMatrices, double **)
 {
   double **MatrixA11, **MatrixA12, **MatrixA13, **MatrixA21;
   double **MatrixA22, **MatrixA23, **MatrixA31, **MatrixA32;
@@ -3543,9 +3543,9 @@ void TimeNSType3_4NLVMS_ProjectionNewtonDD3D(double Mult, double *coeff,
 // right-hand side for NSE ONLY
 // ======================================================================
 void TimeNSRHSNewton3D(double Mult, double *coeff, 
-               double *param, double hK, 
+               double *param, double,
                double **OrigValues, int *N_BaseFuncts,
-               double ***LocMatrices, double **LocRhs)
+               double ***, double **LocRhs)
 {
   double *Rhs1, *Rhs2, *Rhs3, *Rhs4, *Rhs5, *Rhs6;
   double test000;
@@ -3595,10 +3595,10 @@ void TimeNSRHSNewton3D(double Mult, double *coeff,
     //cout <<  Rhs1[i] << " " <<  Rhs2[i] << " "; 
   } // endfor i
 }
-void TimeNSRHSNewtonNL3D(double Mult, double *coeff, 
-               double *param, double hK, 
+void TimeNSRHSNewtonNL3D(double Mult, double *, 
+               double *param, double,
                double **OrigValues, int *N_BaseFuncts,
-               double ***LocMatrices, double **LocRhs)
+               double ***, double **LocRhs)
 {
   double *Rhs4, *Rhs5, *Rhs6;
   double test000;
@@ -3642,10 +3642,10 @@ void TimeNSRHSNewtonNL3D(double Mult, double *coeff,
 // right-hand side for NSE ONLY 
 // ClassicalLES model
 // ======================================================================
-void TimeNSRHSClassicalLESNewton3D(double Mult, double *coeff,
+void TimeNSRHSClassicalLESNewton3D(double Mult, double *,
                double *param, double hK,
                double **OrigValues, int *N_BaseFuncts,
-               double ***LocMatrices, double **LocRhs)
+               double ***, double **LocRhs)
 {
   double *Rhs1, *Rhs2, *Rhs3;
   double test100, test010, test001;
@@ -3716,10 +3716,10 @@ void TimeNSRHSClassicalLESNewton3D(double Mult, double *coeff,
 // right-hand side for NSE ONLY
 // Galdi-Layton model with convolution and auxiliary problem
 // ======================================================================
-void TimeNSRHSLESModelNewton3D(double Mult, double *coeff,
+void TimeNSRHSLESModelNewton3D(double Mult, double *,
                          double *param, double hK,
                          double **OrigValues, int *N_BaseFuncts,
-                         double ***LocMatrices, double **LocRhs)
+                         double ***, double **LocRhs)
 {
   double *Rhs1, *Rhs2, *Rhs3;
   double test100, test010, test001;
@@ -3769,10 +3769,10 @@ void TimeNSRHSLESModelNewton3D(double Mult, double *coeff,
 // right-hand side for auxiliary problem 
 // Galdi-Layton model with auxiliary problem
 // ======================================================================
-void TimeNSGL00AuxProblemRHSNewton3D(double Mult, double *coeff,
-               double *param, double hK,
+void TimeNSGL00AuxProblemRHSNewton3D(double Mult, double *,
+               double *param, double,
                double **OrigValues, int *N_BaseFuncts,
-               double ***LocMatrices, double **LocRhs)
+               double ***, double **LocRhs)
 {
   double *Rhs1, *Rhs2, *Rhs3, *Rhs4, *Rhs5, *Rhs6, val;
   double mat11, mat12, mat13, mat22, mat23, mat33;
@@ -3830,9 +3830,9 @@ void TimeNSGL00AuxProblemRHSNewton3D(double Mult, double *coeff,
 // for VMS
 // ======================================================================
 void TimeNS_VMS_SmallRhsNewton3D(double Mult, double *coeff, 
-                           double *param, double hK, 
+                           double *param, double, 
                            double **OrigValues, int *N_BaseFuncts,
-                           double ***LocMatrices, double **LocRhs)
+                           double ***, double **LocRhs)
 {
   double *Rhs1, *Rhs2, *Rhs3;
   double test000, test100, test010, test001;

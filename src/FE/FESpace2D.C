@@ -16,7 +16,6 @@
 #  include "mpi.h"
 #endif
 
-#include <DefineParams.h>
 #include <Constants.h>
 #include <FESpace2D.h>
 #include <Joint.h>
@@ -39,8 +38,8 @@
 
 /** Constructor */
 TFESpace2D::TFESpace2D(TCollection *coll,
-                       std::string name,
-                       std::string description) :
+                       const std::string& name,
+                       const std::string& description) :
      TFESpace(coll, name, description)
 {
   N_ActiveDegrees = 0;
@@ -56,9 +55,9 @@ TFESpace2D::TFESpace2D(TCollection *coll,
 // =====================================================================
 
 /** constructor for building a space with elements of order k */
-TFESpace2D::TFESpace2D(TCollection *coll, std::string name, std::string description,
-                       BoundCondFunct2D *BoundaryCondition, int ord,
-                       TCollection *mortarcoll) :
+TFESpace2D::TFESpace2D(TCollection *coll, const std::string& name,
+                       const std::string& description,
+                       BoundCondFunct2D *BoundaryCondition, int ord) :
      TFESpace(coll, name, description)
 {
   N_ActiveDegrees = 0;
@@ -566,9 +565,10 @@ TFESpace2D::TFESpace2D(TCollection *coll, std::string name, std::string descript
 }
 
 /** constructor for building a space with elements of order k */
-TFESpace2D::TFESpace2D(TCollection *coll,  std::string name, std::string description,
+TFESpace2D::TFESpace2D(TCollection *coll,  const std::string& name,
+                       const std::string& description,
                        BoundCondFunct2D *BoundaryCondition, SpaceType type,
-                       int ord, TCollection *mortarcoll) :
+                       int ord) :
      TFESpace(coll, name, description)
 {
   N_ActiveDegrees = 0;
@@ -1156,9 +1156,9 @@ TFESpace2D::TFESpace2D(TCollection *coll,  std::string name, std::string descrip
 }
 
 /** constructor for building a space with the given elements */
-TFESpace2D::TFESpace2D(TCollection *coll, std::string name, std::string description,
-               BoundCondFunct2D *BoundaryCondition,
-               FE2D *fes, TCollection *mortarcoll) :
+TFESpace2D::TFESpace2D(TCollection *coll, const std::string& name,
+                       const std::string& description,
+                       BoundCondFunct2D *BoundaryCondition, FE2D *fes) :
     TFESpace(coll, name, description)
 {
   int i, N_;
@@ -1184,7 +1184,7 @@ TFESpace2D::TFESpace2D(TCollection *coll, std::string name, std::string descript
 }
 
 /** return the FE Id for element i, corresponding to cell */
-FE2D TFESpace2D::GetFE2D(int i, TBaseCell *cell) const
+FE2D TFESpace2D::GetFE2D(int i, const TBaseCell *cell) const
 {
   FE2D ret;
 
@@ -1202,7 +1202,7 @@ const TFE2D& TFESpace2D::get_fe(unsigned int cell_number) const
   if((int)cell_number >= this->N_Cells)
     ErrThrow("unable to find the finite element for cell ", cell_number, 
              ". There are only ", this->N_Cells, " cells");
-  TBaseCell * cell = this->Collection->GetCell(cell_number);
+  const TBaseCell * cell = this->Collection->GetCell(cell_number);
   // find finite element id
   FE2D fe_id = this->GetFE2D(cell_number, cell);
   // get the finite element from the database
@@ -1213,7 +1213,7 @@ const TFE2D& TFESpace2D::get_fe(unsigned int cell_number) const
 
 void TFESpace2D::FindUsedElements()
 {
-  TBaseCell *cell;
+  const TBaseCell *cell;
   int i, j, N_;
   int Used[N_FEs2D];
 
@@ -1244,13 +1244,20 @@ void TFESpace2D::FindUsedElements()
   //   OutPut("UsedElement[" << i << "]: " << UsedElements[i] << endl);
 }
 
+int TFESpace2D::GetBaseVectDim() const 
+{
+  // the desired information is stored in the BasisFunction2D object. We take 
+  // the one on the first cell, on all other cells it should be the same
+  return this->get_fe(0).GetBaseFunct2D()->GetBaseVectDim();
+}
+
 void TFESpace2D::ConstructSpace(BoundCondFunct2D *BoundaryCondition)
 {
   int i, j, k, l, m, n, comp, N_Edges;
   int *v;
-  TBaseCell *cell, *neigh, *child1;
-  TJoint *joint;
-  TBoundComp2D *BoundComp;
+  const TBaseCell *cell, *neigh, *child1;
+  const TJoint *joint;
+  const TBoundComp2D *BoundComp;
   TBoundEdge *BoundEdge;
   double t0,t1;
   BoundCond Cond0, Cond1;
@@ -1278,11 +1285,11 @@ void TFESpace2D::ConstructSpace(BoundCondFunct2D *BoundaryCondition)
 
 #ifndef _MPI //to avoid warnings in MPI case
   int m2, NEdges;
-  TBaseCell *child2;
+  const TBaseCell *child2;
   TFE2DMapper1Reg *mapper1reg;
   const int* TmpoEnE, *TmpLen1, *TmpEC, *TmpLen2, *TmpoEnlE;
   int MaxLen1, MaxLen2;
-  TRefDesc *refdesc;
+  const TRefDesc *refdesc;
   FE2D FEType2;
   TFE2D *FE2;
   TFEDesc2D *FEDesc2_Obj;
@@ -1574,20 +1581,11 @@ void TFESpace2D::ConstructSpace(BoundCondFunct2D *BoundaryCondition)
       {
         // no boundary joint
         neigh = joint->GetNeighbour(cell);
-        if (!neigh || joint->GetType() == MortarJoint ||
-            joint->GetType() == MortarBaseJoint)
+        if (!neigh)
         {
           // there is no neighbour
-          // => either mortar joint
-          //    or finer cell in 1 regular grid
+          // => finer cell in 1 regular grid
           //    will be handle from coarser cell
-          if(joint->GetType() == MortarJoint ||
-             joint->GetType() == MortarBaseJoint)
-          {
-            // do mortar mapping
-            mapper=TFEDatabase2D::GetFE2DMapper(FEDesc0, FEDesc0);
-            mapper->MapBound(GlobalNumbers, I_K0, Indices0, Counter);
-          }
         } // !neigh
         else
         {
@@ -2102,14 +2100,14 @@ TFESpace2D::~TFESpace2D()
 void TFESpace2D::GetDOFPosition(double *x, double *y)
 {
   int i,j,k;
-  TBaseCell *cell;
+  const TBaseCell *cell;
   int N_Joints;
-  TJoint *joint;
+  const TJoint *joint;
   JointType jointtype;
   FE2D FEid;
   int *DOF;
   TNodalFunctional2D *nf;
-  double *xi, *eta;
+  const double *xi, *eta;
   int N_Points;
   RefTrans2D RefTrans, *RefTransArray;
   int IsIsoparametric;
@@ -2223,14 +2221,14 @@ void TFESpace2D::GetDOFPosition(double *x, double *y)
 void TFESpace2D::GetDOFPosition(int dof, double &x, double &y) const
 {
   int i,j,k;
-  TBaseCell *cell;
+  const TBaseCell *cell;
   int N_Joints;
-  TJoint *joint;
+  const TJoint *joint;
   JointType jointtype;
   FE2D FEid;
   int *DOF;
   TNodalFunctional2D *nf;
-  double *xi, *eta;
+  const double *xi, *eta;
   int N_Points;
   RefTrans2D RefTrans, *RefTransArray;
   int IsIsoparametric;

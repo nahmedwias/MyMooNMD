@@ -279,11 +279,11 @@ double VerstappenViscositymodelCmuMax(double delta, double* gradu, double froben
   // compute filter width in coordinate directions
   // hk is just the value if the filter width would be zero (this should not happen)
   double hk = delta/2.0;
-  double delta_x = Mesh_size_in_convection_direction(hk,1,0,0);
+  double delta_x = Mesh_size_in_convection_direction<3>(hk, {{1,0,0}});
   delta_x *= delta_x;
-  double delta_y = Mesh_size_in_convection_direction(hk,0,1,0);
+  double delta_y = Mesh_size_in_convection_direction<3>(hk, {{0,1,0}});
   delta_y *= delta_y;
-  double delta_z = Mesh_size_in_convection_direction(hk,0,0,1);
+  double delta_z = Mesh_size_in_convection_direction<3>(hk, {{0,0,1}});
   delta_z *= delta_z;
   
   double mu_max = 4 * ( 1./delta_x + 1./delta_y + 1./delta_z );
@@ -321,9 +321,9 @@ double VerstappenViscositymodelChPhi(double delta, double* gradu, double frobeni
   // compute filter width in coordinate directions
   // hk is just the value if the filter width would be zero (this should not happen)
   double hk = delta/2.0;
-  double delta_x = Mesh_size_in_convection_direction(hk,1,0,0);
-  double delta_y = Mesh_size_in_convection_direction(hk,0,1,0);
-  double delta_z = Mesh_size_in_convection_direction(hk,0,0,1);
+  double delta_x = Mesh_size_in_convection_direction<3>(hk, {{1,0,0}});
+  double delta_y = Mesh_size_in_convection_direction<3>(hk, {{0,1,0}});
+  double delta_z = Mesh_size_in_convection_direction<3>(hk, {{0,0,1}});
   
   // TODO: change cell width hk using CELL_MEASURE (more elegant), now too slow! 
   
@@ -381,11 +381,11 @@ double vermanViscosityModel(double delta, double *gradu)
     // hk is just the value if the filter width would be zero 
     // (this should not happen)
     hk = delta/2.0;
-    delta_x = Mesh_size_in_convection_direction(hk,1,0,0);
+    delta_x = Mesh_size_in_convection_direction<3>(hk, {{1,0,0}});
     delta_x *=delta_x;
-    delta_y = Mesh_size_in_convection_direction(hk,0,1,0);
+    delta_y = Mesh_size_in_convection_direction<3>(hk, {{0,1,0}});
     delta_y *=delta_y;
-    delta_z = Mesh_size_in_convection_direction(hk,0,0,1);
+    delta_z = Mesh_size_in_convection_direction<3>(hk, {{0,0,1}});
     delta_z *=delta_z;
     
     // compute second invariant of gradient of velocity, scaled with 
@@ -408,7 +408,7 @@ double vermanViscosityModel(double delta, double *gradu)
   return viscosity;
 }
 
-double frobeniusNormTensor(double* u, double* gradu, double* uConv, int proj_space)
+double frobeniusNormTensor(double*, double* gradu, double* uConv, int)
 {
   int viscosityTensor = TDatabase::ParamDB->TURBULENT_VISCOSITY_TENSOR;
   double a11, a12, a13,a22, a23, a33;
@@ -467,8 +467,8 @@ double frobeniusNormTensor(double* u, double* gradu, double* uConv, int proj_spa
 }
 
 
-double turbulentViscosity3D(double hK, double* u, double* gradu, 
-                            double* uConv, double* x, double* y, double* z, double proj_space)
+double turbulentViscosity3D(double hK, double* u, double* gradu, double* uConv,
+                            double* x, double* y, double* z, double)
 {
   /// compute Characteristic Filter Width
   double filter_constant = TDatabase::ParamDB->FILTER_WIDTH_CONSTANT;

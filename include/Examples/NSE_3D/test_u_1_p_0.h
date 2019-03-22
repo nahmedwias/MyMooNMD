@@ -21,7 +21,7 @@ void ExampleFile()
 }
 
 // exact solution
-void ExactU1(double x, double y,  double z, double *values)
+void ExactU1(double x, double, double, double *values)
 {
   values[0] =  x;
   values[1] =  1;
@@ -29,7 +29,7 @@ void ExactU1(double x, double y,  double z, double *values)
   values[3] =  0;
   values[4] =  0; //Laplacien
 }
-void ExactU2(double x, double y,  double z, double *values)
+void ExactU2(double, double y, double, double *values)
 {
   values[0] = -y;
   values[1] =  0;
@@ -37,7 +37,7 @@ void ExactU2(double x, double y,  double z, double *values)
   values[3] =  0;
   values[4] =  0; //Laplacien
 }
-void ExactU3(double x, double y,  double z, double *values)
+void ExactU3(double, double, double, double *values)
 {
   values[0] =  0;
   values[1] =  0;
@@ -46,7 +46,7 @@ void ExactU3(double x, double y,  double z, double *values)
   values[4] =  0; //Laplacien
 }
 
-void ExactP(double x, double y,  double z, double *values)
+void ExactP(double, double, double, double *values)
 {
   values[0] = 0;
   values[1] = 0;
@@ -59,7 +59,7 @@ void ExactP(double x, double y,  double z, double *values)
  From here it's the same for all NSE3D test Examples.
  * **** */
 // kind of boundary condition (for FE space needed)
-void BoundCondition(double x, double y, double z, BoundCond &cond)
+void BoundCondition(double, double, double, BoundCond &cond)
 {
   cond = DIRICHLET;
 }
@@ -83,8 +83,8 @@ void U3BoundValue(double x, double y, double z, double &value)
   value = diri[0]; //Dirichlet value
 }
 
-void LinCoeffs(int n_points, double * X, double * Y, double * Z,
-               double **parameters, double **coeffs)
+void LinCoeffs(int n_points, double * X, double * Y, double * Z, double **,
+               double **coeffs)
 {
   const double eps = DIMENSIONLESS_VISCOSITY;
   std::vector<double> u1(5,0.0);
@@ -110,5 +110,6 @@ void LinCoeffs(int n_points, double * X, double * Y, double * Z,
     coeffs[i][2] = -eps*u2[4] + ( u1[0]*u2[1] + u2[0]*u2[2] + u3[0]*u2[3] ) + p.at(2) ; // f2
     coeffs[i][3] = -eps*u3[4] + ( u1[0]*u3[1] + u2[0]*u3[2] + u3[0]*u3[3] ) + p.at(3) ; // f3
     coeffs[i][4] = 0; // g watch out that u is divergence free!
+    coeffs[i][5] = 0; // sigma
   }
 }

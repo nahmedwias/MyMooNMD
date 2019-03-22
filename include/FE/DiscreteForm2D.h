@@ -65,7 +65,7 @@ class TDiscreteForm2D
 
     /** function doing the real assembling using parameters from 
         argument list */
-    AssembleFctParam2D *AssembleParam;
+    AssembleFctParam AssembleParam;
 
     /** function for manipulating the coefficients */
     ManipulateFct2D *Manipulate;
@@ -82,7 +82,7 @@ class TDiscreteForm2D
         MultiIndex2D *derivatives, int *fespacenumber,
         int n_matrices, int n_rhs,
         int *rowspace, int *columnspace, int *rhsspace,
-        AssembleFct2D *assemble, CoeffFct2D coeffs,
+        AssembleFct2D *assemble, const CoeffFct2D& coeffs,
         ManipulateFct2D *manipulate);
 
     /** constructor with assembling using parameters */
@@ -90,7 +90,7 @@ class TDiscreteForm2D
         MultiIndex2D *derivatives, int *fespacenumber,
         int n_matrices, int n_rhs,
         int *rowspace, int *columnspace, int *rhsspace,
-        AssembleFctParam2D *assembleparam, CoeffFct2D coeffs,
+        const AssembleFctParam& assembleparam, const CoeffFct2D& coeffs,
         ManipulateFct2D *manipulate);
 
     /** destructor */
@@ -105,11 +105,11 @@ class TDiscreteForm2D
     { return Description; }
 
     /** return local stiffness matrix */
-    void GetLocalForms(int N_Points, double *weights, double *AbsDetjk,
+    void GetLocalForms(int N_Points, const double *weights, double *AbsDetjk,
                        double hK, double *X, double *Y,
                        int *N_BaseFuncts, BaseFunct2D *BaseFuncts, 
                        double **Parameters, double **AuxArray,
-                       TBaseCell *Cell, int N_Matrices, int N_Rhs,
+                       const TBaseCell *Cell, int N_Matrices, int N_Rhs,
                        double ***LocMatrix, double **LocRhs,
                        double factor = 1.);
     
@@ -117,10 +117,10 @@ class TDiscreteForm2D
      * 
      * This is a simplified version of the above GetLocalForms(...).
      */
-    void GetLocalForms(int N_Points, double *weights, double *AbsDetjk,
+    void GetLocalForms(int N_Points, const double *weights, double *AbsDetjk,
                         double hK, double *X, double *Y,
                         int *N_BaseFuncts, BaseFunct2D *BaseFuncts, 
-                        TBaseCell *Cell,double ***LocMatrix, double **LocRhs);
+                        const TBaseCell *Cell,double ***LocMatrix, double **LocRhs);
 
     /** return array Needs2ndDerivatives */
     bool *GetNeeds2ndDerivatives() const
@@ -159,7 +159,7 @@ class TDiscreteForm2D
     int get_RhsSpace(int i) const
     { return RhsSpace[i]; }
     
-    AssembleFctParam2D * get_AssembleParam() const
+    AssembleFctParam get_AssembleParam() const
     { return AssembleParam; }
     
     ManipulateFct2D * get_Manipulate() const

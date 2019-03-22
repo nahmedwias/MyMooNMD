@@ -1,7 +1,7 @@
 /** ************************************************************************
  *
  * @class Example_Brinkman2D
- * @brief store all functions needed to describe a Brinkman example
+ * @brief store all functions needed to describe a Brinkman2D example
  *
  * The standard constructor of this class will fill the vectors
  * (in Example2D) with pointers to the functions needed to fully
@@ -30,20 +30,27 @@ public:
      * This intializes a Brinkman example in 2D. It is chosen according
      * to example_code.
      */
-    Example_Brinkman2D(const ParameterDatabase& user_input_parameter_db);
+    explicit Example_Brinkman2D(
+      const ParameterDatabase& user_input_parameter_db);
     
     /** @brief initialize your own example
      *
      * Create an example with all vectors already defined.
      */
-    Example_Brinkman2D(std::vector <DoubleFunct2D*> exact,
-                       std::vector <BoundCondFunct2D*> bc,
-                       std::vector <BoundValueFunct2D*> bd, CoeffFct2D coeffs)
+    Example_Brinkman2D(const std::vector<DoubleFunct2D*>& exact,
+                       const std::vector<BoundCondFunct2D*>& bc,
+                       const std::vector<BoundValueFunct2D*>& bd,
+                       const CoeffFct2D coeffs)
     : Example2D(exact, bc, bd, coeffs) {};
     
     /// Apply the function stored as post processing routine.
     void do_post_processing(Brinkman2D& brinkman2d) const;
 
+    /// Get physical parameter from the database
+    double get_viscosity() const;
+    double get_effective_viscosity() const;
+    double get_permeablity() const;
+    
     /// Get residual-based equal-order stabilization weight, if set in the .dat-file.
     double get_stab() const;
 
