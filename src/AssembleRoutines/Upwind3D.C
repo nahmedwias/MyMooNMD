@@ -11,7 +11,7 @@
 #include "../../include/AssembleRoutines/Upwind3D.h"
 
 #include <Database.h>
-#include <DiscreteForm3D.h>
+#include <LocalAssembling.h>
 #include <FEFunction3D.h>
 #include <FE3D.h>
 #include <SquareMatrix3D.h>
@@ -319,7 +319,7 @@ void UpwindForNavierStokes3D(TSquareMatrix3D *sqmatrix, TFEFunction3D *u1,
 
 
 void UpwindForConvDiff(TSquareMatrix3D *sqmatrix, double *,
-                       TFESpace3D *fespace, TDiscreteForm3D *DiscreteForm)
+                       const TFESpace3D *fespace, const LocalAssembling<3>& la)
 {
   static double RE=TDatabase::ParamDB->RE_NR;
   double UPWIND_ORDER=TDatabase::ParamDB->UPWIND_ORDER;
@@ -442,7 +442,7 @@ void UpwindForConvDiff(TSquareMatrix3D *sqmatrix, double *,
 	  
           // compute convection in center of face of dual
           // boundary
-          DiscreteForm->GetCoeffFct()(1, &x, &y, &z, &param, &coeff);
+          la.GetCoeffFct()(1, &x, &y, &z, &param, &coeff);
 
 	  //cout << "Koeffizienten:" << coeff[1] << " " << coeff[2] << " " << coeff[3] << endl;
 
