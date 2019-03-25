@@ -277,7 +277,6 @@ double GeothermalPlantsPositionOptimization<d>::compute_functional_and_derivativ
             "  mean: ", norm_mean_control);
   }
   std::copy(x, x+n, control_old.begin());
-
   apply_control_and_solve(x);
 
   current_J_hat = compute_functional(x);
@@ -301,6 +300,169 @@ double GeothermalPlantsPositionOptimization<d>::compute_functional_and_derivativ
 }
 
 /** ************************************************************************ */
+void approximate_delta_functions_hexagon(int n_points,
+					 double *x, double *y,
+#ifdef __3D__
+					 double *z,
+#endif
+					 double **parameters, double **coeffs,
+					 // problem dependent
+					 double u_in,double distance,
+					 double well_radius,
+					 double delta_fct_eps_factor)
+{
+  int dim = 2;
+#ifdef __3D__
+  dim = 3
+#endif
+    
+  double domain_Lx = 10000.;
+  double domain_Ly = 6000.;
+  size_t n_wells = 6;
+  
+  // set well position
+  std::vector<double> singular_x, singular_y, singular_sign, flow_rate;
+
+  singular_sign.push_back(-1.);
+  singular_sign.push_back(1.);
+  singular_sign.push_back(1.);
+  singular_sign.push_back(-1.);
+  singular_sign.push_back(1);
+  singular_sign.push_back(1);
+
+  double Qin = u_in * (2./well_radius); //(dim/well_radius);
+  flow_rate.push_back(Qin);
+  flow_rate.push_back(Qin/2.);
+  flow_rate.push_back(Qin/2.);
+  flow_rate.push_back(Qin);
+  flow_rate.push_back(Qin/2.);
+  flow_rate.push_back(Qin/2.);
+  
+  double epsDelta = delta_fct_eps_factor * well_radius;
+  
+  double x0 = domain_Lx/2.;
+  double y0 = domain_Ly/2.;
+  double pi = acos(-1.);
+  int count = 0;
+  for (unsigned int k1=0; k1 < n_wells; k1++) {
+    double xk = x0 + distance*cos(2.*pi*k1/n_wells);
+    double yk = y0 + distance*sin(2.*pi*k1/n_wells);
+    singular_x.push_back(xk);
+    singular_y.push_back(yk);
+  }
+  
+    
+  for (int i = 0; i < n_points; ++i)
+  {
+    for (size_t k = 0; k <= dim+1; k++)
+    {
+      coeffs[i][k] = 0.;
+    }
+
+    
+
+    
+    for (unsigned int m = 0; m < singular_x.size(); m++)
+    {
+      double x_center_source = singular_x[m];
+      double y_center_source = singular_y[m];
+      
+      double x_distance_to_source = std::pow(std::abs(x[i] - x_center_source), 2);
+      double y_distance_to_source = std::pow(std::abs(y[i] - y_center_source), 2);
+      
+      bool at_source = (x_distance_to_source < epsDelta*epsDelta) *
+	(y_distance_to_source < epsDelta*epsDelta);
+
+      if (at_source)
+      {
+        double magnitude = cos(Pi*(x[i] - x_center_source)/epsDelta) + 1;
+        magnitude *= cos(Pi*(y[i] - y_center_source)/epsDelta) + 1;
+	magnitude /= 4.*epsDelta*epsDelta;
+	
+	coeffs[i][dim+1] += singular_sign[m] * magnitude * flow_rate[m];
+        Output::print<4>(" adding a singular source/sink - point ", m,
+                " coeff[", dim+1, "] = ", coeffs[i][dim+1]);
+      }
+    }
+  }
+  
+}
+/** ************************************************************************ */
+void approximate_delta_functions_lattice(int n_points,
+					 double *x, double *y,
+#ifdef __3D__
+					 double *z,
+#endif
+					 double **parameters, double **coeffs,
+					 // problem dependent
+					 double u_in,double distance,
+					 double well_radius,
+					 double delta_fct_eps_factor)
+{
+  int dim = 2;
+#ifdef __3D__
+  dim = 3
+#endif
+    
+  double domain_Lx = 10000.;
+  double domain_Ly = 6000.;
+  size_t n_wells_per_row = 4;
+  // set well position
+  std::vector<double> singular_x, singular_y, singular_sign;
+
+  double x0 = domain_Lx/2.- (n_wells_per_row-1)/2.*distance;
+  double y0 = domain_Ly/2.- (n_wells_per_row-1)/2.*distance;
+  int count = 0;
+  for (unsigned int k1=0; k1 < n_wells_per_row; k1++) {
+    for (unsigned int k2=0; k2 < n_wells_per_row; k2++) {
+      double xk = x0 + distance*k2;
+      double yk = y0 + distance*k1;
+      singular_sign.push_back(pow(-1,k1)*pow(-1,k2));
+      singular_x.push_back(xk);
+      singular_y.push_back(yk);
+      Output::print<4>("well= ", singular_x.size(), " ", xk,",",yk,
+		       " sign = ",pow(-1,k1)*pow(-1,k2));
+    }
+  }
+  
+    
+  for (int i = 0; i < n_points; ++i)
+  {
+    for (size_t k = 0; k <= dim+1; k++)
+    {
+      coeffs[i][k] = 0.;
+    }
+
+    double epsDelta = delta_fct_eps_factor * well_radius;
+    double Qin = u_in * (2./well_radius); //(dim/well_radius);
+
+    
+    for (unsigned int m = 0; m < singular_x.size(); m++)
+    {
+      double x_center_source = singular_x[m];
+      double y_center_source = singular_y[m];
+      
+      double x_distance_to_source = std::pow(std::abs(x[i] - x_center_source), 2);
+      double y_distance_to_source = std::pow(std::abs(y[i] - y_center_source), 2);
+      
+      bool at_source = (x_distance_to_source < epsDelta*epsDelta) *
+	(y_distance_to_source < epsDelta*epsDelta);
+
+      if (at_source)
+      {
+        double magnitude = cos(Pi*(x[i] - x_center_source)/epsDelta) + 1;
+        magnitude *= cos(Pi*(y[i] - y_center_source)/epsDelta) + 1;
+	magnitude /= 4.*epsDelta*epsDelta;
+	
+	coeffs[i][dim+1] += singular_sign[m] * magnitude * Qin;
+        Output::print<4>(" adding a singular source/sink - point ", m,
+                " coeff[", dim+1, "] = ", coeffs[i][dim+1]);
+      }
+    }
+  }
+  
+}
+
 void approximate_delta_functions(int n_points, double *x, double *y,
 #ifdef __3D__
         double *z,
@@ -1026,6 +1188,39 @@ void GeothermalPlantsPositionOptimization<d>::apply_control_and_solve(const doub
             this->db["u_in"], distance, (double) this->db["well_radius"],
             (double) this->db["delta_fct_eps_factor"]);
   }
+  else if (this->db["scenario"].is("lattice"))
+  {
+    if(n_control != 1)
+      ErrThrow("The chosen 'scenario' and the chosen 'n_control' do not fit. "
+              "This scenario necessitates n_control=1.");
+
+    Output::print<1>("CURRENT CONTROL well distance: ",
+            std::setprecision(14), distance);
+    coeff = std::bind(approximate_delta_functions_lattice,
+		      _1, _2, _3, _4, _5,
+#ifdef __3D__
+            _6,
+#endif
+		      this->db["u_in"], distance, (double) this->db["well_radius"],
+		      (double) this->db["delta_fct_eps_factor"]);
+  }
+  else if (this->db["scenario"].is("hexagon"))
+  {
+    if(n_control != 1)
+      ErrThrow("The chosen 'scenario' and the chosen 'n_control' do not fit. "
+              "This scenario necessitates n_control=1.");
+
+    Output::print<1>("CURRENT CONTROL well distance: ",
+            std::setprecision(14), distance);
+    coeff = std::bind(approximate_delta_functions_hexagon,
+		      _1, _2, _3, _4, _5,
+#ifdef __3D__
+            _6,
+#endif
+		      this->db["u_in"], distance, (double) this->db["well_radius"],
+		      (double) this->db["delta_fct_eps_factor"]);
+  }
+      
 
   std::string disc_type = this->db["space_discretization_type"];
   bool nonsymm_gls = (disc_type == std::string("nonsymm_gls"));
