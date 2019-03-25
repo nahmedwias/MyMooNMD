@@ -202,6 +202,159 @@ double norm_u = sqrt(parameters[i][0]*parameters[i][0] + parameters[i][1]*parame
 }
 
 /** ************************************************************************ */
+void temperature_coefficients_hexagon(int n_points, double *x, double *y,
+#ifdef __3D__
+				      double *z,
+#endif
+				      double **parameters, double **coeffs,
+				      double distance, double nu, double transversal_dispersion_factor,
+				      double longitudinal_dispersion_factor,
+				      double well_radius, double temperature_injection_well, double delta_fct_eps_factor,
+				      double fluid_density, double fluid_heat_capacity)
+{
+
+   double domain_Lx = 10000.;
+  double domain_Ly = 6000.;
+  size_t n_wells = 6;
+  
+  // set well position
+  std::vector<double> singular_x, singular_y, singular_sign, flow_rate;
+
+  singular_sign.push_back(-1.);
+  singular_sign.push_back(1.);
+  singular_sign.push_back(1.);
+  singular_sign.push_back(-1.);
+  singular_sign.push_back(1);
+  singular_sign.push_back(1);
+  
+  double epsDelta = delta_fct_eps_factor * well_radius;
+  
+  double x0 = domain_Lx/2.;
+  double y0 = domain_Ly/2.;
+  double pi = acos(-1.);
+  int count = 0;
+  for (unsigned int k1=0; k1 < n_wells; k1++) {
+    double xk = x0 + distance*cos(2.*pi*k1/n_wells);
+    double yk = y0 + distance*sin(2.*pi*k1/n_wells);
+    if ( singular_sign[k1]>0 ) {
+      singular_x.push_back(xk);
+      singular_y.push_back(yk);
+    }
+  }
+  
+  
+  for(int i = 0; i < n_points; ++i)
+  {
+    double norm_u = sqrt(parameters[i][0]*parameters[i][0] + parameters[i][1]*parameters[i][1]);
+    coeffs[i][0] = nu + transversal_dispersion_factor * norm_u;  // diffusion
+    coeffs[i][1] = parameters[i][0]; // convection, x-direction
+    coeffs[i][2] = parameters[i][1]; // convection, y-direction
+
+    coeffs[i][3] = 0.; // reaction
+    coeffs[i][4] = 0.; // right-hand side
+    if(norm_u)
+      coeffs[i][5] = //fluid_density * fluid_heat_capacity *
+	(longitudinal_dispersion_factor - transversal_dispersion_factor) * 1/norm_u;
+    else
+      coeffs[i][5] = 0.;
+    
+    // Add contribution of singular sources
+    double epsDelta = delta_fct_eps_factor * well_radius; //10*r_well; // 25*r_well; //50*r_well;
+    
+    for (unsigned int m = 0; m < singular_x.size(); m++)
+    {
+      double x_distance_to_source = std::pow(std::abs(x[i]-singular_x[m]), 2);
+      double y_distance_to_source = std::pow(std::abs(y[i]-singular_y[m]), 2);
+      bool at_source = (x_distance_to_source < epsDelta*epsDelta) * (y_distance_to_source < epsDelta*epsDelta);
+      if(at_source)
+      {
+	double magnitude = cos(Pi*(x[i] - singular_x[m])/epsDelta) + 1;
+	magnitude *= cos(Pi*(y[i] - singular_y[m])/epsDelta) + 1;
+	magnitude /= 4.*epsDelta*epsDelta;
+	
+        coeffs[i][3] = magnitude; // reaction
+        coeffs[i][4] = magnitude * temperature_injection_well; // right-hand side
+      }
+    }
+    
+  }
+}
+
+
+/** ************************************************************************ */
+void temperature_coefficients_lattice(int n_points, double *x, double *y,
+#ifdef __3D__
+				      double *z,
+#endif
+				      double **parameters, double **coeffs,
+				      double distance, double nu, double transversal_dispersion_factor,
+				      double longitudinal_dispersion_factor,
+				      double well_radius, double temperature_injection_well, double delta_fct_eps_factor,
+				      double fluid_density, double fluid_heat_capacity)
+{
+
+  double domain_Lx = 10000.;
+  double domain_Ly = 6000.;
+  size_t n_wells_per_row = 4;
+  // set well position
+  std::vector<double> singular_x, singular_y;
+
+  double x0 = domain_Lx/2.- (n_wells_per_row-1)/2.*distance;
+  double y0 = domain_Ly/2.- (n_wells_per_row-1)/2.*distance;
+  int count = 0;
+  for (unsigned int k1=0; k1 < n_wells_per_row; k1++) {
+    for (unsigned int k2=0; k2 < n_wells_per_row; k2++) {
+      double xk = x0 + distance*k2;
+      double yk = y0 + distance*k1;
+      int singular_sign = pow(-1,k1)*pow(-1,k2);
+      // add singular source only at injection wells
+      if (singular_sign>0){
+	singular_x.push_back(xk);
+	singular_y.push_back(yk);
+      }
+
+    }
+  }
+  
+  for(int i = 0; i < n_points; ++i)
+  {
+    double norm_u = sqrt(parameters[i][0]*parameters[i][0] + parameters[i][1]*parameters[i][1]);
+    coeffs[i][0] = nu + transversal_dispersion_factor * norm_u;  // diffusion
+    coeffs[i][1] = parameters[i][0]; // convection, x-direction
+    coeffs[i][2] = parameters[i][1]; // convection, y-direction
+
+    coeffs[i][3] = 0.; // reaction
+    coeffs[i][4] = 0.; // right-hand side
+    if(norm_u)
+      coeffs[i][5] = //fluid_density * fluid_heat_capacity *
+	(longitudinal_dispersion_factor - transversal_dispersion_factor) * 1/norm_u;
+    else
+      coeffs[i][5] = 0.;
+    
+    // Add contribution of singular sources
+    double epsDelta = delta_fct_eps_factor * well_radius; //10*r_well; // 25*r_well; //50*r_well;
+    
+    for (unsigned int m = 0; m < singular_x.size(); m++)
+    {
+      double x_distance_to_source = std::pow(std::abs(x[i]-singular_x[m]), 2);
+      double y_distance_to_source = std::pow(std::abs(y[i]-singular_y[m]), 2);
+      bool at_source = (x_distance_to_source < epsDelta*epsDelta) * (y_distance_to_source < epsDelta*epsDelta);
+      if(at_source)
+      {
+	double magnitude = cos(Pi*(x[i] - singular_x[m])/epsDelta) + 1;
+	magnitude *= cos(Pi*(y[i] - singular_y[m])/epsDelta) + 1;
+	magnitude /= 4.*epsDelta*epsDelta;
+	
+        coeffs[i][3] = magnitude; // reaction
+        coeffs[i][4] = magnitude * temperature_injection_well; // right-hand side
+      }
+    }
+    
+  }
+}
+
+
+/** ************************************************************************ */
 void temperature_coefficients_2doublets(int n_points, double *x, double *y,
 #ifdef __3D__
            double *z,
@@ -1134,7 +1287,31 @@ void TCD_Temperature<d>::assemble(const FEVectFunct& convection,
             (double) this->db["delta_fct_eps_factor"], (double) this->db["fluid_density"],
             (double) this->db["fluid_heat_capacity"]));
     }
-
+    else  if (this->db["scenario"].is("lattice") )
+    {
+    la.ResetCoeffFct(std::bind(temperature_coefficients_lattice,_1, _2, _3, _4, _5,
+#ifdef __3D__
+            _6,
+#endif
+            distance, nu,
+            (double) this->db["transversal_dispersion_factor"], (double) this->db["longitudinal_dispersion_factor"],
+            (double) this->db["well_radius"], (double) this->db["temperature_injection_well"],
+            (double) this->db["delta_fct_eps_factor"], (double) this->db["fluid_density"],
+            (double) this->db["fluid_heat_capacity"]));
+    }
+    else  if (this->db["scenario"].is("hexagon") )
+    {
+    la.ResetCoeffFct(std::bind(temperature_coefficients_hexagon,_1, _2, _3, _4, _5,
+#ifdef __3D__
+            _6,
+#endif
+            distance, nu,
+            (double) this->db["transversal_dispersion_factor"], (double) this->db["longitudinal_dispersion_factor"],
+            (double) this->db["well_radius"], (double) this->db["temperature_injection_well"],
+            (double) this->db["delta_fct_eps_factor"], (double) this->db["fluid_density"],
+            (double) this->db["fluid_heat_capacity"]));
+    }
+    
     la.setBeginParameter({0});
     la.SetN_Parameters(d);
     la.setN_ParamFct(1);
