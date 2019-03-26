@@ -2166,9 +2166,9 @@ void TFEFunction2D::PrintMinMax(const std::string& name) const
   if( min <= max )
   {
     if(name.empty())
-      Output::print<1>(this->Name, " min ", min, ", max ", max);
+      Output::print<1>(this->Name, " min ", min, " max ", max);
     else
-      Output::print<1>(name, " min ", min, ", max ", max);
+      Output::print<1>(name, " min ", min, "  max ", max);
   }
   else
   {

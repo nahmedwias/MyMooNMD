@@ -1890,7 +1890,7 @@ RefTrans2D TFEDatabase2D::GetOrig(int N_LocalUsedElements,
         switch(N_terms*MaxPolynomialDegree)
         {
           case 3:
-            Output::print<2>("Quadrature formula for triangles is MidPointTria"); 
+            Output::print<2>("Quadrature formula for triangles is Gauss3Tria"); 
             break;
           case 6:
             Output::print<2>("Quadrature formula for triangles is Gauss3Tria"); 

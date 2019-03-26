@@ -106,7 +106,9 @@ void U1BoundValue(double x, double y, double z, double &value)
   {
     double H = 0.41; //height of the cylinder in m
     double U = 2.25; //peak inflow velocity
-    value = 16*U*sin(Pi*t/8)*y*z*(H-y)*(H-z) / pow(H,4);
+    //value = 16*U*sin(Pi*t/8)*y*z*(H-y)*(H-z) / pow(H,4);
+    //value = 16*U*y*z*(H-y)*(H-z) / pow(H,4);
+    value = 16*U*(0.5*sin(2*Pi*t/0.5-Pi/2.0)+1.5) *y*z*(H-y)*(H-z) / pow(H,4);
   }
   else
   {
@@ -492,10 +494,11 @@ void compute_drag_lift_pdiff(TimeNavierStokes<3>& tnse3d)
   // as described in John 2002.
   if(my_rank == 0)
   {
-    Output::print(">>>>> Flow Around Cylinder (stat) 3D: Postprocessing Output <<<<<");
-    Output::print( " Drag = ",setprecision(16), drag);
-    Output::print( " Lift = ", setprecision(16), lift);
-    Output::print( " deltaP = ", setprecision(16), pdiff);
+    //Output::print(">>>>> Flow Around Cylinder (stat) 3D: Postprocessing Output <<<<<");
+    //Output::print( " Drag = ",setprecision(16), drag);
+    //Output::print( " Lift = ", setprecision(16), lift);
+    //Output::print( " deltaP = ", setprecision(16), pdiff);
+    Output::print(TDatabase::TimeDB->CURRENTTIME, " drag = ",setprecision(16), drag, " lift = ", setprecision(16), lift, " deltaP = ", setprecision(16), pdiff);
   }
 
 }
