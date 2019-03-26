@@ -102,10 +102,10 @@ class TBoundEdge : public TJoint
 #endif
 
     /** @brief return the coordinates {X,Y} of parameter value T */
-    void GetXYofT(double T, double &X, double &Y)
+    void GetXYofT(double T, double &X, double &Y) const
     { BoundComp->GetXYofT(T, X, Y); }
     /** @brief return parameter value T of the coordinates {X,Y} */
-    void GetTofXY(double X, double Y, double& T)
+    void GetTofXY(double X, double Y, double& T) const
     { BoundComp->GetTofXY(X, Y, T); }
 
     /** return boundary component */

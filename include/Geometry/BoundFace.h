@@ -50,23 +50,21 @@ class TBoundFace : public TJoint
     { return BoundComp; }
     
     /// @brief return the coordinates of a point from its parametrization
-    void GetXYZofTS(double T, double S, double &X, double &Y, double &Z)
+    void GetXYZofTS(double T, double S, double &X, double &Y, double &Z) const
     { this->BoundComp->GetXYZofTS(T, S, X, Y, Z); }
     
     /// @brief return the parametrization of a point from its coordinates
-    void GetTSofXYZ(double X, double Y, double Z, double &T, double &S)
+    void GetTSofXYZ(double X, double Y, double Z, double &T, double &S) const
     { this->BoundComp->GetTSofXYZ(X, Y, Z, T, S); }
     
     void get_normal_vector(double x, double y, double z,
-			   double& nx, double& ny, double &nz)
+                           double& nx, double& ny, double &nz) const
     { this->BoundComp->get_normal_vector(x,y,z,nx,ny,nz);}
     
     /** return both parameters arrays */
     void GetParameters(double *param1, double *param2);
 
     void SetParameters(double *param1, double *param2);
-
-    double Get_h(int cell_measure);
 
     void set_index_in_neighbour(TBaseCell *neigh, int index);
     int get_index_in_neighbour(const TBaseCell*const neigh) const;

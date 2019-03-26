@@ -44,23 +44,17 @@ void BoundValue(int BdComp, double Param, double &value)
 void BilinearCoeffs(int n_points, double *X, double *Y, double **,
                     double **coeffs)
 {
-  static double eps=1/TDatabase::ParamDB->PE_NR;
-  int i;
-  double *coeff;
-  double x, y;
-
-  for(i=0;i<n_points;i++)
+  double eps = 1./TDatabase::ParamDB->PE_NR;
+  for(int i = 0; i < n_points; i++)
   {
-    coeff = coeffs[i];
-    x = X[i];
-    y = Y[i];
-
-    coeff[0] = eps;
-    coeff[1] = -y;
-    coeff[2] = x;
-    coeff[3] = 0;
-    coeff[4] = 0;
-    coeff[5] = sqrt(x*x + y*y);
+    double x = X[i];
+    double y = Y[i];
+    coeffs[i][0] = eps;
+    coeffs[i][1] = -y;
+    coeffs[i][2] = x;
+    coeffs[i][3] = 0;
+    coeffs[i][4] = 0;
+    coeffs[i][5] = std::sqrt(x*x + y*y);
   }
 }
 

@@ -230,6 +230,8 @@ class ConvectionDiffusion
     { return this->systems.front().solution.length(); }
     const Example_CD& get_example() const
     { return example; }
+    void add_to_output(const FEFunction* fe_fct)
+    { outputWriter.add_fe_function(fe_fct); }
     const ParameterDatabase & get_db() const
     { return db; }
 
