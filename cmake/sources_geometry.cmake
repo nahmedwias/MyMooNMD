@@ -52,6 +52,7 @@ list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/Quadrangle.C")
 list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/ReadGeo.C")
 list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/Rectangle.C")
 list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/RefDesc.C")
+list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/RefinementStrategy.C")
 # list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/ShapeDesc.C") #CB why not?
 # list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/SubDomainEdge3D.C") #CB why not?
 list(APPEND GEO_SOURCES "${PROJECT_SOURCE_DIR}/src/Geometry/SubDomainHaloJoint.C")

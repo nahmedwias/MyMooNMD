@@ -30,6 +30,8 @@
 #include <IsoBoundEdge.h>
 #include <BdLine.h>
 #include <LinAlg.h>
+#include "ErrorEstimator.h"
+#include "BlockVector.h"
 
 #include <fstream>
 #include <sstream>
@@ -70,6 +72,34 @@ TFEFunction2D::TFEFunction2D(std::shared_ptr<const TFESpace2D> fespace2D,
 
   Length=length;
 }
+
+TFEFunction2D::TFEFunction2D(const ErrorEstimator<2>& estimator,
+                             BlockVector& values)
+ : Name("estimator"),
+   Description("piecewise constant function representing an error estimator")
+{
+  Output::print<5>("Constructor of TFEFunction2D using an ErrorEstimator");
+  auto collection = estimator.get_collection();
+  int n_cells = collection->GetN_Cells();
+  FESpace2D = std::shared_ptr<const TFESpace2D>(
+    new TFESpace2D(collection, "estimator_space", "piecewise constant space",
+                   BoundConditionNoBoundCondition, 0));
+  if(FESpace2D->GetN_DegreesOfFreedom() != n_cells)
+  {
+    ErrThrow("picewise constant 2d FE space not properly constructed");
+  }
+  values.copy_structure(BlockVector(n_cells));
+  Values = values.get_entries();
+  Length = n_cells;
+  
+  
+  for(int i = 0; i < n_cells; ++i)
+  {
+    auto DOF = FESpace2D->GetGlobalDOF(i);
+    Values[DOF[0]] = estimator.get_eta_K(i);
+  }
+}
+
 
 
 TFEFunction2D::~TFEFunction2D()

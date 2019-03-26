@@ -45,7 +45,7 @@ class TFESpace
 // information of cell collection
 // =======================================================================
     /** Collection containing the cells used for building this space */
-    TCollection *Collection;
+    const TCollection *Collection;
 
     /** number of cells in the triangulation used for building this space */
     int N_Cells;
@@ -110,7 +110,7 @@ class TFESpace
      * @param[in] name The name of the space, used in printout etc.
      * @param[in] description A description of the space, used in printout etc.
      */
-    TFESpace(TCollection *coll, const std::string& name,
+    TFESpace(const TCollection *coll, const std::string& name,
              const std::string& description);
 
     /** destrcutor */

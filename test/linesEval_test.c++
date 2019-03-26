@@ -83,9 +83,13 @@ int main(int argc, char* argv[])
   ParameterDatabase db = ParameterDatabase::parmoon_default_database();
   db.merge(TDomain::default_domain_parameters());
 
+  bool root = true;
 #ifdef _MPI
   MPI_Init(&argc, &argv);
   db["refinement_n_initial_steps"] = 4;
+  int my_rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+  root = (my_rank == 0);
 #else
   db["refinement_n_initial_steps"] = 0;
 #endif
@@ -204,9 +208,9 @@ int main(int argc, char* argv[])
 
   // delete temporary file used for this test
   std::string dir_name = lines_eval_db["directory_name"];
-  if(std::remove(dir_name.c_str()) != 0)
+  if(root && std::remove(dir_name.c_str()) != 0)
   {
-    ErrThrow("linesEval_test: Error deleting temporary file.");
+    ErrThrow("linesEval_test: Error deleting temporary directory ", dir_name);
   }
 
 #ifdef _MPI

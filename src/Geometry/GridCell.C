@@ -388,25 +388,24 @@ int TGridCell::Ref1Reg(int LocJointNum, TBaseCell *&RefCell)
 #ifdef __2D__
 int TGridCell::MakeConfClosure()
 {
-  int i, clip, N_;
-  TBaseCell *Neighb;
+  int i;
 
-  N_ = GetN_Edges();
-  // set triangle/quadrangle bit(7/8)
-  clip = 1 << (N_ + 4); // mac64 warning bracket added
+  int N_ = GetN_Edges();
+  // set triangle/quadrangle bit(7/8) (clip<256 means triangle )
+  int clip = 1 << (N_ + 4); // mac64 warning bracket added
   // set edge bits(0-3) and number of edges (bits 4-6)
   for (i=0;i<N_;i++)
-      // there is a neighbour cell
-    if ((Neighb = Joints[i]->GetNeighbour(this)))
-        // this neighbour cell is refined regularly or 
-        // it has children 
-        if (Neighb->ExistChildren() || Neighb->GetClipBoard() > 512)
-         {
-          if (Neighb->ExistChildren() ) OutPut("1a");
-          if (Neighb->GetClipBoard()>512) OutPut("2b");
-          OutPut(endl);
+  {
+    // there is a neighbour cell
+    if(TBaseCell *Neighb = Joints[i]->GetNeighbour(this))
+    {
+      // this neighbour cell is refined regularly or it has children 
+      if (Neighb->ExistChildren() || Neighb->GetClipBoard() > 512)
+      {    
         clip += (1 << i) + 16;
       }
+    }
+  }
   // set regular refinement bit(9)
   if ((clip > 160 && clip < 256) || clip > 304)
     clip |= 512;
@@ -427,7 +426,8 @@ int TGridCell::MakeConfClosure()
 
     if (Joints[i]->InnerJoint())
     {
-      if ((Neighb = Joints[i]->GetNeighbour(this)))
+      TBaseCell *Neighb = Joints[i]->GetNeighbour(this);
+      if(Neighb)
         Neighb->MakeConfClosure();
       else
       {
