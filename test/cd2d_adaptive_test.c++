@@ -15,7 +15,7 @@
 #include "Multigrid.h"
 
 
-bool write_PS_and_VTU_files = false; // turn this on for debugging purposes
+bool write_PS_and_VTU_files = true; // turn this on for debugging purposes
 
 // compare the computed errors in the Darcy2D object with the given ones in 
 // the array

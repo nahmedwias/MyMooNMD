@@ -134,7 +134,15 @@ class ConvectionDiffusion
      */
     void set_parameters();
     
-    void call_assembling_routine(SystemPerGrid& s, LocalAssembling<d>& local_assem);
+    /**
+     * @brief assembles the RHS and system matrix
+     * 
+     * Earlier this was done in assemble function. But, now as CD_AFC is a 
+     * derived class of CD, this function is called from CD_AFC::assemble().
+     * Hence, this was seprated
+     */    
+    void call_assembling_routine(SystemPerGrid& s, 
+                                 LocalAssembling<d>& local_assem);
     
     /** @brief write some information (number of cells, dofs, ...) */
     void output_problem_size_info() const;
