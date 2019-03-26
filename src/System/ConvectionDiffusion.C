@@ -333,7 +333,8 @@ void ConvectionDiffusion<d>::call_assembling_routine(SystemPerGrid& s,
       &boundary_conditions, &non_const_bound_value, local_assem);
     // copy Dirichlet values from rhs to solution vector (this is not really
     // necessary in case of a direct solver)
-    s.solution.copy_nonactive(s.rhs); 
+    s.solution.copy_nonactive(s.rhs);
+    
 }
 
 
