@@ -33,6 +33,7 @@ if(NOT _USING_MPI)
   register_2d_main_program(mesh 2DPrograms/mesh_ParMooN.C)
   register_2d_main_program(geo2mesh2d 2DPrograms/geo2mesh2d_ParMooN.C)
   register_2d_main_program(tcd2dpod 2DPrograms/TCD2D_POD_ParMooN.C)
+  register_2d_main_program(tcd2drom 2DPrograms/TCD2D_ROM_ParMooN.C)
 endif(NOT _USING_MPI)
 
 ###############################################################################

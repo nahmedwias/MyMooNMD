@@ -25,6 +25,7 @@ using namespace std;
 
 int main(int, char* argv[])
 {
+  bool do_rom = false;
   double t_start = GetTime();
   TDatabase Database(argv[1]);
   TFEDatabase2D FEDatabase;

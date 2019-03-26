@@ -9,7 +9,7 @@ list(APPEND ROM_SOURCES "${PROJECT_SOURCE_DIR}/src/ReducedOrderModels/SnapshotsC
 list(APPEND ROM_SOURCES "${PROJECT_SOURCE_DIR}/src/ReducedOrderModels/POD.C")
 list(APPEND ROM_SOURCES "${PROJECT_SOURCE_DIR}/src/ReducedOrderModels/TimeConvectionDiffusionPOD.C")
 list(APPEND ROM_SOURCES "${PROJECT_SOURCE_DIR}/src/ReducedOrderModels/ROM.C")
-
+list(APPEND ROM_SOURCES "${PROJECT_SOURCE_DIR}/src/ReducedOrderModels/TimeConvectionDiffusionROM.C")
 
 list(APPEND PARMOON_SOURCES_2D ${ROM_SOURCES})
 list(APPEND PARMOON_SOURCES_3D ${ROM_SOURCES})

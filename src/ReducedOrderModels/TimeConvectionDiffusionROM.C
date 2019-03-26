@@ -26,7 +26,7 @@ ParameterDatabase TimeConvectionDiffusionROM<d>::default_tcd_rom_database()
 template<int d>
 TimeConvectionDiffusionROM<d>::System_per_grid::System_per_grid(const Example_TimeCD& example,
                                             TCollection& coll, int ansatz_order)
-: space(&coll, "space", "time_cd2d space", example.get_bc(0),ansatz_order)
+: space(new FESpace(&coll, "space", "time_cd_rom space", example.get_bc(0),ansatz_order))
 {
 #ifdef __3D__
   gramian_matrix=BlockFEMatrix::CD3D(space);
@@ -35,12 +35,12 @@ TimeConvectionDiffusionROM<d>::System_per_grid::System_per_grid(const Example_Ti
 #endif
   rhs = BlockVector(gramian_matrix, true);
   solution = BlockVector(gramian_matrix, false);
-  fe_function = FEFunction(&space, "c", "c", solution.get_entries(), solution.length());  
+  fe_function = FEFunction(space, "c", "c", solution.get_entries(), solution.length());  
 }
 
 template<int d>
-TimeConvectionDiffusionROM<d>::TimeConvectionDiffusionROM(const TDomain& domain, 
-   const ParameterDatabase& param_db, const Example_TimeCD& ex)
+TimeConvectionDiffusionROM<d>::TimeConvectionDiffusionROM(const ParameterDatabase& param_db,
+							  const Example_TimeCD& ex)
 : ROM(param_db),
   db(default_tcd_rom_database()), solver(param_db),systems(), 
   example(ex), time_stepping_scheme(param_db), errors(5, 0.), outputWriter(param_db)
@@ -181,7 +181,7 @@ void TimeConvectionDiffusionROM<d>::assemble_and_reduce(LocalAssembling_type typ
   temp_matrix = BlockFEMatrix::CD2D(systems.front().space);
 #endif
   int n_fespaces = 1;
-  const FESpace * _fe_space_ = &systems.front().space;  
+  const FESpace* _fe_space_ = systems.front().space.get();
   using SquareMatrixD = typename Template_names<d>::SquareMatrixD;
   std::vector<SquareMatrixD*> sqMatrices;
   std::vector<double*> rhs_array(0);
@@ -194,13 +194,13 @@ void TimeConvectionDiffusionROM<d>::assemble_and_reduce(LocalAssembling_type typ
       sqMatrices[0] = {reinterpret_cast<SquareMatrixD*>(block.at(0).get())};
       break;
     case LocalAssembling_type::TCDGradGradOnly:
-      if (db["pod_inner_product"].get<std::string>() == "l2")
+      if (db["pod_inner_product"].is("l2"))
       {
         sqMatrices.resize(1);
         block = temp_matrix.get_blocks_uniquely();
         sqMatrices[0] = {reinterpret_cast<SquareMatrixD*>(block.at(0).get())};
       }
-      else if (db["pod_inner_product"].get<std::string>() == "eucl")
+      else if (db["pod_inner_product"].is("euclidean"))
       {
         Output::print<1>("For given parameter 'pod_inner_product' no assembling needed.");
         return;
@@ -223,11 +223,11 @@ void TimeConvectionDiffusionROM<d>::assemble_and_reduce(LocalAssembling_type typ
   for(auto sm : sqMatrices)
     sm->reset();
   // local assembling 
-  TFEFunction2D * pointer_to_function = &systems.front().fe_function;
-  LocalAssembling2D la(db, type, &pointer_to_function, example.get_coeffs());
+  FEFunction *pointer_to_function = &systems.front().fe_function;
+  LocalAssembling<d> la(db, type, &pointer_to_function, example.get_coeffs());
   // boundary conditions and boundary values
   auto * bc = _fe_space_->get_boundary_condition();
-  auto * bv =example.get_bd(0);
+  auto * bv = example.get_bd(0);
   
 #ifdef __2D__
   Assemble2D(
@@ -291,10 +291,15 @@ void TimeConvectionDiffusionROM<d>::output(int time_step)
     TAuxParam2D aux;
     MultiIndex2D all_derivatives[3] = { D00, D10, D01 };
 #endif
-    const FESpace * _fe_space_ = &s.space;  
+    const FESpace* _fe_space_ = s.space.get();
+#ifdef __2D__
     s.fe_function.GetErrors(this->example.get_exact(0), 3, all_derivatives, 4,
-                           SDFEMErrors, this->example.get_coeffs(), &aux, 1,
-                           &_fe_space_, loc_e);
+                            SDFEMErrors, this->example.get_coeffs(), &aux, 1,
+                            &_fe_space_, loc_e);
+#else
+    Output::print(" ** WARNING: I cannot compute errors. ");
+    Output::print("The function SDFEMErrors is not implemented in 3D **");
+#endif
     
     Output::print<1>("time: ", time_stepping_scheme.current_time_);
     Output::print<1>("  L2: ", loc_e[0]);
@@ -313,7 +318,8 @@ void TimeConvectionDiffusionROM<d>::output(int time_step)
     
     double min, max;
     s.fe_function.MinMax(min,max);
-    std::string error_file = db["outfile"].get<std::string>() + ".errors";
+    std::string outfile = db["outfile"];
+    std::string error_file = outfile + ".errors";
     /** @todo Add additional functionality in namespace Output to write information
      * into seond (or generally several) output file (like here Output::redirect(error_file)) */
     
@@ -336,3 +342,4 @@ template class TimeConvectionDiffusionROM<3>;
 template class TimeConvectionDiffusionROM<2>;
 #endif
 /**************************************************************************** */
+ 
