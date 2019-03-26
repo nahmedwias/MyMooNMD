@@ -150,6 +150,11 @@ class BlockVector
      * This subvector with index i is scaled by a, only the actives.
      */
     void scaleActive(const double a);
+    /**
+     * @brief scale a subvector
+     * This subvector with index i is scaled by a, only the non actives.
+     */
+    void scaleNonActive( const double a);
     
     /**
      * @brief Scale the entire vector

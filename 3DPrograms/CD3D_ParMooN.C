@@ -85,7 +85,7 @@ int main(int argc, char* argv[])
 
   timer.restart_and_print("setup(domain, example, database)");
   // Construct the cd3d problem object.
-  ConvectionDiffusion<3> cd3d(domain, parmoon_db, example);
+  ConvectionDiffusion<3> cd3d(domain, parmoon_db);
   timer.restart_and_print("constructing CD3D object");
   
   //=========================================================================

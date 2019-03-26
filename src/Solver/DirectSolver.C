@@ -185,7 +185,7 @@ DirectSolver::DirectSolver(std::shared_ptr<TMatrix> matrix,
 
   // the threshold is rather small here, it should furthermore depend on the 
   // dimension (2 or 3) and the polynomial degree (and possibly more).
-  if(this->matrix->GetN_Rows() > 1e5 && type == DirectSolverTypes::umfpack)
+  if(this->matrix->GetN_Rows() > 1e4 && type == DirectSolverTypes::umfpack)
   {
     this->cols.resize(this->matrix->GetN_Entries(), 0);
     this->rows.resize(this->matrix->GetN_Rows()+1, 0);
