@@ -25,6 +25,7 @@ endmacro(register_3d_main_program)
 ### Standard 2D Programs (no MPI support in 2D) ###
 if(NOT _USING_MPI)
   register_2d_main_program(cd2d 2DPrograms/CD2D_ParMooN.C)
+  register_2d_main_program(cd2d_afc 2DPrograms/CD2D_AFC_ParMooN.C)
   register_2d_main_program(darcy2d 2DPrograms/Darcy2D_ParMooN.C)
   register_2d_main_program(nse2d 2DPrograms/NSE2D_ParMooN.C)
   #register_2d_main_program(brinkman2d 2DPrograms/Brinkman2D_ParMooN.C)
@@ -38,6 +39,7 @@ endif(NOT _USING_MPI)
 ###############################################################################
 ### Standard 3D Programs ###
 register_3d_main_program(cd3d 3DPrograms/CD3D_ParMooN.C)
+register_3d_main_program(cd3d_afc 3DPrograms/CD3D_AFC_ParMooN.C)
 register_3d_main_program(darcy3d 3DPrograms/Darcy3D_ParMooN.C)
 #register_3d_main_program(brinkman3d 3DPrograms/Brinkman3D_ParMooN.C)
 register_3d_main_program(tcd3d 3DPrograms/TCD3D_ParMooN.C)

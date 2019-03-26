@@ -123,7 +123,7 @@ int main(int argc, char* argv[])
   db["afc_limiter"].set<>("kuzmin");
   db["afc_iteration_scheme"].set<>("fixed_point_rhs");
   db["afc_nonlinloop_anderson_acc"].set<>("no");
-  std::array<double,2> errors = {{0.00149380803286, 0.013230165352384}};
+  std::array<double,2> errors = {{0.0010369623588627, 0.011894930265006}};
   check_cd3d(domain, db, errors);
   //=========================================================================
   Output::print("\n\n --------- P1 + kuzmin + newton + no_anderson_acceleration ---------\n");
@@ -131,7 +131,7 @@ int main(int argc, char* argv[])
   db["afc_iteration_scheme"].set<>("newton");
   db["afc_nonlinloop_anderson_acc"].set<>("no");
  
-  errors = {{0.0014938084093367 , 0.013230166506521}};
+  errors = {{0.0010369624917919 , 0.011894928221049}};
   check_cd3d(domain, db, errors);
   //=========================================================================
   Output::print("\n\n --------- P1 + kuzmin + fixed_point_matrix + no_anderson_acceleration ---------\n");
@@ -139,28 +139,28 @@ int main(int argc, char* argv[])
   db["afc_iteration_scheme"].set<>("fixed_point_matrix");
   db["afc_nonlinloop_anderson_acc"].set<>("no");
   
-  errors = {{0.0014938084639286, 0.013230166672609}};
+  errors = {{0.0010369624396964, 0.011894928040666}};
   check_cd3d(domain, db, errors);
   //=========================================================================
   Output::print("\n\n --------- P1 + BJK17 + fixed_point_rhs + no_anderson_acceleration ---------\n");
   db["afc_limiter"].set<>("BJK17");
   db["afc_iteration_scheme"].set<>("fixed_point_rhs");
   db["afc_nonlinloop_anderson_acc"].set<>("no");
-  errors = {{0.000416420573027, 0.010287280962814}};
+  errors = {{0.00041589919577948, 0.010288830826148}};
   check_cd3d(domain, db, errors);
   //=========================================================================  
   Output::print("\n\n --------- P1 + BJK17 + newton + no_anderson_acceleration ---------\n");
   db["afc_limiter"].set<>("BJK17");
   db["afc_iteration_scheme"].set<>("newton");
   db["afc_nonlinloop_anderson_acc"].set<>("no");
-  errors = {{0.00041642068192927, 0.010287281981352}};
+  errors = {{0.00041589896552261, 0.010288832022184}};
   check_cd3d(domain, db, errors);
   //=========================================================================  
   Output::print("\n\n --------- P1 + BJK17 + fixed_point_matrix + no_anderson_acceleration ---------\n");
   db["afc_limiter"].set<>("BJK17");
   db["afc_iteration_scheme"].set<>("fixed_point_matrix");
   db["afc_nonlinloop_anderson_acc"].set<>("no");
-  errors = {{0.00041642061583269, 0.010287285359938}};
+  errors = {{ 0.00041589891048811, 0.010288836337654}};
   check_cd3d(domain, db, errors);
   //=========================================================================
   
@@ -171,7 +171,7 @@ int main(int argc, char* argv[])
   db["afc_iteration_scheme"].set<>("fixed_point_rhs");
   db["afc_nonlinloop_anderson_acc"].set<>("yes");
   db["afc_anderson_damping"].set<>("no");
-  errors = {{0.00149380803286, 0.013230165352384}};
+  errors = {{0.0010369627652847, 0.011894929166125}};
   check_cd3d(domain, db, errors);
   //=========================================================================
   Output::print("\n\n --------- P1 + kuzmin + newton + anderson_acceleration ---------\n");
@@ -179,7 +179,7 @@ int main(int argc, char* argv[])
   db["afc_iteration_scheme"].set<>("newton");
   db["afc_nonlinloop_anderson_acc"].set<>("yes");
   db["afc_anderson_damping"].set<>("no");
-  errors = {{0.0014938084093367, 0.013230166506521}};
+  errors = {{0.0010369624917919, 0.011894928221049}};
   check_cd3d(domain, db, errors);
   //=========================================================================
   Output::print("\n\n --------- P1 + kuzmin + fixed_point_matrix + anderson_acceleration ---------\n");
@@ -187,7 +187,7 @@ int main(int argc, char* argv[])
   db["afc_iteration_scheme"].set<>("fixed_point_matrix");
   db["afc_nonlinloop_anderson_acc"].set<>("yes");
   db["afc_anderson_damping"].set<>("no");
-  errors = {{0.0014938084639286, 0.013230166672609}};
+  errors = {{0.0010369624396964,0.011894928040666 }};
   check_cd3d(domain, db, errors);
   //=========================================================================
   Output::print("\n\n --------- P1 + BJK17 + fixed_point_rhs + anderson_acceleration ---------\n");
@@ -195,7 +195,7 @@ int main(int argc, char* argv[])
   db["afc_iteration_scheme"].set<>("fixed_point_rhs");
   db["afc_nonlinloop_anderson_acc"].set<>("yes");
   db["afc_anderson_damping"].set<>("no");
-  errors = {{0.00041642065861425, 0.010287280925369}};
+  errors = {{0.00041589901259253, 0.010288830807286}};
   check_cd3d(domain, db, errors);
   //=========================================================================  
   Output::print("\n\n --------- P1 + BJK17 + newton + anderson_acceleration ---------\n");
@@ -203,7 +203,7 @@ int main(int argc, char* argv[])
   db["afc_iteration_scheme"].set<>("newton");
   db["afc_nonlinloop_anderson_acc"].set<>("yes");
   db["afc_anderson_damping"].set<>("no");
-  errors = {{0.00041642072608981, 0.010287281031888}};
+  errors = {{0.00041589904466904, 0.010288830778404}};
   check_cd3d(domain, db, errors);
   //=========================================================================  
   Output::print("\n\n --------- P1 + BJK17 + fixed_point_matrix + anderson_acceleration ---------\n");
@@ -211,7 +211,7 @@ int main(int argc, char* argv[])
   db["afc_iteration_scheme"].set<>("fixed_point_matrix");
   db["afc_nonlinloop_anderson_acc"].set<>("yes");
   db["afc_anderson_damping"].set<>("no");
-  errors = {{0.0004164208055072, 0.010287281557243}};
+  errors = {{0.00041589915223163, 0.010288831391598}};
   check_cd3d(domain, db, errors);
   //=========================================================================
 
@@ -229,7 +229,7 @@ int main(int argc, char* argv[])
   db["afc_iteration_scheme"].set<>("fixed_point_rhs");
   db["afc_nonlinloop_anderson_acc"].set<>("no");
   
-  errors = {{0.00039916511745917, 0.0053003916489301}};
+  errors = {{0.00019851552281602, 0.0042946862986406}};
   check_cd3d(domain_quad, db, errors);
   //=========================================================================
   Output::print("\n\n --------- Q1 + kuzmin + newton + no_anderson_acceleration ---------\n");
@@ -237,7 +237,7 @@ int main(int argc, char* argv[])
   db["afc_iteration_scheme"].set<>("newton");
   db["afc_nonlinloop_anderson_acc"].set<>("no");
   
-  errors = {{0.000399165125613, 0.0053003919795139}};
+  errors = {{0.00019851553388223, 0.0042946863306704}};
   check_cd3d(domain_quad, db, errors);
   //=========================================================================
   Output::print("\n\n --------- Q1 + kuzmin + fixed_point_matrix + no_anderson_acceleration ---------\n");
@@ -245,7 +245,7 @@ int main(int argc, char* argv[])
   db["afc_iteration_scheme"].set<>("fixed_point_matrix");
   db["afc_nonlinloop_anderson_acc"].set<>("no");
   
-  errors = {{0.0003991651006792, 0.0053003919707961}};
+  errors = {{0.00019851557114826, 0.0042946863131265}};
   check_cd3d(domain_quad, db, errors);
   //=========================================================================
   
@@ -256,7 +256,7 @@ int main(int argc, char* argv[])
   db["afc_iteration_scheme"].set<>("fixed_point_rhs");
   db["afc_nonlinloop_anderson_acc"].set<>("yes");
   db["afc_anderson_damping"].set<>("no");
-  errors = {{0.0003991651071879, 0.005300391980387}};
+  errors = {{0.00019851553307403, 0.0042946862979766}};
   check_cd3d(domain_quad, db, errors);
   //=========================================================================
   Output::print("\n\n --------- Q1 + kuzmin + newton + anderson_acceleration ---------\n");
@@ -264,7 +264,7 @@ int main(int argc, char* argv[])
   db["afc_iteration_scheme"].set<>("newton");
   db["afc_nonlinloop_anderson_acc"].set<>("yes");
   db["afc_anderson_damping"].set<>("no");
-  errors = {{0.00039916502859844, 0.0053003921620624}};
+  errors = {{0.00019851553697763, 0.004294686306746}};
   check_cd3d(domain_quad, db, errors);
   //=========================================================================
   Output::print("\n\n --------- Q1 + kuzmin + fixed_point_matrix + anderson_acceleration ---------\n");
@@ -272,7 +272,7 @@ int main(int argc, char* argv[])
   db["afc_iteration_scheme"].set<>("fixed_point_matrix");
   db["afc_nonlinloop_anderson_acc"].set<>("yes");
   db["afc_anderson_damping"].set<>("no");
-  errors = {{0.00039916491935108, 0.0053003924157625}};
+  errors = {{0.00019851552155721, 0.0042946862932138}};
   check_cd3d(domain_quad, db, errors);
   //=========================================================================
   
