@@ -52,8 +52,9 @@ int TGridCell::Refine(int reflevel)
  //   if (RefDesc->GetEdgeRef(i))
       if (Joints[i]->CheckMatchingRef(this, i, Tmp[i]))
       {
-        cerr << "Error: non matching edges!!!" << endl;
-//         exit(-1);
+        ErrThrow("Error: non matching edges!!! i ", i, " N_1 ", N_1,
+                 " return value ",
+                 Joints[i]->CheckMatchingRef(this, i, Tmp[i]));
       }
 
   // create children
