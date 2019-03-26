@@ -46,6 +46,7 @@
   #include <InnerEdge.h>
   #include <IsoEdge3D.h>
 #endif
+#include "RefinementStrategy.h"
 
 #include <string.h>
 #include <vector>
@@ -1033,59 +1034,114 @@ int TDomain::RegRefineAll()
 }
 
 
-int TDomain::RefineByIndicator(DoubleFunct2D *Indicator)
+void TDomain::RefineByIndicator(DoubleFunct2D *Indicator, bool conf_closure)
 {
-  TBaseCell *CurrCell;
-  TVertex *vert;
-  int j, k, info;
-  int Inner, Outer;
-  double x,y,val;
+#ifdef __2D__
+  auto db = RefinementStrategy<2>::default_refinement_strategy_database();
+  auto f = [&](std::array<double, 3> point)
+           { 
+             double val;
+             Indicator(point[0], point[1], &val);
+             return val;
+           };
+  RefinementStrategy<2> rs(db);
+  TCollection* coll = this->GetCollection(It_Finest, 0);
+  rs.apply_indicator(coll, f);
+  delete coll;
+  this->RefineByRefinementStrategy(rs, conf_closure);
+#else
+  ErrThrow("TDomain::RefineByIndicator is only available in 2D");
+#endif
+//   TBaseCell *CurrCell;
+//   TVertex *vert;
+//   int j, k, info;
+//   int Inner, Outer;
+//   double x,y,val;
+// 
+//   TDatabase::IteratorDB[It_Finest]->Init(0);
+// 
+//   // loop over all cells
+//   while ((CurrCell = TDatabase::IteratorDB[It_Finest]->Next(info)))
+//   {
+//     Inner=0;
+//     Outer=0;
+//     k=CurrCell->GetN_Vertices();
+//     for(j=0;j<k;j++)
+//     {
+//       vert=CurrCell->GetVertex(j);
+//       x=vert->GetX();
+//       y=vert->GetY();
+//       Indicator(x,y,&val);
+//       if(val<=1e-10) Inner++;
+//       if(val>=-1e-10) Outer++;
+//     }
+//     if((Inner>0) && (Outer>0)) 
+//     {
+//       // there vertices on both sides
+//       CurrCell->SetRegRefine();
+//     }
+//   }
+// 
+//   Refine();
+//   if(conf_closure)
+//   { 
+//     MakeConfClosure();
+//   }
+//   else
+//   {
+//     Gen1RegGrid();
+//   }
+//   gridCollections.push_front(this->GetCollection(It_Finest, 0));
+}
 
-  TDatabase::IteratorDB[It_Finest]->Init(0);
-
-  // loop over all cells
-  while ((CurrCell = TDatabase::IteratorDB[It_Finest]->Next(info)))
+template <int d>
+void TDomain::RefineByRefinementStrategy(RefinementStrategy<d>& strategy,
+                                         bool conf_closure)
+{
+  TCollection* collection = this->GetCollection(It_Finest, 0);
+  for(int k = 0; k < collection->GetN_Cells(); k++)
   {
-    Inner=0;
-    Outer=0;
-    k=CurrCell->GetN_Vertices();
-    for(j=0;j<k;j++)
+    if(strategy.should_refine_cell(k))
     {
-      vert=CurrCell->GetVertex(j);
-      x=vert->GetX();
-      y=vert->GetY();
-      Indicator(x,y,&val);
-      if(val<=1e-10) Inner++;
-      if(val>=-1e-10) Outer++;
-    }
-    if((Inner>0) && (Outer>0)) 
-    {
-      // there vertices on both sides
-      CurrCell->SetRegRefine();
+      collection->GetCell(k)->SetRegRefine();
     }
   }
-
-  Refine();
-  return Gen1RegGrid();
+  
+  if(conf_closure)
+  { 
+    MakeConfClosure();
+  }
+  else
+  {
+    Refine();
+    Gen1RegGrid();
+  }
+  gridCollections.push_front(this->GetCollection(It_Finest, 0));
 }
+#ifdef __3D__
+template void TDomain::RefineByRefinementStrategy(
+  RefinementStrategy<3>& strategy, bool conf_closure);
+#else
+template void TDomain::RefineByRefinementStrategy(
+  RefinementStrategy<2>& strategy, bool conf_closure);
+#endif
+
 
 
 #ifdef __2D__
 int TDomain::MakeConfClosure()
 {
-  TBaseCell *CurrCell, *parent;
-  int i, info, MaxLevel, clip;
-  Refinements type;
-
-  const char filename[] = "before_closure.ps";
-
+  int info;
   // delete existing closures
   TDatabase::IteratorDB[It_Finest]->Init(0);
-  while ((CurrCell = TDatabase::IteratorDB[It_Finest]->Next(info)))
-    if ((parent = CurrCell->GetParent()))
+  while(TBaseCell *CurrCell = TDatabase::IteratorDB[It_Finest]->Next(info))
+  {
+    if(TBaseCell *parent = CurrCell->GetParent())
     {
-      type = parent->GetRefDesc()->GetType();
-      if (type >= TriBis0 && type <= Quad2Conf3)
+      Refinements type = parent->GetRefDesc()->GetType();
+      // check if the parent has been refined non-regularly, which (almost only)
+      // happens during conforming closures
+      if(type >= TriBis0 && type <= Quad2Conf3)
       {
         // check whether a child is marked for refinement
         // TriReg means regular refinement for triangles and quadrangles
@@ -1103,10 +1159,14 @@ int TDomain::MakeConfClosure()
 
         parent->Derefine();
 
-        if (type == TriReg)
+        /// @todo can type be QuadReg and the other children NoRef? If so, the 
+        /// following will not correctly refine the parent, will it?
+        if(type == TriReg)
           parent->SetRegRefine();
       }
     }
+    // there is no parent cell (coarsest level)
+  }
     
 
   // generate a new 1-regular grid
@@ -1115,98 +1175,101 @@ int TDomain::MakeConfClosure()
 
   // initialize clipboards
   TDatabase::IteratorDB[It_Finest]->Init(0);
-  while ((CurrCell = TDatabase::IteratorDB[It_Finest]->Next(info)))
+  while(TBaseCell *CurrCell = TDatabase::IteratorDB[It_Finest]->Next(info))
     CurrCell->SetClipBoard(0);
 
   // look for elements which have to be refined
   TDatabase::IteratorDB[It_Finest]->Init(0);
-  MaxLevel = TDatabase::IteratorDB[It_Finest]->GetMaxLevel();
-  PS(filename,It_Finest,0);
-  OutPut("MaxLevel " << MaxLevel << endl);
+  int MaxLevel = TDatabase::IteratorDB[It_Finest]->GetMaxLevel();
+  //this->PS("before_closure.ps", It_Finest, 0);
+  //Output::print("MaxLevel " << MaxLevel);
   
-  for (i=MaxLevel;i>=0;i--)
+  for(int i = MaxLevel; i >= 0; i--)
   {
-      // get iterator on level i
-      TDatabase::IteratorDB[It_EQ]->Init(i);
-      // loop over the mesh cells on level i
-      while ((CurrCell = TDatabase::IteratorDB[It_EQ]->Next(info)))
-	  // if current cell does not possess children, compute conforming closure
-	  if (!CurrCell->ExistChildren())
-	  {
-	      CurrCell->MakeConfClosure();
-	  }
-      // get iterator on finest level
-      TDatabase::IteratorDB[It_Finest]->Init(0);
-      // loop over mesh cells on finest level
-      while ((CurrCell = TDatabase::IteratorDB[It_Finest]->Next(info)))
+    // get iterator on level i
+    TDatabase::IteratorDB[It_EQ]->Init(i);
+    // loop over the mesh cells on level i
+    while(TBaseCell *CurrCell = TDatabase::IteratorDB[It_EQ]->Next(info))
+    {
+      // if current cell does not possess children, compute conforming closure
+      if(!CurrCell->ExistChildren())
       {
-	  // get clip board
-	  clip = CurrCell->GetClipBoard();
-	  //cout << i << " clip " << clip << endl;
-	  // compute refinement rule
-	  switch (clip)
-	  {
-	      case 145: CurrCell->SetRefDesc(TDatabase::RefDescDB[
-						 N_SHAPES + TriBis0]);
-                  CurrCell->Refine(RefLevel);
-                  break;
-	      case 146: CurrCell->SetRefDesc(TDatabase::RefDescDB[
-						 N_SHAPES + TriBis1]);
-                  CurrCell->Refine(RefLevel);
-                  break;
-	      case 148: CurrCell->SetRefDesc(TDatabase::RefDescDB[
-						 N_SHAPES + TriBis2]);
-                  CurrCell->Refine(RefLevel);
-                  break;
-	      case 273: CurrCell->SetRefDesc(TDatabase::RefDescDB[
-						 N_SHAPES + Quad1Conf2]);
-                  CurrCell->Refine(RefLevel);
-                  break;
-	      case 274: CurrCell->SetRefDesc(TDatabase::RefDescDB[
-						 N_SHAPES + Quad1Conf3]);
-                  CurrCell->Refine(RefLevel);
-                  break;
-	      case 276: CurrCell->SetRefDesc(TDatabase::RefDescDB[
-						 N_SHAPES + Quad1Conf0]);
-                  CurrCell->Refine(RefLevel);
-                  break;
-	      case 280: CurrCell->SetRefDesc(TDatabase::RefDescDB[
-						 N_SHAPES + Quad1Conf1]);
-                  CurrCell->Refine(RefLevel);
-                  break;
-	      case 291: CurrCell->SetRefDesc(TDatabase::RefDescDB[
-						 N_SHAPES + Quad2Conf1]);
-                  CurrCell->Refine(RefLevel);
-                  break;
-	      case 293: CurrCell->SetRefDesc(TDatabase::RefDescDB[
-						 N_SHAPES + QuadBis0]);
-                  CurrCell->Refine(RefLevel);
-                  break;
-	      case 294: CurrCell->SetRefDesc(TDatabase::RefDescDB[
-						 N_SHAPES + Quad2Conf2]);
-                  CurrCell->Refine(RefLevel);
-                  break;
-	      case 297: CurrCell->SetRefDesc(TDatabase::RefDescDB[
-						 N_SHAPES + Quad2Conf3]);
-                  CurrCell->Refine(RefLevel);
-                  break;
-	      case 298: CurrCell->SetRefDesc(TDatabase::RefDescDB[
-						 N_SHAPES + QuadBis1]);
-                  CurrCell->Refine(RefLevel);
-                  break;
-	      case 300: CurrCell->SetRefDesc(TDatabase::RefDescDB[
-						 N_SHAPES + Quad2Conf0]);
-                  CurrCell->Refine(RefLevel);
-                  break;
-	      default: if (clip > 512)
-	      {
-		  CurrCell->SetRegRefine();
-		  CurrCell->Refine(RefLevel);
-	      }
-	  }
+        CurrCell->MakeConfClosure();
+      }
+    }
+    // get iterator on finest level
+    TDatabase::IteratorDB[It_Finest]->Init(0);
+    // loop over mesh cells on finest level
+    while(TBaseCell *CurrCell = TDatabase::IteratorDB[It_Finest]->Next(info))
+    {
+      // get clip board
+      int clip = CurrCell->GetClipBoard();
+      //cout << i << " clip " << clip << endl;
+      // compute refinement rule
+      switch (clip)
+      {
+        case 145:
+          CurrCell->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + TriBis0]);
+          CurrCell->Refine(RefLevel);
+          break;
+        case 146: 
+          CurrCell->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + TriBis1]);
+          CurrCell->Refine(RefLevel);
+          break;
+        case 148:
+          CurrCell->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + TriBis2]);
+          CurrCell->Refine(RefLevel);
+          break;
+        case 273:
+          CurrCell->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + Quad1Conf2]);
+          CurrCell->Refine(RefLevel);
+          break;
+        case 274:
+          CurrCell->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + Quad1Conf3]);
+          CurrCell->Refine(RefLevel);
+          break;
+        case 276:
+          CurrCell->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + Quad1Conf0]);
+          CurrCell->Refine(RefLevel);
+          break;
+        case 280:
+          CurrCell->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + Quad1Conf1]);
+          CurrCell->Refine(RefLevel);
+          break;
+        case 291:
+          CurrCell->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + Quad2Conf1]);
+          CurrCell->Refine(RefLevel);
+          break;
+        case 293:
+          CurrCell->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + QuadBis0]);
+          CurrCell->Refine(RefLevel);
+          break;
+        case 294:
+          CurrCell->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + Quad2Conf2]);
+          CurrCell->Refine(RefLevel);
+          break;
+        case 297:
+          CurrCell->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + Quad2Conf0]);
+          CurrCell->Refine(RefLevel);
+          break;
+        case 298:
+          CurrCell->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + QuadBis1]);
+          CurrCell->Refine(RefLevel);
+          break;
+        case 300:
+          CurrCell->SetRefDesc(TDatabase::RefDescDB[N_SHAPES + Quad2Conf3]);
+          CurrCell->Refine(RefLevel);
+          break;
+        default:
+          if (clip > 512)
+          {
+            CurrCell->SetRegRefine();
+            CurrCell->Refine(RefLevel);
+          }
+          break;
+      }
     }
   }
-
   return 0;
 }
 

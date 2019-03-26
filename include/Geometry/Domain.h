@@ -23,6 +23,8 @@ class TDomain;
 #include <ParameterDatabase.h>
 class TJoint;
 
+template <int d> class RefinementStrategy;
+
 /** contains the boundary description, the virtual cell
     tree and macro grid */
 class TDomain
@@ -293,9 +295,16 @@ class TDomain
     /** @brief generate a 1-regular grid */
     int Gen1RegGrid();
     /** @brief refine the finest grid according the given indicator function */
-    int RefineByIndicator(DoubleFunct2D *Indicator);
-    /** @brief refine the finest grid if necessary in order to get a 
-        grid with conforming closures */
+    void RefineByIndicator(DoubleFunct2D *Indicator, bool conf_closure);
+    /** @brief refine the finest grid according to the marked cells in 
+     *  refinement strategy.
+     * @param[in] ConfClosure Do or don't do conforming closures 
+     */
+    template <int d>
+    void RefineByRefinementStrategy(RefinementStrategy<d>& strategy,
+                                    bool conf_closure);
+    /** @brief refine the finest grid if necessary in order to get a grid with
+     *  conforming closures */
     int MakeConfClosure();
 
     

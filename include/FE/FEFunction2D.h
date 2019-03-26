@@ -22,6 +22,8 @@
 #include <memory>
 
 class TAuxParam2D;
+template <int d> class ErrorEstimator;
+class BlockVector;
 #include <FESpace2D.h>
 //#include <AuxParam2D.h>
 
@@ -58,6 +60,12 @@ class TFEFunction2D
     TFEFunction2D(std::shared_ptr<const TFESpace2D> fespace2D,
                   const std::string& name, const std::string& description,
                   double *values, int length);
+    
+    /// @brief build a P0/Q0 fe function with values of the estimator on each 
+    /// cell. Since the TFEFunction2D does not manage the memory of its 
+    /// 'Values', here an additional BlockVector is needed. it is resized 
+    /// accordingly and must not be deleted before this TFEFunction2D.
+    TFEFunction2D(const ErrorEstimator<2>& estimator, BlockVector& values);
 
     /// Copy assignment operator. Shallow copy, as the
     /// FEFunction does not take any memory responsibility.
