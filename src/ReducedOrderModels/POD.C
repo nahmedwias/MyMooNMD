@@ -50,6 +50,15 @@ ParameterDatabase POD::default_pod_database()
          "basis. Besides default value, only 'l2' is possible at the moment.",
          {"euclidean", "L2"});
 
+  db.add("rom_init_regularized", false,
+         "This is the flag whether the the ROM initial condition should be regularized.",
+         {true,false});
+
+  db.add("differential_filter_width", 1.0,
+         "Filter width for the differential filter (Helmoltz equation) for the computation "
+         "of of the regularized ROM initial condition.",
+         0., 10.);
+
   // Merge with snapshots database needed to get the path of the snapshots
   db.merge(SnapshotsCollector::default_snapshots_database(), true);
 

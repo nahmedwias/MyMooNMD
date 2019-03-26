@@ -17,6 +17,10 @@ void TCDMass(double Mult, double *coeff, double *param, double hK, double**OrigV
              int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
 
 template <int d>
+void GradGrad(double Mult, double *coeff, double *param, double hK, double**OrigValues, 
+             int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
+
+template <int d>
 void TCDRhs(double Mult, double *coeff, double *param, double hK, double**OrigValues, 
              int *N_BaseFuncts, double ***LocMatrices, double **LocRhs);
 template <int d>

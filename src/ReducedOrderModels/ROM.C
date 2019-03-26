@@ -100,7 +100,7 @@ ublas::vector<double> ROM::reduce(double *full_vec)
   ublas::vector<double> red_vec;
   ublas::vector<double> tmp_vec(POD::length);
 
-  for (int i=0; i<POD::length; ++i)
+  for (int i=0; i < POD::length; ++i)
   {
     tmp_vec(i) = full_vec[i];
   }

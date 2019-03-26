@@ -49,6 +49,8 @@ enum class LocalAssembling_type
     Darcy, // stationary Darcy problem (mixed form)
     TCDStiffMassRhs,
     TCDMassOnly,
+      TCDGradGradOnly,
+      TCDRhsOnly,
     TCDStiffRhs,
     NSE3D_Linear,    /// Linear part of stationary Navier--Stokes in 3D
     NSE3D_NonLinear, /// Non-linear part of stationary Navier--Stokes in 3D
