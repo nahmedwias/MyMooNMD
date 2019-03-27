@@ -5,14 +5,16 @@
 # 2015/08/20 Clemens Bartsch: Rework to supply 2D and 3D library at once.
 #
 
-# Include header files. 
-include_directories("${CMAKE_SOURCE_DIR}/include/Parallel")
-
-list(APPEND PAR_SOURCES "${PROJECT_SOURCE_DIR}/src/Parallel/MeshPartition.C")
-list(APPEND PAR_SOURCES "${PROJECT_SOURCE_DIR}/src/Parallel/MeshPartitionInOut.C")  
-list(APPEND PAR_SOURCES "${PROJECT_SOURCE_DIR}/src/Parallel/MumpsWrapper.C")
-list(APPEND PAR_SOURCES "${PROJECT_SOURCE_DIR}/src/Parallel/ParFEMapper3D.C")
-list(APPEND PAR_SOURCES "${PROJECT_SOURCE_DIR}/src/Parallel/ParFECommunicator3D.C")
-
-list(APPEND PARMOON_SOURCES_2D ${PAR_SOURCES})
-list(APPEND PARMOON_SOURCES_3D ${PAR_SOURCES})
+if(_USING_MPI)
+  # Include header files. 
+  include_directories("${CMAKE_SOURCE_DIR}/include/Parallel")
+  
+  list(APPEND PAR_SOURCES "${PROJECT_SOURCE_DIR}/src/Parallel/MeshPartition.C")
+  list(APPEND PAR_SOURCES "${PROJECT_SOURCE_DIR}/src/Parallel/MeshPartitionInOut.C")  
+  list(APPEND PAR_SOURCES "${PROJECT_SOURCE_DIR}/src/Parallel/MumpsWrapper.C")
+  list(APPEND PAR_SOURCES "${PROJECT_SOURCE_DIR}/src/Parallel/ParFEMapper3D.C")
+  list(APPEND PAR_SOURCES "${PROJECT_SOURCE_DIR}/src/Parallel/ParFECommunicator3D.C")
+  
+  list(APPEND PARMOON_SOURCES_2D ${PAR_SOURCES})
+  list(APPEND PARMOON_SOURCES_3D ${PAR_SOURCES})
+endif(_USING_MPI)
