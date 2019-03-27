@@ -8,7 +8,11 @@
 #ifndef INCLUDE_MULTIGRID_DIRECTSMOOTHER_H_
 #define INCLUDE_MULTIGRID_DIRECTSMOOTHER_H_
 
+#ifdef _MPI
+#include <MumpsWrapper.h>
+#else
 #include <DirectSolver.h>
+#endif
 #include <Smoother.h>
 
 #include <memory>
