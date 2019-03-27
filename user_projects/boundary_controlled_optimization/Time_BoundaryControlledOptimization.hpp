@@ -45,6 +45,13 @@ class Time_BoundaryControlledOptimization
     ParameterDatabase db;
     /// @brief the size (dimension) of the control space
     unsigned n_control;
+    /// @brief some variables related to the control
+    /// (x,y directions for the moment)
+    unsigned n_components;
+    unsigned n_dof_per_component;
+    unsigned n_control_per_time_step;
+    mutable std::vector<int> control_index_x;
+    mutable std::vector<int> control_index_y;
     /// @brief the dofs which are to be controlled.
     /// These are the dofs of the space for each component, it is therefore
     /// n_control = 2*control_dofs.size() multiplied by the number of time steps
@@ -92,6 +99,12 @@ class Time_BoundaryControlledOptimization
     /// @brief counting how often derivatives are computed
     unsigned n_computation_derivative;
     
+    /// @brief initialize quantities related to the control 
+    /// (must be called at the end of the contructor)
+    void initialize_control();
+    /// @brief return the correct control indices, i.e. taking into account 
+    /// the number of components and time-dependency
+    void set_control_indices(int current_time_step) const;
     
     /// @brief apply the control and solve the (primal) pde
     ///

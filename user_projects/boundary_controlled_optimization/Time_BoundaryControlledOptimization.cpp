@@ -156,9 +156,11 @@ Time_BoundaryControlledOptimization<d>::tnse_primal_solution::tnse_primal_soluti
 template<int d>
 Time_BoundaryControlledOptimization<d>::Time_BoundaryControlledOptimization(
   const TDomain& domain, const ParameterDatabase& param_db)
- : db(default_BCO_database()), n_control(0), control_dofs(),
+ : db(default_BCO_database()), n_control(0), n_components(0), 
+   n_dof_per_component(0), n_control_per_time_step(0), 
+   control_index_x(), control_index_y(), control_dofs(),
    tnse_primal(domain, get_primal_database (param_db)),
-   tnse_adjoint( tnse_primal, get_adjoint_database(param_db)),
+   tnse_adjoint(tnse_primal, get_adjoint_database(param_db)),
    stokes_fe_vector(new BlockVector(tnse_primal.get_solution())),
    stokes_sol(
      new FEVectFunct(tnse_primal.get_velocity_space(), "stokes_sol", "",
@@ -283,25 +285,43 @@ Time_BoundaryControlledOptimization<d>::Time_BoundaryControlledOptimization(
 //     Output::print("control_dof ", e);
 //   }
 
+  // initialize the control size depending on input parameters
+  initialize_control();
+   
+  Output::print<3>("Created the Time_BoundaryControlledOptimization object, ",
+                   "n_control = ", n_control);
+}
+
+
+template<int d>
+void Time_BoundaryControlledOptimization<d>::initialize_control()
+{
+  bool depends_on_time  = db["control_depends_on_time"];
+  bool depends_on_space = db["control_depends_on_space"];
+  bool x_direction = db["control_in_x_direction"];
+  bool y_direction = db["control_in_y_direction"];
+  
   // Set the size of the control
   // minimum value: 1 (time- and space-INdependent)
   // maximum value: 2 * control_dofs.size()*n_time_steps (time- and space-dependent)
   n_control = 1;
-  if (db["control_depends_on_time"])
+  if (depends_on_time)
     n_control *= n_time_steps_;
 
-  int n_components = 0;
-  if (db["control_in_x_direction"])
+  n_components = 0;
+  if (x_direction)
     n_components++;
-  if (db["control_in_y_direction"])
+  if (y_direction)
     n_components++;
 
-  auto n_dof_per_component = db["control_depends_on_space"] ? control_dofs.size() : 1;
-  n_control *= n_components*n_dof_per_component;
+  n_dof_per_component = depends_on_space ? control_dofs.size() : 1;
+  n_control_per_time_step = n_components * n_dof_per_component;
 
+  n_control *= n_control_per_time_step;  
   control_old = std::vector<double>(n_control, 0.0);
-  Output::print<3>("Created the Time_BoundaryControlledOptimization object, ",
-                   "n_control = ", n_control);
+  
+  control_index_x.resize(control_dofs.size());
+  control_index_y.resize(control_dofs.size());
 }
 
 template<int d>
@@ -314,7 +334,9 @@ double Time_BoundaryControlledOptimization<d>::compute_functional_and_derivative
              " of the control space");
   }
   ++n_calls;
-  Output::print<1>("Call to 'compute_functional_and_derivative' ", n_calls);
+  Output::print<1>("\n#########################################"
+                   "\nCall to 'compute_functional_and_derivative' ", n_calls,
+                   "\n#########################################"); 
   if(n_calls > 1)
   {
     double norm_diff_control = std::sqrt(
@@ -328,13 +350,11 @@ double Time_BoundaryControlledOptimization<d>::compute_functional_and_derivative
   }
   std::copy(x, x+n, control_old.begin());
   Output::print<2>("Control vector (", n, " dofs):");
-  auto n_dof_per_component = control_dofs.size();
-  auto n_time_steps = n_control / (2*n_dof_per_component);
-  for(auto i = 0u; i < n_time_steps; ++i)
+  for(auto i = 0u; i < n_time_steps_; ++i)
   {
     for(auto j = 0u; j < n_dof_per_component; ++j)
     {
-    Output::print<5>("Time step i=", i, " x[i]=", x[j+i*2*n_dof_per_component],
+    Output::print<3>("Time step i=", i, " x[i]=", x[j+i*2*n_dof_per_component],
                   " y[i]=", x[j+i*2*n_dof_per_component+n_dof_per_component]);
     }
   }
@@ -414,6 +434,7 @@ void Time_BoundaryControlledOptimization<d>::apply_control_and_solve(const doubl
                                       tnse_primal.get_velocity(),tnse_primal.get_pressure());
 
   tnse_primal.assemble_initial_time();
+  impose_control_in_rhs_and_sol(x, tss.current_step_); // to overwrite assembled rhs values
   tnse_primal.output();
   LoopInfo loop_info_time("time loop");
   loop_info_time.print_time_every_step = true;
@@ -432,8 +453,6 @@ void Time_BoundaryControlledOptimization<d>::apply_control_and_solve(const doubl
     Output::print("\nCURRENT TIME: ", TDatabase::TimeDB->CURRENTTIME);
 
     tnse_primal.assemble_matrices_rhs(0);
-
-    // apply control x
     impose_control_in_rhs_and_sol(x,tss.current_step_);
 
     LoopInfo loop_info("nonlinear");
@@ -457,7 +476,7 @@ void Time_BoundaryControlledOptimization<d>::apply_control_and_solve(const doubl
         continue;
 
       tnse_primal.assemble_matrices_rhs(i+1);
-
+      impose_control_in_rhs_and_sol(x,tss.current_step_);
     }
     // save solution for later use (cost functional and adjoint problem)
     tnse_primal_solutions_.emplace_back(tnse_primal.get_solution(),tss.current_step_,
@@ -470,51 +489,57 @@ void Time_BoundaryControlledOptimization<d>::apply_control_and_solve(const doubl
 
 template<int d>
 void Time_BoundaryControlledOptimization<d>::impose_control_in_rhs_and_sol(const double* x,
-                                                                        int current_time_step){
+                                                                        int current_time_step)
+{
   auto& rhs = this->tnse_primal.get_rhs_from_time_disc();
   auto& sol = this->tnse_primal.get_solution();
+  auto& old_sol = this->tnse_primal.get_old_solution();
   int length = rhs.length(0);
 
-  bool depends_on_time  = db["control_depends_on_time"];
-  bool depends_on_space = db["control_depends_on_space"];
-  bool x_direction = db["control_in_x_direction"];
-  bool y_direction = db["control_in_y_direction"];
-
-  int n_components = 0;
-  if (x_direction)
-    n_components++;
-  if (y_direction)
-    n_components++;
-  auto n_dof_per_component = depends_on_space ? control_dofs.size() : 1;
-  auto n_control_per_time_step = n_components * n_dof_per_component;
-
-  int time_index = depends_on_time ? current_time_step*n_control_per_time_step : 0;
+  //adjust control indices according to space- and time-dependency (see input parameters)
+  set_control_indices(current_time_step); 
 
   for(auto i = 0u; i < control_dofs.size(); ++i)
   {
-    int control_index = time_index;
-    if(depends_on_space)
-      control_index += i;
+    rhs[control_dofs[i]] = db["control_in_x_direction"] ? x[control_index_x[i]] : 0.;
+    sol[control_dofs[i]] = db["control_in_x_direction"] ? x[control_index_x[i]] : 0.;
+    old_sol[control_dofs[i]] = db["control_in_x_direction"] ? x[control_index_x[i]] : 0.;
 
-    if (x_direction && control_index >= n_control)
-          ErrThrow("ERROR", control_index, " ", n_control);
-
-    rhs[control_dofs[i]] = x_direction ? x[control_index] : 0.;
-    sol[control_dofs[i]] = x_direction ? x[control_index] : 0.;
-
-    if(x_direction)
-      control_index += n_dof_per_component;
-
-    if (y_direction && control_index >= n_control)
-      ErrThrow("ERROR", control_index, " ", n_control);
-
-    rhs[control_dofs[i] + length] = y_direction ? x[control_index]: 0.;
-    sol[control_dofs[i] + length] = y_direction ? x[control_index]: 0.;
+    rhs[control_dofs[i] + length] = db["control_in_y_direction"] ? x[control_index_y[i]]: 0.;
+    sol[control_dofs[i] + length] = db["control_in_y_direction"] ? x[control_index_y[i]]: 0.;
+    old_sol[control_dofs[i] + length] = db["control_in_y_direction"] ? x[control_index_y[i]]: 0.;
 
     Output::print("Control_dofs x_component: i=",i, " in time step=", current_time_step,
                   " equals:", rhs[control_dofs[i]]);
     Output::print("Control_dofs y_component: i=", i, " in time step=",
     current_time_step, " equals:", rhs[control_dofs[i] + length]);
+   }
+//    if(n_calls >=2)
+//    {
+//      Output::print("EXITING AT SECOND CALL TO FORWARD PROBLEM");
+//      exit(0);
+//    }
+}
+
+template<int d>
+void Time_BoundaryControlledOptimization<d>::set_control_indices(int current_time_step) const
+{
+  int time_index = db["control_depends_on_time"] ? current_time_step*n_control_per_time_step : 0;
+  
+  for(auto i = 0u; i < control_dofs.size(); ++i)
+  {
+    control_index_x[i] = time_index;
+    if(db["control_depends_on_space"])
+      control_index_x[i] += i;
+
+    if(db["control_in_x_direction"] && control_index_x[i] >= n_control)
+          ErrThrow("ERROR", control_index_x[i], " ", n_control);
+
+    if(db["control_in_y_direction"])
+      control_index_y[i] = control_index_x[i] + n_dof_per_component;
+
+    if(db["control_in_y_direction"] && control_index_y[i] >= n_control)
+      ErrThrow("ERROR", control_index_y[i], " ", n_control);
    }
 }
 
@@ -631,6 +656,9 @@ double Time_BoundaryControlledOptimization<d>::compute_functional_at_t(int time_
 template<int d>
 void Time_BoundaryControlledOptimization<d>::solve_adjoint_equation()
 {
+  Output::print<2>("\n#########################################"
+                   "\n#### STARTING SOLVE_ADJOINT_EQUATION ####"
+                   "\n#########################################"); 
   // make sure Dirichlet rows are handled differently (1e30 on the diagonal)
   TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE = 1;
   

@@ -58,8 +58,8 @@ void set_ref_sol(int test_case,
       break;
     case 3: // test 3 - tbco with gradient-free LN_COBYLA (algo 25)
       // the max number of iterations 12 is reached. At this iteration, the solution should be:
-      reference_solution[0] = 382.8958748; // min cost functional
-      reference_solution[1] = 1.271036577; // norm of control vector
+      reference_solution[0] = 383.0113357; // min cost functional
+      reference_solution[1] = 1.271266404; // norm of control vector
       // note1: by having nl iterations long enough, the solution is similar
       // to stationary
       // note2: the cost functional is not comparable to stationary
@@ -70,8 +70,8 @@ void set_ref_sol(int test_case,
       // note4: control dependent on space, but constant in time
       break;
     case 4: // the max number of iterations 9 is reached. At this iteration, the solution should be:
-      reference_solution[0] = 392.325423; // min cost functional
-      reference_solution[1] = 1.25567595; // norm of control vector
+      reference_solution[0] = 392.3244362; // min cost functional
+      reference_solution[1] = 1.255678231; // norm of control vector
       // note1: by having nl iterations long enough,
       // the solution is similar to stationary
       break;
