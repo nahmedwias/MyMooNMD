@@ -82,20 +82,20 @@ endif()
 
 # If we want global compile flags to reach the subdirectories, we have to 
 # run the following includes AFTER setting global flags.
-include(cmake/sources_rom.cmake)
 include(cmake/sources_assembleroutines.cmake)
 include(cmake/sources_assembleroutinessaddle.cmake)
 include(cmake/sources_examples.cmake)
 include(cmake/sources_fe.cmake)
 include(cmake/sources_general.cmake)
 include(cmake/sources_geometry.cmake)
+include(cmake/sources_matrix.cmake)
 include(cmake/sources_multigrid.cmake)
 include(cmake/sources_parallel.cmake)
 include(cmake/sources_quadformulas.cmake)
 include(cmake/sources_refinement.cmake)
+include(cmake/sources_rom.cmake)
 include(cmake/sources_solver.cmake)
 include(cmake/sources_system.cmake)
-include(cmake/sources_matrix.cmake)
 include(cmake/sources_timediscroutines.cmake)
 # include(cmake/sources_pbe.cmake)
 
