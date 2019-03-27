@@ -1106,6 +1106,7 @@ void TDomain::RefineByRefinementStrategy(RefinementStrategy<d>& strategy,
       collection->GetCell(k)->SetRegRefine();
     }
   }
+  delete collection;
   
   if(conf_closure)
   { 
