@@ -79,8 +79,6 @@
 #include <FEMatrix.h>
 #include <FESpace.h>
 
-#include <MumpsWrapper.h> //for friend method
-
 #ifdef _MPI
 class TParFECommunicator3D;
 #endif

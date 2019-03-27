@@ -16,6 +16,7 @@
 #include "LocalProjection.h"
 #ifdef _MPI
  #include "ParFECommunicator3D.h"
+ #include "MumpsWrapper.h"
 #endif
 
 

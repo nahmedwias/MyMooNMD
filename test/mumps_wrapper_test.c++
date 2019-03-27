@@ -19,6 +19,7 @@
 #include <FEDatabase3D.h>
 #include <FESpace3D.h>
 #include <Domain.h>
+#include "MumpsWrapper.h"
 #include <MeshPartition.h>
 #include <MainUtilities.h>
 #include <ParFECommunicator3D.h>
