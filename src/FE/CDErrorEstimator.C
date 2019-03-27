@@ -592,6 +592,7 @@ void CDErrorEstimator<d>::estimate(const Example_CD & example,
   this->currentCollection = coll;
 
   this->eta_K.resize(coll->GetN_Cells());
+  this->maximal_local_error = 0.;
 
   // array of pointers holding quad point -> derivatives
   std::vector<double *> derivativesPerQuadPoint;
@@ -687,7 +688,7 @@ void CDErrorEstimator<d>::estimate(const Example_CD & example,
   auto n_used_elements = fe_space->GetN_UsedElements();
 
   // store used finite elements
-  std::unique_ptr<FE2D> UsedElements{new FE2D[n_used_elements]};
+  std::vector<FE2D> UsedElements(n_used_elements);
   {
     std::vector<int> Used = std::vector<int>(N_FEs2D);
     auto n = fe_space->GetN_UsedElements();
@@ -701,13 +702,12 @@ void CDErrorEstimator<d>::estimate(const Example_CD & example,
     for(auto i = 0; i < N_FEs2D; i++)
       if (Used[i]) N_UsedElements++;
 
-    auto ptr = UsedElements.get();
     size_t j = 0;
     for(auto i = 0; i < N_FEs2D; i++)
     {
       if(Used[i])
       {
-        ptr[j] = (FE2D) i;
+        UsedElements[j] = (FE2D) i;
         j++;
       }
     }
@@ -720,7 +720,7 @@ void CDErrorEstimator<d>::estimate(const Example_CD & example,
   int N_Points1D;
   for(auto i = 0; i < n_used_elements; i++)
   {
-    FE2D usedElement = UsedElements.get()[i];//fe_space->GetUsedElements()[i];
+    FE2D usedElement = UsedElements.at(i);//fe_space->GetUsedElements()[i];
     QuadFormula1D qf = TFEDatabase2D::GetQFLineFromDegree(2 * TFEDatabase2D::GetPolynomialDegreeFromFE2D(usedElement));
     TQuadFormula1D *quadFormula = TFEDatabase2D::GetQuadFormula1D(qf);
     const double *weights1D, *zeta;
@@ -743,13 +743,12 @@ void CDErrorEstimator<d>::estimate(const Example_CD & example,
     BaseFunct2D baseFunct2D = baseFunctions[usedElement];
     TBaseFunct2D *bf = TFEDatabase2D::GetBaseFunct2D(baseFunct2D);// get base functions
     BF2DRefElements bf2Drefelements = bf->GetRefElement();
-    auto used_ptr = UsedElements.get();
     int baseFunct_loc = 0;
     {
       int j;
       for(j = 0; j < n_used_elements; j++)
       {
-        if((int) baseFunct2D == (int) used_ptr[j])
+        if((int) baseFunct2D == (int) UsedElements[j])
         {
           break;
         }
@@ -910,8 +909,8 @@ void CDErrorEstimator<d>::estimate(const Example_CD & example,
       {
         TDatabase::ParamDB->INTERNAL_VERTEX_X[3] = -4711;
       }
-      TDatabase::ParamDB->INTERNAL_HK_CONVECTION = -1;
     }
+    TDatabase::ParamDB->INTERNAL_HK_CONVECTION = -1; // reset for every cell
 
 
     double result = calculateEtaK(cell, fe_function, *coll, example,
@@ -923,10 +922,10 @@ void CDErrorEstimator<d>::estimate(const Example_CD & example,
 
     this->eta_K[cellIdx] = result;
     this->estimated_global_error[int(estimatorType)] += result;
-    this->maximal_local_error =
-     result > this->maximal_local_error ? result : this->maximal_local_error;
+    this->maximal_local_error = std::max(result, this->maximal_local_error);
   } // end loop over cells
-  this->estimated_global_error[int(estimatorType)] = std::sqrt(this->estimated_global_error[int(estimatorType)]);
+  this->estimated_global_error[int(estimatorType)] 
+    = std::sqrt(this->estimated_global_error[int(estimatorType)]);
   this->maximal_local_error = std::sqrt(this->maximal_local_error);
 }
 

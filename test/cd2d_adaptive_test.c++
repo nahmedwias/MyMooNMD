@@ -163,13 +163,13 @@ void tests_on_triangles(ParameterDatabase& db)
   std::array<double, 4> errors;
 
   Output::print("\nstarting with P1");
-  errors = {{ 0.47720213058287, 4.0718514609287, 0.15174882324829,
-              1.0245077300949 }};
+  errors = {{ 0.47784752238546, 4.1491718167438, 0.14237859736407,
+              1.0217899951186 }};
   check_cd2d(db, 1, errors);
   
   Output::print("\nstarting with P2");
-  errors = {{ 0.47835418898307, 4.1430089242609, 0.13810433523118,
-              1.0941493943193 }};
+  errors = {{ 0.47843700715078, 4.1949720830524, 0.13830367367314,
+              1.1101098542477 }};
   check_cd2d(db, 2, errors);
 }
 
