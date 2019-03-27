@@ -10,7 +10,6 @@
 #include <FEDatabase3D.h>
 #include "ConvectionDiffusion.h"
 #include <Example_CD3D.h>
-#include <MeshPartition.h>
 #include <Chrono.h>
 
 #include <sys/stat.h>
