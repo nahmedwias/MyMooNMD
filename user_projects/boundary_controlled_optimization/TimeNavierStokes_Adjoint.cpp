@@ -48,7 +48,8 @@ void tnse_adjoint::zero_solution(double, double ,
 template<int d>
 TimeNavierStokes_Adjoint<d>::TimeNavierStokes_Adjoint(const TimeNavierStokes<d>& tnse,
                              const ParameterDatabase& param_db)
- : TimeNavierStokes<d>(tnse) // copy constructor
+ : TimeNavierStokes<d>(tnse), // copy constructor
+   internal_step_counter(0)
 {
   // copy remaining parts
   this->TimeNavierStokes<d>::db.merge(param_db, false);
@@ -71,6 +72,8 @@ TimeNavierStokes_Adjoint<d>::TimeNavierStokes_Adjoint(const TimeNavierStokes<d>&
   this->TimeNavierStokes<d>::outputWriter.add_fe_vector_function(&this->get_velocity());
   this->TimeNavierStokes<d>::outputWriter.add_fe_function(&this->get_pressure());
   this->TimeNavierStokes<d>::solver = Solver<BlockFEMatrix, BlockVector>(param_db);
+  tnse_adjoint::cost_functional_weights = this->db["cost_functional"];
+  tnse_adjoint::restricted_curl_functional = this->db["restricted_curl_functional"];
 }
 
 template<int d>
@@ -98,19 +101,7 @@ void TimeNavierStokes_Adjoint<d>::assemble_initial_time(const FEVectFunct& u,
     
     // copy nonactives
     s.solution.copy_nonactive(s.rhs);
-
-  /** After copy_nonactive, the solution vectors needs to be Comm-updated in 
-   * MPI-case in order to be consistently saved. It is necessary that the vector
-   * is consistently saved because it is the only way to ensure that its
-   * multiplication with an inconsistently saved matrix (multiplication which
-   * appears in the defect and rhs computations) give the correct results. When
-   * we call copy_nonactive in MPI-case, we have to remember the following: it
-   * can happen that some slave ACTTIVE DoFs are placed in the block of
-   * NON-ACTIVE DoFs (because they are at the interface between processors).
-   * Doing copy_nonactive changes then the value of these DOFs,although they are
-   * actually active. That's why we have to update the values so that the vector
-   * becomes consistent again.
-   */
+  /** After copy_nonactive, the solution vectors needs to be Comm-updated */
 #ifdef _MPI
   for(int i = 0; i < d; ++i)
   {
@@ -164,6 +155,35 @@ void TimeNavierStokes_Adjoint<d>::solve()
 }
 
 template<int d>
+void TimeNavierStokes_Adjoint<d>::set_time_variables(bool initialize)
+{
+  TimeDiscretization& tss = this->get_time_stepping_scheme();
+  if(initialize)
+  {
+    internal_step_counter = 0; // resetting it in case of a new call to solve_adjoint...
+    tss.current_time_ = tss.get_end_time();
+    tss.current_step_ = tss.get_end_time()/tss.get_step_length(); // last step first / backward in time
+    tss.set_time_disc_parameters();
+    TDatabase::TimeDB->CURRENTTIME = tss.get_end_time();
+  }
+  else
+  {   
+    internal_step_counter++;
+    double tau = this->db["time_step_length"];
+    tss.current_time_ -= tau;
+    tss.current_step_--;
+    tss.set_time_disc_parameters();
+    TDatabase::TimeDB->CURRENTTIME -= tau;
+    if(tss.current_time_ <= 1e-10)
+    {
+      tss.current_time_ = 0;
+      TDatabase::TimeDB->CURRENTTIME = 0;
+    }
+    Output::print("\nCURRENT TIME: ", TDatabase::TimeDB->CURRENTTIME);
+  }
+}
+
+template<int d>
 void TimeNavierStokes_Adjoint<d>::assemble_adjoint_terms(const FEVectFunct& u,
                                                         const FEFunction& p)
 {
@@ -188,8 +208,8 @@ void TimeNavierStokes_Adjoint<d>::assemble_adjoint_terms(const FEVectFunct& u,
   // assemble additional terms, which depend on the primal solution (u,p)
   // what follows is basically a wrapper to call Assemble2D or 3D
   this->systems.front().rhs.reset();
-  auto n_fe_spaces = 1;
-  const FESpace* fe_spaces[1]{v_space};
+  const int n_fe_spaces = 2;
+  const FESpace* fe_spaces[n_fe_spaces]{v_space, p_space};
   
   std::vector<std::shared_ptr<FEMatrix>> blocks = this->TimeNavierStokes<d>::systems.front().matrix.get_blocks_uniquely(
 #ifdef __2D__
@@ -199,12 +219,10 @@ void TimeNavierStokes_Adjoint<d>::assemble_adjoint_terms(const FEVectFunct& u,
 #endif
   ;
   auto n_sq_mat = d*d;
-  SquareMatrixD* sq_mat[n_sq_mat];
-  for(int i = 0, j = 0; i < d*d; ++i, ++j)
+  std::vector<SquareMatrixD*> sq_mat(n_sq_mat);
+  for(int i = 0; i < d*d; ++i)
   {
-    if(i%d == 0 && i > 0)
-      j++;
-    sq_mat[i] = reinterpret_cast<SquareMatrixD*>(blocks[j].get());
+    sq_mat[i] = reinterpret_cast<SquareMatrixD*>(blocks[i].get());
   }
   
   // reset A blocks
@@ -242,7 +260,7 @@ void TimeNavierStokes_Adjoint<d>::assemble_adjoint_terms(const FEVectFunct& u,
 
   //======================================================================= 
   // set up custom LocalAssembling object and assemble
-  int n_terms = d+1;
+  int n_terms = d+2;
   int N_FEValues = d*d+d;
   
 #ifdef __2D__
@@ -291,7 +309,7 @@ void TimeNavierStokes_Adjoint<d>::assemble_adjoint_terms(const FEVectFunct& u,
 #else //__3D__
   Assemble3D(
 #endif
-    n_fe_spaces, fe_spaces, n_sq_mat, sq_mat, n_rect_mat, rect_mat,
+    n_fe_spaces, fe_spaces, n_sq_mat, sq_mat.data(), n_rect_mat, rect_mat,
              n_rhs, rhs, fe_rhs, boundary_conditions,
              non_const_bound_values, la);
   
