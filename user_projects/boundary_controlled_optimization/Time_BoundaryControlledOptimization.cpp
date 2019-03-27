@@ -436,9 +436,7 @@ void Time_BoundaryControlledOptimization<d>::apply_control_and_solve(const doubl
   tnse_primal.assemble_initial_time();
   impose_control_in_rhs_and_sol(x, tss.current_step_); // to overwrite assembled rhs values
   tnse_primal.output();
-  LoopInfo loop_info_time("time loop");
-  loop_info_time.print_time_every_step = true;
-  loop_info_time.verbosity_threshold = 1;
+  LoopInfo loop_info_time("time loop", true, false, 1);
   int linear_iteration=0;
 
   // solve the primal system, time loop
@@ -455,9 +453,7 @@ void Time_BoundaryControlledOptimization<d>::apply_control_and_solve(const doubl
     tnse_primal.assemble_matrices_rhs(0);
     impose_control_in_rhs_and_sol(x,tss.current_step_);
 
-    LoopInfo loop_info("nonlinear");
-    loop_info.print_time_every_step = true;
-    loop_info.verbosity_threshold = 1;
+    LoopInfo loop_info("nonlinear", true, true, 1);
     for(unsigned int i=0;; i++)
     {
       if(tnse_primal.stop_it(i))
@@ -662,13 +658,7 @@ void Time_BoundaryControlledOptimization<d>::solve_adjoint_equation()
   // make sure Dirichlet rows are handled differently (1e30 on the diagonal)
   TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE = 1;
   
-  Output::print<2>("adjoint solve");
-  TimeDiscretization& tss = tnse_adjoint.get_time_stepping_scheme();
-  tss.current_step_ = n_time_steps_; // last step first / backward in time
-  tss.set_time_disc_parameters();
-
-  {
-    // the "initial" (t=T) condition is zero unless the objective has a term
+  { // the "initial" (t=T) condition is zero unless the objective has a term
     // involving u(T)
     Output::info<5>("Initial Solution", "Interpolating initial solution from example.");
     for(int i = 0; i < d; ++i)
@@ -681,29 +671,22 @@ void Time_BoundaryControlledOptimization<d>::solve_adjoint_equation()
     p.Interpolate(tnse_adjoint.get_example().get_initial_cond(d));
   }
 
-  auto final_forward_solution = tnse_primal_solutions_.at(
-    tnse_primal.get_time_stepping_scheme().current_step_);
+  TimeDiscretization& tss = tnse_adjoint.get_time_stepping_scheme();
+  tnse_adjoint.set_time_variables(true); // true = initialization
+  
+  auto &final_forward_solution = tnse_primal_solutions_.at(tss.current_step_);
+
   tnse_adjoint.assemble_initial_time(final_forward_solution.u_at_timestep_t_,
                                      final_forward_solution.p_at_timestep_t_);
   tnse_adjoint.output();
-  double end_time = 0.;
-  TDatabase::TimeDB->CURRENTTIME = tnse_primal.get_time_stepping_scheme().get_end_time();
-  LoopInfo loop_info_time("time loop");
-  loop_info_time.print_time_every_step = true;
-  loop_info_time.verbosity_threshold = 1;
-  int linear_iteration=0;
+  LoopInfo loop_info_time("time loop", true, false, 1);
 
   // solve the primal system, time loop
-  while(tss.current_time_ > end_time + 1e-10)
+  while(tss.current_time_ > 0. + 1e-10)
   {
-    tss.current_step_--;
-    // set the time parameters
-    tss.set_time_disc_parameters();
-    double tau = tnse_adjoint.get_db()["time_step_length"];
-    TDatabase::TimeDB->CURRENTTIME -= tau;
-    Output::print("\nCURRENT TIME: ", TDatabase::TimeDB->CURRENTTIME);
+    tnse_adjoint.set_time_variables();
 
-    auto forward_solution = tnse_primal_solutions_.at(tss.current_step_);
+    auto &forward_solution = tnse_primal_solutions_.at(tss.current_step_);
     tnse_adjoint.assemble_matrices_rhs(forward_solution.u_at_timestep_t_,
                                        forward_solution.p_at_timestep_t_);
 
