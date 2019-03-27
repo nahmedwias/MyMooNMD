@@ -132,6 +132,8 @@ class TimeNavierStokes
     { return this->systems.front().solution; }
     BlockVector & get_solution()
     { return this->systems.front().solution; }
+    BlockVector & get_old_solution()
+    { return this->systems.front().solution_m1; }
     unsigned int get_size() const
     { return this->systems.front().solution.length(); }
     const Example_TimeNSE & get_example() const
