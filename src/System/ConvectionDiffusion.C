@@ -4,15 +4,16 @@
 #include "Domain.h"
 #include "LocalAssembling.h"
 #include "Multigrid.h"
-#include "AlgebraicFluxCorrection.h"
 #ifdef __2D__
  #include "Assemble2D.h"
  #include "SquareMatrix2D.h"
  #include "AuxParam2D.h"
+ #include "Example_CD2D.h"
 #else
  #include "Assemble3D.h"
  #include "SquareMatrix3D.h"
  #include "AuxParam3D.h"
+ #include "Example_CD3D.h"
 #endif
 #ifdef _MPI
  #include "ParFECommunicator3D.h"
@@ -31,8 +32,6 @@ ParameterDatabase ConvectionDiffusion<d>::get_default_cd_database()
   
   // a default output database - needed here as long as there's no class handling the output
   db.merge(ParameterDatabase::default_output_database(), true);
-  // a default afc database
-  db.merge(AlgebraicFluxCorrection::default_afc_database(), true);
   // default local assembling database
   db.merge(LocalAssembling<d>::default_local_assembling_database(), true);
 
@@ -147,26 +146,6 @@ void ConvectionDiffusion<d>::set_parameters()
     ErrThrow("Ansatz order 0 is not used in convection diffusion "
              "reaction problems! (Vanishing convection and diffusion term).");
   }
-  
-  //////////////// Algebraic flux correction ////////////
-  if(!db["algebraic_flux_correction"].is("none"))
-  {//some kind of afc enabled
-    if(!db["algebraic_flux_correction"].is("fem-tvd"))
-    {
-      db["algebraic_flux_correction"].set("fem-tvd");
-      Output::print("Only kind of algebraic flux correction"
-          " for CD problems is FEM-TVD (fem-tvd).");
-    }
-    //make sure that galerkin discretization is used
-    if (!db["space_discretization_type"].is("galerkin"))
-    {//some other disctype than galerkin
-      db["space_discretization_type"] = "galerkin";
-      Output::warn<1>("Parameter 'space_discretization_type' changed to 'galerkin' "
-          "because Algebraic Flux Correction is enabled.");
-    }
-    // when using afc, create system matrices as if all dofs were active
-    TDatabase::ParamDB->INTERNAL_FULL_MATRIX_STRUCTURE = 1;
-  }
 }
 
 /* ************************************************************************* */
@@ -187,9 +166,7 @@ void ConvectionDiffusion<d>::output_problem_size_info() const
 /* ************************************************************************* */
 template<int d>
 void ConvectionDiffusion<d>::assemble()
-{
-  using SquareMatrixD = typename Template_names<d>::SquareMatrixD;
-  
+{  
   LocalAssembling_type laType = LocalAssembling_type::ConvDiff;
   // this loop has more than one iteration only in case of multigrid
   for(auto & s : systems)
@@ -199,42 +176,7 @@ void ConvectionDiffusion<d>::assemble()
     // create a local assembling object which is needed to assemble the matrix
     LocalAssembling<d> laObject(this->db, laType, &feFunctionPtr,
                                 example.get_coeffs());
-
-    // assemble the system matrix with given local assembling, solution and rhs
-    int n_fe_spaces = 1;
-    const FESpace * fe_space = s.fe_space.get();
-    auto * boundary_conditions = fe_space->get_boundary_condition();
-    int n_square_matrices = 1;
-    int n_rect_matrices = 0;
-    double * rhs_entries = s.rhs.get_entries();
-    int n_rhs = 1;
-    auto * non_const_bound_value = example.get_bd(0);
-
-    //fetch stiffness matrix as block
-    auto blocks = s.matrix.get_blocks_uniquely();
-    SquareMatrixD* block = reinterpret_cast<SquareMatrixD*>(blocks.at(0).get());
-    
-    // reset right hand side and matrix to zero
-    s.rhs.reset();
-    block->reset();
-    // and call the assmebling method
-#ifdef __3D__
-    Assemble3D(
-#else      
-    Assemble2D(
-#endif
-               n_fe_spaces, &fe_space, n_square_matrices, &block, 
-               n_rect_matrices, nullptr, n_rhs, &rhs_entries, &fe_space,
-               &boundary_conditions, &non_const_bound_value, laObject);
-    
-    // copy Dirichlet values from rhs to solution vector (this is not really
-    // necessary in case of a direct solver, but also algebraic flux correction
-    // assumes the solution has the correct Dirichlet dofs)
-    s.solution.copy_nonactive(s.rhs);
-  }
-  if(!db["algebraic_flux_correction"].is("none"))
-  {
-    do_algebraic_flux_correction();
+    call_assembling_routine(s, laObject);
   }
 }
 
@@ -330,49 +272,6 @@ void ConvectionDiffusion<d>::output(int i)
   } // if(this->db["compute_errors"])
 }
 
-/* ************************************************************************* */
-template<int d>
-void ConvectionDiffusion<d>::do_algebraic_flux_correction()
-{
-  for(auto & s : this->systems) // do it on all levels.
-  {
-    //determine which kind of afc to use
-    if(db["algebraic_flux_correction"].is("default") ||
-        db["algebraic_flux_correction"].is("fem-tvd"))
-    {
-      //get pointers/references to the relevant objects
-      auto& feSpace = *s.fe_space;
-      FEMatrix& one_block = *s.matrix.get_blocks_uniquely().at(0).get();
-      const std::vector<double>& solEntries = s.solution.get_entries_vector();
-      std::vector<double>& rhsEntries = s.rhs.get_entries_vector();
-
-      // fill a vector "neumannToDirichlet" with those rows that got
-      // internally treated as Neumann although they are Dirichlet
-      int firstDiriDof = feSpace.GetActiveBound();
-      int nDiri = feSpace.GetN_Dirichlet();
-
-      std::vector<int> neumToDiri(nDiri, 0);
-      std::iota(std::begin(neumToDiri), std::end(neumToDiri), firstDiriDof);
-
-      // apply FEM-TVD
-      AlgebraicFluxCorrection::fem_tvd_algorithm(
-          one_block,
-          solEntries,rhsEntries,
-          neumToDiri);
-
-      //...and finally correct the entries in the Dirchlet rows
-      AlgebraicFluxCorrection::correct_dirichlet_rows(one_block);
-      //...and in the right hand side, too, assum correct in solution vector
-      s.rhs.copy_nonactive(s.solution);
-    }
-    else
-    {
-      ErrThrow("The chosen algebraic flux correction scheme is unknown "
-               "to class ConvectionDiffusion<", d, ">.");
-    }
-  }
-}
-
 /** ************************************************************************ */
 template<int d>
 double ConvectionDiffusion<d>::get_L2_error() const
@@ -400,6 +299,45 @@ double ConvectionDiffusion<d>::get_L_inf_error() const
 {
   return this->errors[3];
 }
+
+/** ************************************************************************ */
+template<int d>
+void ConvectionDiffusion<d>::call_assembling_routine(SystemPerGrid& s, 
+						     LocalAssembling<d>& local_assem)
+{
+  // assemble the system matrix with given local assembling, solution and rhs
+  using SquareMatrixD = typename Template_names<d>::SquareMatrixD;
+  int n_fe_spaces = 1;
+  const FESpace * fe_space = s.fe_space.get();
+  auto * boundary_conditions = fe_space->get_boundary_condition();
+  int n_square_matrices = 1;
+  int n_rect_matrices = 0;
+  double * rhs_entries = s.rhs.get_entries();
+  int n_rhs = 1;
+  auto * non_const_bound_value = example.get_bd(0);
+  
+  //fetch stiffness matrix as block
+  auto blocks = s.matrix.get_blocks_uniquely();
+  SquareMatrixD* block = reinterpret_cast<SquareMatrixD*>(blocks.at(0).get());
+  
+  // reset right hand side and matrix to zero
+  s.rhs.reset();
+  block->reset();
+  // and call the assmebling method
+#ifdef __3D__
+    Assemble3D(
+#else      
+    Assemble2D(
+#endif
+      n_fe_spaces, &fe_space, n_square_matrices, &block,
+      n_rect_matrices, nullptr, n_rhs, &rhs_entries, &fe_space,
+      &boundary_conditions, &non_const_bound_value, local_assem);
+    // copy Dirichlet values from rhs to solution vector (this is not really
+    // necessary in case of a direct solver)
+    s.solution.copy_nonactive(s.rhs);
+    
+}
+
 
 #ifdef __3D__
 template class ConvectionDiffusion<3>;
