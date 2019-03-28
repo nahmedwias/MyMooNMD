@@ -1,6 +1,7 @@
 /**
- * @brief Main program for solving a 3D stationary scalar equation using ParMooN.
- * @author Sashikumaar Ganesan, Clemens Bartsch
+ * @brief Main program for solving a 3D stationary scalar equation using AFC 
+ *        in ParMooN.
+ * @author Sashikumaar Ganesan, Clemens Bartsch, Abhinav Jha
  *
  * Implementation started on 2015/01/23. Rework since 2015/10/19.
  *
@@ -8,7 +9,7 @@
 #include <Domain.h>
 #include <Database.h>
 #include <FEDatabase3D.h>
-#include "ConvectionDiffusion.h"
+#include "ConvectionDiffusion_AFC.h"
 #include <Example_CD3D.h>
 #include <Chrono.h>
 
@@ -84,18 +85,30 @@ int main(int argc, char* argv[])
 
   timer.restart_and_print("setup(domain, example, database)");
   // Construct the cd3d problem object.
-  ConvectionDiffusion<3> cd3d(domain, parmoon_db);
+  ConvectionDiffusion_AFC<3> cd3d(domain, parmoon_db);
   timer.restart_and_print("constructing CD3D object");
   
   //=========================================================================
   //Start the actual computations.
   //=========================================================================
 
-  cd3d.assemble(); // assemble matrix and rhs
+  cd3d.assemble(0); // assemble matrix and rhs
   timer.restart_and_print("Assembling");
   
-  cd3d.solve();    // solve the system
+  cd3d.solve(0);    // solve the system
   timer.restart_and_print("Solving");
+  if( cd3d.get_db()["algebraic_flux_correction"].is("afc") )
+  {//nonlinear loop necessary
+    size_t Max_It = cd3d.get_db()["afc_nonlinloop_maxit"];
+    for(unsigned int k = 1;; k++)
+    {
+      bool converged;
+      converged = cd3d.solve(k);
+
+      if ((converged)||(k>= Max_It))
+        break;
+    }
+  }
   
   cd3d.output();   // produce nice output
   timer.restart_and_print("output");

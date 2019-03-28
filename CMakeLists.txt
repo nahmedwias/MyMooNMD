@@ -28,6 +28,9 @@
 cmake_minimum_required(VERSION 3.5)
 
 project(ParMooN)
+enable_language(Fortran)
+include(FortranCInterface) 
+#get_filename_component (Fortran_COMPILER_NAME ${CMAKE_Fortran_COMPILER} gfortran)
 
 # determine the parallel type (see https://stackoverflow.com/a/39671055)
 list(APPEND _PAR_LIST "MPI" "OMPONLY" "HYBRID" "SEQUENTIAL")

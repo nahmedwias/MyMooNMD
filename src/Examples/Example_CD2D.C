@@ -1,4 +1,5 @@
 #include <Example_CD2D.h>
+#include <ConvectionDiffusion.h>
 
 #include <Database.h>
 #include <FEFunction2D.h>
@@ -31,6 +32,27 @@ namespace sharp_boundary_layer
 {
   #include "CD_2D/SharpBoundaryLayer.h"
 }
+
+namespace smooth_solution
+{
+  #include "CD_2D/Smooth.h"
+}
+
+namespace HMM1986
+{
+  #include "CD_2D/HMM1986.h"
+}
+
+namespace hump
+{
+  #include "CD_2D/hump.h"
+}
+
+namespace boundary_layer_known
+{
+  #include "CD_2D/boundary_layer_known.h"
+}
+
 
 Example_CD2D::Example_CD2D(const ParameterDatabase& user_input_parameter_db) 
  : Example2D(user_input_parameter_db)
@@ -98,6 +120,70 @@ Example_CD2D::Example_CD2D(const ParameterDatabase& user_input_parameter_db)
       problem_coefficients = sharp_boundary_layer::BilinearCoeffs;
 
       sharp_boundary_layer::ExampleFile();
+      break;
+      
+    case 4:
+      /** exact_solution */
+      exact_solution.push_back( smooth_solution::Exact );
+      
+      /** boundary condition */
+      boundary_conditions.push_back( smooth_solution::BoundCondition );
+      
+      /** boundary values */
+      boundary_data.push_back( smooth_solution::BoundValue );
+      
+      /** coefficients */
+      problem_coefficients = smooth_solution::BilinearCoeffs;
+      
+      smooth_solution::ExampleFile();
+      break;
+      
+    case 5:
+      /** exact_solution */
+      exact_solution.push_back( HMM1986::Exact );
+      
+      /** boundary condition */
+      boundary_conditions.push_back( HMM1986::BoundCondition );
+      
+      /** boundary values */
+      boundary_data.push_back( HMM1986::BoundValue );
+      
+      /** coefficients */
+      problem_coefficients = HMM1986::BilinearCoeffs;
+      
+      HMM1986::ExampleFile();
+      break;
+    
+    case 6:
+      /** exact_solution */
+      exact_solution.push_back( hump::Exact );
+      
+      /** boundary condition */
+      boundary_conditions.push_back( hump::BoundCondition );
+      
+      /** boundary values */
+      boundary_data.push_back( hump::BoundValue );
+      
+      /** coefficients */
+      problem_coefficients = hump::BilinearCoeffs;
+      
+      hump::ExampleFile();
+      break;
+    
+    case 7:
+      /** exact_solution */
+      exact_solution.push_back( boundary_layer_known::Exact );
+      
+      /** boundary condition */
+      boundary_conditions.push_back( boundary_layer_known::BoundCondition );
+      
+      /** boundary values */
+      boundary_data.push_back( boundary_layer_known::BoundValue );
+      
+      /** coefficients */
+      problem_coefficients = boundary_layer_known::BilinearCoeffs;
+      
+      boundary_layer_known::ExampleFile();
       break;
 
     default:

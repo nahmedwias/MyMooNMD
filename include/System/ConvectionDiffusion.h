@@ -20,6 +20,10 @@
 
 class TDomain;
 
+
+template<int d>
+class LocalAssembling;
+
 template<int d>
 class ConvectionDiffusion
 {
@@ -129,6 +133,16 @@ class ConvectionDiffusion
      * throws an exception.
      */
     void set_parameters();
+    
+    /**
+     * @brief assembles the RHS and system matrix
+     * 
+     * Earlier this was done in assemble function. But, now as CD_AFC is a 
+     * derived class of CD, this function is called from CD_AFC::assemble().
+     * Hence, this was seprated
+     */    
+    void call_assembling_routine(SystemPerGrid& s, 
+                                 LocalAssembling<d>& local_assem);
     
     /** @brief write some information (number of cells, dofs, ...) */
     void output_problem_size_info() const;
@@ -253,16 +267,6 @@ class ConvectionDiffusion
     //! Destructor.
     ~ConvectionDiffusion() = default;
 
-  private:
-    /**
-     * Apply an algebraic flux correction scheme to the assembled matrix.
-     * Should be called within the assemble routine, after the actual assembling
-     * has been performed with the INTERNAL_FULL_MATRIX_STRUCTURE switch on.
-     *
-     * Which afc algorithm is performed is determined by switching over
-     * ALGEBRAIC_FLUX_CORRECTION.
-     */
-    void do_algebraic_flux_correction();
 };
 
 #endif // __SYSTEM_CONVECTIONDIFFUSION_H__

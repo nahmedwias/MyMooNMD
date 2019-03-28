@@ -13,8 +13,9 @@
 #define __UPWIND3D__
 
 #include <SquareMatrix3D.h>
-#include <DiscreteForm3D.h>
 #include <FEFunction3D.h>
+
+template <int d> class LocalAssembling;
 
 /// Do upwinding for Navier--Stokes. TODO Understand and comment this.
 /// The method was freed form its global database dependency by setting the
@@ -30,7 +31,6 @@ void UpwindForNavierStokes3D(TSquareMatrix3D *sqmatrix, TFEFunction3D *u1,
                              int upwind_application = 0);
 
 void UpwindForConvDiff(TSquareMatrix3D *sqmatrix, double *RHS,
-                       TFESpace3D *fespace, TDiscreteForm3D
-                       *DiscreteForm);
+                       const TFESpace3D *fespace, const LocalAssembling<3>& la);
 
 #endif
