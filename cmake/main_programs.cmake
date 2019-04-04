@@ -8,7 +8,7 @@ macro(register_main_program name file_name space_dim)
   # Link in the required libraries.
   target_link_libraries(${name} PUBLIC 
                         parmoon_${space_dim}d_${PARMOON_PARALLEL_TYPE}
-                        ${_EXTERN_LIBRARIES})
+                        ${PARMOON_EXTERNAL_LIBRARIES})
   # create list of all main programs
   list(APPEND parmoon_main_programs ${name})
 endmacro(register_main_program)
@@ -23,7 +23,7 @@ endmacro(register_3d_main_program)
 
 ###############################################################################
 ### Standard 2D Programs (no MPI support in 2D) ###
-if(NOT _USING_MPI)
+if(NOT PARMOON_USING_MPI)
   register_2d_main_program(cd2d 2DPrograms/CD2D_ParMooN.C)
   register_2d_main_program(cd2d_afc 2DPrograms/CD2D_AFC_ParMooN.C)
   register_2d_main_program(darcy2d 2DPrograms/Darcy2D_ParMooN.C)
@@ -35,7 +35,7 @@ if(NOT _USING_MPI)
   register_2d_main_program(geo2mesh2d 2DPrograms/geo2mesh2d_ParMooN.C)
   register_2d_main_program(tcd2dpod 2DPrograms/TCD2D_POD_ParMooN.C)
   register_2d_main_program(tcd2drom 2DPrograms/TCD2D_ROM_ParMooN.C)
-endif(NOT _USING_MPI)
+endif(NOT PARMOON_USING_MPI)
 
 ###############################################################################
 ### Standard 3D Programs ###

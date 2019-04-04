@@ -63,7 +63,7 @@ TimeConvectionDiffusionPOD<d>::TimeConvectionDiffusionPOD(TCollection& coll,
     outputWriter(db)
 {
   // create directory db["pod_directory"]
-  std::string directory_name = this->db["pod_directory"].get<std::string>();
+  std::string directory_name = this->db["pod_directory"].value_as_string();
   mkdir(directory_name.c_str(), 0777);
 
 #ifdef __3D__

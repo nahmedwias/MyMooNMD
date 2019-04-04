@@ -31,6 +31,8 @@ class Preconditioner
      * here.
      */
     virtual void update() {};
+    
+    virtual ~Preconditioner() = default;
 };
 
 template <class Vector>
@@ -38,7 +40,7 @@ class NoPreconditioner : public Preconditioner<Vector>
 {
   public:
     
-    void apply(const Vector & z, Vector & r) const override
+    virtual void apply(const Vector & z, Vector & r) const override final
     { r = z; }
     
     /** @brief Method to use this preconditioner in FGMRES.
@@ -50,8 +52,10 @@ class NoPreconditioner : public Preconditioner<Vector>
      * @param z The right hand side of the preconditioning.
      * @param r The obtained vector.
      */
-    void apply(unsigned int i, unsigned int j, const Vector &z, Vector &r)
-      const;
+    virtual void apply(unsigned int i, unsigned int j, const Vector &z,
+                       Vector &r) const final;
+
+    virtual ~NoPreconditioner() = default;
 };
 
 

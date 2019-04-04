@@ -22,10 +22,9 @@
  * @author Clemens Bartsch
  */
 #ifdef _MPI
-extern "C"
-{
- #include "dmumps_c.h"
-}
+#include "all_defines_external_libraries.h"
+#ifdef PARMOON_WITH_MUMPS
+#include "dmumps_c.h"
 #include <mpi.h>
 #include <array>
 
@@ -144,4 +143,8 @@ int main(int argc, char* argv[])
   MPI_Finalize();
 
 }
-#endif
+
+#else
+int main(){}
+#endif // PARMOON_WITH_MUMPS
+#endif // _MPI

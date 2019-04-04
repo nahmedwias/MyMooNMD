@@ -52,8 +52,11 @@
 #ifndef __PETSCSOLVER__
 #define __PETSCSOLVER__
 
+#include "all_defines_external_libraries.h"
+#ifdef PARMOON_WITH_PETSC
 #include <petscksp.h> // defines type 'Mat' below and much more
 #include <petscpc.h> // defines type 'Mat' below and much more
+#endif // PARMOON_WITH_PETSC
 #include <ParameterDatabase.h>
 #include <vector>
 #include <memory>
@@ -70,7 +73,7 @@ class TParFECommunicator3D;
 class PETScSolver
 {
   public:
-	PETScSolver(const BlockFEMatrix& matrix, const ParameterDatabase& db);
+    PETScSolver(const BlockFEMatrix& matrix, const ParameterDatabase& db);
 
     /** @brief constructor: an internal copy is created and stored. Ready to 
      * solve.
@@ -101,6 +104,7 @@ class PETScSolver
     void solve(const BlockVector& rhs, BlockVector& solution);
     
   private:
+#ifdef PARMOON_WITH_PETSC
     /** @brief the matrix of the linear equation A*x=b, PETSc format */
     Mat petsc_mat;
     
@@ -113,7 +117,7 @@ class PETScSolver
     
     /// @brief PETSc linear solver object (Krylov subspace method)
     KSP ksp;
-    
+#endif // PARMOON_WITH_PETSC
 #ifdef _MPI
     std::vector<const TParFECommunicator3D*> comms_;
 #endif // _MPI

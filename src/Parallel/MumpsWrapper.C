@@ -15,6 +15,8 @@
 #include <mpi.h>
 #include <memory>
 
+#ifdef PARMOON_WITH_MUMPS
+
 //two of the used mumps job codes
 #define JOB_INIT -1
 #define JOB_END -2
@@ -826,4 +828,28 @@ void MumpsWrapper::check_input_matrix(const BlockMatrix& bmatrix)
 
 }
 
-#endif
+#else // PARMOON_WITH_MUMPS
+MumpsWrapper::MumpsWrapper(const BlockFEMatrix&, std::vector<double>)
+{
+  ErrThrow("ParMooN has been compiled without mumps, therefore a MumpsWrapper "
+           "can not be created.");
+}
+MumpsWrapper::MumpsWrapper(const BlockMatrix&,
+                           std::vector<const TParFECommunicator3D*>,
+                           std::vector<double>,
+                           std::vector<std::vector<int>>)
+{
+  ErrThrow("ParMooN has been compiled without mumps, therefore a MumpsWrapper "
+           "can not be created.");
+}
+MumpsWrapper::~MumpsWrapper()
+{
+}
+void MumpsWrapper::solve(const BlockVector&, BlockVector&)
+{
+  ErrThrow("ParMooN has been compiled without mumps, therefore "
+           "MumpsWrapper::solve can not be called.");
+}
+#endif // PARMOON_WITH_MUMPS
+
+#endif // _MPI

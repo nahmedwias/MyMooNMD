@@ -44,7 +44,7 @@ class Saddle_point_preconditioner : public Preconditioner<BlockVector>
                                          type t, const ParameterDatabase& db);
     
     /** @brief destructor, delete all allocated memory */
-    ~Saddle_point_preconditioner() = default;
+    virtual ~Saddle_point_preconditioner() = default;
     
     /** "brief update the members in this class after a change in the matrix
      * 
@@ -57,7 +57,7 @@ class Saddle_point_preconditioner : public Preconditioner<BlockVector>
     void update();
     
     /** @brief applying the preconditioner */
-    void apply(const BlockVector &z, BlockVector &r) const;
+    virtual void apply(const BlockVector &z, BlockVector &r) const final;
     
     /** @brief Method to apply the preconditioner in flexible gmres.
      *
@@ -68,7 +68,7 @@ class Saddle_point_preconditioner : public Preconditioner<BlockVector>
      * @param z The right hand side of the preconditioning
      * @param r The obtained vector
      */
-    void apply(int i, int j, const BlockVector &z, BlockVector &r) const;
+    virtual void apply(int i, int j, const BlockVector &z, BlockVector &r) const final;
 
     /* @brief get the augmentated system matrix in case of augmented Lagrangian preconditioner:
      * A_ij -> A_ij + gamma * B_i^T * W^{-1} * B_j */
