@@ -33,25 +33,25 @@ include(FortranCInterface)
 #get_filename_component (Fortran_COMPILER_NAME ${CMAKE_Fortran_COMPILER} gfortran)
 
 # determine the parallel type (see https://stackoverflow.com/a/39671055)
-list(APPEND _PAR_LIST "MPI" "OMPONLY" "HYBRID" "SEQUENTIAL")
+list(APPEND PARMOON_PARALLEL_TYPE_LIST "MPI" "OMPONLY" "HYBRID" "SEQUENTIAL")
 set(PARMOON_PARALLEL_TYPE "SEQUENTIAL" 
-    CACHE STRING "The used parallelism. Choose between ${_PAR_LIST}.")
+    CACHE STRING "The used parallelism. Choose between ${PARMOON_PARALLEL_TYPE_LIST}.")
 # set the allowed strings as property. This way (graphical) editors for the 
 # cache (CMakeCache.txt) can select only the allowed values
-set_property(CACHE PARMOON_PARALLEL_TYPE PROPERTY STRINGS ${_PAR_LIST})
-list(FIND _PAR_LIST ${PARMOON_PARALLEL_TYPE} _VALID_PAR)
+set_property(CACHE PARMOON_PARALLEL_TYPE PROPERTY STRINGS ${PARMOON_PARALLEL_TYPE_LIST})
+list(FIND PARMOON_PARALLEL_TYPE_LIST ${PARMOON_PARALLEL_TYPE} _VALID_PAR)
 if(_VALID_PAR EQUAL -1)
   message(FATAL_ERROR "Unknown PARMOON_PARALLEL_TYPE ${PARMOON_PARALLEL_TYPE}. "
-                      "Choose between ${_PAR_LIST}")
+                      "Choose between ${PARMOON_PARALLEL_TYPE_LIST}")
 endif()
 message(STATUS "Chosen parallel type is " ${PARMOON_PARALLEL_TYPE}.)
 
 # Set two auxiliary variables, which make the file better readable imho
 if("${PARMOON_PARALLEL_TYPE}" STREQUAL "MPI" OR "${PARMOON_PARALLEL_TYPE}" STREQUAL "HYBRID")
-  set(_USING_MPI TRUE)
+  set(PARMOON_USING_MPI TRUE)
 endif()
 if("${PARMOON_PARALLEL_TYPE}" STREQUAL "OMPONLY" OR "${PARMOON_PARALLEL_TYPE}" STREQUAL "HYBRID")
-  set(_USING_OMP TRUE)
+  set(PARMOON_USING_OMP TRUE)
 endif()
 
 # include all external libraries
@@ -63,7 +63,7 @@ IF(Boost_FOUND)
     MESSAGE("Boost includes located in: ${Boost_INCLUDE_DIRS}")
     MESSAGE("Boost libraries located in: ${Boost_LIBRARIES}")
     include_directories(${Boost_INCLUDE_DIRS})
-    list(APPEND _EXTERN_LIBRARIES ${Boost_LIBRARIES})
+    list(APPEND PARMOON_EXTERNAL_LIBRARIES ${Boost_LIBRARIES})
 ENDIF(Boost_FOUND)
 
 # turn on all warnings
@@ -76,8 +76,8 @@ add_compile_options(
   # MSVC warnings
   $<$<CXX_COMPILER_ID:MSVC>:"/W4">)
 
-add_compile_options($<$<BOOL:${_USING_MPI}>:-D_MPI>
-                    $<$<BOOL:${_USING_OMP}>:-D_OMP>)
+add_compile_options($<$<BOOL:${PARMOON_USING_MPI}>:-D_MPI>
+                    $<$<BOOL:${PARMOON_USING_OMP}>:-D_OMP>)
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   add_compile_options(-D__MAC64__) # how can we get rid of this?
 endif()
@@ -106,6 +106,7 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+
 # Define two static libraries. Each has its own precompiler flag (2D/3D).
 add_library(parmoon_2d_${PARMOON_PARALLEL_TYPE} STATIC ${PARMOON_SOURCES_2D})
 target_compile_definitions(parmoon_2d_${PARMOON_PARALLEL_TYPE} PUBLIC -D__2D__)
@@ -122,6 +123,11 @@ target_compile_definitions(parmoon_3d_${PARMOON_PARALLEL_TYPE} PUBLIC -D__3D__)
 include(cmake/main_programs.cmake)
 include(cmake/documentation_target.cmake)
 include(cmake/get_repository_information.cmake)
+###############################################################################
+# parmoon defines 
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/cmake/all_defines_external_libraries.h.in
+               ${CMAKE_CURRENT_BINARY_DIR}/config/all_defines_external_libraries.h)
+include_directories(${CMAKE_CURRENT_BINARY_DIR}/config/)
 
 ###############################################################################
 enable_testing()

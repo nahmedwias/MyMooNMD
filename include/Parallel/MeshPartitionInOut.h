@@ -1,8 +1,13 @@
 #ifndef INCLUDE_PARALLEL_MESH_PARTITION_IN_OUT_INCLUDED
 #define INCLUDE_PARALLEL_MESH_PARTITION_IN_OUT_INCLUDED
 
+#include "all_defines_external_libraries.h"
 #ifdef _MPI
-#include "metis.h" //for the id_x typedef
+#ifdef PARMOON_WITH_METIS
+#include <metis.h>  //for the id_x typedef
+#else // PARMOON_WITH_METIS
+typedef int32_t idx_t;
+#endif // PARMOON_WITH_METIS
 
 //forward declaration
 class TDomain;
@@ -28,6 +33,6 @@ namespace MeshPartitionInOut
 	void write_file(const TDomain& Domain, int size,
 	                int N_Cells, idx_t *Cell_Rank);
 }
-#endif
+#endif // _MPI
 
 #endif //INCLUDE_PARALLEL_MESH_PARTITION_IN_OUT_INCLUDED

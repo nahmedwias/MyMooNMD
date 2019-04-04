@@ -1,94 +1,127 @@
-# Set path to the external libraries which ship with ParMooN
-set(PARMOON_EXTLIB_PATH ${CMAKE_SOURCE_DIR}/EXT_LIB)
 # Set path to ParMooN package search modules.
-set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/Modules/PETSc)
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake/Modules/)
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/Modules/)
+
+# mandatory packages
+set(PARMOON_WITH_BLAS false)
+set(PARMOON_WITH_LAPACK false)
+# optional packages
+set(PARMOON_WITH_UMFPACK false)
+set(PARMOON_WITH_PARDISO false)
+set(PARMOON_WITH_MPI false)
+set(PARMOON_WITH_METIS false)
+set(PARMOON_WITH_PARMETIS false)
+set(PARMOON_WITH_MUMPS false)
+set(PARMOON_WITH_SCALAPACK false)
+set(PARMOON_WITH_PETSC false)
 
 
-# find PETSc
-# what we want is 'find_package(PETSc REQUIRED)' but with a custom error 
-# message. To do so we omit the 'REQUIRED' and then check for success by hand.
-set(PETSC_DIR CACHE STRING "The path to the directory to find PETSc in.")
-set(PETSC_ARCH CACHE STRING
-    "The directory (under PETSC_DIR) to find the compiled PETSc in.")
+
 find_package(PETSc)
-if(NOT PETSC_FOUND)
-  message(WARNING "could not find PETSc. This is essential for ParMooN.")
-  message(STATUS "If you don't have PETSc installed, then you can download "
-          "PETSc via ")
-  message(STATUS "    git clone -b maint https://bitbucket.org/petsc/petsc "
-          "petsc")
-  message(STATUS "into the subdirectory petsc (preferably outside of the ")
-  message(STATUS "ParMooN directory). Then in that directory you have to run ")
-  message(STATUS "the configure script. As an example try ")
-  message(STATUS "    ./configure --with-cc=gcc --with-cxx=g++ \
---with-fc=gfortran \
---with-debugging=0 COPTFLAGS='-O3 -march=native -mtune=native' \
-CXXOPTFLAGS='-O3 -march=native -mtune=native' \
-FOPTFLAGS='-O3 -march=native -mtune=native' \
---download-fblaslapack --download-openmpi --download-scalapack \
---download-mumps --download-metis --download-suitesparse --download-parmetis")
-  message(STATUS "In the end, the output of the configure script will tell you")
-  message(STATUS "the command you should call to compile all of PETSc together")
-  message(STATUS "with all its dependecies. Then you have to set PETSC_DIR and")
-  message(STATUS "PETSC_ARCH correctly within the CMakeCache of your ParMooN")
-  message(STATUS "build directory. They are now: ")
-  message(STATUS ${PETSC_DIR} " and " ${PETSC_ARCH})
-  message(STATUS "Please also read the documentation of PETSc for further")
-  message(STATUS "details")
-  message(FATAL_ERROR "ParMooN can not be compiled without PETSc.")
-endif(NOT PETSC_FOUND)
-set(PETSC_LIBS_PATH ${PETSC_DIR}/${PETSC_ARCH}/lib/)
-# the following makes all calls to 'include_directories' unnecessary for
-# libraries provided by PETSc. Also PETSc needs to find the header file 'mpi.h'
-# even in sequential mode (because it is compiled for MPI). With this line it 
-# can find it.
-include_directories(${PETSC_INCLUDES})
-
-
-function(check_if_lib_exists lib_name petsc_configure_flag)
-  string(FIND "${PETSC_LIBRARIES}" "${lib_name}" found)
-  if(found EQUAL -1)
-    message(FATAL_ERROR 
-            "${lib_name} not found in the PETSc libraries. You have to "
-            "configure PETSc with ${lib_name}, e.g.: "
-            "--download-${petsc_configure_flag}")
+if(${PETSC_FOUND})
+  list(APPEND PARMOON_EXTERNAL_LIBRARIES ${PETSC_LIBRARIES})
+  include_directories(${PETSC_INCLUDES})
+  set(PARMOON_WITH_PETSC true)
+  
+  # check for more libraries in petsc:
+  if("${PETSC_LIBRARIES}" MATCHES blas)
+    set(PARMOON_WITH_BLAS true)
+  endif("${PETSC_LIBRARIES}" MATCHES blas)
+  if("${PETSC_LIBRARIES}" MATCHES lapack)
+    set(PARMOON_WITH_LAPACK true)
+  endif("${PETSC_LIBRARIES}" MATCHES lapack)
+  if("${PETSC_LIBRARIES}" MATCHES umfpack
+     AND "${PETSC_LIBRARIES}" MATCHES suitesparseconfig
+     AND "${PETSC_LIBRARIES}" MATCHES amd
+     AND "${PETSC_LIBRARIES}" MATCHES cholmod
+     AND "${PETSC_LIBRARIES}" MATCHES colamd)
+    set(PARMOON_WITH_UMFPACK true)
   endif()
-endfunction(check_if_lib_exists)
+  if("${PETSC_LIBRARIES}" MATCHES mpi)
+    set(PARMOON_WITH_MPI true)
+    set(MPIEXEC ${PETSC_MPIEXEC})
+  endif("${PETSC_LIBRARIES}" MATCHES mpi)
+  if("${PETSC_LIBRARIES}" MATCHES metis)
+    set(PARMOON_WITH_METIS true)
+  endif("${PETSC_LIBRARIES}" MATCHES metis)
+  if("${PETSC_LIBRARIES}" MATCHES dmumps 
+     AND "${PETSC_LIBRARIES}" MATCHES mumps_common
+     AND "${PETSC_LIBRARIES}" MATCHES pord)
+    set(PARMOON_WITH_MUMPS true)
+  endif()
+  if("${PETSC_LIBRARIES}" MATCHES scalapack)
+    set(PARMOON_WITH_SCALAPACK true)
+  endif("${PETSC_LIBRARIES}" MATCHES scalapack)
+endif(${PETSC_FOUND})
 
+message(STATUS "done with FindPETSc, "
+               "blas: ${PARMOON_WITH_BLAS}, lapack: ${PARMOON_WITH_LAPACK}, "
+               "umfpack: ${PARMOON_WITH_UMFPACK}, mpi: ${PARMOON_WITH_MPI}, "
+               "metis: ${PARMOON_WITH_METIS}, mumps: ${PARMOON_WITH_MUMPS}, "
+               "scalapack: ${PARMOON_WITH_SCALAPACK}")
 
-check_if_lib_exists("blas" "fblaslapack")
-check_if_lib_exists("lapack" "fblaslapack")
-check_if_lib_exists("umfpack" "suitesparse")
-check_if_lib_exists("suitesparseconfig" "suitesparse")
-check_if_lib_exists("amd" "suitesparse")
-check_if_lib_exists("cholmod" "suitesparse")
-check_if_lib_exists("colamd" "suitesparse")
-if(_USING_MPI)
-  check_if_lib_exists("mpi" "openmpi")
-  check_if_lib_exists("metis" "metis")
-  check_if_lib_exists("parmetis" "parmetis")
-  check_if_lib_exists("dmumps" "mumps")
-  check_if_lib_exists("mumps_common" "mumps")
-  # Find a thread library. (Mumps needs this)
-  set(CMAKE_THREAD_PREFER_PTHREAD ON)
-  find_package(Threads REQUIRED)
-  # pord library (the sequential ordering tool which ships with mumps)
-  check_if_lib_exists("pord" "mumps")
-  check_if_lib_exists("scalapack" "scalapack")
-endif(_USING_MPI)
+if(NOT PARMOON_WITH_BLAS)
+  find_package(BLAS REQUIRED)
+  list(APPEND PARMOON_EXTERNAL_LIBRARIES ${BLAS_LIBRARIES})
+  set(PARMOON_WITH_BLAS true)
+  message(STATUS "blas found  ${BLAS_LIBRARIES}" )
+endif(NOT PARMOON_WITH_BLAS)
 
+if(NOT PARMOON_WITH_LAPACK)
+  find_package(LAPACK REQUIRED)
+  list(APPEND PARMOON_EXTERNAL_LIBRARIES ${LAPACK_LIBRARIES})
+  set(PARMOON_WITH_LAPACK true)
+  message(STATUS "lapack found  ${LAPACK_LIBRARIES}" )
+endif(NOT PARMOON_WITH_LAPACK)
 
+if(NOT PARMOON_WITH_MPI)
+  find_package(MPI)
+  list(APPEND PARMOON_EXTERNAL_LIBRARIES ${MPI_CXX_LIBRARIES})
+  include_directories(${MPI_CXX_INCLUDE_PATH})
+  set(PARMOON_WITH_MPI true)
+  message(STATUS "blas found  ${MPI_CXX_INCLUDE_PATH}  ${MPI_CXX_LIBRARIES}" )
+endif(NOT PARMOON_WITH_MPI)
 
-# When using OpenMP, find it and use the module's output.
-if(_USING_OMP)
-  # CB Kick off the default FindOpenMP module.
-  find_package(OpenMP REQUIRED)
-  if(OPENMP_FOUND)
-    # If OpenMP is used, add the found compiler flags for c and c++ globally.
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-  endif(OPENMP_FOUND)
-endif(_USING_OMP)
+if(NOT PARMOON_WITH_UMFPACK)
+  find_package(UMFPACK)
+  if(${UMFPACK_FOUND})
+    list(APPEND PARMOON_EXTERNAL_LIBRARIES ${UMFPACK_LIBRARIES})
+    include_directories(${UMFPACK_INCLUDES})
+    set(PARMOON_WITH_UMFPACK true)
+    message(STATUS "Umfpack found  ${UMFPACK_INCLUDES}  ${UMFPACK_LIBRARIES}" )
+  endif(${UMFPACK_FOUND})
+endif(NOT PARMOON_WITH_UMFPACK)
 
-list(APPEND _EXTERN_LIBRARIES ${PETSC_LIBRARIES})
+if(NOT PARMOON_WITH_METIS)
+  find_package(METIS)
+  if(${METIS_FOUND})
+    list(APPEND PARMOON_EXTERNAL_LIBRARIES ${METIS_LIBRARIES})
+    include_directories(${METIS_INCLUDE_DIRS})
+    set(PARMOON_WITH_METIS true)
+    message(STATUS "Metis found  ${METIS_INCLUDE_DIRS}  ${METIS_LIBRARIES}" )
+  endif(${METIS_FOUND})
+endif(NOT PARMOON_WITH_METIS)
+
+if(NOT PARMOON_WITH_MUMPS)
+  find_package(MUMPS)
+  if(${MUMPS_FOUND})
+    list(APPEND PARMOON_EXTERNAL_LIBRARIES ${MUMPS_LIBRARIES})
+    include_directories(${MUMPS_INCLUDE_DIRS})
+    set(PARMOON_WITH_MUMPS true)
+    message(STATUS "Mumps found  ${MUMPS_INCLUDE_DIRS}  ${MUMPS_LIBRARIES}" )
+  endif(${MUMPS_FOUND})
+endif(NOT PARMOON_WITH_MUMPS)
+
+if(NOT PARMOON_WITH_SCALAPACK)
+  find_package(SCALAPACK)
+  if(${SCALAPACK_FOUND})
+    list(APPEND PARMOON_EXTERNAL_LIBRARIES ${SCALAPACK_LIBRARIES})
+    include_directories(${SCALAPACK_INCLUDES})
+    set(PARMOON_WITH_SCALAPACK true)
+  endif(${SCALAPACK_FOUND})
+endif(NOT PARMOON_WITH_SCALAPACK)
+
+# sanity checks:
+if(PARMOON_USING_MPI AND NOT PARMOON_WITH_MPI)
+  message(FATAL_ERROR
+          "ParMooN needs an mpi library in mpi mode but could not find one.")
+endif(PARMOON_USING_MPI AND NOT PARMOON_WITH_MPI)

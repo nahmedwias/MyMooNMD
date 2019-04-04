@@ -5,7 +5,7 @@
 # 2015/08/20 Clemens Bartsch: Rework to supply 2D and 3D library at once.
 #
 
-if(_USING_MPI)
+if(PARMOON_USING_MPI)
   # Include header files. 
   include_directories("${CMAKE_SOURCE_DIR}/include/Parallel")
   
@@ -17,4 +17,4 @@ if(_USING_MPI)
   
   list(APPEND PARMOON_SOURCES_2D ${PAR_SOURCES})
   list(APPEND PARMOON_SOURCES_3D ${PAR_SOURCES})
-endif(_USING_MPI)
+endif(PARMOON_USING_MPI)

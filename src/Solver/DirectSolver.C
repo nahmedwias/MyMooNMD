@@ -9,15 +9,18 @@
 //
 // =======================================================================
 
+#include "all_defines_external_libraries.h"
 #include <MainUtilities.h>
 #include <DirectSolver.h>
 #include <Database.h>
+#ifdef PARMOON_WITH_UMFPACK
 #include "umfpack.h"
+#endif
 #include <BlockFEMatrix.h>
 #include <BlockVector.h>
 #include <Matrix.h>
 
-#ifdef _OMP
+#ifdef PARMOON_WITH_PARDISO
 #include <omp.h>
 /* Pardiso Fortran Function */
 extern "C" void pardiso_(
@@ -43,14 +46,15 @@ void pardiso_(void * , int *, int *, int *, int *, int *, double *, int *,
               int *, int *, int *, int [pardiso_options_array_length], int *,
               double *, double *, int *)
 {
-  ErrThrow("you compiled without openmp, therefore pardiso does not work."
-           "Change PARMOON_PARALLEL_TYPE in your CMakeCache.txt");
+  ErrThrow("you compiled without pardiso, therefore a call to 'pardiso_' does "
+           "not work.");
 }
 #endif
 
 
 void handle_error_umfpack(int ierror)
 {
+#ifdef PARMOON_WITH_UMFPACK
   if (ierror == UMFPACK_OK)
     return;
 
@@ -105,6 +109,7 @@ void handle_error_umfpack(int ierror)
       ErrThrow("umfpack: unkown error. Error number ", ierror); break;
     break;
   }
+#endif // PARMOON_WITH_UMFPACK
 }
 void handle_error_pardiso(int ierror)
 {
@@ -155,6 +160,17 @@ DirectSolver::DirectSolver(std::shared_ptr<TMatrix> matrix,
    symbolic(nullptr), numeric(nullptr), pt(), maxfct(10), mnum(1), 
    mtype(11), perm(0), nrhs(1), iparm(), msglvl(0)
 {
+#ifndef PARMOON_WITH_UMFPACK
+  if(type == DirectSolverTypes::umfpack)
+    ErrThrow("ParMooN has been compiled without umfpack, therefore a "
+             "DirectSolver object with type 'umfpack' can not be created.");
+#endif // not PARMOON_WITH_UMFPACK
+#ifndef PARMOON_WITH_PARDISO
+  if(type == DirectSolverTypes::pardiso)
+    ErrThrow("ParMooN has been compiled without pardiso, therefore a "
+             "DirectSolver object with type 'pardiso' can not be created.");
+#endif
+  
   Output::print<5>("constructing a DirectSolver object");
   if(!matrix->is_square())
   {
@@ -254,6 +270,7 @@ DirectSolver::~DirectSolver()
   switch(type)
   {
     case DirectSolver::DirectSolverTypes::umfpack:
+#ifdef PARMOON_WITH_UMFPACK
       if(this->cols.size() == 0)
       {
         // using int for indices
@@ -266,6 +283,7 @@ DirectSolver::~DirectSolver()
         umfpack_dl_free_symbolic(&symbolic);
         umfpack_dl_free_numeric(&numeric);
       }
+#endif // PARMOON_WITH_UMFPACK
       break;
     case DirectSolver::DirectSolverTypes::pardiso:
     {
@@ -299,6 +317,7 @@ void DirectSolver::symbolic_factorize()
   {
     case DirectSolverTypes::umfpack:
     {
+#ifdef PARMOON_WITH_UMFPACK
       // symbolic factorization
       if(this->cols.size() == 0)
       {
@@ -316,6 +335,7 @@ void DirectSolver::symbolic_factorize()
                                         &symbolic, nullptr, nullptr);
         handle_error_umfpack(error);
       }
+#endif // PARMOON_WITH_UMFPACK
       break;
     }
     case DirectSolverTypes::pardiso:
@@ -348,6 +368,7 @@ void DirectSolver::numeric_factorize()
   {
     case DirectSolverTypes::umfpack:
     {
+#ifdef PARMOON_WITH_UMFPACK
       double Info[UMFPACK_INFO];
       double Control[UMFPACK_CONTROL];
       umfpack_di_defaults(Control);
@@ -370,6 +391,7 @@ void DirectSolver::numeric_factorize()
       }
       Output::print<4>("umfpack: Peak memory ", Info[UMFPACK_PEAK_MEMORY],
                        ", estimated condition number ", 1./Info[UMFPACK_RCOND]);
+#endif // PARMOON_WITH_UMFPACK
       break;
     }
     case DirectSolverTypes::pardiso:
@@ -403,6 +425,7 @@ void DirectSolver::solve(const double* rhs, double* solution)
   {
     case DirectSolverTypes::umfpack:
     {
+#ifdef PARMOON_WITH_UMFPACK
       // symbolic factorization
       if(this->cols.size() == 0)
       {
@@ -420,6 +443,7 @@ void DirectSolver::solve(const double* rhs, double* solution)
                                      solution, rhs, numeric, nullptr, nullptr);
         handle_error_umfpack(error);
       }
+#endif // PARMOON_WITH_UMFPACK
       break;
     }
     case DirectSolverTypes::pardiso:

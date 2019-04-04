@@ -9,7 +9,7 @@
 #endif // _MPI
 #include <algorithm>
 
-
+#ifdef PARMOON_WITH_PETSC
 /**
  * Adding PETSc parameters from the database to the PETSc arguments string.
  *
@@ -749,3 +749,24 @@ void PETScSolver::solve(const BlockVector& rhs, BlockVector& solution)
   VecDestroy(&x);
 }
 
+#else // !PARMOON_WITH_PETSC
+PETScSolver::PETScSolver(const BlockFEMatrix&, const ParameterDatabase&)
+{
+  ErrThrow("ParMooN has been compiled without PETSc, therefore a PETScSolver "
+           "can not be created.");
+}
+PETScSolver::PETScSolver(const BlockMatrix&, const ParameterDatabase&)
+{
+  ErrThrow("ParMooN has been compiled without PETSc, therefore a PETScSolver "
+           "can not be created.");
+}
+PETScSolver::~PETScSolver()
+{
+  
+}
+void PETScSolver::solve(const BlockVector&, BlockVector&)
+{
+  ErrThrow("ParMooN has been compiled without PETSc, therefore "
+           "PETScSolver::solve can not be called.");
+}
+#endif // PARMOON_WITH_PETSC

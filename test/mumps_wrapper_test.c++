@@ -12,6 +12,8 @@
  * @author Clemens Bartsch
  */
 #ifdef _MPI
+#include "all_defines_external_libraries.h"
+#ifdef PARMOON_WITH_MUMPS
 
 #include <BlockFEMatrix.h>
 #include <BlockVector.h>
@@ -195,6 +197,9 @@ int main(int argc, char* argv[])
 
 }
 
-#endif
+#else // PARMOON_WITH_MUMPS
+int main(){}
+#endif // PARMOON_WITH_MUMPS
+#endif // _MPI
 
 

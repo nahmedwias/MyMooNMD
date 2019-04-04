@@ -25,10 +25,10 @@
 #ifndef __MUMPSWRAPPER__
 #define __MUMPSWRAPPER__
 
-extern "C"
-{
-#  include "dmumps_c.h"
-}
+#include "all_defines_external_libraries.h"
+#ifdef PARMOON_WITH_MUMPS
+#include "dmumps_c.h"
+#endif // PARMOON_WITH_MUMPS
 #include <vector>
 #include <string>
 
@@ -196,8 +196,9 @@ class MumpsWrapper
 
 
     /// An instance of the mumps solver. Naming it "id_" is common mumps style.
+#ifdef PARMOON_WITH_MUMPS
     DMUMPS_STRUC_C id_;
-
+#endif // PARMOON_WITH_MUMPS
     /**
      * Structure holding a Matrix in coordinate formate. This is the matrix
      * format the Mumps solver deals with.

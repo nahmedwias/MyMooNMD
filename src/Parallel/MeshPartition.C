@@ -34,12 +34,7 @@
   #include <FEDatabase2D.h>
 #endif
 
-extern "C"
-{
-  #include <metis.h>
-  #include <parmetis.h>
-}
-#include <MeshPartitionInOut.h>
+#include <MeshPartitionInOut.h> // this includes metis.h
 
 #include<algorithm>
 #include<vector>
@@ -207,7 +202,7 @@ int Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
        }
        
        TDatabase::ParamDB->Par_P2 = abs(TDatabase::ParamDB->Par_P2 - 1);
-       return 1;  		//partinioning unsuccessful
+       return 1;  		//partitioning unsuccessful
      }
    
  if(size==1)
@@ -239,6 +234,7 @@ int Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
    
    
    idx_t *MetisVertexNumbers; 
+#ifdef PARMOON_WITH_METIS
    idx_t options[METIS_NOPTIONS];
  
    METIS_SetDefaultOptions(options);
@@ -247,6 +243,7 @@ int Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
    options[METIS_OPTION_OBJTYPE] = METIS_OBJTYPE_CUT; 
    options[METIS_OPTION_NUMBERING] = 0; 
    options[METIS_OPTION_CONTIG] = 1;
+#endif // PARMOON_WITH_METIS
 
    TVertex **Vertices;    
 
@@ -356,24 +353,30 @@ int Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
   }
   else
   {
-  t1 = MPI_Wtime();
-   if(type == 0)
+#ifdef PARMOON_WITH_METIS
+    t1 = MPI_Wtime();
+    if(type == 0)
     {
-     METIS_PartMeshNodal(&ne, &nn, eptr, MetisVertexNumbers, nullptr, nullptr, &nparts, nullptr, options, &edgecut, Cell_Rank, Vert_Rank);
+      METIS_PartMeshNodal(&ne, &nn, eptr, MetisVertexNumbers, nullptr, nullptr, &nparts, nullptr, options, &edgecut, Cell_Rank, Vert_Rank);
     }
-   else if(type == 1)
+    else if(type == 1)
     {
-     METIS_PartMeshDual(&ne, &nn,  eptr, MetisVertexNumbers,  nullptr, nullptr,  &ncommon,
-                       &nparts, nullptr, options, &edgecut, Cell_Rank, Vert_Rank);
+      METIS_PartMeshDual(&ne, &nn,  eptr, MetisVertexNumbers,  nullptr, nullptr,  &ncommon,
+                         &nparts, nullptr, options, &edgecut, Cell_Rank, Vert_Rank);
     }
-   else
-   {
-     cout<<" Error METIS_PartMesh implemented for Par_P2 = 0 or 1 !!" <<endl;
-     MPI_Abort(comm, 0);
-   }
-   std:: cout << Cell_Rank;
-   t2 = MPI_Wtime();
-   Output::root_info("Domain Decomposition","Time taken for METIS mesh partitioning ", t2-t1, " sec");
+    else
+    {
+      cout<<" Error METIS_PartMesh implemented for Par_P2 = 0 or 1 !!" <<endl;
+      MPI_Abort(comm, 0);
+    }
+    std:: cout << Cell_Rank;
+    t2 = MPI_Wtime();
+    Output::root_info("Domain Decomposition","Time taken for METIS mesh partitioning ", t2-t1, " sec");
+#else
+    ErrThrow("ParMooN has been compiled without metis, therefore it can not be "
+             "called. You have to either read a partitioning or compile with "
+             "metis.");
+#endif
   }
   //if 'wrtie_metis' is true, than a file is created which contains the partitioning of the cells on the processors.
   if(write_metis)
@@ -647,7 +650,7 @@ int Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
        }
        
        TDatabase::ParamDB->Par_P2 = abs(TDatabase::ParamDB->Par_P2 - 1);
-       return 1;  		//partinioning unsuccessful
+       return 1;  		//partitioning unsuccessful
      }
       
      if(N_LocalCells)
@@ -1108,7 +1111,7 @@ int Partition_Mesh3D(MPI_Comm comm, TDomain *Domain, int &MaxRankPerV)
 // 
 //      MPI_Finalize();
 //     exit(0);  
-   return 0;		//partinioning successful
+   return 0;		//partitioning successful
 }
 #endif // 3D
 
