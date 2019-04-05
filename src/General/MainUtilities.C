@@ -505,7 +505,7 @@ void StreamFunction(const TFESpace2D *velo, double *u1, double *u2,
 
   delete KVIND;
 
-  delete CellList;
+  delete [] CellList;
 }
 
 void ComputeVorticityDivergence(const TFESpace2D *, TFEFunction2D *u1,

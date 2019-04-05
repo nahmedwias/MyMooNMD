@@ -15,39 +15,38 @@
 #include <Hexahedron.h>
 #include <cmath>
 
-static const int DatEdgeVertex[][2] = { {0, 1},  {1, 2},  {2, 3},  {3, 0},
-                                        {0, 4},  {1, 5},  {2, 6},  {3, 7},
-                                       {4, 5},  {5, 6},  {6, 7},  {7, 4}};
-static const int DatVertexEdge[][HEXAMAXN_EpV] =
-                 { {3, 0, 4},  {0, 1, 5},  {1, 2, 6},  {2, 3, 7},
-                   {4, 8,11},  {5, 9, 8},  {6,10, 9},  {7,11,10}};
-
-static const int DatFaceVertex[][HEXAMAXN_VpF] =
-                 { {0, 1, 2, 3},  {0, 4, 5, 1},  {1, 5, 6, 2},
-                   {2, 6, 7, 3},  {0, 3, 7, 4},  {4, 7, 6, 5}};
-static const int DatFaceVertexLen[] = { 4, 4, 4, 4, 4, 4};
-
-static const int DatVertexFace[][HEXAMAXN_FpV] =
-                 { {0, 1, 4},   {0, 2, 1},   {0, 3, 2},   {0, 4, 3},
-                   {1, 5, 4},   {2, 5, 1},   {3, 5, 2},   {4, 5, 3}};
-
-static const int DatFaceEdge[][HEXAMAXN_EpF] =
-                 { {0, 1, 2, 3},  {4, 8, 5, 0},  {5, 9, 6, 1},
-                   {6,10, 7, 2},  {3, 7,11, 4},  {11,10, 9,8}};
-
-static const int DatFaceEdgeLen[] =
-                 { 4, 4, 4, 4, 4, 4};
-static const int DatEdgeFace[][HEXAMAXN_FpE] =
-                 { {1, 0},  {2, 0},  {3, 0},  {4, 0},
-                   {4, 1},  {1, 2},  {2, 3},  {3, 4},
-                   {5, 1},  {5, 2},  {5, 3},  {5, 4}};
-
-static const Shapes DatFaceType[] = { Quadrangle, Quadrangle, Quadrangle,
-                                      Quadrangle, Quadrangle, Quadrangle};
-
 // Constructor
 THexahedron::THexahedron()
 {
+  static const int DatEdgeVertex[][2] = { {0, 1},  {1, 2},  {2, 3},  {3, 0},
+                                          {0, 4},  {1, 5},  {2, 6},  {3, 7},
+                                          {4, 5},  {5, 6},  {6, 7},  {7, 4}};
+  static const int DatVertexEdge[][HEXAMAXN_EpV] =
+                   { {3, 0, 4},  {0, 1, 5},  {1, 2, 6},  {2, 3, 7},
+                     {4, 8,11},  {5, 9, 8},  {6,10, 9},  {7,11,10}};
+
+  static const int DatFaceVertex[][HEXAMAXN_VpF] =
+                   { {0, 1, 2, 3},  {0, 4, 5, 1},  {1, 5, 6, 2},
+                     {2, 6, 7, 3},  {0, 3, 7, 4},  {4, 7, 6, 5}};
+  static const int DatFaceVertexLen[] = { 4, 4, 4, 4, 4, 4};
+
+  static const int DatVertexFace[][HEXAMAXN_FpV] =
+                   { {0, 1, 4},   {0, 2, 1},   {0, 3, 2},   {0, 4, 3},
+                     {1, 5, 4},   {2, 5, 1},   {3, 5, 2},   {4, 5, 3}};
+
+  static const int DatFaceEdge[][HEXAMAXN_EpF] =
+                   { {0, 1, 2, 3},  {4, 8, 5, 0},  {5, 9, 6, 1},
+                     {6,10, 7, 2},  {3, 7,11, 4},  {11,10, 9,8}};
+
+  static const int DatFaceEdgeLen[] = { 4, 4, 4, 4, 4, 4};
+  static const int DatEdgeFace[][HEXAMAXN_FpE] =
+                   { {1, 0},  {2, 0},  {3, 0},  {4, 0},
+                     {4, 1},  {1, 2},  {2, 3},  {3, 4},
+                     {5, 1},  {5, 2},  {5, 3},  {5, 4}};
+
+  static const Shapes DatFaceType[] = { Quadrangle, Quadrangle, Quadrangle,
+                                        Quadrangle, Quadrangle, Quadrangle};
+
   MaxN_EpV = HEXAMAXN_EpV;
   MaxN_VpF = HEXAMAXN_VpF;
   MaxN_FpV = HEXAMAXN_FpV;

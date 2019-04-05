@@ -12,6 +12,9 @@
 
 #include <RefTriBis01Desc.h>
 
+// Constructor
+TRefTriBis01Desc::TRefTriBis01Desc(TShapeDesc *shape) : TRefDesc(shape)
+{
 static const Shapes DatChildType[] = { Triangle, Triangle, Triangle};
 
 static const Refinements DatEdgeType[] = { LineReg, LineReg, NoRef};
@@ -54,9 +57,6 @@ static const int DatOldEdgeNewLocEdge[][TRIBI01N_E] =
 static const int DatNewEdgeOldEdge[] =
                { 0, 0, 1, 1, 2, -1, -1};
 
-// Constructor
-TRefTriBis01Desc::TRefTriBis01Desc(TShapeDesc *shape) : TRefDesc(shape)
-{
   Type = TriBis01;
 
   // set all numbers

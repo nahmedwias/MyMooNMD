@@ -11,6 +11,9 @@
 
 #include <RefQuadToTri0Desc.h>
 
+// Constructor
+TRefQuadToTri0Desc::TRefQuadToTri0Desc(TShapeDesc *shape) : TRefDesc(shape)
+{
 static const Shapes DatChildType[] = { Triangle, Triangle};
 
 static const Refinements DatEdgeType[] = { NoRef, NoRef, NoRef, NoRef};
@@ -68,9 +71,6 @@ static const int DatOldEdgeNewLocEdge[][4] =
 static const int DatNewEdgeOldEdge[] =
                { 0,  1,  2,  3,  -1};
 
-// Constructor
-TRefQuadToTri0Desc::TRefQuadToTri0Desc(TShapeDesc *shape) : TRefDesc(shape)
-{
   Type = QuadToTri0;
 
   // set all numbers

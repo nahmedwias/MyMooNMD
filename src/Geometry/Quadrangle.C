@@ -13,13 +13,13 @@
 #include <math.h>
 #include <stdlib.h>
 
-static const int DatEdgeVertex[][2] = { {0, 1},  {1, 2},  {2, 3},  {3, 0}};
-static const int DatVertexEdge[][QUADMAXN_EpV] =
-                 { {3, 0},  {0, 1},  {1, 2},  {2, 3}};
-
 // Constructor
 TQuadrangle::TQuadrangle()
 {
+  static const int DatEdgeVertex[][2] = { {0, 1},  {1, 2},  {2, 3},  {3, 0}};
+  static const int DatVertexEdge[][QUADMAXN_EpV] =
+                 { {3, 0},  {0, 1},  {1, 2},  {2, 3}};
+
   MaxN_EpV = QUADMAXN_EpV;
 
   EdgeVertex = (const int *) DatEdgeVertex;

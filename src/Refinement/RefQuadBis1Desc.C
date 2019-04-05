@@ -10,6 +10,9 @@
 
 #include <RefQuadBis1Desc.h>
 
+// Constructor
+TRefQuadBis1Desc::TRefQuadBis1Desc(TShapeDesc *shape) : TRefDesc(shape)
+{
 static const Shapes DatChildType[] = { Quadrangle, Quadrangle};
 
 static const Refinements DatEdgeType[] = { NoRef, LineReg, NoRef, LineReg};
@@ -66,9 +69,6 @@ static const int DatOldEdgeNewLocEdge[][QUADBIN_E] =
 static const int DatNewEdgeOldEdge[] =
                { 0,  1,  1,  2,  3,  3,  -1};
 
-// Constructor
-TRefQuadBis1Desc::TRefQuadBis1Desc(TShapeDesc *shape) : TRefDesc(shape)
-{
   Type = QuadBis1;
 
   // set all numbers

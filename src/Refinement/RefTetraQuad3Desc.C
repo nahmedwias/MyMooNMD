@@ -4,6 +4,9 @@
 
 #include <RefTetraQuad3Desc.h>
 
+// Constructor
+TRefTetraQuad3Desc::TRefTetraQuad3Desc(TShapeDesc *shape) : TRefDesc(shape)
+{
 static const Shapes DatChildType[] = {Tetrahedron, Tetrahedron, Tetrahedron, Tetrahedron};
 
 static const Refinements DatEdgeType[] = {NoRef, NoRef, LineReg, LineReg, NoRef, LineReg};
@@ -137,9 +140,6 @@ static const int DatChildTwistIndex[] =
   {0, 2, 0, 1, 0, 2, 0, 1, 2, 0, -1, -1, -1};
 
 
-// Constructor
-TRefTetraQuad3Desc::TRefTetraQuad3Desc(TShapeDesc *shape) : TRefDesc(shape)
-{
   Type = TetraQuad3;
 
   //set all numbers

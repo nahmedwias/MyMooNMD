@@ -10,6 +10,9 @@
 
 #include <RefTriRegDesc.h>
 
+// Constructor
+TRefTriRegDesc::TRefTriRegDesc(TShapeDesc *shape) : TRefDesc(shape)
+{
 static const Shapes DatChildType[] = { Triangle, Triangle, Triangle, Triangle};
 
 static const Refinements DatEdgeType[] = { LineReg, LineReg, LineReg};
@@ -62,9 +65,6 @@ static const int DatOldEdgeNewLocEdge[][TRIRRN_E] =
 static const int DatNewEdgeOldEdge[] =
                  { 0,  0,  1,  1,  2,  2, -1, -1, -1};
 
-// Constructor
-TRefTriRegDesc::TRefTriRegDesc(TShapeDesc *shape) : TRefDesc(shape)
-{
   Type = TriReg;
 
   // set all numbers
