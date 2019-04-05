@@ -27,12 +27,12 @@ namespace flow_around_cylinder_steady_inflow     // case 3
 #include "flow_around_cylinder_steady_inflow.h"
 }
 
-namespace backward_facing_step  // case 4
+namespace backward_facing_step_time  // case 4
 {
 #include "TNSE_2D/backward_facing_step.h"
 }
 
-namespace driven_cavity         // case 5
+namespace driven_cavity_time         // case 5
 {
 #include "TNSE_2D/DrivenCavity.h"
 }
@@ -157,53 +157,53 @@ Example_TimeNSE2D::Example_TimeNSE2D(
       flow_around_cylinder_steady_inflow::ExampleFile();
       break;
     case 4:
-      exact_solution.push_back( backward_facing_step::ExactU1 );
-      exact_solution.push_back( backward_facing_step::ExactU2 );
-      exact_solution.push_back( backward_facing_step::ExactP );
+      exact_solution.push_back( backward_facing_step_time::ExactU1 );
+      exact_solution.push_back( backward_facing_step_time::ExactU2 );
+      exact_solution.push_back( backward_facing_step_time::ExactP );
       
       /** boundary condition */
-      boundary_conditions.push_back( backward_facing_step::BoundCondition );
-      boundary_conditions.push_back( backward_facing_step::BoundCondition );
+      boundary_conditions.push_back( backward_facing_step_time::BoundCondition );
+      boundary_conditions.push_back( backward_facing_step_time::BoundCondition );
       boundary_conditions.push_back( BoundConditionNoBoundCondition );
       
       /** boundary values */
-      boundary_data.push_back( backward_facing_step::U1BoundValue );
-      boundary_data.push_back( backward_facing_step::U2BoundValue );
+      boundary_data.push_back( backward_facing_step_time::U1BoundValue );
+      boundary_data.push_back( backward_facing_step_time::U2BoundValue );
       boundary_data.push_back( BoundaryValueHomogenous );
       
       /** coefficients */
-      problem_coefficients = backward_facing_step::LinCoeffs;
+      problem_coefficients = backward_facing_step_time::LinCoeffs;
       
-      initialCondition.push_back(backward_facing_step::InitialU1);
-      initialCondition.push_back(backward_facing_step::InitialU2);
-      initialCondition.push_back(backward_facing_step::InitialP);
+      initialCondition.push_back(backward_facing_step_time::InitialU1);
+      initialCondition.push_back(backward_facing_step_time::InitialU2);
+      initialCondition.push_back(backward_facing_step_time::InitialP);
       
-      backward_facing_step::ExampleFile();
-      backward_facing_step::DIMENSIONLESS_VISCOSITY = this->get_nu();
+      backward_facing_step_time::ExampleFile();
+      backward_facing_step_time::DIMENSIONLESS_VISCOSITY = this->get_nu();
       break;
     case 5:
-      exact_solution.push_back( driven_cavity::ExactU1 );
-      exact_solution.push_back( driven_cavity::ExactU2 );
-      exact_solution.push_back( driven_cavity::ExactP );
+      exact_solution.push_back( driven_cavity_time::ExactU1 );
+      exact_solution.push_back( driven_cavity_time::ExactU2 );
+      exact_solution.push_back( driven_cavity_time::ExactP );
 
       /** boundary condition */
-      boundary_conditions.push_back( driven_cavity::BoundCondition );
-      boundary_conditions.push_back( driven_cavity::BoundCondition );
+      boundary_conditions.push_back( driven_cavity_time::BoundCondition );
+      boundary_conditions.push_back( driven_cavity_time::BoundCondition );
       boundary_conditions.push_back( BoundConditionNoBoundCondition );
 
       /** boundary values */
-      boundary_data.push_back( driven_cavity::U1BoundValue );
-      boundary_data.push_back( driven_cavity::U2BoundValue );
+      boundary_data.push_back( driven_cavity_time::U1BoundValue );
+      boundary_data.push_back( driven_cavity_time::U2BoundValue );
       boundary_data.push_back( BoundaryValueHomogenous );
 
       /** coefficients */
-      problem_coefficients = driven_cavity::LinCoeffs;
+      problem_coefficients = driven_cavity_time::LinCoeffs;
 
-      initialCondition.push_back(driven_cavity::InitialU1);
-      initialCondition.push_back(driven_cavity::InitialU2);
+      initialCondition.push_back(driven_cavity_time::InitialU1);
+      initialCondition.push_back(driven_cavity_time::InitialU2);
 
-      driven_cavity::DIMENSIONLESS_VISCOSITY = this->get_nu();
-      driven_cavity::ExampleFile();
+      driven_cavity_time::DIMENSIONLESS_VISCOSITY = this->get_nu();
+      driven_cavity_time::ExampleFile();
       break;
     case 6:
       exact_solution.push_back( mixing_layer_us::ExactU1 );
