@@ -15,33 +15,32 @@
 #include <Tetrahedron.h>
 #include <cmath>
 
-static const int DatEdgeVertex[][2] = { {0, 1},  {1, 2},  {2, 0},
-                                        {0, 3},  {1, 3},  {2, 3}};
-static const int DatVertexEdge[][TETRAMAXN_EpV] =
-                 { {2, 0, 3},  {0, 1, 4},  {1, 2, 5},  {3, 4, 5}};
-
-static const int DatFaceVertex[][TETRAMAXN_VpF] =
-                   { {0, 1, 2},  {0, 3, 1},  {2, 1, 3},  {0, 2, 3}};
-
-static const int DatFaceVertexLen[] = { 3, 3, 3, 3};
-
-static const int DatVertexFace[][TETRAMAXN_FpV] =
-                 { {0, 1, 3},  {0, 2, 1},  {0, 3, 2},  {1, 2, 3}};
-
-static const int DatFaceEdge[][TETRAMAXN_EpF] =
-                 { {0, 1, 2},  {3, 4, 0},  {1, 4, 5},  {2, 5, 3}};
-
-static const int DatFaceEdgeLen[] =
-                 { 3, 3, 3, 3};
-
-static const int DatEdgeFace[][TETRAMAXN_FpE] =
-                 { {1, 0},  {2, 0},  {3, 0}, {3, 1},  {1, 2},  {2, 3}};
-
-static const Shapes DatFaceType[] = { Triangle, Triangle, Triangle, Triangle};
-
 // Constructor
 TTetrahedron::TTetrahedron()
 {
+  static const int DatEdgeVertex[][2] = { {0, 1},  {1, 2},  {2, 0},
+                                          {0, 3},  {1, 3},  {2, 3}};
+  static const int DatVertexEdge[][TETRAMAXN_EpV] =
+                   { {2, 0, 3},  {0, 1, 4},  {1, 2, 5},  {3, 4, 5}};
+
+  static const int DatFaceVertex[][TETRAMAXN_VpF] =
+                     { {0, 1, 2},  {0, 3, 1},  {2, 1, 3},  {0, 2, 3}};
+
+  static const int DatFaceVertexLen[] = { 3, 3, 3, 3};
+
+  static const int DatVertexFace[][TETRAMAXN_FpV] =
+                   { {0, 1, 3},  {0, 2, 1},  {0, 3, 2},  {1, 2, 3}};
+
+  static const int DatFaceEdge[][TETRAMAXN_EpF] =
+                   { {0, 1, 2},  {3, 4, 0},  {1, 4, 5},  {2, 5, 3}};
+
+  static const int DatFaceEdgeLen[] = { 3, 3, 3, 3};
+
+  static const int DatEdgeFace[][TETRAMAXN_FpE] =
+                   { {1, 0},  {2, 0},  {3, 0}, {3, 1},  {1, 2},  {2, 3}};
+
+  static const Shapes DatFaceType[] = { Triangle, Triangle, Triangle, Triangle};
+
   MaxN_EpV = TETRAMAXN_EpV;
   MaxN_VpF = TETRAMAXN_VpF;
   MaxN_FpV = TETRAMAXN_FpV;

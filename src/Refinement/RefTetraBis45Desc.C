@@ -4,6 +4,9 @@
 
 #include <RefTetraBis45Desc.h>
 
+// Constructor
+TRefTetraBis45Desc::TRefTetraBis45Desc(TShapeDesc *shape) : TRefDesc(shape)
+{
 static const Shapes DatChildType[] = {Tetrahedron, Tetrahedron, Tetrahedron};
 
 static const Refinements DatEdgeType[] = {NoRef, NoRef, NoRef, NoRef, LineReg, LineReg};
@@ -122,9 +125,6 @@ static const int DatOldFaceNewLocFace[][4] =
 static const int DatChildTwistIndex[] =
   {0, 2, 1, 0, 0, 2, 2, 1, -1, -1};
 
-// Constructor
-TRefTetraBis45Desc::TRefTetraBis45Desc(TShapeDesc *shape) : TRefDesc(shape)
-{
   Type = TetraBis45;
 
   //set all numbers

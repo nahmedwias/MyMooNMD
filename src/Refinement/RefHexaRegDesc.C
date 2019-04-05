@@ -15,6 +15,9 @@
 
 #include <RefHexaRegDesc.h>
 
+// Constructor
+TRefHexaRegDesc::TRefHexaRegDesc(TShapeDesc *shape) : TRefDesc(shape)
+{
 static const Shapes DatChildType[] = {Hexahedron, Hexahedron, Hexahedron,
                                       Hexahedron, Hexahedron, Hexahedron,
                                       Hexahedron, Hexahedron };
@@ -327,9 +330,6 @@ static const int DatChildTwistIndex[] =
          0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
          0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
-// Constructor
-TRefHexaRegDesc::TRefHexaRegDesc(TShapeDesc *shape) : TRefDesc(shape)
-{
 
   Type = HexaReg;
 

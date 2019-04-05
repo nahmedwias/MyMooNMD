@@ -994,7 +994,7 @@ void TFEVectFunct2D::FindVectGradient(double x, double y, double *val1, double *
       {
        RefElement = FE_Obj->GetBaseFunct2D()->GetRefElement();     
 
-       switch(RefTrans)
+       switch(RefElement)
        {
          case BFUnitSquare:    
           N_Edges = 4;

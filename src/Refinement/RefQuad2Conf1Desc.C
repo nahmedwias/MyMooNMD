@@ -11,6 +11,9 @@
 
 #include <RefQuad2Conf1Desc.h>
 
+// Constructor
+TRefQuad2Conf1Desc::TRefQuad2Conf1Desc(TShapeDesc *shape) : TRefDesc(shape)
+{
 static const Shapes DatChildType[] = { Quadrangle, Quadrangle,
                                        Quadrangle };
 
@@ -78,9 +81,6 @@ static const int DatNewEdgeOldEdge[] =
 static const int DatNewEdgeEqOldEdge[] = { 2, 3};
 static const int DatNewEdgeEqOldEdgeIndex[] = { 2, 3};
 
-// Constructor
-TRefQuad2Conf1Desc::TRefQuad2Conf1Desc(TShapeDesc *shape) : TRefDesc(shape)
-{
   Type = Quad2Conf1;
 
   // set all numbers

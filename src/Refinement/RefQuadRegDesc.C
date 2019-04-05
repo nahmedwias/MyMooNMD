@@ -10,6 +10,9 @@
 
 #include <RefQuadRegDesc.h>
 
+// Constructor
+TRefQuadRegDesc::TRefQuadRegDesc(TShapeDesc *shape) : TRefDesc(shape)
+{
 static const Shapes DatChildType[] = { Quadrangle, Quadrangle,
                                        Quadrangle, Quadrangle};
 
@@ -74,9 +77,6 @@ static const int DatOldEdgeNewLocEdge[][QUADRRN_E] =
 static const int DatNewEdgeOldEdge[] =
                { 0,  0,  1,  1,  2,  2,  3,  3,  -1,  -1,  -1,  -1};
 
-// Constructor
-TRefQuadRegDesc::TRefQuadRegDesc(TShapeDesc *shape) : TRefDesc(shape)
-{
   Type = QuadReg;
 
   // set all numbers

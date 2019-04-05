@@ -1,5 +1,8 @@
 #include <RefTriBaryDesc.h>
 
+// Constructor
+TRefTriBaryDesc::TRefTriBaryDesc(TShapeDesc *shape) : TRefDesc(shape)
+{
 static const Shapes DatChildType[] = { Triangle, Triangle, Triangle};
 
 static const Refinements DatEdgeType[] = { NoRef, NoRef, NoRef};
@@ -49,9 +52,6 @@ static const int DatOldEdgeNewLocEdge[][3] =
 static const int DatNewEdgeOldEdge[] =
                  {0, 1, 2, -1, -1, -1};
 
-// Constructor
-TRefTriBaryDesc::TRefTriBaryDesc(TShapeDesc *shape) : TRefDesc(shape)
-{
   Type = TriBary;
 
   // set all numbers

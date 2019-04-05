@@ -16,6 +16,9 @@
 
 #include <RefTetraReg2Desc.h>
 
+// Constructor
+TRefTetraReg2Desc::TRefTetraReg2Desc(TShapeDesc *shape) : TRefDesc(shape)
+{
 static const Shapes DatChildType[] = {Tetrahedron, Tetrahedron, Tetrahedron,
                                       Tetrahedron, Tetrahedron, Tetrahedron,
                                       Tetrahedron, Tetrahedron };
@@ -173,9 +176,6 @@ static const int DatOldFaceNewLocFace[][TETRAN_F] =
 static const int DatChildTwistIndex[] =
            { 0, 0, -1, 0, 0, 0, -1, 0, 0, 0, -1, 0, 0, 0, -1, 0, -1, 2, -1, 2, -1, 0, -1, 0};
 
-// Constructor
-TRefTetraReg2Desc::TRefTetraReg2Desc(TShapeDesc *shape) : TRefDesc(shape)
-{
 
   Type = TetraReg2;
 

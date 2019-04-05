@@ -10,11 +10,11 @@
 
 #include <RefNoRef.h>
 
-static Refinements DatEdgeType[MAXN_ORIGEDGES];
 
 // Constructor
 TRefNoRef::TRefNoRef(TShapeDesc *shape) : TRefDesc(shape)
 {
+static Refinements DatEdgeType[MAXN_ORIGEDGES];
   int i;
 
   for (i=0;i<MAXN_ORIGEDGES;i++)

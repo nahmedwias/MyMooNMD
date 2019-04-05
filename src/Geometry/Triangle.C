@@ -13,12 +13,12 @@
 #include <Constants.h>
 #include <math.h>
 
-static const int DatEdgeVertex[][2] = { {0, 1},  {1, 2},  {2, 0}};
-static const int DatVertexEdge[][TRIMAXN_EpV] = { {2, 0},  {0, 1},  {1, 2}};
-
 // Constructor
 TTriangle::TTriangle()
 {
+  static const int DatEdgeVertex[][2] = { {0, 1},  {1, 2},  {2, 0}};
+  static const int DatVertexEdge[][TRIMAXN_EpV] = { {2, 0},  {0, 1},  {1, 2}};
+
   MaxN_EpV = TRIMAXN_EpV;
 
   EdgeVertex = (const int *) DatEdgeVertex;
