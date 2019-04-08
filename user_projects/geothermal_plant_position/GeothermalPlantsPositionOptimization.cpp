@@ -126,7 +126,12 @@ ParameterDatabase GeothermalPlantsPositionOptimization<d>::default_GPPO_database
            "Determine the scenario to be optimized.",
            {"1doublet_optimize_distance", "2doublets_fixed_well_distance",
                    "3_rows_of_double_doublets_fixed_well_distance",
-                   "3_rows_of_double_doublets_varying_row_distance"});
+                   "3_rows_of_double_doublets_varying_row_distance",
+                   "lattice", "hexagon"});
+  db.add("lattice_n_wells_per_row", 4u , "Parameter for the scenario 'lattice'."
+        " Determines the number of wells per row and column. "
+        "Has to be an even number since (lattice_n_wells_per_row*lattice_n_wells_per_row)/2 production "
+        "resp. injection wells are assumed to be present.", 0u, 1000000u);
 
   return db;
 }
@@ -313,7 +318,7 @@ void approximate_delta_functions_hexagon(int n_points,
 {
   int dim = 2;
 #ifdef __3D__
-  dim = 3
+  dim = 3;
 #endif
     
   double domain_Lx = 10000.;
@@ -397,19 +402,22 @@ void approximate_delta_functions_lattice(int n_points,
 					 // problem dependent
 					 double u_in,double distance,
 					 double well_radius,
-					 double delta_fct_eps_factor)
+					 double delta_fct_eps_factor,
+					 size_t lattice_n_wells_per_row)
 {
   int dim = 2;
 #ifdef __3D__
-  dim = 3
+  dim = 3;
 #endif
     
   double domain_Lx = 10000.;
   double domain_Ly = 6000.;
-  size_t n_wells_per_row = 4;
+
+  // has to be an even number
+  size_t n_wells_per_row = lattice_n_wells_per_row; //equals number of wells per column
+
   // set well position
   std::vector<double> singular_x, singular_y, singular_sign;
-
   double x0 = domain_Lx/2.- (n_wells_per_row-1)/2.*distance;
   double y0 = domain_Ly/2.- (n_wells_per_row-1)/2.*distance;
   int count = 0;
@@ -1202,7 +1210,8 @@ void GeothermalPlantsPositionOptimization<d>::apply_control_and_solve(const doub
             _6,
 #endif
 		      this->db["u_in"], distance, (double) this->db["well_radius"],
-		      (double) this->db["delta_fct_eps_factor"]);
+		      (double) this->db["delta_fct_eps_factor"],
+		      (size_t) this->db["lattice_n_wells_per_row"]);
   }
   else if (this->db["scenario"].is("hexagon"))
   {
@@ -1350,7 +1359,95 @@ void GeothermalPlantsPositionOptimization<d>::apply_control_and_solve(const doub
       TCollection* Coll = temperature.GetFESpace3D()->GetCollection();
 #endif
 
-    if (this->db["scenario"].is("3_rows_of_double_doublets_varying_row_distance"))
+      if (this->db["scenario"].is("lattice"))
+      {
+          double domain_Lx = 10000.;
+          double domain_Ly = 6000.;
+
+        // has to be an even number
+        size_t n_wells_per_row = (size_t) db["lattice_n_wells_per_row"]; //equals number of wells per column
+
+        // lower left well
+        double x0 = domain_Lx/2.- (n_wells_per_row-1)/2.*distance;
+        double y0 = domain_Ly/2.- (n_wells_per_row-1)/2.*distance;
+
+        size_t n_wells = n_wells_per_row*n_wells_per_row;
+
+        if (n_wells % 2 != 0)
+          ErrThrow("n_wells_per_row should be an even number with equally many production "
+                  "and injection wells, but we have ", n_wells, " many wells.");
+
+        std::vector<double> x_production_well, y_production_well;
+
+        for (unsigned int k1 = 0; k1 < n_wells_per_row; k1++) {
+            for (unsigned int k2 = 0; k2 < n_wells_per_row; k2++) {
+              double xk = x0 + distance*k2;
+              double yk = y0 + distance*k1;
+              if ( pow(-1,k1)*pow(-1,k2) == -1 )
+              {
+              x_production_well.push_back(xk);
+              y_production_well.push_back(yk);
+              }
+            }
+          }
+
+        x_production_well.resize(n_wells/2.);
+        y_production_well.resize(n_wells/2.);
+
+  #ifdef __3D__
+        std::vector<double> z_production_well(n_wells/2.,0.);//3000.;
+        for (int i = 0; i < n_wells/2.; i++)
+          z_production_well[i] = 250.;
+  #endif
+
+        std::vector<double> average(n_wells/2., 0.), min(n_wells/2., 0.);
+        bool minimum_temperature_reached = false;
+        size_t Num_circle_points = 10;
+        double total_average = 0.;
+
+        for (int i = 0; i < x_production_well.size(); i++)
+        {
+          std::array<double, d> centers = {x_production_well[i], y_production_well[i]
+  #ifdef __3D__
+             , z_production_well[i]
+  #endif
+          };
+
+          sinks sink((double) db["delta_fct_eps_factor"], (double) db["well_radius"], centers, Num_circle_points, Coll);
+          sink.find_average_and_min_along_circle(&temperature, average[i], min[i]);
+
+          total_average += average[i];
+
+          if (min[i] < (double) db["minimum_temperature_production_well"])
+          {
+            minimum_temperature_reached = true;
+            Output::print("Minimum production temperature obtained in the production well at position ",
+                          x_production_well[i], ", ", y_production_well[i],
+#ifdef __3D__
+                          ", ", z_production_well[i],
+#endif
+                  " at time step ",
+                  (double) tss.current_step_, " .");
+            break;
+          }
+        }
+
+        if ( !minimum_temperature_reached )
+             {
+               total_average = total_average/(x_production_well.size());
+               Output::print(" *** T(average) = ", total_average);
+               this->temperature_production_well_at_time_steps.push_back(total_average);
+             }
+             else
+               break;
+
+      }
+      else if (this->db["scenario"].is("hexagon"))
+      {
+        // todo
+        Output::print(" Temperature along well not yet implemented");
+      }
+      else if (this->db["scenario"].is("3_rows_of_double_doublets_varying_row_distance"))
     {
       std::vector<double> x_production_well(6,0.), y_production_well(6,0.);
       x_production_well[0] = center_x_moving_doublet_top_row - ((double)  db["well_distance"])/2.;
@@ -1612,7 +1709,156 @@ const
       TCollection* Coll = pressure.GetFESpace3D()->GetCollection();
 #endif
 
-if (this->db["scenario"].is("3_rows_of_double_doublets_fixed_well_distance")
+      if (this->db["scenario"].is("lattice"))
+      {
+        double domain_Lx = 10000.;
+        double domain_Ly = 6000.;
+
+      // has to be an even number
+      size_t n_wells_per_row = (size_t) db["lattice_n_wells_per_row"]; //equals number of wells per column
+
+      // lower left well
+      double x0 = domain_Lx/2.- (n_wells_per_row-1)/2.*distance;
+      double y0 = domain_Ly/2.- (n_wells_per_row-1)/2.*distance;
+
+      size_t n_wells = n_wells_per_row*n_wells_per_row;
+
+      if (n_wells % 2 != 0)
+        ErrThrow("n_wells_per_row should be an even number with equally many production "
+                "and injection wells, but we have ", n_wells, " many wells.");
+
+      std::vector<double> x_production_wells, y_production_wells, x_injection_wells, y_injection_wells;
+
+      for ( unsigned int k1 = 0; k1 < n_wells_per_row; k1++)
+      {
+          for (unsigned int k2 = 0; k2 < n_wells_per_row; k2++)
+          {
+            double xk = x0 + distance*k2;
+            double yk = y0 + distance*k1;
+            if ( pow(-1,k1)*pow(-1,k2) == -1 )
+            {
+            x_production_wells.push_back(xk);
+            y_production_wells.push_back(yk);
+            }
+            else
+            {
+              x_injection_wells.push_back(xk);
+              y_injection_wells.push_back(yk);
+            }
+          }
+        }
+
+      x_production_wells.resize(n_wells/2.);
+      y_production_wells.resize(n_wells/2.);
+      x_injection_wells.resize(n_wells/2.);
+      y_injection_wells.resize(n_wells/2.);
+
+#ifdef __3D__
+      std::vector<double> z_production_wells(n_wells/2.,0.), z_injection_wells(n_wells/2.,0.);//3000.;
+      for (int i = 0; i < n_wells/2.; i++)
+      {
+        z_production_wells[i] = 250.;
+        z_injection_wells[i] = 250.;
+      }
+#endif
+
+
+        std::vector<double> average_injection(n_wells/2., 0.), min_injection(n_wells/2., 0.),
+                average_production(n_wells/2., 0.), min_production(n_wells/2., 0.);
+        double pressure_values_production_wells = 0.;
+        double pressure_values_injection_wells = 0.;
+            size_t Num_circle_points = 10;
+
+            for (int i = 0; i < x_production_wells.size(); i++)
+            {
+              std::array<double, d> centers = {x_production_wells[i], y_production_wells[i]
+      #ifdef __3D__
+                , z_production_wells[i]
+      #endif
+              };
+
+              sinks sink((double) db["delta_fct_eps_factor"], (double) db["well_radius"], centers, Num_circle_points, Coll);
+              sink.find_average_and_min_along_circle(&pressure, average_production[i], min_production[i]);
+
+              pressure_values_production_wells += average_production[i];
+            }
+            for (int i = 0; i < x_injection_wells.size(); i++)
+            {
+              std::array<double, d> centers = {x_injection_wells[i], y_injection_wells[i]
+      #ifdef __3D__
+                 , z_injection_wells[i]
+      #endif
+              };
+
+              sinks source((double) db["delta_fct_eps_factor"], (double) db["well_radius"], centers, Num_circle_points, Coll);
+              source.find_average_and_min_along_circle(&pressure, average_injection[i], min_injection[i]);
+
+              pressure_values_injection_wells += average_injection[i];
+            }
+
+
+        //todo: compute Q from u_in
+        /// double Q = 150/360;//24 * 50; // 50 - 300
+
+        int number_of_time_steps_for_production = 0;
+        double Delta_Temp = 0;
+
+        for (int i = 0; i < this->temperature_production_well_at_time_steps.size(); i++)
+        {
+          if (this->temperature_production_well_at_time_steps.at(i) >= ((double) db["minimum_temperature_production_well"])/6.)
+          {
+            Delta_Temp += this->temperature_production_well_at_time_steps.at(i) -  (n_wells/2.)*(double) db["temperature_injection_well"];
+            cout <<" temperature_production_well_at_time_steps: "<<  this->temperature_production_well_at_time_steps.at(i) << ", step: "<< i <<endl;
+          }
+          else
+            break;
+
+          number_of_time_steps_for_production = i+1;
+        }
+
+        double alpha = db["alpha_cost"];
+        /*
+         * double functional_value_new // = Q/(0.6)* Delta t * (pressure_prod[1] - pressure_inj[1])  -  Q * Delta t * fluid_density * fluid_heat_capacity * (temperature_prod[1] - temperature_inj); // Net energy AFTER 50 years
+                                       //= Q * Delta t * (   1/(0.6) * (pressure_prod[1] - pressure_inj[1])  - fluid_density * fluid_heat_capacity * (temperature_prod[1] - temperature_inj)   );
+       //since Q_i=const, Delta t = const we can minimize
+         */
+
+        functional_value =  (number_of_time_steps_for_production * 1/(double)db["pump_efficiency"] *
+                   ( pressure_values_injection_wells - pressure_values_production_wells)
+                  - (double) db["fluid_density"] * (double) db["fluid_heat_capacity"] * Delta_Temp)
+          +  alpha * std::abs(distance - 1000.);
+
+        Output::print("functional_value: ", functional_value);
+
+        //write to stream
+        std::ofstream outputFile("temperature_values_at_production_well_and_net_energy_for_disctance" + std::to_string(distance) +  ".txt");
+        std::copy(this->temperature_production_well_at_time_steps.begin(), this->temperature_production_well_at_time_steps.end(), std::ostream_iterator<int>(outputFile, "\n"));
+        //std::copy(functional_value, std::ostream_iterator<int>(outputFile, "\n"));
+        outputFile << functional_value;
+
+
+        std::vector<double> cost_functional = db["cost_functional"];
+
+        auto temperature = tcd_primal.get_function();
+        auto temperature_at_sink =
+                [&](){
+          double mean = temperature.compute_mean();
+          return mean;
+        };
+
+        /*auto temperature_at_sink1 =
+                [&](){
+          double mean = temperature.compute_mean();
+          return mean;
+        };
+        auto temperature_at_sink2 =
+                [&](){
+          double mean = temperature.compute_mean();
+          return mean;
+        };
+         */
+      }
+ else if (this->db["scenario"].is("3_rows_of_double_doublets_fixed_well_distance")
         || this->db["scenario"].is("3_rows_of_double_doublets_varying_row_distance"))
 {
   if ( this->db["scenario"].is("3_rows_of_double_doublets_varying_row_distance"))
