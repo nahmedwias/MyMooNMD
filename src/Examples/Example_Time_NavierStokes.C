@@ -10,7 +10,7 @@ Example_NonStationary Example_NonStationary::Time_NavierStokes(
   bool only_stokes = false; // some examples also provide a linear version
   // flag, false means the laplace term is discretized with the gradient, true
   // means it is discretized with the deformation tensor
-  bool deformation_tensor = false;
+  //bool deformation_tensor = false;
   double initial_time = 0.0; // should this be taken from the database?
 
   // indicate if two or three space dimensions
@@ -39,7 +39,7 @@ Example_NonStationary Example_NonStationary::Time_NavierStokes(
       // exact solution, first velocity component
       if(two_d)
       {
-        auto u1 = [p](const Point& point, double t, FunctionEvaluation& v)
+        auto u1 = [](const Point& point, double t, FunctionEvaluation& v)
         {
           const double x = point.x();
           const double y = point.y();
@@ -52,7 +52,7 @@ Example_NonStationary Example_NonStationary::Time_NavierStokes(
         };
         exact.push_back(AnalyticalFunction(u1));
         // exact solution, second velocity component
-        auto u2 = [p](const Point& point, double t, FunctionEvaluation& v)
+        auto u2 = [](const Point& point, double t, FunctionEvaluation& v)
         {
           const double x = point.x();
           const double y = point.y();
@@ -65,7 +65,7 @@ Example_NonStationary Example_NonStationary::Time_NavierStokes(
         };
         exact.push_back(AnalyticalFunction(u2));
         // exact solution, pressure component
-        auto pr = [p](const Point& point, double t, FunctionEvaluation& v)
+        auto pr = [](const Point& point, double t, FunctionEvaluation& v)
         {
           const double x = point.x();
           const double y = point.y();
@@ -86,8 +86,7 @@ Example_NonStationary Example_NonStationary::Time_NavierStokes(
         // Boundary data for first velocity component ((all zero))
         bd.push_back(BoundaryData(0.0));
         // Boundary data for second velocity component
-        auto g2 = [reynolds, deformation_tensor, p](unsigned int component,
-                                                    double t, double time)
+        auto g2 = [](unsigned int component, double t, double time)
         {
           switch(component)
           {
@@ -110,7 +109,7 @@ Example_NonStationary Example_NonStationary::Time_NavierStokes(
         bd.push_back(BoundaryData(g2));
         bd.push_back(BoundaryData(0.0)); // all zero for pressure
         // the coefficient function
-        f = [reynolds, only_stokes, p](const Point& point, double time,
+        f = [reynolds, only_stokes](const Point& point, double time,
                                        std::vector<double>& coeffs)
         {
           const double x = point.x();
@@ -149,7 +148,7 @@ Example_NonStationary Example_NonStationary::Time_NavierStokes(
       {
         /// @todo implement sine example for TNSE3D, this one is time indepenent
         ErrThrow("implement a sine example for TNSE3D!");
-        auto u1 = [p](const Point& point, FunctionEvaluation& v)
+        auto u1 = [](const Point& point, FunctionEvaluation& v)
         {
           const double x = point.x();
           const double y = point.y();
@@ -173,7 +172,7 @@ Example_NonStationary Example_NonStationary::Time_NavierStokes(
         };
         exact.push_back(AnalyticalFunction(u1));
         // exact solution, second velocity component
-        auto u2 = [p](const Point& point, FunctionEvaluation& v)
+        auto u2 = [](const Point& point, FunctionEvaluation& v)
         {
           const double x = point.x();
           const double y = point.y();
@@ -197,7 +196,7 @@ Example_NonStationary Example_NonStationary::Time_NavierStokes(
         };
         exact.push_back(AnalyticalFunction(u2));
         // exact solution, third velocity component
-        auto u3 = [p](const Point& point, FunctionEvaluation& v)
+        auto u3 = [](const Point& point, FunctionEvaluation& v)
         {
           const double x = point.x();
           const double y = point.y();
@@ -224,7 +223,7 @@ Example_NonStationary Example_NonStationary::Time_NavierStokes(
         };
         exact.push_back(AnalyticalFunction(u3));
         // exact solution, pressure component
-        auto pr = [p](const Point&, FunctionEvaluation& v)
+        auto pr = [](const Point&, FunctionEvaluation& v)
         {
           v.reset(); // all zero
         };
@@ -237,22 +236,19 @@ Example_NonStationary Example_NonStationary::Time_NavierStokes(
         // boundary data, automatically computed from known solution
         // bd.push_back(BoundaryData(bc, exact));
         // Boundary data for first velocity component
-        auto g1 =
-            [reynolds, deformation_tensor, p](const Point& point, double)
+        auto g1 = [](const Point& point, double)
         {
           return cos(p * point.x()) * sin(p * point.y()) * sin(p * point.z());
         };
         bd.push_back(BoundaryData(g1));
         // Boundary data for first velocity component
-        auto g2 =
-            [reynolds, deformation_tensor, p](const Point& point, double)
+        auto g2 = [](const Point& point, double)
         {
           return sin(p * point.x()) * cos(p * point.y()) * sin(p * point.z());
         };
         bd.push_back(BoundaryData(g2));
         // Boundary data for third velocity component
-        auto g3 =
-            [reynolds, deformation_tensor, p](const Point& point, double)
+        auto g3 = [](const Point& point, double)
         {
           return -2 * sin(p * point.x()) * sin(p * point.y())
                  * cos(p * point.z());
@@ -260,7 +256,7 @@ Example_NonStationary Example_NonStationary::Time_NavierStokes(
         bd.push_back(BoundaryData(g3));
         bd.push_back(BoundaryData(0.0)); // all zero for pressure
         // the coefficient function
-        f = [reynolds, only_stokes, p, u1, u2, u3, pr](
+        f = [reynolds, only_stokes, u1, u2, u3, pr](
             const Point& point, double, std::vector<double>& coeffs)
         {
           constexpr MultiIndex D000 = MultiIndex::D000;
@@ -395,8 +391,7 @@ Example_NonStationary Example_NonStationary::Time_NavierStokes(
       // Boundary data for first velocity component
       if(two_d)
       {
-        auto g1 = [reynolds, deformation_tensor](unsigned int component,
-                                                 double t, double)
+        auto g1 = [](unsigned int component, double t, double)
         {
           return (component == 2 && t > 0.00001 && t < 0.99999) ? 1. : 0.;
         };
@@ -405,7 +400,7 @@ Example_NonStationary Example_NonStationary::Time_NavierStokes(
       else
       {
         // 3D
-        auto g1 = [reynolds, deformation_tensor](const Point& point, double)
+        auto g1 = [](const Point& point, double)
         {
           return (1. - point.z() < 1e-10) ? 1. : 0.;
         };
@@ -420,8 +415,7 @@ Example_NonStationary Example_NonStationary::Time_NavierStokes(
       }
       bd.push_back(BoundaryData(0.0)); // all zero for pressure
       // the coefficient function
-      f = [reynolds, only_stokes](const Point& point, double,
-                                  std::vector<double>& coeffs)
+      f = [reynolds](const Point& point, double, std::vector<double>& coeffs)
       {
         coeffs[0] = 1. / reynolds; // reynolds number
         coeffs[1] = 0.;            // right hand side, first component

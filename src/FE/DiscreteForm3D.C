@@ -80,11 +80,13 @@ TDiscreteForm3D::TDiscreteForm3D(char *name, char *description, int n_terms,
 
   if(rank==TDatabase::ParamDB->Par_P0)
 #endif
+  {
     Output::print<3>("---------------------");
     Output::print<3>("number of spaces: ", N_Spaces);
     for(i=0;i<N_Spaces;i++)
-    	Output::print<3>(i ," ", Needs2ndDerivatives[i]);
+      Output::print<3>(i ," ", Needs2ndDerivatives[i]);
     Output::print<3>("---------------------");
+  }
 }
 
 /** constructor with assembling using parameters */

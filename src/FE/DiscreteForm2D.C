@@ -152,11 +152,13 @@ MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
 if(rank==0)
 #endif
-  Output::print("---------------------");
-  Output::print("number of spaces: ", N_Spaces );
-  for(i=0;i<N_Spaces;i++)
-  	Output::print(i," ",Needs2ndDerivatives[i]);
-  Output::print("---------------------");
+  {
+    Output::print("---------------------");
+    Output::print("number of spaces: ", N_Spaces );
+    for(i=0;i<N_Spaces;i++)
+      Output::print(i," ",Needs2ndDerivatives[i]);
+    Output::print("---------------------");
+  }
 }
 
 TDiscreteForm2D::~TDiscreteForm2D()

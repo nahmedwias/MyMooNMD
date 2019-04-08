@@ -10,7 +10,7 @@ void ExampleFile()
 }
 
 // exact solution is not known
-void Exact(double x, double y, double z, double *values)
+void Exact(double, double, double, double *values)
 {
   values[0] = 0;
   values[1] = 0;
@@ -74,8 +74,8 @@ void BoundValue(double x, double y, double z, double &value)
   }
 }
 
-void BilinearCoeffs(int n_points, double *x, double *y, double *z,
-        double **parameters, double **coeffs)
+void BilinearCoeffs(int n_points, double *x, double *, double *, double **,
+                    double **coeffs)
 {
   double l_x;
   l_x=(0.19*x[0]*x[0]*x[0]-1.42*x[0]*x[0]+2.38*x[0])/4;

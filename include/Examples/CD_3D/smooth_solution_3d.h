@@ -18,19 +18,19 @@ void Exact(double x, double y, double z, double *values)
 }
 
 // kind of boundary condition (needed for FE space)
-void BoundCondition(double x, double y, double z, BoundCond &cond)
+void BoundCondition(double, double, double, BoundCond &cond)
 {
     cond = DIRICHLET;
 }
 
 // value of boundary condition
-void BoundValue(double x, double y, double z, double &value)
+void BoundValue(double, double, double, double &value)
 {
   value=0;
 }
 
 void BilinearCoeffs(int n_points, double *x, double *y, double *z,
-        double **parameters, double **coeffs)
+                    double **, double **coeffs)
 {
   double exact[5];
   for(int i = 0; i < n_points; ++i)
