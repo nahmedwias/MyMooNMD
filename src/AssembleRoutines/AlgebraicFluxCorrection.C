@@ -87,7 +87,7 @@ namespace
 
     int nDof = system_matrix.GetN_Rows();
 
-    if(!(int) lumped_mass_matrix.size() == nDof)
+    if((int) lumped_mass_matrix.size() != nDof)
     {
       ErrThrow("Lumped mass matrix vector does not fit the stiffness matrix!");
     }
@@ -374,24 +374,24 @@ namespace
     int nDofs = mass_matrix.GetN_Rows();
     int nEntries = mass_matrix.GetN_Entries();
 
-    if(! (int) lumped_mass.size() == nDofs)
+    if((int) lumped_mass.size() != nDofs)
     {
       ErrThrow("lumped_mass has incorrect size ", lumped_mass.size(),
         " != ", nDofs);
     }
 
-    if(! (int) sol_approx.size() == nDofs)
+    if((int) sol_approx.size() != nDofs)
     {
       ErrThrow("sol_approx has incorrect size ", sol_approx.size(),
         " != ", nDofs);
     }
 
-    if(! (int) alphas.size() == nEntries)
+    if((int) alphas.size() != nEntries)
     {
       ErrThrow("alphas has incorrect size ", alphas.size(), " != ", nEntries);
     }
 
-    if(! (int) raw_fluxes.size() == nEntries)
+    if((int) raw_fluxes.size() != nEntries)
     {
       ErrThrow("raw_fluxes has incorrect size ", raw_fluxes.size(),
         " != ", nEntries);

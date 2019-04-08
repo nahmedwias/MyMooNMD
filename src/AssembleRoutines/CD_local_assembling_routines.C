@@ -41,13 +41,13 @@ void TCDStiff(double Mult, double *coeff, double *, double , double**OrigValues,
 }
 
 template <int d>
-void TCDStiff_TensorialDiffusionTerm(double Mult, double *coeff, double *param,
-                    double hK, double**OrigValues, int *N_BaseFuncts,
-                    double ***LocMatrices, double **LocRhs)
+void TCDStiff_TensorialDiffusionTerm(double Mult, double *coeff, double *,
+                    double, double**OrigValues, int *N_BaseFuncts,
+                    double ***LocMatrices, double **)
 {
   double **Matrix = LocMatrices[0];
   int N_ = N_BaseFuncts[0];
-  double * u  =OrigValues[0];
+  //double * u  =OrigValues[0];
   double * u_x=OrigValues[1];
   double * u_y=OrigValues[2];
   double * u_z = d == 2 ? nullptr : OrigValues[3];
@@ -59,14 +59,14 @@ void TCDStiff_TensorialDiffusionTerm(double Mult, double *coeff, double *param,
 
   for (int i = 0; i < N_; i++)
   {
-    double test = u[i];
+    //double test = u[i];
     double test_x = u_x[i];
     double test_y = u_y[i];
     double test_z = d == 2 ? 0. : u_z[i];
 
     for (int j = 0; j < N_; j++)
     {
-      double ansatz=u[j];
+      //double ansatz=u[j];
       double ansatz_x=u_x[j];
       double ansatz_y=u_y[j];
       double ansatz_z = d == 2 ? 0. : u_z[j];
