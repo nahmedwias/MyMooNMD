@@ -14,7 +14,7 @@ template <class Vector>
 Preconditioner_vanka<Vector>::Preconditioner_vanka(const BlockFEMatrix& matrix,
                          VankaType type, double damp_factor)
                          : vanka_object_(type, damp_factor, false),
-                           matrix_(matrix)
+                           matrix_(&matrix)
 {
    // It seems like Solver.C requests a preconditioner object to
    // be fully functional directly after construction, i.e. it has to call
@@ -27,7 +27,7 @@ template <class Vector>
 Preconditioner_vanka<Vector>::Preconditioner_vanka(const BlockMatrix&,
                                                    VankaType type,
                                                    double damp_factor)
- : vanka_object_(type, damp_factor, false), matrix_(BlockFEMatrix())
+ : vanka_object_(type, damp_factor, false), matrix_(nullptr)
 {
   ErrThrow("Creating a Preconditioner_vanka with a BlockMatrix is not "
            "possible, you need a BlockFEMatrix.");
@@ -44,8 +44,11 @@ void Preconditioner_vanka<Vector>::apply(const Vector & z, Vector & r) const
 template <class Vector>
 void Preconditioner_vanka<Vector>::update()
 {
+  if(matrix_ != nullptr)
+  {
     // Let the Vanka object update itself with the stored matrix.
-    vanka_object_.update(matrix_);
+    vanka_object_.update(*matrix_);
+  }
 }
 
 // explicit instantiation
