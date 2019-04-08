@@ -46,7 +46,7 @@ class Preconditioner_vanka : public Preconditioner<Vector>
     /// The Vanka object which does all the work.
     mutable VankaSmoother vanka_object_;
     /// The BlockFEMatrix which this is a preconditioner for.
-    const BlockFEMatrix& matrix_;
+    const BlockFEMatrix* matrix_;
 };
 
 
