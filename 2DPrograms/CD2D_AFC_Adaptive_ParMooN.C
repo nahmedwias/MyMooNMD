@@ -54,7 +54,7 @@ int main(int, char* argv[])
   RefinementStrategy<2> refinementStrategy(parmoon_db);
   LoopInfo loop_info("adaptive", true, true, 1);
   BlockVector values;
-  size_t n_adaptive_steps = 30;
+  size_t n_adaptive_steps = domain.get_database()["refinement_max_n_adaptive_steps"];
   bool adaptive_converged;
   for(size_t curr_level = 0; ; ++curr_level)
   {
