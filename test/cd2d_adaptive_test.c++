@@ -65,7 +65,7 @@ void check_cd2d(ParameterDatabase& db, int element_code,
   LoopInfo loop_info("adaptive", true, true, 1);
   BlockVector values;
   // for this test we do a fixed number of adaptive refinement steps
-  size_t n_adaptive_steps = 8;
+  size_t n_adaptive_steps = domain.get_database()["refinement_max_n_adaptive_steps"];
   for(size_t curr_level = 0; curr_level < n_adaptive_steps; ++curr_level)
   {
     Output::print("\nadaptive loop ", curr_level);
@@ -193,6 +193,8 @@ int main(int, char**)
   db.merge(Example2D::default_example_database());
   db.merge(ParameterDatabase::default_output_database());
   db.merge(RefinementStrategy<2>::default_refinement_strategy_database());
+  db.merge(TDomain::default_domain_parameters());
+  db["refinement_max_n_adaptive_steps"] = 8;
   db["problem_type"] = 0; // problem type is not needed
   TDatabase::ParamDB->PE_NR = 1000;
   db["example"] = 1; // two_interior_layers
@@ -200,9 +202,9 @@ int main(int, char**)
   
   db["output_compute_errors"] = true;
   
-  db.add("boundary_file", "Default_UnitSquare", "");
-  db.add("geo_file", "UnitSquare", "", {"UnitSquare", "TwoTriangles"});
-  db.add("refinement_n_initial_steps", (size_t) nRefinements,"");
+  db["boundary_file"] = "Default_UnitSquare";
+  db["geo_file"] = "UnitSquare";
+  db["refinement_n_initial_steps"] = nRefinements;
   db.add("space_discretization_type", "galerkin", "");
   if(write_PS_and_VTU_files)
     db["output_write_vtu"] = true;
