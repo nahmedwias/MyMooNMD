@@ -41,6 +41,8 @@ class ConvectionDiffusion_AFC : public ConvectionDiffusion<d>
     FEMatrix afc_matrix_D;
     /** @brief limiters */
     std::vector<double> afc_alphas;
+    /** @brief interpolation error */
+    std::array<double, ConvectionDiffusion<d>::n_errors+1> interpolation_errors;
     
   public:
     using FEFunction = typename Template_names<d>::FEFunction;
