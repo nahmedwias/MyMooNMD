@@ -2,11 +2,12 @@
 // Created by Moritz Hoffmann on 05/07/15.
 //
 
-#ifndef CDERRORESTIMATOR2D_H
-#define CDERRORESTIMATOR2D_H
+#ifndef CDERRORESTIMATOR2D_AFC_H
+#define CDERRORESTIMATOR2D_AFC_H
 
 #include "templateNames.h"
 #include "ErrorEstimator.h"
+#include "FEMatrix.h"
 #ifdef __2D__
 #include "Example_CD2D.h"
 #include "FEFunction2D.h"
@@ -18,23 +19,11 @@
 
 enum class CDErrorEstimatorType
 {
-  // 0 - gradient indicator
-  GradientIndicator = 0,
-  // 1 - H^1 estimator
-  H1_ResidualEstimator,
-  // 2 - L^2 estimator
-  L2_ResidualEstimator,
-  // 3 - energy norm + dual norm, Verf"urth 2005
-  Energy_ResidualEstimatorQuasiRobust,
-  // 4 - energy norm estimator without jumps
-  Energy_ResidualEstimatorWithoutJumps,
-  // 5 - supg estimator John/Novo, upper estimate
-  SUPG_Upper,
-  // 6 - supg estimator John/Novo, lower estimate
-  SUPG_Lower
+  // 1- AFC 
+  AFC
 };
 
-constexpr int N_CD2D_ESTIMATOR_TYPES = 7;
+constexpr int N_CD2D_ESTIMATOR_TYPES = 2;
 
 // enable output of CD error estimator type
 std::ostream &operator<<(std::ostream &os, CDErrorEstimatorType type);
@@ -51,7 +40,7 @@ std::ostream &operator<<(std::ostream &os, CDErrorEstimatorType type);
  *       works in 2D.
  */
 template <int d>
-class CDErrorEstimator : public ErrorEstimator<d>
+class CDErrorEstimator_AFC : public ErrorEstimator<d>
 {
   public:
     using FEFunction = typename Template_names<d>::FEFunction;
@@ -78,18 +67,18 @@ class CDErrorEstimator : public ErrorEstimator<d>
     bool conform_grid;
     
     Parameter space_discretization;
+    
+    // (hk)^d/|K| constant in eta_3
+    double maxK_constant;
 
     // internal function calculating jumps across edges at the boundary
     bool handleJump_BoundaryEdge(double *result, const Example_CD &example,
-                                 const int estimatorType,
                                  const int N_QuadraturePoints1D,
                                  const double *const &weights1D,
-                                 const CDErrorEstimator::JointData &edgeData,
-                                 const double meas, const double *coeff,
-                                 double linfb, const std::vector<double> &alpha,
+                                 const CDErrorEstimator_AFC<d>::JointData &edgeData,
+                                 const double *coeff,
                                  int edgeIdx, const TJoint *joint) const;
-
-
+    
     // calculates eta_K for a single cell K
     double calculateEtaK(const TBaseCell *cell,
                          const FEFunction &fe_function,
@@ -101,13 +90,17 @@ class CDErrorEstimator : public ErrorEstimator<d>
                          int n_quadrature_points,
                          const unsigned int N_QuadraturePoints1D,
                          const double *(&weights1D), const JointData &edgeData,
-                         const double* zeta, JointRefData &edgeRefData) const;
+                         const double* zeta, JointRefData &edgeRefData,
+                         const FEMatrix& afc_matrix_D_entries,
+                         const std::vector<double>& alphas) const;
 
   public:
     // constructor
-    CDErrorEstimator(int type, bool conform_grid, Parameter space_disc);
+    CDErrorEstimator_AFC(int type, bool conform_grid, Parameter space_disc);
 
-    void estimate(const Example_CD &ex, const FEFunction &fe_function);
+    void estimate(const Example_CD &ex, const FEFunction &fe_function,
+                  const FEMatrix& afc_matrix_D_entries,
+                  const std::vector<double>& alphas);
     
     virtual void info() override;
 };

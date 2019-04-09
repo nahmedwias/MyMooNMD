@@ -581,7 +581,9 @@ template<int d>
 void CDErrorEstimator<d>::estimate(const Example_CD & example,
                                    const FEFunction &fe_function)
 {
+  //taking from the base class ErrorEstimator
   this->eta_K.clear();
+  //Initializing the global error to zero
   std::fill(this->estimated_global_error.begin(),
             this->estimated_global_error.end(), 0.);
 
@@ -913,12 +915,19 @@ void CDErrorEstimator<d>::estimate(const Example_CD & example,
     TDatabase::ParamDB->INTERNAL_HK_CONVECTION = -1; // reset for every cell
 
 
-    double result = calculateEtaK(cell, fe_function, *coll, example,
-                                  derivativesPerQuadPoint, AbsDetjk,
-                                  weights, coefficientsPerQuadPoint,
+    double result = calculateEtaK(cell, 
+                                  fe_function, 
+                                  *coll, 
+                                  example,
+                                  derivativesPerQuadPoint, 
+                                  AbsDetjk, weights, 
+                                  coefficientsPerQuadPoint,
                                   N_Points,
                                   (const unsigned int) N_QuadraturePoints1D,
-                                  weights1D, edgeData, zeta, edgeRefData);
+                                  weights1D, 
+                                  edgeData, 
+                                  zeta, 
+                                  edgeRefData);
 
     this->eta_K[cellIdx] = result;
     this->estimated_global_error[int(estimatorType)] += result;
@@ -987,13 +996,19 @@ double compute_estimator_weight(int estimatorType, double hE, double nu,
 
 template<int d>
 double CDErrorEstimator<d>::calculateEtaK(
-  const TBaseCell *cell, const FEFunction &fe_function, const TCollection &coll,
+  const TBaseCell *cell, 
+  const FEFunction &fe_function,
+  const TCollection &coll,
   const Example_CD & example,
   std::vector<double *> &derivativesPerQuadPoint,
   double (&AbsDetjk)[MaxN_QuadPoints_2D], const double *(&weights),
-  std::vector<double *> &coefficientsPerQuadPoint, int n_quadrature_points,
-  const unsigned int N_QuadraturePoints1D, const double *(&weights1D),
-  const JointData &edgeData, const double *zeta, JointRefData &edgeRefData) const
+  std::vector<double *> &coefficientsPerQuadPoint, 
+  int n_quadrature_points,
+  const unsigned int N_QuadraturePoints1D, 
+  const double *(&weights1D),
+  const JointData &edgeData, 
+  const double *zeta, 
+  JointRefData &edgeRefData) const
 {
   // SUPG parameter
   double delta_K = 0.0;
@@ -1096,13 +1111,20 @@ double CDErrorEstimator<d>::calculateEtaK(
 
     // getting the cell weight in a vector [weight_0,...,weight_5], see description of the method
     double linfb;
+    //these are the coeffecients that we have in the posteriori analyis which appear with
+    //the strong residue
     std::vector<double> alpha = getCellWeights<d>(
       hK, space_discretization.is("supg"), coeff, hK_tilde, linfb, delta_K);
     double estimator_cell_weight = alpha[int(estimatorType) - 1];
 
     // this is the accordingly weighted strong residual without jumps
     result = estimator_cell_weight * strong_residual;
+    
+    /*--------------Till here AFC follows the same story when we have to add
+     * the contribution of the triangle elements----------------------------*/
 
+    /*--------------Now the edge cotribution starts which should also cover
+     * the AFC contribution--------------------------------------------------*/
     /**
      * Calculate jumps
      */

@@ -157,15 +157,20 @@ namespace
    *
    */
   void compute_artificial_diffusion_matrix(
-    const FEMatrix& A, std::vector<double>& matrix_D)
+    const FEMatrix& A, FEMatrix& D)
   {
     // catch non-square matrix
     if (!A.is_square() )
     {
       ErrThrow("Matrix must be square!");
     }
+    if(A.GetStructure()!=D.GetStructure())
+    {
+      ErrThrow("A and D should have the same structure!");
+    }
     // store number of dofs
     int nDof = A.GetN_Rows();
+    double* D_Entries=D.GetEntries();
 
 #ifdef _MPI
     const TParFECommunicator3D& comm = A.GetFESpace3D()->get_communicator();
@@ -207,7 +212,7 @@ namespace
             }
           }
           //determine entry D_ij
-          matrix_D[l] = std::min({-k_ij , 0.0 , -k_ji}
+          D_Entries[l] = std::min({-k_ij , 0.0 , -k_ji}
           );
         }
       }
@@ -226,12 +231,12 @@ namespace
       int ll = -1;
       for(int l=RowPtr[i];l<RowPtr[i+1];l++)
       {
-        val +=  matrix_D[l];
+        val +=  D_Entries[l];
         int j = ColInd[l];
         if (j==i)                                 //diagonal found
           ll = l;                                 //place of the diagonal entry in the matrix_D entries array
       }
-      matrix_D[ll] = -val;
+      D_Entries[ll] = -val;
     }
   }
 
@@ -542,7 +547,7 @@ namespace
    *                     is required
    * @param[in] index_j: Column number for entry a_ij
    * @param[in] entries_pointer_ij: Denotes the pointer to the array Entries
-   * @param[in] afc_matrix_D_entries: The artificial diffusion matrix
+   * @param[in] D: The artificial diffusion matrix
    *
    * @param[out] The summation required in the entry of the Jacobian matrix.
    */
@@ -557,7 +562,7 @@ namespace
     const int index_i,
     const int index_j,
     const int entries_pointer_ij,
-    const std::vector<double>& afc_matrix_D_entries)
+    const FEMatrix& D)
   {
     double sum=0, epsinv;
     //DQ_minus, DQ_plus, DP_minus, DP_plus: 
@@ -569,6 +574,8 @@ namespace
     const double* Entries = A.GetEntries();
     int row_i_start, row_i_end, temp, index_a_ji, index_k, index_a_ki;
     int row_k_start, row_k_end, index_a_kj, index_a_jk, a_kj;
+    
+    const double* afc_matrix_D_entries=D.GetEntries();
 
     epsinv = 1.0/eps;
     // computation of the index of entry a_ji
@@ -945,7 +952,8 @@ namespace
     const int index_i,
     const int index_j,
     const int entries_pointer_ij,
-    const std::vector<double>& afc_matrix_D_entries, const double sigma, 
+    const FEMatrix& D, 
+    const double sigma, 
     const double omega_matrix, const double omega_derivative)
   {
     //Regularized P_plus, P_minus, Q_plus, Q_minus
@@ -972,6 +980,8 @@ namespace
     // indicies used in the loop
     int k, m, index_m, m2, m3, mm, row_k_start, row_k_end, index_k;
     int index_a_ki = -1, index_a_kj, index_a_jk = 0;
+    
+    const double* afc_matrix_D_entries=D.GetEntries();
 
     // i-th row of sqmatrix
     row_i_start = RowPtr[index_i];
@@ -1269,7 +1279,7 @@ namespace
    *                   is required
    * @param[in] col_j: Column number for entry a_ij
    * @param[in] entries_pointer: Denotes the pointer to the array Entries
-   * @param[in] afc_matrix_D_entries: The artificial diffusion matrix
+   * @param[in] D: The artificial diffusion matrix
    *
    * @param[out] The summation required in the entry of the Jacobian matrix.
    */
@@ -1289,7 +1299,7 @@ namespace
     const int row_i,
     const int col_j,
     const int entries_pointer,
-    const std::vector<double>& afc_matrix_D_entries)
+    const FEMatrix& D)
 
   {
     double sum=0, epsinv;
@@ -1305,6 +1315,7 @@ namespace
     k1=RowPtr[row_i+1];
     m0=RowPtr[col_j];
     m1=RowPtr[col_j+1];
+    const double* afc_matrix_D_entries=D.GetEntries();
 
     for(int k=k0;k<k1;k++)
     {
@@ -1837,8 +1848,9 @@ FEMatrix& system_matrix,
 const std::vector<double>& sol,
 std::vector<double>& rhs,
 const std::vector<int>& neum_to_diri,
-std::vector<double>& afc_matrix_D_entries,
+FEMatrix& D,
 std::vector<double>& gamma,
+std::vector<double>& alphas,
 bool compute_D_and_gamma,
 const ParameterDatabase& db,
 //std::vector<double>& exact_interpolant,
@@ -1866,6 +1878,7 @@ const int is_not_afc_fixed_point_rhs)
   const int * RowPtr = system_matrix.GetRowPtr();
   // non-const, matrix entries get modified!
   double* Entries = system_matrix.GetEntries();
+  double* D_Entries=D.GetEntries();
 
   int N_Entries = system_matrix.GetN_Entries();
   // allocate memory for matrix F and flux limiters
@@ -1878,20 +1891,20 @@ const int is_not_afc_fixed_point_rhs)
   double* R_plus = Q_minus + nDofs;
   double* R_minus = R_plus + nDofs;
   
-  std::vector<double> alphas;
   std::vector<double> umin, umax, q;
   
  
   if ((it_scheme == Iteration_Scheme::NEWTON)||
     (it_scheme == Iteration_Scheme::FIXEDPOINT_MATRIX)
-    ||(it_scheme == Iteration_Scheme::NEWTON_REGU))
+    ||(it_scheme == Iteration_Scheme::NEWTON_REGU)
+    ||(it_scheme == Iteration_Scheme::FIXEDPOINT_RHS))
     alphas.resize(N_Entries+1,0.0);
   // compute entries of the artificial diffusion matrix D
   // TODO make matrix D an actual TMatrix and not only an entries vector
   if (compute_D_and_gamma)
   {
     Output::print<4>("AFC: compute matrix D");
-    compute_artificial_diffusion_matrix(system_matrix, afc_matrix_D_entries);
+    compute_artificial_diffusion_matrix(system_matrix, D);
     if (limiter == Limiter::BJK17)
     {
       Output::print<4>("AFC: compute vector gamma");
@@ -1902,7 +1915,7 @@ const int is_not_afc_fixed_point_rhs)
   // this is the matrix with the properties of an M matrix
   //for fixed_point_rhs and iteration>1 we don't need to add matrix D again.
   if (is_not_afc_fixed_point_rhs)
-    Daxpy(N_Entries, 1.0, &afc_matrix_D_entries[0], Entries);
+    system_matrix += D;
   /*Previous Implementation
     Daxpy(N_Entries, 1.0, &afc_matrix_D_entries[0], Entries);*/
   
@@ -1932,7 +1945,7 @@ const int is_not_afc_fixed_point_rhs)
         if (sol[index] > umax[i])
           umax[i] = sol[index];
         if (i != index)
-          q[i] += afc_matrix_D_entries[j];
+          q[i] += D_Entries[j];
       }
       q[i] *= gamma[i];
     }
@@ -1951,7 +1964,7 @@ const int is_not_afc_fixed_point_rhs)
       // column
       index = ColInd[j];
       // d_ij (u_j - u_i)
-      F[j] = afc_matrix_D_entries[j] * (sol[index]-sol[i]);
+      F[j] = D_Entries[j] * (sol[index]-sol[i]);
     }
   }
   // matrix F is computed
@@ -2122,7 +2135,8 @@ const int is_not_afc_fixed_point_rhs)
         if (it_scheme == Iteration_Scheme::FIXEDPOINT_RHS)
         {
           // update rhs
-          rhs[i] += alpha_ij*F[j];
+          alphas[j]=alpha_ij;
+          rhs[i] += alpha_ij*F[j];          
         }
         if ((it_scheme==Iteration_Scheme::NEWTON)
             || (it_scheme == Iteration_Scheme::FIXEDPOINT_MATRIX)
@@ -2162,9 +2176,11 @@ const int is_not_afc_fixed_point_rhs)
         // explicit treatment
         if (it_scheme == Iteration_Scheme::FIXEDPOINT_RHS)
         {
+          alphas[j]=alpha_ij;
+          alphas[jj]=alpha_ij;
           F[j] = alpha_ij *F[j];
           // update rhs of current row
-          rhs[i] += F[j];
+          rhs[i] += F[j];          
           // update rhs wrt to current column
           // note that F[j] = -F[jj] and 
           // alpha_j = alpha_jj (symmetry of alpha matrix)
@@ -2183,7 +2199,8 @@ const int is_not_afc_fixed_point_rhs)
     }                                             //End of For loop j
     if((it_scheme==Iteration_Scheme::NEWTON)
         ||(it_scheme == Iteration_Scheme::FIXEDPOINT_MATRIX)
-        || (it_scheme == Iteration_Scheme::NEWTON_REGU))
+        || (it_scheme == Iteration_Scheme::NEWTON_REGU)
+          ||(it_scheme == Iteration_Scheme::FIXEDPOINT_RHS))
       alphas[diag_index]=1.0;
   }                                               //End of loop i
 
@@ -2206,10 +2223,10 @@ const int is_not_afc_fixed_point_rhs)
         //Non-Diagonal Entries
         if(i!=index_j)
         {
-          Entries[j]-=alphas[j]*afc_matrix_D_entries[j]*tau0;
+          Entries[j]-=alphas[j]*D_Entries[j]*tau0;
           // if (Entries[j] > 0)
           //  Output::print<2>("non-diag pos ", Entries[j]);
-          rhs[i] += alphas[j]*afc_matrix_D_entries[j]*sol[index_j]*tau1;
+          rhs[i] += alphas[j]*D_Entries[j]*sol[index_j]*tau1;
         }
         else
         {
@@ -2217,7 +2234,7 @@ const int is_not_afc_fixed_point_rhs)
           for(int jj=j3;jj<j4;jj++)
           {
             if(ColInd[jj]!=i)
-              sum_flux += alphas[jj]*afc_matrix_D_entries[jj];
+              sum_flux += alphas[jj]*D_Entries[jj];
           }
           Entries[j]+=sum_flux*tau0;
           //if (Entries[j] < 0)
@@ -2280,13 +2297,13 @@ const int is_not_afc_fixed_point_rhs)
             {
               //Derivative Product is a function which returns the summation 
               //inside the DF matrix
-              df[j]=Entries[j]-tau0*alphas[j]*afc_matrix_D_entries[j]
+              df[j]=Entries[j]-tau0*alphas[j]*D_Entries[j]
                 -tau1*Compute_Jacobian_times_flux_Kuzmin(system_matrix,
                                                          F,P_plus,Q_plus,
                                                          Q_minus,P_minus,
                                                          R_minus,R_plus,i,
                                                          index_j,j,
-                                                         afc_matrix_D_entries);
+                                                         D);
             }
             else
             {
@@ -2294,7 +2311,7 @@ const int is_not_afc_fixed_point_rhs)
               for(int jj=j3;jj<j4;jj++)
               {
                 if(ColInd[jj]!=i)
-                  sum_flux += alphas[jj]*afc_matrix_D_entries[jj];
+                  sum_flux += alphas[jj]*D_Entries[jj];
               }
               df[j]=Entries[j]+tau0*sum_flux
                 -tau1*Compute_Jacobian_times_flux_Kuzmin(system_matrix,
@@ -2302,7 +2319,7 @@ const int is_not_afc_fixed_point_rhs)
                                                          Q_minus,P_minus,
                                                          R_minus,R_plus,i,
                                                          index_j,j,
-                                                         afc_matrix_D_entries);
+                                                         D);
             }
           }               //end of loop j
         }                 //end of loop i     //Formation of matrix DF complete
@@ -2326,7 +2343,7 @@ const int is_not_afc_fixed_point_rhs)
             df[j]=Entries[j]
              -Compute_Jacobian_times_flux_Kuzmin_Regularized(system_matrix,
                                                              F,i,index_j,j,
-                                                             afc_matrix_D_entries,
+                                                             D,
                                                              sigma, tau0, tau1);
           }
         }                //end of loop i      //Formation of matrix DF complete
@@ -2352,7 +2369,7 @@ const int is_not_afc_fixed_point_rhs)
             {
               //Derivative Product is a function which returns the summation inside the DF matrix
               df[j]=Entries[j]
-                   -tau0*alphas[j]*afc_matrix_D_entries[j]
+                   -tau0*alphas[j]*D_Entries[j]
                    -tau1*Compute_Jacobian_times_flux_BJK17(system_matrix, 
                                                            F, P_plus,P_minus,
                                                            Q_plus,Q_minus,
@@ -2360,7 +2377,7 @@ const int is_not_afc_fixed_point_rhs)
                                                            umax,umin,q,
                                                            sol[index_j],i,
                                                            index_j,j,
-                                                           afc_matrix_D_entries);
+                                                           D);
             }
             else
             {
@@ -2368,7 +2385,7 @@ const int is_not_afc_fixed_point_rhs)
               for(int jj=j3;jj<j4;jj++)
               {
                 if(ColInd[jj]!=i)
-                  sum_flux +=alphas[jj]*afc_matrix_D_entries[jj];
+                  sum_flux +=alphas[jj]*D_Entries[jj];
               }
               df[j]=Entries[j]+tau0*sum_flux
                    -tau1*Compute_Jacobian_times_flux_BJK17(system_matrix, 
@@ -2378,7 +2395,7 @@ const int is_not_afc_fixed_point_rhs)
                                                            umax,umin,q,
                                                            sol[index_j],i,
                                                            index_j,j,
-                                                           afc_matrix_D_entries);
+                                                           D);
             }
           }                //end of loop j
         }                  //end of loop i  //Formation of matrix DF complete
@@ -2450,14 +2467,18 @@ AlgebraicFluxCorrection::Prelimiter prelim
   // entries.
   const int* ColInd = K.GetKCol();
   const int* RowPtr = K.GetRowPtr();
-  double* Entries = K.GetEntries();
   int N_Entries = K.GetN_Entries();
+  
+  FEMatrix D(K);
+  
+  D.reset();
+  
+  double* afc_matrix_D_Entries=D.GetEntries();
 
   //STEP 0.1: Compute artificial diffusion matrix D and add to K, K := K + D ("L").
-  std::vector<double> matrix_D_Entries(N_Entries, 0.0);
-  compute_artificial_diffusion_matrix(K, matrix_D_Entries);
-
-  Daxpy(N_Entries, 1.0, &matrix_D_Entries[0], Entries);
+  compute_artificial_diffusion_matrix(K, D);
+  
+  K+=D;
 
   //MPI: Matrix K is in Level-0-consistency now.
 
@@ -2546,7 +2567,7 @@ AlgebraicFluxCorrection::Prelimiter prelim
       if (index==i)                 //nothing to do if this is a diagonal entry
         continue;
 
-      double val = - matrix_D_Entries[j] * (u_interm[i]-u_interm[index]);
+      double val = - afc_matrix_D_Entries[j] * (u_interm[i]-u_interm[index]);
       raw_fluxes[j]= Entries_M[j] * (u_dot_interm[i]-u_dot_interm[index]) + val;
 
       // pre-limit fluxes
