@@ -1382,7 +1382,7 @@ double CDErrorEstimator_AFC<d>::calculateEtaK(
         
         result += compute_estimator_weight(hE, coeff[0], coeff[3]) * jump / 2.0;
         //contribution from d_h
-        result += compute_estimator_weight_d_h(hE, coeff[0], maxK_constant)*tangent_der_sol;
+        result += (compute_estimator_weight_d_h(hE, coeff[0], maxK_constant)*tangent_der_sol)/2.0;
       }
       
       /***********************************************************************/
@@ -1740,8 +1740,8 @@ double CDErrorEstimator_AFC<d>::calculateEtaK(
             //Output::print<2>("jump ", jump);
             result += compute_estimator_weight(hE,coeff[0], coeff[3])* jump / 2.0; 
             //contribution from d_h
-            result += compute_estimator_weight_d_h(hE, coeff[0], 
-                                                   maxK_constant)*tangent_der_sol;
+            result += (compute_estimator_weight_d_h(hE, coeff[0], 
+                                                   maxK_constant)*tangent_der_sol)/2.0;
           }  
         }                                       // end clipboard==-1
         else
@@ -1885,8 +1885,8 @@ double CDErrorEstimator_AFC<d>::calculateEtaK(
           beta=compute_estimator_weight(hE, coeff[0], coeff[3]);
           result += beta* jump / 2.0;  
           //contribution from d_h
-          result += compute_estimator_weight_d_h(hE, coeff[0], 
-                                                 maxK_constant)*tangent_der_sol;
+          result += (compute_estimator_weight_d_h(hE, coeff[0], 
+                                                 maxK_constant)*tangent_der_sol)/2.0;
         }                                       // end neighbour is member of the collection  
       }  
     }  
