@@ -1,5 +1,6 @@
 #include "ConvectionDiffusion_AFC.h"
 #include "Database.h"
+#include "ConvDiff.h"
 #include "AlgebraicFluxCorrection.h"
 #include "LinAlg.h"
 #include "anderson.h"
@@ -82,7 +83,20 @@ ConvectionDiffusion_AFC<d>::ConvectionDiffusion_AFC(const TDomain& domain,
 				    exact_interpolant.data(),   space->GetN_DegreesOfFreedom());
 #endif
   //Interpolates and store the value in exact_interpolant
-  exact_interpolation.Interpolate(this->example.get_exact(0));  
+  exact_interpolation.Interpolate(this->example.get_exact(0));
+#ifdef __3D__
+  TAuxParam3D aux;
+  MultiIndex3D AllDerivatives[4] = { D000, D100, D010, D001 };
+#else
+  TAuxParam2D aux;
+  MultiIndex2D AllDerivatives[3] = { D00, D10, D01 };
+#endif
+  const FESpace*  fe_space_pointer = space.get();
+  exact_interpolation.GetErrors(this->example.get_exact(0), d+1, AllDerivatives,
+                                ConvectionDiffusion<d>::n_errors,
+                                conv_diff_l2_h1_linf_error<d>,
+                                this->example.get_coeffs(), &aux, 1,
+                                &fe_space_pointer, interpolation_errors.data());
 }
 
 /** ************************************************************************ */
@@ -656,6 +670,11 @@ void ConvectionDiffusion_AFC<d>::output(int i)
                        ConvectionDiffusion<d>::errors[0]
                        +epsilon*ConvectionDiffusion<d>::errors[1]*
                        ConvectionDiffusion<d>::errors[1]);
+      Output::print<1>("Interpolation Energy Norm^2: ", setprecision(14), 
+                       interpolation_errors[0]*
+                       interpolation_errors[0]
+                       +epsilon*interpolation_errors[1]*
+                       interpolation_errors[1]);     
     }
   }
 }
