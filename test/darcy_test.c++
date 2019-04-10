@@ -396,7 +396,7 @@ int main(int, char**)
   
   
   db["max_n_iterations"] = 10000;
-  
+#ifdef PARMOON_WITH_PETSC
   Output::print("\n\n ----------- PETSc solver -----------\n");
   db["solver_type"] = "petsc";
 
@@ -409,6 +409,7 @@ int main(int, char**)
 
   tests_on_different_grids(nRefinements, db);
   timer.restart_and_print("all tests, the petsc solver");
+#endif // PARMOON_WITH_PETSC
   
   db["solver_type"] = "iterative";
   

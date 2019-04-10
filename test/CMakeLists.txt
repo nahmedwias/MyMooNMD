@@ -240,7 +240,9 @@ if(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL OR ${PARMOON_PARALLEL_TYPE} STRE
   #richardson iteration with multigrid
   add_test(NAME cd3d_seq_mg COMMAND ParMooN_test_cd3d_solver_seq multigrid)
   # petsc
-  add_test(NAME cd3d_seq_petsc COMMAND ParMooN_test_cd3d_solver_seq petsc)
+  if(${PARMOON_WITH_PETSC})
+    add_test(NAME cd3d_seq_petsc COMMAND ParMooN_test_cd3d_solver_seq petsc)
+  endif(${PARMOON_WITH_PETSC})
   
   #cd3d algebraic flux correction(afc) test
   add_executable(ParMooN_test_cd3d_afc cd3d_afc_test.c++)
@@ -259,7 +261,9 @@ if(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL OR ${PARMOON_PARALLEL_TYPE} STRE
   #richardson iteration with multigrid
   add_test(NAME tcd3d_seq_mg COMMAND ParMooN_test_tcd3d_solver_seq multigrid)
   # petsc
-  add_test(NAME tcd3d_seq_petsc COMMAND ParMooN_test_tcd3d_solver_seq petsc)
+  if(${PARMOON_WITH_PETSC})
+    add_test(NAME tcd3d_seq_petsc COMMAND ParMooN_test_tcd3d_solver_seq petsc)
+  endif(${PARMOON_WITH_PETSC})
   
   #tcd3d algebraic flux correction tests
   set(_EXEC_NAME ParMooN_test_tcd3d_femfct_seq)
@@ -280,7 +284,9 @@ if(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL OR ${PARMOON_PARALLEL_TYPE} STRE
   #multigrid with cell_vanka_jacobi smoother (works in SEQ and MPI)
   add_test(NAME nse3d_seq_cell_vanka_seq COMMAND ParMooN_test_nse3d_solver_seq cell_vanka_jacobi)
   # petsc
-  add_test(NAME nse3d_seq_petsc COMMAND ParMooN_test_nse3d_solver_seq petsc)
+  if(${PARMOON_WITH_PETSC})
+    add_test(NAME nse3d_seq_petsc COMMAND ParMooN_test_nse3d_solver_seq petsc)
+  endif(${PARMOON_WITH_PETSC})
   
   # direct solver test
   add_executable(ParMooN_test_direct_solver direct_solver_test.c++)
@@ -423,8 +429,10 @@ elseif(${PARMOON_PARALLEL_TYPE} STREQUAL MPI)
   #jacobi
   add_test(NAME cd3d_mpi_jacobi COMMAND ${MPIEXEC} -n 3 ParMooN_test_cd3d_solver_mpi jacobi)
   # using defualt petsc solver
-  add_test(NAME cd3d_mpi_petsc COMMAND ${MPIEXEC} -n 3 ParMooN_test_cd3d_solver_mpi 
-           petsc)
+  if(${PARMOON_WITH_PETSC})
+    add_test(NAME cd3d_mpi_petsc COMMAND ${MPIEXEC} -n 3 ParMooN_test_cd3d_solver_mpi 
+             petsc)
+  endif(${PARMOON_WITH_PETSC})
   # mg with iterative solver fgmres and smoother SOR
   add_test(NAME cd3d_mpi_mg COMMAND ${MPIEXEC} -n 3 ParMooN_test_cd3d_solver_mpi 
            multigrid)
