@@ -2345,7 +2345,6 @@ void Assemble2D_VectFE(int n_fespaces, const TFESpace2D** fespaces,
 #endif // __2D__
 
 
-
 void Assemble2D(int n_fespaces, TFESpace2D **fespaces,
                 int n_sqmatrices, TSquareMatrix2D **sqmatrices,
                 int n_matrices, TMatrix2D **matrices,

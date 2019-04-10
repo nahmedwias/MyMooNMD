@@ -222,7 +222,7 @@ NavierStokes<d>::NavierStokes(const TDomain& domain,
   
   outputWriter.add_fe_vector_function(&this->get_velocity());
   outputWriter.add_fe_function(&this->get_pressure());
-
+  
   if(db["output_write_exact_solution"])
   {
     // initialize variables for storing exact solution (FE functions)
