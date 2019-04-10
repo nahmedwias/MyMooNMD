@@ -440,6 +440,20 @@ Example_NSE3D::Example_NSE3D(const ParameterDatabase& user_input_parameter_db)
   }
 }
 
+
+Example_NSE3D::Example_NSE3D(const std::vector<DoubleFunct3D *>& exact,
+                             const std::vector<BoundCondFunct3D *>& bc,
+                             const std::vector<BoundValueFunct3D *>& bd,
+                             const CoeffFct3D& coeffs, double nu)
+ : Example3D(exact, bc, bd, coeffs)
+{
+  if (nu != 0.)
+    this->example_database["reynolds_number"] = 1./nu;
+  else
+    this->example_database["reynolds_number"] = 0.;
+}
+
+
 void Example_NSE3D::do_post_processing(NavierStokes<3>& nse3d) const
 {
   if(post_processing_stat)
