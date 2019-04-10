@@ -159,9 +159,11 @@ int main(int, char**)
     
     time_integration(2,tcd, tss);
     
+#ifdef PARMOON_WITH_PETSC
     db["solver_type"] = "petsc";
     TimeConvectionDiffusion<2> tcd_petsc(domain, db);
     time_integration(2, tcd_petsc, tss);
+#endif // PARMOON_WITH_PETSC
   }
 }
 
