@@ -1,6 +1,7 @@
 /**
  * @brief A test program to test Time_CD2D program
  */
+#include "all_defines_external_libraries.h"
 #include <Domain.h>
 #include <Database.h>
 #include <FEDatabase2D.h>
