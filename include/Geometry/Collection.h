@@ -77,6 +77,11 @@ class TCollection
 
     /** @brief get maximal and minimal diameter */
     int GetHminHmax(double *hmin, double *hmax) const;
+    
+    /** @brief tells if the mesh is Delaunay or not
+     * @note Currently implemented only in 2D, 3D returns false 
+     * @note Hexahedra and Quad grids return false */
+    bool IsDelaunay() const;
 
     /** @brief return index of cell in Cells-array */
     int get_cell_index(const TBaseCell *cell) const;
