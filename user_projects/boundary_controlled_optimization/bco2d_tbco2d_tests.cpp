@@ -189,11 +189,12 @@ int main(int argc, char* argv[])
 
 
   {
-    //=======================================================================
-    //============= TEST 4 : TimeBCO with time-dependent control ============
-    //==== This tests a control which is independent from space, in one =====
-    //==== direction only, and dependent of time (n_control = 4 time steps) =
-    //=======================================================================
+    Output::print(
+     "============= TEST 4 : TimeBCO with time-dependent control ============\n"
+     "==== This tests a control which is independent from space, in one =====\n"
+     "==== direction only, and dependent of time (n_control = 4 time steps) =\n"
+     "=======================================================================\n"
+    );
     test_number = 4;
     // reset some parameters specifically to test 4
     parmoon_db["max_n_evaluations"] = 9; // force lower iterations because of bug

@@ -191,7 +191,7 @@ void NavierStokes_Adjoint<d>::assemble(const FEVectFunct& u, const FEFunction& p
                                                D00, D00};
   LocalAssembling2D la(n_terms, derivatives, FESpaceNumber, row_space, 
                        column_space, rhs_space, coeffs, 
-                       {local_assembling_routine}, manipulate_function,
+                       {local_assembling_routine}, manipulate_function, 
                        n_matrices, n_rhs, N_ParamFct, ParameterFct,
                        BeginParameter, N_Parameters, FEFunctions2D, N_FEValues, 
                        FEValue_FctIndex, FEValue_MultiIndex);

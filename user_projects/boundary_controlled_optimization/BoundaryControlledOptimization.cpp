@@ -1,6 +1,7 @@
 #include "BoundaryControlledOptimization.hpp"
 #include "LoopInfo.h"
 #include "Database.h"
+#include "BaseCell.h"
 #include <algorithm>
 #include <BaseCell.h>
 

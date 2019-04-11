@@ -3,7 +3,11 @@
 #include <Chrono.h>
 #include <Database.h>
 #include <Domain.h>
-#include <FEDatabase2D.h>
+#ifdef __2D__
+  #include <FEDatabase2D.h>
+#else
+  #include <FEDatabase3D.h>
+#endif
 #include <LoopInfo.h>
 
 
@@ -19,7 +23,11 @@ int main(int argc, char* argv[])
   
   //  declaration of database, you need this in every program
   TDatabase Database;
+#ifdef __2D__
   TFEDatabase2D FEDatabase;
+#else
+  TFEDatabase3D FEDatabase;
+#endif
   ParameterDatabase parmoon_db = ParameterDatabase::parmoon_default_database();
   parmoon_db.read(argv[1]);
 
@@ -41,7 +49,11 @@ int main(int argc, char* argv[])
     domain.PS("Domain.ps", It_Finest, 0);
   }
 
-  Time_BoundaryControlledOptimization<2> tbco(domain, parmoon_db);
+#ifdef __2D__
+    Time_BoundaryControlledOptimization<2> tbco(domain, parmoon_db);
+#else
+    Time_BoundaryControlledOptimization<3> tbco(domain, parmoon_db);
+#endif
   
   timer.restart_and_print("all preparations before optimization loop");
   parmoon_opt::print_nlopt_version();
