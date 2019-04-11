@@ -1,6 +1,7 @@
 /**
  * @brief A test program to test Time_CD2D program
  */
+#include "all_defines_external_libraries.h"
 #include <Domain.h>
 #include <Database.h>
 #include <FEDatabase2D.h>
@@ -164,13 +165,15 @@ int main(int, char**)
     TimeConvectionDiffusion<2> tcd(domain, db);
     time_integration(tcd);
 
+#ifdef PARMOON_WITH_PETSC
     // test PETSc solver
     Output::print("\n\nTesting PETSc\n");
     db["solver_type"] = "petsc";
     TDatabase::TimeDB->CURRENTTIME = db["time_start"];
     TimeConvectionDiffusion<2> tcd_petsc(domain, db);
     time_integration(tcd_petsc);
-
+#endif // PARMOON_WITH_PETSC
+    
     // test direct solver with SUPG
     Output::print("\n\nTesting SUPG\n");
     db["solver_type"] = "direct";
