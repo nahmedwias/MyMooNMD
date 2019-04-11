@@ -19,6 +19,7 @@
  *
  */
 
+#include "all_defines_external_libraries.h"
 #include <Domain.h>
 #include <Database.h>
 #ifdef __2D__

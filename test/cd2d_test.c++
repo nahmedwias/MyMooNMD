@@ -28,6 +28,7 @@
 #include <FEDatabase2D.h>
 #include "ConvectionDiffusion.h"
 #include <Multigrid.h>
+#include "all_defines_external_libraries.h"
 
 #include <Chrono.h>
 #include "LocalAssembling.h"

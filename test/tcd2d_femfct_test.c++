@@ -7,6 +7,7 @@
  * @date 2016/01/13
  * @author Clemens Bartsch, Naveed Ahmed
  */
+#include "all_defines_external_libraries.h"
 #include <AlgebraicFluxCorrection.h>
 #include "TimeConvectionDiffusion.h"
 #include <Database.h>
