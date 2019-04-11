@@ -49,6 +49,49 @@ int TCollection::GetHminHmax(double *hmin, double *hmax) const
   return(0);
 }
 
+/** check whether the meshing is Delaunay or not */
+bool TCollection::IsDelaunay() const
+{
+#ifdef __2D__
+  for(int i = 0; i<N_Cells; i++)
+  {
+    auto cell = GetCell(i);
+    if(cell->GetN_Vertices() != 3)
+    {
+      Output::print<1>("Delaunay checking only available for triangular elements");
+      return false;
+    }
+    // get vertices of edge edgeIdx
+    const TVertex *ver0 = cell->GetVertex(0);
+    const TVertex *ver1 = cell->GetVertex(1);
+    const TVertex *ver2 = cell->GetVertex(2);
+    // coordinates of edges
+    double x0 = ver0->GetX();
+    double y0 = ver0->GetY();
+    double x1 = ver1->GetX();
+    double y1 = ver1->GetY();
+    double x2 = ver2->GetX();
+    double y2 = ver2->GetY();
+    
+    double dot_product;
+    dot_product = (x0-x1)*(x2-x1)+(y0-y1)*(y2-y1);
+    if(dot_product < 0)
+      return false;
+    dot_product = (x1-x2)*(x0-x2)+(y1-y2)*(y0-y2);
+    if(dot_product < 0)
+      return false;
+    dot_product = (x1-x0)*(x2-x0)+(y1-y0)*(y2-y0);
+    if(dot_product < 0)
+      return false;
+  }                                        //end of loop over cells
+  return true;
+#endif
+#ifdef __3D__
+  Output::print<1>("Delaunay checking only available for 2D");
+  return false;
+#endif
+}
+
 /** return Index of cell in SortedCells-array */
 int TCollection::get_cell_index(const TBaseCell *cell) const
 {
