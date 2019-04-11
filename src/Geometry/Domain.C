@@ -65,9 +65,8 @@ ParameterDatabase TDomain::default_domain_parameters()
 
   db.add("refinement_max_n_adaptive_steps", 0u,
          "A maximum number of adaptive refinement steps"
-         "which may be applied to this domain."
-         "THIS IS UNUSED AT THE MOMENT!",
-         0u, 10u);
+         "which may be applied to this domain.",
+         0u, 1000u);
   
   db.add("refinement_final_step_barycentric", false,
          "If this is set to true, the domain will be refined as usual except "

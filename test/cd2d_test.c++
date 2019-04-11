@@ -28,6 +28,7 @@
 #include <FEDatabase2D.h>
 #include "ConvectionDiffusion.h"
 #include <Multigrid.h>
+#include "all_defines_external_libraries.h"
 
 #include <Chrono.h>
 #include "LocalAssembling.h"
@@ -225,7 +226,7 @@ int main(int, char**)
   tests_on_triangles(db);
   time.restart_and_print("all tests, direct solver");
   
-  
+#ifdef PARMOON_WITH_PETSC
   Output::print("\n\n ----------- petsc solver -----------\n");
   db["solver_type"] = "petsc";
   db["geo_file"] = "UnitSquare";
@@ -233,7 +234,7 @@ int main(int, char**)
   db["geo_file"] = "TwoTriangles";
   tests_on_triangles(db);
   time.restart_and_print("all tests, petsc solver");
-  
+#endif // PARMOON_WITH_PETSC  
   
   
   Output::print("\n\n --------- fgmres+ssor solver ---------\n");

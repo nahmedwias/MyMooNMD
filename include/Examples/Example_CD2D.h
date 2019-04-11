@@ -9,14 +9,15 @@
 * 
 * So far the following examples are implemented and enabled:
 * Stationary examples
-* 	0 - Simple Sine Laplace (analytical example)
-* 	1 - Two interior Layers  (Knopp, Lube, Rapin, CMAME 2002)
-* 	2 - Hemker Rotating Body (Hemker 1996)
-* 	3 - Sharp Boundary Layer (Kuzmin & Moeller 2005)
-*       4 - Smooth Solution (BJK SIAM, 2016)
-*       5 - Hughes, Mallet, Mizukami 1986
-*       6 - Inner Layer Hump, (John, Knobloch, Savescu, CMAME 2011)
-*       7 - Boundary Layer Known, (John, Knobloch, Savescu, CMAME 2011)
+* 0 - Simple Sine Laplace (analytical example)
+* 1 - Two interior Layers  (Knopp, Lube, Rapin, CMAME 2002)
+* 2 - Hemker Rotating Body (Hemker 1996)
+* 3 - Sharp Boundary Layer (Kuzmin & Moeller 2005)
+* 4 - Smooth Solution (BJK SIAM, 2016)
+* 5 - Hughes, Mallet, Mizukami 1986
+* 6 - Inner Layer Hump, (John, Knobloch, Savescu, CMAME 2011)
+* 7 - Boundary Layer Known, (John, Knobloch, Savescu, CMAME 2011)
+* 8 - Known solution with a Boundary layer (Allendes, Barrenchea, and Rankin, SISC 2017)
 *
 * Time dependent examples
 * 	101 - Exponential Function (analytical example)

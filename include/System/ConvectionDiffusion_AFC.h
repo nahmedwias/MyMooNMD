@@ -38,7 +38,11 @@ class ConvectionDiffusion_AFC : public ConvectionDiffusion<d>
     /** @brief vector of weights for an AFC scheme */
     std::vector<double> afc_gamma;
     /** @brief entries of correction matrix for AFC schemes */
-    std::vector<double> afc_matrix_D_entries;
+    FEMatrix afc_matrix_D;
+    /** @brief limiters */
+    std::vector<double> afc_alphas;
+    /** @brief interpolation error */
+    std::array<double, ConvectionDiffusion<d>::n_errors+1> interpolation_errors;
     
   public:
     using FEFunction = typename Template_names<d>::FEFunction;
@@ -84,6 +88,8 @@ class ConvectionDiffusion_AFC : public ConvectionDiffusion<d>
      std::list<std::vector<double>> & solAnderson,
      std::list<std::vector<double>> & deltaAnderson);
     
+    const FEMatrix& get_afc_D_entries()  const;
+    const std::vector<double>& get_afc_alphas() const;
     
     ~ConvectionDiffusion_AFC()=default; 
     

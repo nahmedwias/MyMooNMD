@@ -148,10 +148,12 @@ add_subdirectory(test EXCLUDE_FROM_ALL)
 #   running all tests corresponding to the current #
 #   parallel type. Use it excessively!             #
 ####################################################
+add_custom_target(build_all_tests DEPENDS ${parmoon_tests})
+add_custom_target(build_all_main DEPENDS ${parmoon_main_programs})
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure --exclude-regex all
-                  DEPENDS ${parmoon_tests} ${parmoon_main_programs})
+                  DEPENDS build_all_tests build_all_main)
 add_custom_target(check_all COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure 
-                  DEPENDS ${parmoon_tests} ${parmoon_main_programs})
+                  DEPENDS build_all_tests build_all_main)
 
 include(cmake/additional_helper_targets.cmake)
 

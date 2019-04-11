@@ -7,6 +7,7 @@
  * @date 2016/01/13
  * @author Clemens Bartsch, Naveed Ahmed
  */
+#include "all_defines_external_libraries.h"
 #include <AlgebraicFluxCorrection.h>
 #include "TimeConvectionDiffusion.h"
 #include <Database.h>
@@ -159,9 +160,11 @@ int main(int, char**)
     
     time_integration(2,tcd, tss);
     
+#ifdef PARMOON_WITH_PETSC
     db["solver_type"] = "petsc";
     TimeConvectionDiffusion<2> tcd_petsc(domain, db);
     time_integration(2, tcd_petsc, tss);
+#endif // PARMOON_WITH_PETSC
   }
 }
 

@@ -53,6 +53,10 @@ namespace boundary_layer_known
   #include "CD_2D/boundary_layer_known.h"
 }
 
+namespace example_1_ABR17
+{
+  #include "CD_2D/example_1_ABR17.h"
+}
 
 Example_CD2D::Example_CD2D(const ParameterDatabase& user_input_parameter_db) 
  : Example2D(user_input_parameter_db)
@@ -184,6 +188,21 @@ Example_CD2D::Example_CD2D(const ParameterDatabase& user_input_parameter_db)
       problem_coefficients = boundary_layer_known::BilinearCoeffs;
       
       boundary_layer_known::ExampleFile();
+      break;
+    case 8:
+      /** exact_solution */
+      exact_solution.push_back( example_1_ABR17::Exact );
+      
+      /** boundary condition */
+      boundary_conditions.push_back( example_1_ABR17::BoundCondition );
+      
+      /** boundary values */
+      boundary_data.push_back( example_1_ABR17::BoundValue );
+      
+      /** coefficients */
+      problem_coefficients = example_1_ABR17::BilinearCoeffs;
+      
+      example_1_ABR17::ExampleFile();
       break;
 
     default:

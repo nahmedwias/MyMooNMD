@@ -162,12 +162,12 @@ DirectSolver::DirectSolver(std::shared_ptr<TMatrix> matrix,
 {
 #ifndef PARMOON_WITH_UMFPACK
   if(type == DirectSolverTypes::umfpack)
-    ErrThrow("ParMooN has been compiled without umfpack, therefore a "
+    ErrThrow("ParMooN has been configured without umfpack, therefore a "
              "DirectSolver object with type 'umfpack' can not be created.");
 #endif // not PARMOON_WITH_UMFPACK
 #ifndef PARMOON_WITH_PARDISO
   if(type == DirectSolverTypes::pardiso)
-    ErrThrow("ParMooN has been compiled without pardiso, therefore a "
+    ErrThrow("ParMooN has been configured without pardiso, therefore a "
              "DirectSolver object with type 'pardiso' can not be created.");
 #endif
   

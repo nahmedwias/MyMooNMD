@@ -1,5 +1,6 @@
 #include "ConvectionDiffusion_AFC.h"
 #include "Database.h"
+#include "ConvDiff.h"
 #include "AlgebraicFluxCorrection.h"
 #include "LinAlg.h"
 #include "anderson.h"
@@ -43,7 +44,8 @@ template<int d>
 ConvectionDiffusion_AFC<d>::ConvectionDiffusion_AFC(const TDomain& domain, 
 						 const ParameterDatabase& param_db)
 : ConvectionDiffusion<d>(domain, test(param_db), Example_CD(param_db)),
-                         alphas_x_i(), old_solution()
+  afc_matrix_D(*this->ConvectionDiffusion<d>::systems.front().matrix.get_blocks_uniquely()[0]),
+  alphas_x_i(), old_solution()  
 {
   // A default AFC database. Use to merge AFC database with Parameter DB
   auto afc_db(AlgebraicFluxCorrection::default_afc_database());
@@ -81,7 +83,20 @@ ConvectionDiffusion_AFC<d>::ConvectionDiffusion_AFC(const TDomain& domain,
 				    exact_interpolant.data(),   space->GetN_DegreesOfFreedom());
 #endif
   //Interpolates and store the value in exact_interpolant
-  exact_interpolation.Interpolate(this->example.get_exact(0));  
+  exact_interpolation.Interpolate(this->example.get_exact(0));
+#ifdef __3D__
+  TAuxParam3D aux;
+  MultiIndex3D AllDerivatives[4] = { D000, D100, D010, D001 };
+#else
+  TAuxParam2D aux;
+  MultiIndex2D AllDerivatives[3] = { D00, D10, D01 };
+#endif
+  const FESpace*  fe_space_pointer = space.get();
+  exact_interpolation.GetErrors(this->example.get_exact(0), d+1, AllDerivatives,
+                                ConvectionDiffusion<d>::n_errors,
+                                conv_diff_l2_h1_linf_error<d>,
+                                this->example.get_coeffs(), &aux, 1,
+                                &fe_space_pointer, interpolation_errors.data());
 }
 
 /** ************************************************************************ */
@@ -655,6 +670,11 @@ void ConvectionDiffusion_AFC<d>::output(int i)
                        ConvectionDiffusion<d>::errors[0]
                        +epsilon*ConvectionDiffusion<d>::errors[1]*
                        ConvectionDiffusion<d>::errors[1]);
+      Output::print<1>("Interpolation Energy Norm^2: ", setprecision(14), 
+                       interpolation_errors[0]*
+                       interpolation_errors[0]
+                       +epsilon*interpolation_errors[1]*
+                       interpolation_errors[1]);     
     }
   }
 }
@@ -699,12 +719,19 @@ void ConvectionDiffusion_AFC<d>::do_algebraic_flux_correction(
     //AFC only applied after the 0th iteration or the initial iterate is zero.
     if (iteration >0 || this->db["afc_initial_iterate"].is("afc_zero"))
     {
-      // if necessary, set up vector gamma and matrix D
-      if(afc_matrix_D_entries.empty())
+      /*
+       * In fixed_point_rhs after the first iteration the matrix A is computed 
+       * and stored, so is D and A+D(see matrix_copy). Hence, one doesn't need 
+       * to compute D and gamma again (gamma doesn't depend on A or D) after the
+       * first iteration. For other methods, A is getting assembled again and
+       * hence D needs to be assembled again.
+       */
+      
+      if(is_not_afc_fixed_point_rhs)
       {
-        Output::print<4>("AFC: allocate matrix D");
-        afc_matrix_D_entries.resize(one_block.GetN_Entries(),0.0);
         compute_D_and_gamma = true;  
+        Output::print<4>("Reseting matrix D in AFC");
+        afc_matrix_D.reset();
       }
       if ((limiter== AlgebraicFluxCorrection::Limiter::BJK17) 
                           && (afc_gamma.empty()))
@@ -720,7 +747,7 @@ void ConvectionDiffusion_AFC<d>::do_algebraic_flux_correction(
           one_block,
           solEntries,rhsEntries,
           neumToDiri,
-          afc_matrix_D_entries, afc_gamma, compute_D_and_gamma, this->db,
+          afc_matrix_D, afc_gamma, afc_alphas ,compute_D_and_gamma, this->db,
           limiter, it_scheme, is_not_afc_fixed_point_rhs);
         //performed only once in the whole iteration process
         if(iteration==1 && 
@@ -744,7 +771,7 @@ void ConvectionDiffusion_AFC<d>::do_algebraic_flux_correction(
           one_block1,
           solEntries,rhsEntries,
           neumToDiri,
-          afc_matrix_D_entries, afc_gamma, compute_D_and_gamma, this->db,
+          afc_matrix_D, afc_gamma, afc_alphas ,compute_D_and_gamma, this->db,
           limiter, it_scheme, is_not_afc_fixed_point_rhs);  
       }
       // Previous Implementation
@@ -805,6 +832,20 @@ AlgebraicFluxCorrection::Iteration_Scheme string_to_it_scheme(
   {
     ErrThrow("afc_iteration_scheme",afc_iteration_scheme, "not implemented!!!");
   }
+}
+
+/* ************************************************************************* */
+template <int d>
+const std::vector< double >& ConvectionDiffusion_AFC<d>::get_afc_alphas() const
+{
+  return afc_alphas;
+}
+
+/* ************************************************************************* */
+template <int d>
+const FEMatrix& ConvectionDiffusion_AFC<d>::get_afc_D_entries() const
+{
+  return afc_matrix_D;
 }
 
 #ifdef __3D__
