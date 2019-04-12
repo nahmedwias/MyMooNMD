@@ -157,10 +157,16 @@ void ConvectionDiffusion<d>::output_problem_size_info() const
   double hMin, hMax;
   auto coll = space.GetCollection();
   coll->GetHminHmax(&hMin, &hMax);
+  bool delaunay;
+  delaunay = coll -> IsDelaunay();
   Output::print<1>("N_Cells    : ", setw(13), coll->GetN_Cells());
   Output::print<1>("h(min, max): ", setw(13), hMin, " ", setw(13), hMax);
   Output::print<1>("dofs all   : ", setw(13), space.GetN_DegreesOfFreedom());
   Output::print<1>("dof active : ", setw(13), space.GetActiveBound());
+  if(delaunay)
+    Output::print<1>("The mesh is Delaunay");
+  else
+    Output::print<1>("The mesh is not Delaunay");
 }
 
 /* ************************************************************************* */

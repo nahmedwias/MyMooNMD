@@ -98,8 +98,6 @@ void time_integration(int td, TimeConvectionDiffusion<2>& tcd, TimeDiscretizatio
   while(TDatabase::TimeDB->CURRENTTIME < end_time -1e-10)
   {
     step ++;
-    TDatabase::TimeDB->INTERNAL_STARTTIME
-       = TDatabase::TimeDB->CURRENTTIME;
     tss.set_time_disc_parameters();
     SetTimeDiscParameters(1);
 

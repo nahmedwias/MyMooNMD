@@ -424,8 +424,6 @@ void Time_BoundaryControlledOptimization<d>::apply_control_and_solve(const doubl
   while(!tss.reached_final_time_step())
   {
     tss.current_step_++;
-
-    TDatabase::TimeDB->INTERNAL_STARTTIME = TDatabase::TimeDB->CURRENTTIME;
     // set the time parameters
     tss.set_time_disc_parameters();
     double tau = tnse_primal.get_db()["time_step_length"];
@@ -671,8 +669,6 @@ void Time_BoundaryControlledOptimization<d>::solve_adjoint_equation()
   while(tss.current_time_ > end_time + 1e-10)
   {
     tss.current_step_--;
-
-    TDatabase::TimeDB->INTERNAL_STARTTIME = TDatabase::TimeDB->CURRENTTIME;
     // set the time parameters
     tss.set_time_disc_parameters();
     double tau = tnse_adjoint.get_db()["time_step_length"];

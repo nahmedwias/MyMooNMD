@@ -1328,7 +1328,6 @@ void GeothermalPlantsPositionOptimization<d>::apply_control_and_solve(const doub
   while(TDatabase::TimeDB->CURRENTTIME < end_time - 1e-10)
   {
     tss.current_step_++;
-    TDatabase::TimeDB->INTERNAL_STARTTIME = TDatabase::TimeDB->CURRENTTIME;
 
     cout << "db[scaling_time_derivative]: " <<  db["scaling_time_derivative"] <<endl;
     tss.set_time_disc_parameters();

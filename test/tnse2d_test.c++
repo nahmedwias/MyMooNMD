@@ -61,9 +61,6 @@ void compute(TDomain& domain, ParameterDatabase& db,
   while(TDatabase::TimeDB->CURRENTTIME < end_time-1e-10)
   {
     tnse2d.get_time_stepping_scheme().current_step_++;
-    TDatabase::TimeDB->INTERNAL_STARTTIME
-       = TDatabase::TimeDB->CURRENTTIME;
-
     tnse2d.get_time_stepping_scheme().set_time_disc_parameters();
     double tau = db["time_step_length"];
     TDatabase::TimeDB->CURRENTTIME += tau;

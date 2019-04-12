@@ -110,7 +110,6 @@ void compute(const TDomain& domain, ParameterDatabase& db,
   while(TDatabase::TimeDB->CURRENTTIME < tnse3d.get_time_stepping_scheme().get_end_time()-1e-10)
   {
     tnse3d.get_time_stepping_scheme().current_step_++;
-    TDatabase::TimeDB->INTERNAL_STARTTIME = TDatabase::TimeDB->CURRENTTIME;
     // SetTimeDiscParameters(1);
     tnse3d.get_time_stepping_scheme().set_time_disc_parameters();
     double tau = tnse3d.get_time_stepping_scheme().get_step_length();
