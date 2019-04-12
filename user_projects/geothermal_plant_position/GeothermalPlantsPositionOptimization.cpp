@@ -501,7 +501,7 @@ int dim = 2;
     Qin = u_in * (2/well_radius/well_radius);
 #endif
     
-    std::vector<double> singular_x, singular_y, singular_z,singular_sign;
+    std::vector<double> singular_x, singular_y, singular_z, singular_sign;
 
     double z0 = 50;
     double dz = 50;
@@ -1311,7 +1311,7 @@ void GeothermalPlantsPositionOptimization<d>::apply_control_and_solve(const doub
   TimeDiscretization& tss = tcd_primal.get_time_stepping_scheme();
   tss.current_step_ = 0;
   
-  this->temperature_production_well_at_time_steps.clear();
+  this->average_temperature_production_wells_at_time_steps.clear();
   
   tss.set_time_disc_parameters();
   Output::print<2>("  --> assemble ");
@@ -1366,6 +1366,10 @@ void GeothermalPlantsPositionOptimization<d>::apply_control_and_solve(const doub
 
         // has to be an even number
         size_t n_wells_per_row = (size_t) db["lattice_n_wells_per_row"]; //equals number of wells per column
+
+        if (distance > fmin((double) ((n_wells_per_row-1) * domain_Lx), (double) ((n_wells_per_row-1) * domain_Ly)))
+          ErrThrow("The control results in coordinates that are not within the domain region! "
+                  "Adjust 'lower_bound' and 'upper_bound' in the input file.");
 
         // lower left well
         double x0 = domain_Lx/2.- (n_wells_per_row-1)/2.*distance;
@@ -1436,7 +1440,7 @@ void GeothermalPlantsPositionOptimization<d>::apply_control_and_solve(const doub
              {
                total_average = total_average/(x_production_well.size());
                Output::print(" *** T(average) = ", total_average);
-               this->temperature_production_well_at_time_steps.push_back(total_average);
+               this->average_temperature_production_wells_at_time_steps.push_back(total_average);
              }
              else
                break;
@@ -1444,8 +1448,84 @@ void GeothermalPlantsPositionOptimization<d>::apply_control_and_solve(const doub
       }
       else if (this->db["scenario"].is("hexagon"))
       {
-        // todo
-        Output::print(" Temperature along well not yet implemented");
+        double domain_Lx = 10000.;
+        double domain_Ly = 6000.;
+        size_t n_wells = 6; // todo: = (size_t) db["hexagon_n_wells"];
+
+        // set well position
+        std::vector<double> x_production_wells, y_production_wells, singular_sign;
+
+        singular_sign.push_back(-1.);
+        singular_sign.push_back(1.);
+        singular_sign.push_back(1.);
+        singular_sign.push_back(-1.);
+        singular_sign.push_back(1);
+        singular_sign.push_back(1);
+
+        double x0 = domain_Lx/2.;
+        double y0 = domain_Ly/2.;
+        double pi = acos(-1.);
+        int count = 0;
+        for (unsigned int k1 = 0; k1 < n_wells; k1++)
+        {
+          double xk = x0 + distance*cos(2.*pi*k1/n_wells);
+          double yk = y0 + distance*sin(2.*pi*k1/n_wells);
+
+          if ( singular_sign[k1] == -1 )
+          {
+            x_production_wells.push_back(xk);
+            y_production_wells.push_back(yk);
+          }
+        }
+
+        x_production_wells.resize(4.);
+        y_production_wells.resize(4.);
+
+#ifdef __3D__
+        std::vector<double> z_production_wells(4.,250.);//3000.;
+#endif
+
+        std::vector<double> average(4., 0.), min(4., 0.);
+        bool minimum_temperature_reached = false;
+        size_t Num_circle_points = 10;
+        double total_average = 0.;
+
+        for (int i = 0; i < x_production_wells.size(); i++)
+        {
+          std::array<double, d> centers = {x_production_wells[i], y_production_wells[i]
+#ifdef __3D__
+                                                                                     , z_production_wells[i]
+#endif
+          };
+
+          sinks sink((double) db["delta_fct_eps_factor"], (double) db["well_radius"], centers, Num_circle_points, Coll);
+          sink.find_average_and_min_along_circle(&temperature, average[i], min[i]);
+
+          total_average += average[i];
+
+          if (min[i] < (double) db["minimum_temperature_production_well"])
+          {
+            minimum_temperature_reached = true;
+            Output::print("Minimum production temperature obtained in the production well at position ",
+                    x_production_wells[i], ", ", y_production_wells[i],
+#ifdef __3D__
+                    ", ", z_production_wells[i],
+#endif
+                    " at time step ",
+                    (double) tss.current_step_, " .");
+            break;
+          }
+        }
+
+        if ( !minimum_temperature_reached )
+        {
+          total_average = total_average/(x_production_wells.size());
+          Output::print(" *** T(average) = ", total_average);
+          this->average_temperature_production_wells_at_time_steps.push_back(total_average);
+        }
+        else
+          break;
+
       }
       else if (this->db["scenario"].is("3_rows_of_double_doublets_varying_row_distance"))
     {
@@ -1496,8 +1576,8 @@ void GeothermalPlantsPositionOptimization<d>::apply_control_and_solve(const doub
 
       if ( !minimum_temperature_reached )
       {
-        this->temperature_production_well_at_time_steps.push_back(
-                average[0] + average[1] + average[2] + average[3] + average[4] + average[5]);
+        this->average_temperature_production_wells_at_time_steps.push_back(
+                (average[0] + average[1] + average[2] + average[3] + average[4] + average[5])/6.);
       }
       else
       {
@@ -1554,8 +1634,8 @@ void GeothermalPlantsPositionOptimization<d>::apply_control_and_solve(const doub
 
       if ( !minimum_temperature_reached )
       {
-        this->temperature_production_well_at_time_steps.push_back(
-                average[0] + average[1] + average[2] + average[3] + average[4] + average[5]);
+        this->average_temperature_production_wells_at_time_steps.push_back((
+                average[0] + average[1] + average[2] + average[3] + average[4] + average[5])/6.);
       }
       else
       {
@@ -1608,8 +1688,8 @@ void GeothermalPlantsPositionOptimization<d>::apply_control_and_solve(const doub
 
       if ( !minimum_temperature_reached )
       {
-        this->temperature_production_well_at_time_steps.push_back(
-                average[0] + average[1]);
+        this->average_temperature_production_wells_at_time_steps.push_back(
+                (average[0] + average[1])/2.);
       }
       else
       {
@@ -1659,8 +1739,8 @@ void GeothermalPlantsPositionOptimization<d>::apply_control_and_solve(const doub
 
       if ( !minimum_temperature_reached )
       {
-        this->temperature_production_well_at_time_steps.push_back(
-                average[0] + average[1]);
+        this->average_temperature_production_wells_at_time_steps.push_back(
+                (average[0] + average[1])/2.);
       }
       else
       {
@@ -1803,12 +1883,12 @@ const
         int number_of_time_steps_for_production = 0;
         double Delta_Temp = 0;
 
-        for (int i = 0; i < this->temperature_production_well_at_time_steps.size(); i++)
+        for (int i = 0; i < this->average_temperature_production_wells_at_time_steps.size(); i++)
         {
-          if (this->temperature_production_well_at_time_steps.at(i) >= ((double) db["minimum_temperature_production_well"])/6.)
+          if (this->average_temperature_production_wells_at_time_steps.at(i) >= ((double) db["minimum_temperature_production_well"]))
           {
-            Delta_Temp += this->temperature_production_well_at_time_steps.at(i) -  (n_wells/2.)*(double) db["temperature_injection_well"];
-            cout <<" temperature_production_well_at_time_steps: "<<  this->temperature_production_well_at_time_steps.at(i) << ", step: "<< i <<endl;
+            Delta_Temp += (n_wells/2.)*(this->average_temperature_production_wells_at_time_steps.at(i) -  (double) db["temperature_injection_well"]);
+            cout <<" average_temperature_production_wells_at_time_steps: "<<  this->average_temperature_production_wells_at_time_steps.at(i) << ", step: "<< i <<endl;
           }
           else
             break;
@@ -1832,7 +1912,7 @@ const
 
         //write to stream
         std::ofstream outputFile("temperature_values_at_production_well_and_net_energy_for_disctance" + std::to_string(distance) +  ".txt");
-        std::copy(this->temperature_production_well_at_time_steps.begin(), this->temperature_production_well_at_time_steps.end(), std::ostream_iterator<int>(outputFile, "\n"));
+        std::copy(this->average_temperature_production_wells_at_time_steps.begin(), this->average_temperature_production_wells_at_time_steps.end(), std::ostream_iterator<int>(outputFile, "\n"));
         //std::copy(functional_value, std::ostream_iterator<int>(outputFile, "\n"));
         outputFile << functional_value;
 
@@ -1857,6 +1937,135 @@ const
           return mean;
         };
          */
+      }
+      else if (this->db["scenario"].is("hexagon"))
+      {
+        double domain_Lx = 10000.;
+        double domain_Ly = 6000.;
+        size_t n_wells = 6; // todo: = (size_t) db["hexagon_n_wells"];
+
+        // set well position
+        std::vector<double> x_production_wells, y_production_wells, x_injection_wells, y_injection_wells, singular_sign;
+
+        singular_sign.push_back(-1.);
+        singular_sign.push_back(1.);
+        singular_sign.push_back(1.);
+        singular_sign.push_back(-1.);
+        singular_sign.push_back(1);
+        singular_sign.push_back(1);
+
+        double x0 = domain_Lx/2.;
+        double y0 = domain_Ly/2.;
+        double pi = acos(-1.);
+        int count = 0;
+        for (unsigned int k1 = 0; k1 < n_wells; k1++)
+        {
+          double xk = x0 + distance*cos(2.*pi*k1/n_wells);
+          double yk = y0 + distance*sin(2.*pi*k1/n_wells);
+
+          if ( singular_sign[k1] == -1 )
+          {
+            x_production_wells.push_back(xk);
+            y_production_wells.push_back(yk);
+          }
+          else
+          {
+            x_injection_wells.push_back(xk);
+            y_injection_wells.push_back(yk);
+          }
+        }
+
+        x_production_wells.resize(4.);
+        y_production_wells.resize(4.);
+        x_injection_wells.resize(2.);
+        y_injection_wells.resize(2.);
+
+#ifdef __3D__
+        std::vector<double> z_production_wells(4.,250.), z_injection_wells(2.,0.);//3000.;
+#endif
+
+        std::vector<double> average_injection(2., 0.), min_injection(2., 0.),
+                average_production(4., 0.), min_production(4., 0.);
+        double pressure_values_production_wells = 0.;
+        double pressure_values_injection_wells = 0.;
+        size_t Num_circle_points = 10;
+
+        for (int i = 0; i < x_production_wells.size(); i++)
+        {
+          std::array<double, d> centers = {x_production_wells[i], y_production_wells[i]
+#ifdef __3D__
+                                                                                     , z_production_wells[i]
+#endif
+          };
+
+          sinks sink((double) db["delta_fct_eps_factor"], (double) db["well_radius"], centers, Num_circle_points, Coll);
+          sink.find_average_and_min_along_circle(&pressure, average_production[i], min_production[i]);
+
+          pressure_values_production_wells += average_production[i];
+        }
+        for (int i = 0; i < x_injection_wells.size(); i++)
+        {
+          std::array<double, d> centers = {x_injection_wells[i], y_injection_wells[i]
+#ifdef __3D__
+                                                                                   , z_injection_wells[i]
+#endif
+          };
+
+          sinks source((double) db["delta_fct_eps_factor"], (double) db["well_radius"], centers, Num_circle_points, Coll);
+          source.find_average_and_min_along_circle(&pressure, average_injection[i], min_injection[i]);
+
+          pressure_values_injection_wells += average_injection[i];
+        }
+
+
+        //todo: compute Q from u_in
+        /// double Q = 150/360;//24 * 50; // 50 - 300
+
+        int number_of_time_steps_for_production = 0;
+        double Delta_Temp = 0;
+
+        for (int i = 0; i < this->average_temperature_production_wells_at_time_steps.size(); i++)
+        {
+          if (this->average_temperature_production_wells_at_time_steps.at(i) >= ((double) db["minimum_temperature_production_well"]))
+          {
+            Delta_Temp += (n_wells/2.)*(this->average_temperature_production_wells_at_time_steps.at(i) -  (double) db["temperature_injection_well"]);
+            cout <<" average_temperature_production_wells_at_time_steps: "<<  this->average_temperature_production_wells_at_time_steps.at(i) << ", step: "<< i <<endl;
+          }
+          else
+            break;
+
+          number_of_time_steps_for_production = i+1;
+        }
+
+        double alpha = db["alpha_cost"];
+        /*
+         * double functional_value_new // = Q/(0.6)* Delta t * (pressure_prod[1] - pressure_inj[1])  -  Q * Delta t * fluid_density * fluid_heat_capacity * (temperature_prod[1] - temperature_inj); // Net energy AFTER 50 years
+                                       //= Q * Delta t * (   1/(0.6) * (pressure_prod[1] - pressure_inj[1])  - fluid_density * fluid_heat_capacity * (temperature_prod[1] - temperature_inj)   );
+       //since Q_i=const, Delta t = const we can minimize
+         */
+
+        functional_value =  (number_of_time_steps_for_production * 1/(double)db["pump_efficiency"] *
+                ( pressure_values_injection_wells - pressure_values_production_wells)
+                - (double) db["fluid_density"] * (double) db["fluid_heat_capacity"] * Delta_Temp)
+                  +  alpha * std::abs(distance - 1000.);
+
+        Output::print("functional_value: ", functional_value);
+
+        //write to stream
+        std::ofstream outputFile("temperature_values_at_production_well_and_net_energy_for_disctance" + std::to_string(distance) +  ".txt");
+        std::copy(this->average_temperature_production_wells_at_time_steps.begin(), this->average_temperature_production_wells_at_time_steps.end(), std::ostream_iterator<int>(outputFile, "\n"));
+        //std::copy(functional_value, std::ostream_iterator<int>(outputFile, "\n"));
+        outputFile << functional_value;
+
+
+        std::vector<double> cost_functional = db["cost_functional"];
+
+        auto temperature = tcd_primal.get_function();
+        auto temperature_at_sink =
+                [&](){
+          double mean = temperature.compute_mean();
+          return mean;
+        };
       }
  else if (this->db["scenario"].is("3_rows_of_double_doublets_fixed_well_distance")
         || this->db["scenario"].is("3_rows_of_double_doublets_varying_row_distance"))
@@ -1947,12 +2156,12 @@ const
   int number_of_time_steps_for_production = 0;
   double Delta_Temp = 0;
 
-  for (int i = 0; i < this->temperature_production_well_at_time_steps.size(); i++)
+  for (int i = 0; i < this->average_temperature_production_wells_at_time_steps.size(); i++)
   {
-    if (this->temperature_production_well_at_time_steps.at(i) >= ((double) db["minimum_temperature_production_well"])/6.)
+    if (this->average_temperature_production_wells_at_time_steps.at(i) >= ((double) db["minimum_temperature_production_well"]))
     {
-      Delta_Temp += this->temperature_production_well_at_time_steps.at(i) -  6.*(double) db["temperature_injection_well"];
-      cout <<" temperature_production_well_at_time_steps: "<<  this->temperature_production_well_at_time_steps.at(i) << ", step: "<< i <<endl;
+      Delta_Temp += 6*(this->average_temperature_production_wells_at_time_steps.at(i) -  (double) db["temperature_injection_well"]);
+      cout <<" average_temperature_production_wells_at_time_steps: "<<  this->average_temperature_production_wells_at_time_steps.at(i) << ", step: "<< i <<endl;
     }
     else
       break;
@@ -1972,11 +2181,12 @@ const
             - (double) db["fluid_density"] * (double) db["fluid_heat_capacity"] * Delta_Temp)
     +  alpha * std::abs(center_x_moving_doublet_bottom_row - 2000.);
 
+
   Output::print("functional_value: ", functional_value);
 
   //write to stream
   std::ofstream outputFile("temperature_values_at_production_well_and_net_energy_for_disctance" + std::to_string(distance) +  ".txt");
-  std::copy(this->temperature_production_well_at_time_steps.begin(), this->temperature_production_well_at_time_steps.end(), std::ostream_iterator<int>(outputFile, "\n"));
+  std::copy(this->average_temperature_production_wells_at_time_steps.begin(), this->average_temperature_production_wells_at_time_steps.end(), std::ostream_iterator<int>(outputFile, "\n"));
   //std::copy(functional_value, std::ostream_iterator<int>(outputFile, "\n"));
   outputFile << functional_value;
 
@@ -2064,12 +2274,12 @@ else if (this->db["scenario"].is("2doublets_fixed_well_distance") )
     int number_of_time_steps_for_production = 0;
     double Delta_Temp = 0;
 
-    for (int i = 0; i < this->temperature_production_well_at_time_steps.size(); i++)
+    for (int i = 0; i < this->average_temperature_production_wells_at_time_steps.size(); i++)
     {
-      if (this->temperature_production_well_at_time_steps.at(i) >= ((double) db["minimum_temperature_production_well"])/2.)
+      if (this->average_temperature_production_wells_at_time_steps.at(i) >= ((double) db["minimum_temperature_production_well"]))
       {
-        Delta_Temp += this->temperature_production_well_at_time_steps.at(i) -  2.*(double) db["temperature_injection_well"];
-        cout <<" temperature_production_well_at_time_steps: "<<  this->temperature_production_well_at_time_steps.at(i) << ", step: "<< i <<endl;
+        Delta_Temp += 2.*(this->average_temperature_production_wells_at_time_steps.at(i) -  (double) db["temperature_injection_well"]);
+        cout <<" average_temperature_production_wells_at_time_steps: "<<  this->average_temperature_production_wells_at_time_steps.at(i) << ", step: "<< i <<endl;
       }
       else
         break;
@@ -2092,7 +2302,7 @@ else if (this->db["scenario"].is("2doublets_fixed_well_distance") )
 
     //write to stream
     std::ofstream outputFile("temperature_values_at_production_well_and_net_energy_for_disctance" + std::to_string(distance) +  ".txt");
-    std::copy(this->temperature_production_well_at_time_steps.begin(), this->temperature_production_well_at_time_steps.end(), std::ostream_iterator<int>(outputFile, "\n"));
+    std::copy(this->average_temperature_production_wells_at_time_steps.begin(), this->average_temperature_production_wells_at_time_steps.end(), std::ostream_iterator<int>(outputFile, "\n"));
     //std::copy(functional_value, std::ostream_iterator<int>(outputFile, "\n"));
     outputFile << functional_value;
 
@@ -2172,12 +2382,12 @@ else if (this->db["scenario"].is("1doublet_optimize_distance") )
   int number_of_time_steps_for_production = 0;
   double Delta_Temp = 0;
 
-  for (int i = 0; i < this->temperature_production_well_at_time_steps.size(); i++)
+  for (int i = 0; i < this->average_temperature_production_wells_at_time_steps.size(); i++)
   {
-    if (this->temperature_production_well_at_time_steps.at(i) >= (double) db["minimum_temperature_production_well"])
+    if (this->average_temperature_production_wells_at_time_steps.at(i) >= (double) db["minimum_temperature_production_well"])
     { 
-      Delta_Temp += this->temperature_production_well_at_time_steps.at(i) -  (double) db["temperature_injection_well"];
-      cout <<" temperature_production_well_at_time_steps: "<<  this->temperature_production_well_at_time_steps.at(i) << ", step: "<< i <<endl;
+      Delta_Temp += this->average_temperature_production_wells_at_time_steps.at(i) -  (double) db["temperature_injection_well"];
+      cout <<" average_temperature_production_wells_at_time_steps: "<<  this->average_temperature_production_wells_at_time_steps.at(i) << ", step: "<< i <<endl;
     }
     else 
       break;
@@ -2200,7 +2410,7 @@ else if (this->db["scenario"].is("1doublet_optimize_distance") )
 
   //write to stream
   std::ofstream outputFile("temperature_values_at_production_well_and_net_energy_for_disctance" + std::to_string(distance) +  ".txt");
-  std::copy(this->temperature_production_well_at_time_steps.begin(), this->temperature_production_well_at_time_steps.end(), std::ostream_iterator<int>(outputFile, "\n"));
+  std::copy(this->average_temperature_production_wells_at_time_steps.begin(), this->average_temperature_production_wells_at_time_steps.end(), std::ostream_iterator<int>(outputFile, "\n"));
   //std::copy(functional_value, std::ostream_iterator<int>(outputFile, "\n"));
   outputFile << functional_value;
 
