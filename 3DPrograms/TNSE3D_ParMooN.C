@@ -130,7 +130,6 @@ int main(int argc, char* argv[])
     //tnse3d.current_step_++;
     tss.current_step_++;
 
-    TDatabase::TimeDB->INTERNAL_STARTTIME = TDatabase::TimeDB->CURRENTTIME;
     for(int j = 0; j < n_substeps; ++j) // loop over substeps in one time iteration
     {
       // setting the time discretization parameters

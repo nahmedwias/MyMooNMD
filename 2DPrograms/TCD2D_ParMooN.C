@@ -90,7 +90,6 @@ int main(int, char* argv[])
     {
       tss.current_step_++;
       // Output::print("mem before: ", GetMemory());
-      TDatabase::TimeDB->INTERNAL_STARTTIME = TDatabase::TimeDB->CURRENTTIME;
       tss.set_time_disc_parameters();
       tss.current_time_ += tss.get_step_length();
       double tau = parmoon_db["time_step_length"];

@@ -98,6 +98,11 @@ class TimeNavierStokes
     bool imex_scheme();
 
     // getters and setters
+    const BlockFEMatrix & get_matrix() const
+    { return this->systems.front().matrix; }
+    BlockFEMatrix & get_matrix()
+    { return this->systems.front().matrix; }
+    
     const BlockVector & get_rhs() const
     { return this->systems.front().rhs; }
     BlockVector & get_rhs()

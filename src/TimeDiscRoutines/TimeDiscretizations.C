@@ -145,7 +145,6 @@ void TimeDiscretization::prepare_rhs_from_time_disc(
   }
   else if(db["time_discretization"].is("crank_nicolson"))
   {
-    // ErrThrow("not yet implemented");
     rhs[0].scaleActive(0.5*current_time_step_length);
     rhs[0].addScaledActive(rhs[1], 0.5*current_time_step_length);
     // mass matrix times old solution goes to right hand side
