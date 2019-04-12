@@ -7,7 +7,7 @@ set(PARMOON_HG_BRANCH "unknown")
 set(PARMOON_LOCAL_CHANGES "unknown")
 
 find_package(Hg)
-if(HG_FOUND)
+if(HG_FOUND AND IS_DIRECTORY ${CMAKE_SOURCE_DIR}/.hg)
   # find the revision number and find out if there are local changes
   execute_process(COMMAND ${HG_EXECUTABLE} id -i
                   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
