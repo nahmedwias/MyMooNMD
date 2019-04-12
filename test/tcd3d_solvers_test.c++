@@ -78,7 +78,6 @@ void check(ParameterDatabase& db, int ansatz_order, int time_disc,
   while(tss.current_time_ < tss.get_end_time()-1e-10)
   {
     tss.current_step_++;
-    TDatabase::TimeDB->INTERNAL_STARTTIME = tss.current_time_;
     tss.set_time_disc_parameters();
     SetTimeDiscParameters(1);
 

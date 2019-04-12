@@ -93,7 +93,6 @@ int main(int argc, char *argv[])
   while(!tss.reached_final_time_step())
   {
     tss.current_step_++;
-    TDatabase::TimeDB->INTERNAL_STARTTIME = tss.current_time_;
     tss.set_time_disc_parameters();
     SetTimeDiscParameters(1);
     tss.current_time_ += tss.get_step_length();

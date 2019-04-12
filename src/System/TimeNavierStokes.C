@@ -139,7 +139,8 @@ template <int d>
 TimeNavierStokes<d>::System_per_grid::System_per_grid(
   const System_per_grid& other)
  : velocity_space(other.velocity_space), pressure_space(other.pressure_space),
-   matrix(other.matrix), rhs(other.rhs), solution(other.solution)
+   matrix(other.matrix), mass_matrix(other.mass_matrix), rhs(other.rhs), solution(other.solution),
+   solution_m1(other.solution_m1), solution_m2(other.solution_m2)
 {
   // the fe functions must be newly created, because copying would mean
   // referencing the BlockVectors in 'other'.
