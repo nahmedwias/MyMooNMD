@@ -873,13 +873,12 @@ void BlockFEMatrix::apply_scaled_submatrix(const BlockVector & x, BlockVector & 
                                         double a) const
 { 
   //check if the vectors fit, if not so the program throws an error
-  //FIXME commented due to Mass_NSE2D matrix does not fit here  
-  //FIXME Also the "=" sign in the check statement have been removed 
+  //NOTE the "=" sign in the check statement has been removed 
   //due to the Mass_NSE2D matrices multiplication: 
   // This reduces the coding in the main class as well easy for time stepping schemes
   
-  // check_vector_fits_pre_image(x); 
-  // check_vector_fits_image(y);
+  this->check_vector_fits_pre_image(x); 
+  this->check_vector_fits_image(y);
   
   if(sub_row > this->n_cell_rows_
       || sub_col > this->n_cell_columns_)

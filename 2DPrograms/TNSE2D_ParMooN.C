@@ -64,7 +64,6 @@ int main(int, char* argv[])
   {
     tss.current_step_++;
 
-    TDatabase::TimeDB->INTERNAL_STARTTIME = TDatabase::TimeDB->CURRENTTIME;
     // set the time parameters
     tss.set_time_disc_parameters();
     // tau may change depending on the time discretization (adaptive time)
