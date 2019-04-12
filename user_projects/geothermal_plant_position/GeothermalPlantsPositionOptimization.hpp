@@ -41,7 +41,7 @@ public:
   static ParameterDatabase default_GPPO_database();
   
   //@brief save the temperature values at each times step at the production well
-  std::vector<double> temperature_production_well_at_time_steps;
+  std::vector<double> average_temperature_production_wells_at_time_steps;
 
   ParameterDatabase get_primal_flow_database(ParameterDatabase param_db);
   ParameterDatabase get_primal_temperature_database(ParameterDatabase param_db);
