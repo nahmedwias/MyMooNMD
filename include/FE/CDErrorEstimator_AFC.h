@@ -92,7 +92,8 @@ class CDErrorEstimator_AFC : public ErrorEstimator<d>
                          const double *(&weights1D), const JointData &edgeData,
                          const double* zeta, JointRefData &edgeRefData,
                          const FEMatrix& afc_matrix_D_entries,
-                         const std::vector<double>& alphas) const;
+                         const std::vector<double>& alphas,
+                         double& result_afc_error ) const;
 
   public:
     // constructor
