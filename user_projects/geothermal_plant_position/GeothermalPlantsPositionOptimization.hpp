@@ -94,9 +94,9 @@ protected:
 
   /////////////////////////////////////////////////
   /// @brief
-  struct sinks
+  struct wells
   {
-    sinks(double eps_delta_fct, double well_radius, std::array<double, d> center,
+    wells(double eps_delta_fct, double well_radius, std::array<double, d> center,
             size_t Num_circle_points, const TCollection* Coll);
 
     std::vector<point_on_circle> circle_points;
