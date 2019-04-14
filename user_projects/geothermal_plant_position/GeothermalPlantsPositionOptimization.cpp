@@ -355,8 +355,7 @@ void approximate_delta_functions_hexagon(int n_points,
     singular_x.push_back(xk);
     singular_y.push_back(yk);
   }
-  
-    
+
   for (int i = 0; i < n_points; ++i)
   {
     for (size_t k = 0; k <= dim+1; k++)
@@ -364,9 +363,6 @@ void approximate_delta_functions_hexagon(int n_points,
       coeffs[i][k] = 0.;
     }
 
-    
-
-    
     for (unsigned int m = 0; m < singular_x.size(); m++)
     {
       double x_center_source = singular_x[m];
@@ -376,15 +372,15 @@ void approximate_delta_functions_hexagon(int n_points,
       double y_distance_to_source = std::pow(std::abs(y[i] - y_center_source), 2);
       
       bool at_source = (x_distance_to_source < epsDelta*epsDelta) *
-	(y_distance_to_source < epsDelta*epsDelta);
+	                     (y_distance_to_source < epsDelta*epsDelta);
 
       if (at_source)
       {
         double magnitude = cos(Pi*(x[i] - x_center_source)/epsDelta) + 1;
         magnitude *= cos(Pi*(y[i] - y_center_source)/epsDelta) + 1;
-	magnitude /= 4.*epsDelta*epsDelta;
+	      magnitude /= 4.*epsDelta*epsDelta;
 	
-	coeffs[i][dim+1] += singular_sign[m] * magnitude * flow_rate[m];
+	      coeffs[i][dim+1] += singular_sign[m] * magnitude * flow_rate[m];
         Output::print<4>(" adding a singular source/sink - point ", m,
                 " coeff[", dim+1, "] = ", coeffs[i][dim+1]);
       }
@@ -1354,180 +1350,182 @@ void GeothermalPlantsPositionOptimization<d>::apply_control_and_solve(const doub
     auto temperature = tcd_primal.get_function();
 
 #ifdef __2D__
-      const TCollection* Coll = temperature.GetFESpace2D()->GetCollection();
+    const TCollection* Coll = temperature.GetFESpace2D()->GetCollection();
 #else
-      const TCollection* Coll = temperature.GetFESpace3D()->GetCollection();
+    const TCollection* Coll = temperature.GetFESpace3D()->GetCollection();
 #endif
 
-      if (this->db["scenario"].is("lattice"))
-      {
-          double domain_Lx = 10000.;
-          double domain_Ly = 6000.;
+    if (this->db["scenario"].is("lattice"))
+    {
+      double domain_Lx = 10000.;
+      double domain_Ly = 6000.;
 
-        // has to be an even number
-        size_t n_wells_per_row = (size_t) db["lattice_n_wells_per_row"]; //equals number of wells per column
+      // has to be an even number
+      size_t n_wells_per_row = (size_t) db["lattice_n_wells_per_row"]; //equals number of wells per column
 
-        if (distance > fmin((double) ((n_wells_per_row-1) * domain_Lx), (double) ((n_wells_per_row-1) * domain_Ly)))
-          ErrThrow("The control results in coordinates that are not within the domain region! "
-                  "Adjust 'lower_bound' and 'upper_bound' in the input file.");
+      if (distance > fmin((double) ((n_wells_per_row-1) * domain_Lx), (double) ((n_wells_per_row-1) * domain_Ly)))
+        ErrThrow("The control results in coordinates that are not within the domain region! "
+                "Adjust 'lower_bound' and 'upper_bound' in the input file.");
 
-        // lower left well
-        double x0 = domain_Lx/2.- (n_wells_per_row-1)/2.*distance;
-        double y0 = domain_Ly/2.- (n_wells_per_row-1)/2.*distance;
+      // lower left well
+      double x0 = domain_Lx/2.- (n_wells_per_row-1)/2.*distance;
+      double y0 = domain_Ly/2.- (n_wells_per_row-1)/2.*distance;
 
-        size_t n_wells = n_wells_per_row*n_wells_per_row;
+      size_t n_wells = n_wells_per_row*n_wells_per_row;
 
-        if (n_wells % 2 != 0)
-          ErrThrow("n_wells_per_row should be an even number with equally many production "
-                  "and injection wells, but we have ", n_wells, " many wells.");
+      if (n_wells % 2 != 0)
+        ErrThrow("n_wells_per_row should be an even number with equally many production "
+                "and injection wells, but we have ", n_wells, " many wells.");
 
-        std::vector<double> x_production_well, y_production_well;
+      std::vector<double> x_production_well, y_production_well;
 
-        for (unsigned int k1 = 0; k1 < n_wells_per_row; k1++) {
-            for (unsigned int k2 = 0; k2 < n_wells_per_row; k2++) {
-              double xk = x0 + distance*k2;
-              double yk = y0 + distance*k1;
-              if ( pow(-1,k1)*pow(-1,k2) == -1 )
-              {
-              x_production_well.push_back(xk);
-              y_production_well.push_back(yk);
-              }
-            }
-          }
-
-        x_production_well.resize(n_wells/2.);
-        y_production_well.resize(n_wells/2.);
-
-  #ifdef __3D__
-        std::vector<double> z_production_well(n_wells/2.,0.);//3000.;
-        for (int i = 0; i < n_wells/2.; i++)
-          z_production_well[i] = 250.;
-  #endif
-
-        std::vector<double> average(n_wells/2., 0.), min(n_wells/2., 0.);
-        bool minimum_temperature_reached = false;
-        size_t Num_circle_points = 10;
-        double total_average = 0.;
-
-        for (int i = 0; i < x_production_well.size(); i++)
-        {
-          std::array<double, d> centers = {x_production_well[i], y_production_well[i]
-  #ifdef __3D__
-             , z_production_well[i]
-  #endif
-          };
-
-          sinks sink((double) db["delta_fct_eps_factor"], (double) db["well_radius"], centers, Num_circle_points, Coll);
-          sink.find_average_and_min_along_circle(&temperature, average[i], min[i]);
-
-          total_average += average[i];
-
-          if (min[i] < (double) db["minimum_temperature_production_well"])
+      for (unsigned int k1 = 0; k1 < n_wells_per_row; k1++) {
+        for (unsigned int k2 = 0; k2 < n_wells_per_row; k2++) {
+          double xk = x0 + distance*k2;
+          double yk = y0 + distance*k1;
+          if ( pow(-1,k1)*pow(-1,k2) == -1 )
           {
-            minimum_temperature_reached = true;
-            Output::print("Minimum production temperature obtained in the production well at position ",
-                          x_production_well[i], ", ", y_production_well[i],
-#ifdef __3D__
-                          ", ", z_production_well[i],
-#endif
-                  " at time step ",
-                  (double) tss.current_step_, " .");
-            break;
+            x_production_well.push_back(xk);
+            y_production_well.push_back(yk);
           }
         }
-
-        if ( !minimum_temperature_reached )
-             {
-               total_average = total_average/(x_production_well.size());
-               Output::print(" *** T(average) = ", total_average);
-               this->average_temperature_production_wells_at_time_steps.push_back(total_average);
-             }
-             else
-               break;
-
       }
-      else if (this->db["scenario"].is("hexagon"))
+
+      x_production_well.resize(n_wells/2.);
+      y_production_well.resize(n_wells/2.);
+
+#ifdef __3D__
+std::vector<double> z_production_well(n_wells/2.,0.);//3000.;
+for (int i = 0; i < n_wells/2.; i++)
+  z_production_well[i] = 250.;
+#endif
+
+std::vector<double> average(n_wells/2., 0.), min(n_wells/2., 0.);
+bool minimum_temperature_reached = false;
+size_t Num_circle_points = 10;
+double total_average = 0.;
+
+for (int i = 0; i < x_production_well.size(); i++)
+{
+  std::array<double, d> centers = {x_production_well[i], y_production_well[i]
+#ifdef __3D__
+, z_production_well[i]
+#endif
+  };
+
+  sinks sink((double) db["delta_fct_eps_factor"], (double) db["well_radius"], centers, Num_circle_points, Coll);
+  sink.find_average_and_min_along_circle(&temperature, average[i], min[i]);
+
+  total_average += average[i];
+
+  if (min[i] < (double) db["minimum_temperature_production_well"])
+  {
+    minimum_temperature_reached = true;
+    Output::print("Minimum production temperature obtained in the production well at position ",
+            x_production_well[i], ", ", y_production_well[i],
+#ifdef __3D__
+            ", ", z_production_well[i],
+#endif
+            " at time step ",
+            (double) tss.current_step_, " .");
+    break;
+  }
+}
+
+if ( !minimum_temperature_reached )
+{
+  total_average = total_average/(x_production_well.size());
+  Output::print(" *** T(average) = ", total_average);
+  this->average_temperature_production_wells_at_time_steps.push_back(total_average);
+}
+else
+  break;
+
+    }
+    else if (this->db["scenario"].is("hexagon"))
+    {
+      double domain_Lx = 10000.;
+      double domain_Ly = 6000.;
+      size_t n_wells = 6;
+
+      // set well position
+      std::vector<double> x_production_well, y_production_well, singular_signs;
+
+      singular_signs.push_back(-1.); //injection
+      singular_signs.push_back(1.);  //production
+      singular_signs.push_back(1.);
+      singular_signs.push_back(-1.);
+      singular_signs.push_back(1.);
+      singular_signs.push_back(1.);
+
+      double x0 = domain_Lx/2.;
+      double y0 = domain_Ly/2.;
+      double pi = acos(-1.);
+      int num_prod_wells = 0;
+
+      for (unsigned int k1 = 0; k1 < n_wells; k1++)
       {
-        double domain_Lx = 10000.;
-        double domain_Ly = 6000.;
-        size_t n_wells = 6; // todo: = (size_t) db["hexagon_n_wells"];
-
-        // set well position
-        std::vector<double> x_production_wells, y_production_wells, singular_sign;
-
-        singular_sign.push_back(-1.);
-        singular_sign.push_back(1.);
-        singular_sign.push_back(1.);
-        singular_sign.push_back(-1.);
-        singular_sign.push_back(1);
-        singular_sign.push_back(1);
-
-        double x0 = domain_Lx/2.;
-        double y0 = domain_Ly/2.;
-        double pi = acos(-1.);
-        int count = 0;
-        for (unsigned int k1 = 0; k1 < n_wells; k1++)
+        if ( singular_signs[k1] == 1 )
         {
+          num_prod_wells += 1;
           double xk = x0 + distance*cos(2.*pi*k1/n_wells);
           double yk = y0 + distance*sin(2.*pi*k1/n_wells);
 
-          if ( singular_sign[k1] == -1 )
-          {
-            x_production_wells.push_back(xk);
-            y_production_wells.push_back(yk);
-          }
+          x_production_well.push_back(xk);
+          y_production_well.push_back(yk);
         }
-
-        x_production_wells.resize(4.);
-        y_production_wells.resize(4.);
-
-#ifdef __3D__
-        std::vector<double> z_production_wells(4.,250.);//3000.;
-#endif
-
-        std::vector<double> average(4., 0.), min(4., 0.);
-        bool minimum_temperature_reached = false;
-        size_t Num_circle_points = 10;
-        double total_average = 0.;
-
-        for (int i = 0; i < x_production_wells.size(); i++)
-        {
-          std::array<double, d> centers = {x_production_wells[i], y_production_wells[i]
-#ifdef __3D__
-                                                                                     , z_production_wells[i]
-#endif
-          };
-
-          sinks sink((double) db["delta_fct_eps_factor"], (double) db["well_radius"], centers, Num_circle_points, Coll);
-          sink.find_average_and_min_along_circle(&temperature, average[i], min[i]);
-
-          total_average += average[i];
-
-          if (min[i] < (double) db["minimum_temperature_production_well"])
-          {
-            minimum_temperature_reached = true;
-            Output::print("Minimum production temperature obtained in the production well at position ",
-                    x_production_wells[i], ", ", y_production_wells[i],
-#ifdef __3D__
-                    ", ", z_production_wells[i],
-#endif
-                    " at time step ",
-                    (double) tss.current_step_, " .");
-            break;
-          }
-        }
-
-        if ( !minimum_temperature_reached )
-        {
-          total_average = total_average/(x_production_wells.size());
-          Output::print(" *** T(average) = ", total_average);
-          this->average_temperature_production_wells_at_time_steps.push_back(total_average);
-        }
-        else
-          break;
-
       }
-      else if (this->db["scenario"].is("3_rows_of_double_doublets_varying_row_distance"))
+
+      x_production_well.resize(num_prod_wells);
+      y_production_well.resize(num_prod_wells);
+
+#ifdef __3D__
+      std::vector<double> z_production_well(num_prod_wells, 250.);//3000.;
+#endif
+
+      std::vector<double> average(num_prod_wells, 0.), min(num_prod_wells, 0.);
+      bool minimum_temperature_reached = false;
+      size_t Num_circle_points = 10;
+      double total_average = 0.;
+
+      for (int i = 0; i < num_prod_wells; i++)
+      {
+        std::array<double, d> centers = {x_production_well[i], y_production_well[i]
+#ifdef __3D__
+                                                                                 , z_production_well[i]
+#endif
+        };
+
+        sinks sink((double) db["delta_fct_eps_factor"], (double) db["well_radius"], centers, Num_circle_points, Coll);
+        sink.find_average_and_min_along_circle(&temperature, average[i], min[i]);
+
+        total_average += average[i];
+
+        if (min[i] < (double) db["minimum_temperature_production_well"])
+        {
+          minimum_temperature_reached = true;
+          Output::print("Minimum production temperature obtained (", min[i], ", ", i ,  ") in the production well at position ",
+                  x_production_well[i], ", ", y_production_well[i],
+#ifdef __3D__
+                  ", ", z_production_well[i],
+#endif
+                  " at time step ",
+                  (double) tss.current_step_, " .");
+          break;
+        }
+      }
+
+      if ( !minimum_temperature_reached )
+      {
+        total_average = total_average/(num_prod_wells);
+        Output::print(" *** T(average) = ", total_average);
+        this->average_temperature_production_wells_at_time_steps.push_back(total_average);
+      }
+      else
+        break;
+
+    }
+    else if (this->db["scenario"].is("3_rows_of_double_doublets_varying_row_distance"))
     {
       std::vector<double> x_production_well(6,0.), y_production_well(6,0.);
       x_production_well[0] = center_x_moving_doublet_top_row - ((double)  db["well_distance"])/2.;
@@ -1556,7 +1554,7 @@ void GeothermalPlantsPositionOptimization<d>::apply_control_and_solve(const doub
       {
         std::array<double, d> centers = {x_production_well[i], y_production_well[i]
 #ifdef __3D__
-           , z_production_well[i]
+                                                                                 , z_production_well[i]
 #endif
         };
 
@@ -1615,7 +1613,7 @@ void GeothermalPlantsPositionOptimization<d>::apply_control_and_solve(const doub
       {
         std::array<double, d> centers = {x_production_well[i], y_production_well[i]
 #ifdef __3D__
-              , z_production_well[i]
+                                                                                 , z_production_well[i]
 #endif
         };
 
@@ -1963,7 +1961,7 @@ const
           double xk = x0 + distance*cos(2.*pi*k1/n_wells);
           double yk = y0 + distance*sin(2.*pi*k1/n_wells);
 
-          if ( singular_sign[k1] == -1 )
+          if ( singular_sign[k1] == 1 )
           {
             x_production_wells.push_back(xk);
             y_production_wells.push_back(yk);
@@ -2028,7 +2026,7 @@ const
         {
           if (this->average_temperature_production_wells_at_time_steps.at(i) >= ((double) db["minimum_temperature_production_well"]))
           {
-            Delta_Temp += (n_wells/2.)*(this->average_temperature_production_wells_at_time_steps.at(i) -  (double) db["temperature_injection_well"]);
+            Delta_Temp += (4.)*(this->average_temperature_production_wells_at_time_steps.at(i)) - 2.* ((double) db["temperature_injection_well"]);
             cout <<" average_temperature_production_wells_at_time_steps: "<<  this->average_temperature_production_wells_at_time_steps.at(i) << ", step: "<< i <<endl;
           }
           else
@@ -2491,16 +2489,17 @@ void GeothermalPlantsPositionOptimization<d>::compute_derivative(const double* x
 template <int d>
 GeothermalPlantsPositionOptimization<d>::sinks::sinks(double eps_delta_fct, double well_radius,
                        std::array<double, d> center_point, size_t Num_circle_points, const TCollection* Coll)
-:center(center_point), meine_punkte(Num_circle_points)
+:center(center_point), circle_points(Num_circle_points)
 {
   double radius = eps_delta_fct*well_radius;
   for (size_t k = 0; k < Num_circle_points; k++)
   {
-    this->meine_punkte[k].coordinates[0] = radius*cos(k*2.*Pi/(Num_circle_points + 1)) + center_point[0];
-    this->meine_punkte[k].coordinates[1] = radius*sin(k*2.*Pi/(Num_circle_points + 1)) + center_point[1];
-    if (d==3)
+    this->circle_points[k].coordinates[0] = radius*cos(k*2.*Pi/(Num_circle_points + 1)) + center_point[0];
+    this->circle_points[k].coordinates[1] = radius*sin(k*2.*Pi/(Num_circle_points + 1)) + center_point[1];
+
+    if (d == 3)
     {
-      this->meine_punkte[k].coordinates[2] = center_point[2];
+      this->circle_points[k].coordinates[2] = center_point[2];
     }
 
     int N_Cells = Coll->GetN_Cells();
@@ -2508,14 +2507,14 @@ GeothermalPlantsPositionOptimization<d>::sinks::sinks(double eps_delta_fct, doub
     {
       auto cell = Coll->GetCell(i);
       {
-        if (cell->PointInCell(this->meine_punkte[k].coordinates[0], this->meine_punkte[k].coordinates[1]
+        if (cell->PointInCell(this->circle_points[k].coordinates[0], this->circle_points[k].coordinates[1]
 #ifdef __3D__
-        ,this->meine_punkte[k].coordinates[2]
+        ,this->circle_points[k].coordinates[2]
 #endif
                                            ))
         {
-          this->meine_punkte[k].cell = cell;
-          this->meine_punkte[k].cell_index = i;
+          this->circle_points[k].cell = cell;
+          this->circle_points[k].cell_index = i;
         }
       }
     }
@@ -2529,13 +2528,13 @@ void GeothermalPlantsPositionOptimization<d>::sinks::find_average_and_min_along_
 {
   min = 1.e9;
   average = 0.;
-  int Num_circle_points = this->meine_punkte.size();
+  int Num_circle_points = this->circle_points.size();
   double val;
 
   for (size_t k = 0; k < Num_circle_points; k++)
   {
-    auto current_point = this->meine_punkte[k];
- function->FindValueLocal(current_point.cell, current_point.cell_index, current_point.coordinates[0],
+    auto current_point = this->circle_points[k];
+    function->FindValueLocal(current_point.cell, current_point.cell_index, current_point.coordinates[0],
          current_point.coordinates[1],
 #ifdef __3D__
                                   current_point.coordinates[2],

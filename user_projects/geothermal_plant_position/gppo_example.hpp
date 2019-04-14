@@ -216,13 +216,13 @@ void pde_coefficients_flow_varying_sigma(int n_points, double *x, double *y,
     coeffs[i][dimension+1] = 0.; // divergence
 
     if ( ((abs(x[i]) < 5000.) && (abs(x[i]) > 3500.))
-            || ((abs(x[i]) < 7000.) && (abs(x[i]) > 6500.)) ) // crack through the sink
+            || ((abs(x[i]) < 7000.) && (abs(x[i]) > 6500.)) )
     {
-      coeffs[i][dimension+2] = 1e-15;
+      coeffs[i][dimension+2] = 1e-13;
     }
     else
     {
-      coeffs[i][dimension+2] = 1e-13;
+      coeffs[i][dimension+2] = 1e-15;
     }
 
   }
@@ -418,12 +418,14 @@ Example_TimeCD2D get_gppo_temperature_example(const ParameterDatabase & db)
   CoeffFct3D coeffs;
   if (sigma == -7447)
   {
-    coeffs = std::bind(pde_coefficients_flow_varying_sigma, _1, _2, _3, _4, _5, _6, effective_viscosity, //1./reynolds_number,
+    coeffs = std::bind(pde_coefficients_flow_varying_sigma, _1, _2, _3, _4, _5, _6,
+            effective_viscosity, //1./reynolds_number,
                     sigma, use_coeff_fct);
   }
   else
   {
-  coeffs = std::bind(pde_coefficients_flow, _1, _2, _3, _4, _5, _6, effective_viscosity, //1./reynolds_number,
+  coeffs = std::bind(pde_coefficients_flow, _1, _2, _3, _4, _5, _6,
+          effective_viscosity, //1./reynolds_number,
           sigma, use_coeff_fct);
   }
   

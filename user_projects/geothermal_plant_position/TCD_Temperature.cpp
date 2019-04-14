@@ -220,8 +220,8 @@ void temperature_coefficients_hexagon(int n_points, double *x, double *y,
   // set well position
   std::vector<double> singular_x, singular_y, singular_sign, flow_rate;
 
-  singular_sign.push_back(-1.);
-  singular_sign.push_back(1.);
+  singular_sign.push_back(-1.); // injection
+  singular_sign.push_back(1.);  // production
   singular_sign.push_back(1.);
   singular_sign.push_back(-1.);
   singular_sign.push_back(1);
@@ -233,10 +233,10 @@ void temperature_coefficients_hexagon(int n_points, double *x, double *y,
   double y0 = domain_Ly/2.;
   double pi = acos(-1.);
   int count = 0;
-  for (unsigned int k1=0; k1 < n_wells; k1++) {
+  for (unsigned int k1 = 0; k1 < n_wells; k1++) {
     double xk = x0 + distance*cos(2.*pi*k1/n_wells);
     double yk = y0 + distance*sin(2.*pi*k1/n_wells);
-    if ( singular_sign[k1]>0 ) {
+    if ( singular_sign[k1] == -1) {
       singular_x.push_back(xk);
       singular_y.push_back(yk);
     }
@@ -308,9 +308,10 @@ void temperature_coefficients_lattice(int n_points, double *x, double *y,
       double yk = y0 + distance*k1;
       int singular_sign = pow(-1,k1)*pow(-1,k2);
       // add singular source only at injection wells
-      if (singular_sign>0){
-	singular_x.push_back(xk);
-	singular_y.push_back(yk);
+      if (singular_sign > 0)
+      {
+	     singular_x.push_back(xk);
+	     singular_y.push_back(yk);
       }
 
     }
