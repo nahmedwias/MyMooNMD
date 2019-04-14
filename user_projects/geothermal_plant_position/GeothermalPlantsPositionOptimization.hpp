@@ -99,7 +99,7 @@ protected:
     sinks(double eps_delta_fct, double well_radius, std::array<double, d> center,
             size_t Num_circle_points, const TCollection* Coll);
 
-    std::vector<point_on_circle> meine_punkte;
+    std::vector<point_on_circle> circle_points;
     std::array<double, d> center;
 
     void find_average_and_min_along_circle(const FEFunction* function, double & average, double & min);
