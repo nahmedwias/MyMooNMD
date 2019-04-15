@@ -23,6 +23,35 @@ FEMatrix::FEMatrix(std::shared_ptr<const TFESpace3D> space)
 }
 #endif // 3D
 
+FEMatrix::FEMatrix(std::shared_ptr<const TFESpace2D> space, const TMatrix& m)
+  : TMatrix(m), AnsatzSpace1D(nullptr), AnsatzSpace2D(space),
+    AnsatzSpace3D(nullptr), TestSpace1D(nullptr), TestSpace2D(space),
+    TestSpace3D(nullptr)
+{
+  int n_dof = space->GetN_DegreesOfFreedom();
+  if(n_dof != this->GetN_Rows() || n_dof != this->GetN_Columns())
+  {
+    ErrThrow("unable to construct a FEMatrix using a TMatrix and an ",
+             "incompatible space. ", n_dof, " ", this->GetN_Rows(), "  ", 
+             this->GetN_Columns());
+  }
+}
+#ifdef __3D__
+FEMatrix::FEMatrix(std::shared_ptr<const TFESpace3D> space, const TMatrix& m)
+  : TMatrix(m), AnsatzSpace1D(nullptr), AnsatzSpace2D(nullptr),
+    AnsatzSpace3D(space), TestSpace1D(nullptr), TestSpace2D(nullptr),
+    TestSpace3D(space)
+{
+  int n_dof = space->GetN_DegreesOfFreedom();
+  if(n_dof != this->GetN_Rows() || n_dof != this->GetN_Columns())
+  {
+    ErrThrow("unable to construct a FEMatrix using a TMatrix and an ",
+             "incompatible space. ", n_dof, " ", this->GetN_Rows(), "  ", 
+             this->GetN_Columns());
+  }
+}
+#endif // 3D
+
 FEMatrix::FEMatrix(std::shared_ptr<const TFESpace2D> testspace,
                    std::shared_ptr<const TFESpace2D> ansatzspace, bool is_empty)
  : TMatrix(std::make_shared<TStructure>(testspace, ansatzspace, is_empty)),

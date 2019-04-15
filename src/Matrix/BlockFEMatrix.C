@@ -98,6 +98,62 @@ ansatz_spaces_columnwise_()
 {
 }
 
+BlockFEMatrix::BlockFEMatrix(
+  int nRows, int nCols, const std::vector<std::shared_ptr<FEMatrix>>& blocks)
+ : BlockMatrix(nRows, nCols,
+               std::vector<std::shared_ptr<TMatrix>>(blocks.begin(),
+                                                     blocks.end())),
+   test_spaces_rowwise_(nRows), ansatz_spaces_columnwise_(nCols)
+{
+  for(size_t i =0 ; i < n_cell_rows_ ; ++i)
+  {
+    // get the current matrix with type FEMatrix
+    std::shared_ptr<const FEMatrix> matrix
+      = std::dynamic_pointer_cast<const FEMatrix>(cell_grid_[i][0].block_);
+#ifdef __2D__
+    test_spaces_rowwise_[i] = matrix->GetTestSpace2D();
+#else
+    test_spaces_rowwise_[i] = matrix->GetTestSpace3D();
+#endif 
+  }
+  for(size_t j = 0 ; j < n_cell_columns_; ++j)
+  {
+    // get the current matrix with type FEMatrix
+    std::shared_ptr<const FEMatrix> matrix
+      = std::dynamic_pointer_cast<const FEMatrix>(cell_grid_[0][j].block_);
+#ifdef __2D__
+    ansatz_spaces_columnwise_[j] = matrix->GetAnsatzSpace2D();
+#else
+    ansatz_spaces_columnwise_[j] = matrix->GetAnsatzSpace3D();
+#endif 
+  }
+  
+  // make sure the spaces are appropriate:
+  for(size_t i =0 ; i < n_cell_rows_ ; ++i)
+  {
+    for(size_t j =0 ; j < n_cell_columns_ ; ++j)
+    {
+      // get the current matrix with type FEMatrix
+      std::shared_ptr<const FEMatrix> matrix
+        = std::dynamic_pointer_cast<const FEMatrix>(cell_grid_[i][j].block_);
+#ifdef __2D__
+      auto matrix_ansatz_space = matrix->GetAnsatzSpace2D();
+      auto matrix_test_space = matrix->GetTestSpace2D();
+#else
+      auto matrix_ansatz_space = matrix->GetAnsatzSpace3D();
+      auto matrix_test_space = matrix->GetTestSpace3D();
+#endif
+      if(matrix_ansatz_space != ansatz_spaces_columnwise_[j])
+        ErrThrow("matrix (", i, ",", j, ") has wrong ansatz space");
+      if(matrix_test_space != test_spaces_rowwise_[i])
+        ErrThrow("matrix (", i, ",", j, ") has wrong test space");
+    }
+  }
+  // TODO figure out whether pressure correction is needed
+  use_pressure_projection_ = determine_need_for_pressure_row_correction(
+    ansatz_spaces_columnwise_);
+}
+
 //named constructors
 #ifdef __2D__
 /* ************************************************************************* */

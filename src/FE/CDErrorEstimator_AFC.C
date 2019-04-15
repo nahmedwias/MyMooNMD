@@ -574,6 +574,7 @@ void CDErrorEstimator_AFC<d>::estimate(const Example_CD& ex,
 
   this->eta_K.resize(coll->GetN_Cells());
   this->maximal_local_error = 0.;
+  this->estimated_afc_error = 0.;
 
   // array of pointers holding quad point -> derivatives
   std::vector<double *> derivativesPerQuadPoint;
@@ -901,6 +902,7 @@ void CDErrorEstimator_AFC<d>::estimate(const Example_CD& ex,
     TDatabase::ParamDB->INTERNAL_HK_CONVECTION = -1; // reset for every cell
 
 
+    double result_afc_error = 0.;
     double result = calculateEtaK(cell, 
                                   fe_function, 
                                   *coll, 
@@ -914,15 +916,18 @@ void CDErrorEstimator_AFC<d>::estimate(const Example_CD& ex,
                                   edgeData, 
                                   zeta, 
                                   edgeRefData,
-                                  afc_matrix_D_entries, alphas);
+                                  afc_matrix_D_entries, alphas,
+                                  result_afc_error);
 
     this->eta_K[cellIdx] = result;
     this->estimated_global_error[int(estimatorType)] += result;
     this->maximal_local_error = std::max(result, this->maximal_local_error);
+    this->estimated_afc_error += result_afc_error;
   } // end loop over cells
   this->estimated_global_error[int(estimatorType)] 
     = std::sqrt(this->estimated_global_error[int(estimatorType)]);
   this->maximal_local_error = std::sqrt(this->maximal_local_error);
+  this->estimated_afc_error = std::sqrt(this->estimated_afc_error);
 }
 
 
@@ -979,6 +984,7 @@ double compute_estimator_weight_d_h(double hE, double epsilon,
                                     double max)
 {
   double diffusion_weight;
+  /** Hard coded value of /nu_E^-1=3*/
   diffusion_weight=(9.*3.*max)/epsilon;
   return diffusion_weight;
 }
@@ -1000,7 +1006,8 @@ double CDErrorEstimator_AFC<d>::calculateEtaK(
   const double *zeta, 
   JointRefData &edgeRefData,
   const FEMatrix& afc_matrix_D_entries,
-  const std::vector< double >& alphas) const
+  const std::vector< double >& alphas,
+  double& result_afc_error) const
 {
   auto fe_space = fe_function.GetFESpace2D();
   // get pointers to columns, rows and entries of matrix D
@@ -1382,6 +1389,7 @@ double CDErrorEstimator_AFC<d>::calculateEtaK(
         
         result += compute_estimator_weight(hE, coeff[0], coeff[3]) * jump / 2.0;
         //contribution from d_h
+        result_afc_error +=(compute_estimator_weight_d_h(hE, coeff[0], maxK_constant)*tangent_der_sol)/2.0;
         result += (compute_estimator_weight_d_h(hE, coeff[0], maxK_constant)*tangent_der_sol)/2.0;
       }
       
@@ -1740,6 +1748,7 @@ double CDErrorEstimator_AFC<d>::calculateEtaK(
             //Output::print<2>("jump ", jump);
             result += compute_estimator_weight(hE,coeff[0], coeff[3])* jump / 2.0; 
             //contribution from d_h
+            result_afc_error +=(compute_estimator_weight_d_h(hE, coeff[0], maxK_constant)*tangent_der_sol)/2.0;
             result += (compute_estimator_weight_d_h(hE, coeff[0], 
                                                    maxK_constant)*tangent_der_sol)/2.0;
           }  
@@ -1885,6 +1894,7 @@ double CDErrorEstimator_AFC<d>::calculateEtaK(
           beta=compute_estimator_weight(hE, coeff[0], coeff[3]);
           result += beta* jump / 2.0;  
           //contribution from d_h
+          result_afc_error +=(compute_estimator_weight_d_h(hE, coeff[0], maxK_constant)*tangent_der_sol)/2.0;
           result += (compute_estimator_weight_d_h(hE, coeff[0], 
                                                  maxK_constant)*tangent_der_sol)/2.0;
         }                                       // end neighbour is member of the collection  
@@ -2003,6 +2013,7 @@ void CDErrorEstimator_AFC<d>::info()
     estimated_global_errors << "  ";
   }
   Output::dash("estimated global errors: ", estimated_global_errors.str());
+  Output::dash("estimated_afc_error: ", this->estimated_afc_error);
 }
 
 
