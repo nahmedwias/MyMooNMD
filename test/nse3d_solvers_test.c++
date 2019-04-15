@@ -42,6 +42,7 @@
 #include <FEDatabase3D.h>
 #include <Multigrid.h>
 #include "LocalAssembling.h"
+#include "Saddle_point_preconditioner.h"
 
 #ifdef _MPI
 #include <mpi.h>
@@ -141,7 +142,7 @@ void set_solver_globals(std::string solver_name, ParameterDatabase& db)
     // If you want to run tests with an iterative solver for the
     // velocity block, comment out these lines of code here.
     ParameterDatabase velocity_solver_db = Solver<>::default_solver_database();
-    velocity_solver_db.set_name("Saddle Point Preconditioner Database");
+    velocity_solver_db.set_name(Saddle_point_preconditioner::database_name_velocity_solver);
     velocity_solver_db["solver_type"] = "iterative";
     velocity_solver_db["iterative_solver_type"] = "bi_cgstab";
     velocity_solver_db["preconditioner"] = "ssor";
@@ -151,6 +152,11 @@ void set_solver_globals(std::string solver_name, ParameterDatabase& db)
     velocity_solver_db["residual_reduction"] = 1.0e-10;
     velocity_solver_db["damping_factor"] = 1.0;
     db.add_nested_database(velocity_solver_db);
+    ParameterDatabase pressure_solver_db = velocity_solver_db; // copy
+    pressure_solver_db.set_name(Saddle_point_preconditioner::database_name_pressure_solver);
+    // choose a different solver compared with the velocity solver
+    pressure_solver_db["solver_type"] = "direct";
+    db.add_nested_database(pressure_solver_db);
   }
   else if (solver_name.compare("multigrid") == 0)
   {
