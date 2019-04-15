@@ -1536,7 +1536,6 @@ void GeothermalPlantsPositionOptimization<d>::apply_control_and_solve(const doub
 #endif
       };
 
-      cout << "centers: "<< centers[0]<<endl;
       wells sink((double) db["delta_fct_eps_factor"], (double) db["well_radius"], centers, Num_circle_points, Coll);
       sink.find_average_and_min_along_circle(&temperature, average[i], min[i]);
 
@@ -1669,7 +1668,6 @@ const
   }
   else if (this->db["scenario"].is("hexagon"))
   {
-    cout<< "!!!!!! inside hexagon"<<endl;
     double domain_Lx = 10000.;
     double domain_Ly = 6000.;
     size_t n_wells = 6;
@@ -1832,7 +1830,6 @@ const
   }
 
   // common routine
-  cout <<" Started common routine " <<endl;
     std::vector<double> average_injection(num_inj_wells, 0.), min_injection(num_inj_wells, 0.),
             average_production(num_prod_wells, 0.), min_production(num_prod_wells, 0.);
     double pressure_values_production_wells = 0.;
@@ -1849,15 +1846,12 @@ const
 #endif
       };
 
-      cout <<" compute sinks " <<endl;
-//      cout <<" centers sink " << centers[0] << ", "<< centers[1] <<endl;
       wells sink((double) db["delta_fct_eps_factor"], (double) db["well_radius"], centers, Num_circle_points, Coll);
       sink.find_average_and_min_along_circle(&pressure, average_production[i], min_production[i]);
 
       pressure_values_production_wells += average_production[i];
     }
-    cout <<" finished compute sinks " <<endl;
-    cout <<" num_inj_wells: "<< num_inj_wells <<endl;
+
     for (int i = 0; i < num_inj_wells; i++)
     {
       centers = {x_injection_wells[i], y_injection_wells[i]
@@ -1865,27 +1859,18 @@ const
                                                                                , z_injection_wells[i]
 #endif
       };
-      cout <<" compute sources " <<endl;
-      cout <<" centers: " << centers[0] <<", "<< centers[1] <<endl;
-   //   cout <<" centers source " << centers[0] << ", "<< centers[1] <<endl;
-      wells source((double) db["delta_fct_eps_factor"], (double) db["well_radius"], centers, Num_circle_points, Coll);
-      cout <<" created source " <<endl;
-      source.find_average_and_min_along_circle(&pressure, average_injection[i], min_injection[i]);
 
-      cout <<"pressure_values_injection_wells: " << pressure_values_injection_wells <<endl;
-      cout <<"average_injection[i]: " << average_injection[i] <<endl;
+      wells source((double) db["delta_fct_eps_factor"], (double) db["well_radius"], centers, Num_circle_points, Coll);
+      source.find_average_and_min_along_circle(&pressure, average_injection[i], min_injection[i]);
 
       pressure_values_injection_wells += average_injection[i];
     }
-    cout <<" finished compute sources " <<endl;
+
     //todo: compute Q from u_in
     /// double Q = 150/360;//24 * 50; // 50 - 300
 
     int number_of_time_steps_for_production = 0;
     double Delta_Temp = 0.;
-
-    cout <<" COMPUTE DELTA_Temp " <<endl;
-
 
     for (int i = 0; i < this->average_temperature_production_wells_at_time_steps.size(); i++)
     {
@@ -1906,10 +1891,6 @@ const
                                  //= Q * Delta t * (   1/(0.6) * (pressure_prod[1] - pressure_inj[1])  - fluid_density * fluid_heat_capacity * (temperature_prod[1] - temperature_inj)   );
       //since Q_i=const, Delta t = const we can minimize
      */
-
-    cout << "pressure_values_injection_wells: "<< pressure_values_injection_wells <<endl;
-    cout << "pressure_values_production_wells: "<< pressure_values_production_wells <<endl;
-    cout << "Delta_Temp: "<< Delta_Temp <<endl;
 
     functional_value =  (number_of_time_steps_for_production * 1/(double)db["pump_efficiency"] *
             (pressure_values_injection_wells - pressure_values_production_wells)
@@ -2003,15 +1984,8 @@ GeothermalPlantsPositionOptimization<d>::wells::wells(double eps_delta_fct, doub
   double radius = eps_delta_fct*well_radius;
   for (size_t k = 0; k < Num_circle_points; k++)
   {
-   /* cout << "center_point[0]: "<< center_point[0]<<endl;
-    cout << "center_point[1]: "<< center_point[1]  <<endl;
-  */  cout << "center[0]: "<< center[0] <<endl;
-    cout << "center[1]: "<< center[1]  <<endl;
-
     this->circle_points[k].coordinates[0] = radius*cos(k*2.*Pi/(Num_circle_points + 1)) + center_point[0];
     this->circle_points[k].coordinates[1] = radius*sin(k*2.*Pi/(Num_circle_points + 1)) + center_point[1];
-   // cout << "this->circle_points[k].coordinates[0] : "<< this->circle_points[k].coordinates[0]  <<endl;
-   // cout << "this->circle_points[k].coordinates[1] : "<< this->circle_points[k].coordinates[1]  <<endl;
     if (d == 3)
     {
       this->circle_points[k].coordinates[2] = center_point[2];
@@ -2045,20 +2019,15 @@ void GeothermalPlantsPositionOptimization<d>::wells::find_average_and_min_along_
   average = 0.;
   int Num_circle_points = this->circle_points.size();
   double val;
- // cout << "this->circle_points.size(): "<< this->circle_points.size() <<endl;
   for (size_t k = 0; k < Num_circle_points; k++)
   {
     auto current_point = this->circle_points[k];
-   cout << "current_point.coordinates[0]: "<< current_point.coordinates[0] <<endl;
-   cout << "current_point.coordinates[1]: "<< current_point.coordinates[1] <<endl;
     function->FindValueLocal(current_point.cell, current_point.cell_index, current_point.coordinates[0],
          current_point.coordinates[1],
 #ifdef __3D__
                                   current_point.coordinates[2],
 #endif
                                   &val);
-    cout << "val: "<< val <<endl;
-
   if (val < min)
      min = val;
 
