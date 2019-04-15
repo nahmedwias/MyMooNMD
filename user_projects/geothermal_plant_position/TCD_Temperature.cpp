@@ -220,12 +220,12 @@ void temperature_coefficients_hexagon(int n_points, double *x, double *y,
   // set well position
   std::vector<double> singular_x, singular_y, singular_sign, flow_rate;
 
+  singular_sign.push_back(1.); // injection
+  singular_sign.push_back(-1.);  // production
   singular_sign.push_back(-1.);
   singular_sign.push_back(1.);
-  singular_sign.push_back(1.);
-  singular_sign.push_back(-1.);
-  singular_sign.push_back(1);
-  singular_sign.push_back(1);
+  singular_sign.push_back(-1);
+  singular_sign.push_back(-1);
   
   double epsDelta = delta_fct_eps_factor * well_radius;
   
@@ -233,15 +233,15 @@ void temperature_coefficients_hexagon(int n_points, double *x, double *y,
   double y0 = domain_Ly/2.;
   double pi = acos(-1.);
   int count = 0;
-  for (unsigned int k1=0; k1 < n_wells; k1++) {
+  for (unsigned int k1 = 0; k1 < n_wells; k1++) {
     double xk = x0 + distance*cos(2.*pi*k1/n_wells);
     double yk = y0 + distance*sin(2.*pi*k1/n_wells);
-    if ( singular_sign[k1]>0 ) {
+    if ( singular_sign[k1] == 1)
+    {
       singular_x.push_back(xk);
       singular_y.push_back(yk);
     }
   }
-  
   
   for(int i = 0; i < n_points; ++i)
   {
@@ -266,17 +266,17 @@ void temperature_coefficients_hexagon(int n_points, double *x, double *y,
       double x_distance_to_source = std::pow(std::abs(x[i]-singular_x[m]), 2);
       double y_distance_to_source = std::pow(std::abs(y[i]-singular_y[m]), 2);
       bool at_source = (x_distance_to_source < epsDelta*epsDelta) * (y_distance_to_source < epsDelta*epsDelta);
+
       if(at_source)
       {
-	double magnitude = cos(Pi*(x[i] - singular_x[m])/epsDelta) + 1;
-	magnitude *= cos(Pi*(y[i] - singular_y[m])/epsDelta) + 1;
-	magnitude /= 4.*epsDelta*epsDelta;
-	
+        double magnitude = cos(Pi*(x[i] - singular_x[m])/epsDelta) + 1;
+        magnitude *= cos(Pi*(y[i] - singular_y[m])/epsDelta) + 1;
+        magnitude /= 4.*epsDelta*epsDelta;
+
         coeffs[i][3] = magnitude; // reaction
         coeffs[i][4] = magnitude * temperature_injection_well; // right-hand side
       }
     }
-    
   }
 }
 
@@ -308,9 +308,10 @@ void temperature_coefficients_lattice(int n_points, double *x, double *y,
       double yk = y0 + distance*k1;
       int singular_sign = pow(-1,k1)*pow(-1,k2);
       // add singular source only at injection wells
-      if (singular_sign>0){
-	singular_x.push_back(xk);
-	singular_y.push_back(yk);
+      if (singular_sign > 0)
+      {
+	     singular_x.push_back(xk);
+	     singular_y.push_back(yk);
       }
 
     }

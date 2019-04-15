@@ -8,7 +8,7 @@
 #include "Example_NSE3D.h"
 #endif
 
-constexpr double surrounding_temperature = 348.15; //=75 + 273.15; //150.;
+constexpr double surrounding_temperature = 373.15; //=100 + 273.15; 348.15; //=75 + 273.15; //150.;
 
 #ifdef __2D__
 // we consider an approximated exact solution for the 2D case
@@ -189,6 +189,44 @@ void initial_condition_temperature(double x, double y,
   values[0] = surrounding_temperature;
 }
 
+void pde_coefficients_flow_varying_sigma(int n_points, double *x, double *y,
+#ifdef __3D__
+         double *z,
+#endif
+         double ** parameters,
+         double **coeffs, double nu, double sigma,
+         bool use_parameters = false)
+{
+  for (int i = 0; i < n_points; i++)
+  {
+    int dimension;
+#ifdef __2D__
+    dimension = 2;
+#else
+    dimension = 3;
+#endif
+    // physical parameters
+    coeffs[i][0] = nu;
+
+    // momentum source
+    for (int k = 1; k <= dimension; k++)
+      coeffs[i][k] = 0.; // f_k
+
+    //divergence source
+    coeffs[i][dimension+1] = 0.; // divergence
+
+    if ( ((abs(x[i]) < 5000.) && (abs(x[i]) > 3500.))
+            || ((abs(x[i]) < 7000.) && (abs(x[i]) > 6500.)) )
+    {
+      coeffs[i][dimension+2] = 1e-13;
+    }
+    else
+    {
+      coeffs[i][dimension+2] = 1e-15;
+    }
+
+  }
+}
 
 void pde_coefficients_flow(int n_points, double *x, double *y,
 #ifdef __3D__
@@ -318,9 +356,19 @@ Example_NSE2D get_gppo_flow_example(const ParameterDatabase & db)
     double sigma = db["inverse_permeability"];
     using namespace std::placeholders;
     bool use_coeff_fct = false; // db["variable_sigma_fct_type"];
-    CoeffFct2D coeffs = std::bind(pde_coefficients_flow, _1, _2, _3, _4, _5,
-				  effective_viscosity, //1./reynolds_number,
-				  sigma, use_coeff_fct);
+    CoeffFct2D coeffs;
+    if (sigma == -7447)
+    {
+      coeffs = std::bind(pde_coefficients_flow_varying_sigma, _1, _2, _3, _4, _5,
+              effective_viscosity, //1./reynolds_number,
+              sigma, use_coeff_fct);
+    }
+    else
+    {
+    coeffs = std::bind(pde_coefficients_flow, _1, _2, _3, _4, _5,
+            effective_viscosity, //1./reynolds_number,
+            sigma, use_coeff_fct);
+    }
     return Example_NSE2D(exact, bc, bd, coeffs, 1./reynolds_number);
     break;
   }
@@ -367,8 +415,19 @@ Example_TimeCD2D get_gppo_temperature_example(const ParameterDatabase & db)
   double sigma = db["inverse_permeability"];
   using namespace std::placeholders;
   bool use_coeff_fct = false; // db["variable_sigma_fct_type"];
-  CoeffFct3D coeffs = std::bind(pde_coefficients_flow, _1, _2, _3, _4, _5, _6, effective_viscosity, //1./reynolds_number,
+  CoeffFct3D coeffs;
+  if (sigma == -7447)
+  {
+    coeffs = std::bind(pde_coefficients_flow_varying_sigma, _1, _2, _3, _4, _5, _6,
+            effective_viscosity, //1./reynolds_number,
+                    sigma, use_coeff_fct);
+  }
+  else
+  {
+  coeffs = std::bind(pde_coefficients_flow, _1, _2, _3, _4, _5, _6,
+          effective_viscosity, //1./reynolds_number,
           sigma, use_coeff_fct);
+  }
   
   //cout << " **********INSIDE 3D_gppo_flow_example************"<< endl;
   return Example_NSE3D(exact, bc, bd, coeffs, 1./reynolds_number);
