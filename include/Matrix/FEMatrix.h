@@ -40,6 +40,16 @@ class FEMatrix : public TMatrix
     #endif // 3D
     //@}
     
+    /// @name construct square matrix using one finite element space with a 
+    ///       given TMatrix
+    /// @brief ansatz and test space is the same 
+    //@{
+    explicit FEMatrix(std::shared_ptr<const TFESpace2D> space, const TMatrix&);
+    #ifdef __3D__
+    explicit FEMatrix(std::shared_ptr<const TFESpace3D> space, const TMatrix&);
+    #endif // 3D
+    //@}
+    
     /// @name construct rectangular matrix using two finite element spaces
     /// @brief test and ansatz space are possibly different
     /// 

@@ -110,6 +110,24 @@ class BlockFEMatrix : public BlockMatrix
      */
     BlockFEMatrix();
 
+    /**
+     * @brief Creates a nRows times nCols BlockFEMatrix filled with blocks
+     * 
+     * The blocks are given row wise. That means block (i,j) in the resulting 
+     * BlockFEMatrix will be the (i*nCols+j)-th block in \c blocks. In other 
+     * words this creates a BlockFEMatrix where each block has its own color and 
+     * is not stored as transposed.
+     * 
+     * The caller has to make sure all blocks are appropriate, otherwise this 
+     * constructor will throw an exception.
+     *
+     * @param nRows - number of blocks per column
+     * @param nCols - number of blocks per row
+     * @param blocks - the given blocks, must be of length nRows*nCols
+     */
+    BlockFEMatrix(int nRows, int nCols, 
+                  const std::vector<std::shared_ptr<FEMatrix>>& blocks);
+    
     // named constructors for block fe matrices often used in ParMooN
     //TODO All named constructors should further reduce the number of TMatrix-Copies made
     // in their body!

@@ -94,10 +94,12 @@ int main(int, char**)
    BlockFEMatrix myMatrix({first_fe_space, second_fe_space});
    myMatrix.check_pointer_types(); //casts to FEMatrix work?
    myMatrix.check_coloring(); //coloring is unbroken?
+   
+   FEMatrix fe_matrix_4_copy(second_fe_space, static_cast<TMatrix&>(fe_matrix_4));
 
    //replace method and check
    myMatrix.replace_blocks(fe_matrix_1, {{0,0}}, { false } );
-   myMatrix.replace_blocks(fe_matrix_4, {{1,1}}, { false });
+   myMatrix.replace_blocks(fe_matrix_4_copy, {{1,1}}, { false });
 
    myMatrix.replace_blocks(fe_matrix_3, {{0,1}, {1,0}}, { true, false }); //replace which leads to color merge
    myMatrix.replace_blocks(fe_matrix_2, {{0,1}}, {false} ); //replace which leads to color split
@@ -212,6 +214,25 @@ int main(int, char**)
 
   }
 
+  {
+    // test standard methods with custom-made 2x2 FEMatrix, including
+    // one transposed storage and one transposed-storage memory hack
+
+    //create four FE Matrices to fiddle around with
+    auto fe_mat1 = std::make_shared<FEMatrix>(first_fe_space);
+    auto fe_mat2 = std::make_shared<FEMatrix>(first_fe_space, second_fe_space);
+    auto fe_mat3 = std::make_shared<FEMatrix>(second_fe_space, first_fe_space);
+    auto fe_mat4 = std::make_shared<FEMatrix>(second_fe_space);
+    auto fe_mat4_copy = std::make_shared<FEMatrix>(second_fe_space,
+                                                   static_cast<TMatrix&>(
+                                                     *fe_mat4));
+    // custom construct and check
+    BlockFEMatrix myMatrix(2, 2, {fe_mat1, fe_mat2, fe_mat3, fe_mat4_copy});
+    myMatrix.check_pointer_types(); //casts to FEMatrix work?
+    myMatrix.check_coloring(); //coloring is unbroken?
+    
+  }
+  
   { //make a default NSE Matrix and two vectors
     BlockFEMatrix blockmat=
             BlockFEMatrix::NSE2D_Type1(first_fe_space, second_fe_space);
