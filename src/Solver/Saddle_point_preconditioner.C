@@ -25,7 +25,10 @@
 #endif
 
 // see https://stackoverflow.com/a/8016853
-constexpr char Saddle_point_preconditioner::required_database_name[];
+constexpr char Saddle_point_preconditioner::database_name[];
+constexpr char Saddle_point_preconditioner::database_name_velocity_solver[];
+constexpr char Saddle_point_preconditioner::database_name_pressure_solver[];
+
 
 /* ************************************************************************** */
 Saddle_point_preconditioner::Saddle_point_preconditioner(
@@ -36,14 +39,14 @@ Saddle_point_preconditioner::Saddle_point_preconditioner(
     velocity_solver(nullptr), inverse_diagonal(),
     velocity_space(m.get_row_space(0)), pressure_space(nullptr),
     damping_factor(1.0), gamma(1.), Poisson_solver_matrix(nullptr),
-    Poisson_solver(nullptr), up_star(m), bdryCorrectionMatrix_(),
+    pressure_solver(nullptr), up_star(m), bdryCorrectionMatrix_(),
     poissonMatrixBdry_(nullptr), poissonSolverBdry_(nullptr)
 {
 #ifdef _MPI
   if(this->spp_type != Saddle_point_preconditioner::type::lsc)
     ErrThrow("In MPI case, only least_squares_commutator is enabled so far.")
 #endif
-        Output::print<5>("Constructing a Saddle_point_preconditioner");
+  Output::print<5>("Constructing a Saddle_point_preconditioner");
   Chrono time_measuring;
   bool pressure_correction_in_matrix = this->M->pressure_projection_enabled();
   this->M->disable_pressure_projection();
@@ -86,20 +89,22 @@ Saddle_point_preconditioner::Saddle_point_preconditioner(
     this->gamma = db["gamma"];
   }
 
+  std::string db_name = Saddle_point_preconditioner::database_name;
   {
     // velocity solver database
     ParameterDatabase vs_db = Solver<>::default_solver_database();
-    auto db_name
-        = std::string(Saddle_point_preconditioner::required_database_name);
+    std::string velo_db_name = Saddle_point_preconditioner::database_name_velocity_solver;
     // use the given database or one of its nested databases, depending on which
     // one has the correct name. Otherwise the default solver database is used.
     if(db.get_name() == db_name)
-    {                         //...the input database has the required name
-      vs_db.merge(db, false); // NEW
+    {
+      //...the input database has the required name
+      vs_db.merge(db, false);
     }
-    else if(db.has_nested_database(db_name))
-    { //...the input database has a nested database of the required name
-      vs_db.merge(db.get_nested_database(db_name), false);
+    else if(db.has_nested_database(velo_db_name))
+    {
+      //...the input database has a nested database of the required name
+      vs_db.merge(db.get_nested_database(velo_db_name), false);
     }
 
     if(vs_db["solver_type"].is("iterative"))
@@ -120,7 +125,7 @@ Saddle_point_preconditioner::Saddle_point_preconditioner(
                            "Setting up a MUMPS velocity solver.");
       velocity_mumps_wrapper.reset(new MumpsWrapper(velocity_block));
     }
-    else if(vs_db["solver_type"].is("iterative"))
+    else
     {
       Output::root_info<3>("Saddle_point_preconditioner",
                            "Setting up an iterative velocity solver "
@@ -129,8 +134,6 @@ Saddle_point_preconditioner::Saddle_point_preconditioner(
       velocity_solver.reset(new Solver<BlockFEMatrix, BlockVector>(vs_db));
       velocity_solver->update_matrix(velocity_block);
     }
-    else
-      ErrThrow("What kind of solver should that be???");
 #endif
   }
 
@@ -152,16 +155,46 @@ Saddle_point_preconditioner::Saddle_point_preconditioner(
   // construct an approximation to the Schur complement matrix
   this->Poisson_solver_matrix = this->compute_Poisson_solver_matrix();
 
+  {
+    // pressure solver database
+    ParameterDatabase ps_db = Solver<>::default_solver_database();
+    std::string p_db_name = Saddle_point_preconditioner::database_name_pressure_solver;
+    // use the given database or one of its nested databases, depending on which
+    // one has the correct name. Otherwise the default solver database is used.
+    if(db.get_name() == db_name)
+    {
+      //...the input database has the required name
+      ps_db.merge(db, false);
+    }
+    else if(db.has_nested_database(p_db_name))
+    {
+      //...the input database has a nested database of the required name
+      ps_db.merge(db.get_nested_database(p_db_name), false);
+    }
+    
 #ifndef _MPI
-  this->Poisson_solver.reset(new DirectSolver(
-      *Poisson_solver_matrix, DirectSolver::DirectSolverTypes::umfpack));
+    this->pressure_solver.reset(new Solver<BlockFEMatrix, BlockVector>(ps_db));
+    this->pressure_solver->update_matrix(*Poisson_solver_matrix);
 #endif
 #ifdef _MPI
-  // comms should contain only the pressure space communicator
-  std::vector<const TParFECommunicator3D*> comms
-      = {M->get_communicators()[M->get_n_cell_rows() - 1]};
-  Poisson_solver.reset(new MumpsWrapper(*Poisson_solver_matrix, comms));
+    if(ps_db["solver_type"].is("direct"))
+    {
+      Output::root_info<3>("Saddle_point_preconditioner",
+                           "Setting up a MUMPS pressure solver.");
+      Poisson_solver.reset(new MumpsWrapper(*Poisson_solver_matrix));
+    }
+    else
+    {
+      Output::root_info<3>("Saddle_point_preconditioner",
+                           "Setting up an iterative velocity solver "
+                           "of type ",
+                           ps_db["iterative_solver_type"], ".");
+      pressure_solver.reset(new Solver<BlockFEMatrix, BlockVector>(ps_db));
+      pressure_solver->update_matrix(*Poisson_solver_matrix);
+    }
 #endif
+  }
+  
   u_star = BlockVector(velocity_block);
   p_star = BlockVector(*this->Poisson_solver_matrix);
   u_tmp = BlockVector(u_star);
@@ -261,15 +294,17 @@ void Saddle_point_preconditioner::update()
 
 
 #ifndef _MPI
-    this->Poisson_solver.reset(
-        new DirectSolver(*this->Poisson_solver_matrix,
-                         DirectSolver::DirectSolverTypes::umfpack));
+    this->pressure_solver->update_matrix(*Poisson_solver_matrix);
 #endif
 #ifdef _MPI
-    // comms should contain only the pressure space communicator
-    std::vector<const TParFECommunicator3D*> comms
-        = {M->get_communicators()[M->get_n_cell_rows() - 1]};
-    Poisson_solver.reset(new MumpsWrapper(*Poisson_solver_matrix, comms));
+    if(this->Poisson_solver)
+    {
+      Poisson_solver.reset(new MumpsWrapper(*Poisson_solver_matrix));
+    }
+    else
+    {
+      this->pressure_solver->update_matrix(*Poisson_solver_matrix);
+    }
 #endif
   }
   else if(this->spp_type == Saddle_point_preconditioner::type::lsc
@@ -281,7 +316,7 @@ void Saddle_point_preconditioner::update()
     // - gradient and divergence block
     // - inverse_diagonal
     // - Poisson_solver_matrix
-    // - Poisson_solver
+    // - pressure_solver/Poisson_solver
     // - velocity_space, pressure_space
   }
 }
@@ -381,7 +416,14 @@ void Saddle_point_preconditioner::apply(const BlockVector& z,
 
       this->divergence_block->multiply(u_star.get_entries(),
                                        p_tmp.get_entries(), -1.);
-      this->Poisson_solver->solve(p_tmp, p_star);
+#ifdef _MPI
+      if(this->Poisson_solver)
+        this->Poisson_solver->solve(p_tmp, p_star);
+      else
+#endif // MPI
+      {
+        this->pressure_solver->solve(p_tmp, p_star);
+      }
 
       // ----------------------------------------------------------------------
       // dp = dp*
@@ -424,7 +466,16 @@ void Saddle_point_preconditioner::apply(const BlockVector& z,
       if(correct_boundary)
         this->poissonSolverBdry_->solve(p_tmp, p_star);
       else
-        this->Poisson_solver->solve(p_tmp, p_star);
+      {
+#ifdef _MPI
+        if(this->Poisson_solver)
+          this->Poisson_solver->solve(p_tmp, p_star);
+        else
+#endif // MPI
+        {
+          this->pressure_solver->solve(p_tmp, p_star);
+        }
+      }
 
         // Step 2. Update p_tmp = -B Q^(-1) K Q^(-1) B^T p_star
 #ifdef _MPI
@@ -484,7 +535,14 @@ void Saddle_point_preconditioner::apply(const BlockVector& z,
       //     below, thus consistency lvl 0 is enough.
 
       // Step 3: 2. solver solve S_p p_star = p_tmp and store it in p_star
-      Poisson_solver->solve(p_tmp, p_star);
+#ifdef _MPI
+      if(this->Poisson_solver)
+        this->Poisson_solver->solve(p_tmp, p_star);
+      else
+#endif // MPI
+      {
+        this->pressure_solver->solve(p_tmp, p_star);
+      }
 
 #ifdef _MPI
       // MPI: update p_star to lvl 3, so that the matrix-vector
@@ -542,8 +600,15 @@ void Saddle_point_preconditioner::apply(const BlockVector& z,
 
       p_tmp = z.block(n_blocks - 1);
       p_tmp.scale(this->gamma); // p_tmp *= this->gamma;
-      this->Poisson_solver->solve(p_tmp,
-                                  p_star); // W * p_star = p_temp, W:= diag[Mp]
+      // W * p_star = p_temp, W:= diag[Mp]
+#ifdef _MPI
+      if(this->Poisson_solver)
+        this->Poisson_solver->solve(p_tmp, p_star);
+      else
+#endif // MPI
+      {
+        this->pressure_solver->solve(p_tmp, p_star);
+      }
 
 
       // Step 2: solve A_gamma * u_star = z_u - B^T * p_star for u_star
@@ -586,7 +651,7 @@ void Saddle_point_preconditioner::apply(int, int, const BlockVector& z,
 
 /* ************************************************************************** */
 /* LSC === */
-std::shared_ptr<BlockMatrix>
+std::shared_ptr<BlockFEMatrix>
 Saddle_point_preconditioner::compute_Poisson_solver_matrix() const
 {
   std::shared_ptr<TMatrix> ret(nullptr);
@@ -638,8 +703,10 @@ Saddle_point_preconditioner::compute_Poisson_solver_matrix() const
   }
   // put the shared_ptr into a vector
   std::vector<std::shared_ptr<TMatrix>> ret_as_vector{ret};
+  auto fe_matrix = std::make_shared<FEMatrix>(pressure_space, *ret);
+  std::vector<std::shared_ptr<FEMatrix>> vec(1, fe_matrix);
   // create a BlockMatrix and return it
-  return std::make_shared<BlockMatrix>(1, 1, ret_as_vector);
+  return std::make_shared<BlockFEMatrix>(1, 1, vec);
 }
 
 /* ************************************************************************** */
@@ -920,9 +987,6 @@ void Saddle_point_preconditioner::fill_inverse_diagonal()
     int n_fe_spaces = 1;
     SqMat* sq_matrices[1];
 
-    // FESpace* neumann_velocity_space =
-    //  this->velocity_space->copy_with_all_Neumann_boundary();
-    // const FESpace* v_space = neumann_velocity_space;
     const FESpace* v_space = this->velocity_space.get();
 
     SqMat one_block_of_mass_matrix(this->velocity_space);
@@ -981,7 +1045,6 @@ void Saddle_point_preconditioner::fill_inverse_diagonal()
     velo_comm.consistency_update(&inverse_diagonal[velo_comm.GetNDof()], 3);
     velo_comm.consistency_update(&inverse_diagonal[2 * velo_comm.GetNDof()], 3);
 #endif
-    // delete neumann_velocity_space;
   }
 }
 
