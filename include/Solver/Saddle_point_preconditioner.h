@@ -33,13 +33,35 @@ class Saddle_point_preconditioner : public Preconditioner<BlockVector>
     AL,
     mod_AL
   };
-  /// The database passed to the constuctor should be named this or have a
-  /// nested database with this name. Otherwise a default solver database is
-  /// used to initialize a solver object for the velocity subsystem.
-  constexpr static char required_database_name[]
+  /// If the database passed to the constuctor has this name, it will be used 
+  /// to define solvers for the velocity and pressure solution substeps. If
+  /// you want to control these two solution steps individually, the database
+  /// given to the contructor need to have two nested databases with the names
+  /// given below.
+  constexpr static char database_name[]
       = "Saddle Point Preconditioner Database";
+  /// The name of the database which has to be a nested database of the one 
+  /// given to the constructor. Its values are used to define a solver object
+  /// for the velocity subsystem.
+  constexpr static char database_name_velocity_solver[]
+      = "Saddle Point Preconditioner Database - velocity Solver";
+  /// The name of the database which has to be a nested database of the one 
+  /// given to the constructor. Its values are used to define a solver object
+  /// for the pressure subsystem.
+  constexpr static char database_name_pressure_solver[]
+      = "Saddle Point Preconditioner Database - pressure Solver";
 
-  /** @brief constructor for a given system matrix */
+  /** @brief constructor for a given system matrix 
+   * 
+   * If the database db has the name 'database_name' (see above), it
+   * defines the solution parameters (solver_type, ...) for both, the velocity
+   * and pressure solution substeps. If the given database has a different name,
+   * it can have nested databases with names
+   * 'database_name_velocity_solver' and 
+   * 'database_name_pressure_solver' which are then used for the two 
+   * solution substeps. If one or both of the nested databases are not present,
+   * default values are used.
+   */
   explicit Saddle_point_preconditioner(const BlockFEMatrix& m, type t,
                                        const ParameterDatabase& db,
                                        const BlockVector& rhs = BlockVector());
@@ -177,12 +199,10 @@ class Saddle_point_preconditioner : public Preconditioner<BlockVector>
   /** @brief the Poisson solver matrix (the part of the approximation of the
    * Schur complement)
    */
-  std::shared_ptr<BlockMatrix> Poisson_solver_matrix;
+  std::shared_ptr<BlockFEMatrix> Poisson_solver_matrix;
 
-#ifndef _MPI
-  /** @brief storing a factorization for the 'Poisson_solver_matrix' */
-  std::shared_ptr<DirectSolver> Poisson_solver;
-#endif
+  /** @brief solver object for solving the pressure block */
+  std::shared_ptr<Solver<BlockFEMatrix, BlockVector>> pressure_solver;
 #ifdef _MPI
   /** @brief storing a factorization for the 'Poisson_solver_matrix' */
   std::shared_ptr<MumpsWrapper> Poisson_solver;
@@ -223,7 +243,7 @@ class Saddle_point_preconditioner : public Preconditioner<BlockVector>
   // methods
 
   /** @brief return an approximation to the Poisson solver matrix */
-  std::shared_ptr<BlockMatrix> compute_Poisson_solver_matrix() const;
+  std::shared_ptr<BlockFEMatrix> compute_Poisson_solver_matrix() const;
 
   /** @brief fill the member Saddle_point_preconditioner::inverse_diagonal.
    *
