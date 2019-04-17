@@ -170,7 +170,7 @@ int main(int argc, char* argv[])
   db["afc_limiter"].set<>("kuzmin");
   db["afc_iteration_scheme"].set<>("fixed_point_rhs");
   db["afc_nonlinloop_anderson_acc"].set<>("yes");
-  db["afc_anderson_damping"].set<>("no");
+  db["afc_nonlinloop_anderson_acc"].set<>("no");
   errors = {{0.0010369627652847, 0.011894929166125}};
   check_cd3d(domain, db, errors);
   //=========================================================================
@@ -178,7 +178,7 @@ int main(int argc, char* argv[])
   db["afc_limiter"].set<>("kuzmin");
   db["afc_iteration_scheme"].set<>("newton");
   db["afc_nonlinloop_anderson_acc"].set<>("yes");
-  db["afc_anderson_damping"].set<>("no");
+  db["afc_nonlinloop_anderson_acc"].set<>("no");
   errors = {{0.0010369624917919, 0.011894928221049}};
   check_cd3d(domain, db, errors);
   //=========================================================================
@@ -186,7 +186,7 @@ int main(int argc, char* argv[])
   db["afc_limiter"].set<>("kuzmin");
   db["afc_iteration_scheme"].set<>("fixed_point_matrix");
   db["afc_nonlinloop_anderson_acc"].set<>("yes");
-  db["afc_anderson_damping"].set<>("no");
+  db["afc_nonlinloop_anderson_acc"].set<>("no");
   errors = {{0.0010369624396964,0.011894928040666 }};
   check_cd3d(domain, db, errors);
   //=========================================================================
@@ -194,7 +194,7 @@ int main(int argc, char* argv[])
   db["afc_limiter"].set<>("BJK17");
   db["afc_iteration_scheme"].set<>("fixed_point_rhs");
   db["afc_nonlinloop_anderson_acc"].set<>("yes");
-  db["afc_anderson_damping"].set<>("no");
+  db["afc_nonlinloop_anderson_acc"].set<>("no");
   errors = {{0.00041589901259253, 0.010288830807286}};
   check_cd3d(domain, db, errors);
   //=========================================================================  
@@ -202,7 +202,7 @@ int main(int argc, char* argv[])
   db["afc_limiter"].set<>("BJK17");
   db["afc_iteration_scheme"].set<>("newton");
   db["afc_nonlinloop_anderson_acc"].set<>("yes");
-  db["afc_anderson_damping"].set<>("no");
+  db["afc_nonlinloop_anderson_acc"].set<>("no");
   errors = {{0.00041589904466904, 0.010288830778404}};
   check_cd3d(domain, db, errors);
   //=========================================================================  
@@ -210,7 +210,7 @@ int main(int argc, char* argv[])
   db["afc_limiter"].set<>("BJK17");
   db["afc_iteration_scheme"].set<>("fixed_point_matrix");
   db["afc_nonlinloop_anderson_acc"].set<>("yes");
-  db["afc_anderson_damping"].set<>("no");
+  db["afc_nonlinloop_anderson_acc"].set<>("no");
   errors = {{0.00041589915223163, 0.010288831391598}};
   check_cd3d(domain, db, errors);
   //=========================================================================
@@ -255,7 +255,7 @@ int main(int argc, char* argv[])
   db["afc_limiter"].set<>("kuzmin");
   db["afc_iteration_scheme"].set<>("fixed_point_rhs");
   db["afc_nonlinloop_anderson_acc"].set<>("yes");
-  db["afc_anderson_damping"].set<>("no");
+  db["afc_nonlinloop_anderson_acc"].set<>("no");
   errors = {{0.00019851553307403, 0.0042946862979766}};
   check_cd3d(domain_quad, db, errors);
   //=========================================================================
@@ -263,7 +263,7 @@ int main(int argc, char* argv[])
   db["afc_limiter"].set<>("kuzmin");
   db["afc_iteration_scheme"].set<>("newton");
   db["afc_nonlinloop_anderson_acc"].set<>("yes");
-  db["afc_anderson_damping"].set<>("no");
+  db["afc_nonlinloop_anderson_acc"].set<>("no");
   errors = {{0.00019851553697763, 0.004294686306746}};
   check_cd3d(domain_quad, db, errors);
   //=========================================================================
@@ -271,7 +271,7 @@ int main(int argc, char* argv[])
   db["afc_limiter"].set<>("kuzmin");
   db["afc_iteration_scheme"].set<>("fixed_point_matrix");
   db["afc_nonlinloop_anderson_acc"].set<>("yes");
-  db["afc_anderson_damping"].set<>("no");
+  db["afc_nonlinloop_anderson_acc"].set<>("no");
   errors = {{0.00019851552155721, 0.0042946862932138}};
   check_cd3d(domain_quad, db, errors);
   //=========================================================================

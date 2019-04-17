@@ -125,6 +125,8 @@ void ConvectionDiffusion_AFC<d>::assemble(const int iteration)
     && this->db["afc_initial_iterate"].is("supg"))
   {
     afc_ini_supg = 1;   
+    Output::print<2>("initial solution is SUPG solution");
+    this->db["space_discretization_type"].set("supg");
   }
   
   LocalAssembling<d> laObject(this->db, laTypet, &feFunctionPtr,
@@ -192,7 +194,6 @@ void ConvectionDiffusion_AFC<d>::assemble(const int iteration)
 
   if(!this->db["algebraic_flux_correction"].is("none"))
     do_algebraic_flux_correction(iteration, is_not_afc_fixed_point_rhs);
-  
 }
 
 /* ************************************************************************ */
@@ -426,61 +427,24 @@ void ConvectionDiffusion_AFC<d>::dynamic_damping(const int iteration)
   BlockVector res = s.rhs;
   BlockVector current_rhs = s.rhs;
   BlockVector current_sol = s.solution;
-  int check_anderson=0;
-  if(iteration<=(int)this->db["afc_nonlinloop_anderson_acc_vec"]+
-                 (int)this->db["afc_nonlinloop_anderson_acc_start"])
-    check_anderson=1;
+
   while(1)
   {
-    // Damping from [WN11.SINUM]
-    if(this->db["afc_anderson_damping"].is("yes"))
-    {
-      if(this->db["afc_nonlinloop_anderson_acc"].is("yes"))
-      {
-        if(check_anderson==1)
-          AlgebraicFluxCorrection::AFC_Compute_New_Iterate(old_solution, 
-                                                           s.solution, this->db);
-        //starts anderson damping after the vectors are stored
-        else
-        {
-          s.solution.scale(omega);
-          s.solution.add_scaled(alphas_x_i, 1.-omega);
-        }
-      }
-      else
-        AlgebraicFluxCorrection::AFC_Compute_New_Iterate(old_solution, 
-                                                         s.solution, this->db);
-      assemble(iteration);
-      // calculation of residual r_k+1
-      res = s.rhs;
-      s.matrix.apply_scaled_add(s.solution , res ,-1.0);
-      // compute the norm of the residual vector, 
-      // residual_old is the norm of residual r_k
-      residual = res.norm();
-      Output::print<4>("  residual for proposed new iterate ", residual);
-      // accept the first damping parameter
-      if (iteration==1)
-        break;
-      if(this->db["afc_nonlinloop_anderson_acc"].is("yes") && check_anderson==1)
-        break;
-    }
-    // Dynamic damping from [JK08.CMAME]
-    else
-    {
-      AlgebraicFluxCorrection::AFC_Compute_New_Iterate(old_solution, s.solution, 
+    
+    AlgebraicFluxCorrection::AFC_Compute_New_Iterate(old_solution, s.solution, 
                                                        this->db);
-      assemble(iteration);
-      // calculation of residual r_k+1
-      res = s.rhs;
-      s.matrix.apply_scaled_add(s.solution , res ,-1.0);
-      // compute the norm of the residual vector, 
-      //    residual_old is the norm of residual r_k
-      residual = res.norm();
-      Output::print<4>("  residual for proposed new iterate ", residual);
-      // accept the first damping parameter
-      if (iteration==1)
-        break;
-    }
+    assemble(iteration);
+    // calculation of residual r_k+1
+    res = s.rhs;
+    s.matrix.apply_scaled_add(s.solution , res ,-1.0);
+    // compute the norm of the residual vector, 
+    //    residual_old is the norm of residual r_k
+    residual = res.norm();
+    Output::print<4>("  residual for proposed new iterate ", residual);
+    // accept the first damping parameter
+    if (iteration==1)
+      break;
+    
     /*
      * if the norm of the residual vector decreases or if the damping parameter 
      * is already very small then accept the new iterate
@@ -766,8 +730,6 @@ void ConvectionDiffusion_AFC<d>::do_algebraic_flux_correction(
        *                  s.matrix_.get_blocks_uniquely({{0,0}})[0]->GetNorm());
        */  
     }
-    //Previous Implementation
-    //AlgebraicFluxCorrection::correct_dirichlet_rows(one_block);
     if (is_not_afc_fixed_point_rhs)
       AlgebraicFluxCorrection::correct_dirichlet_rows(one_block);
     //...and in the right hand side, too, assum correct in solution vector

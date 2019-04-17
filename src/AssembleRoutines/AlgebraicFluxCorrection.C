@@ -1785,7 +1785,7 @@ ParameterDatabase AlgebraicFluxCorrection::default_afc_database()
   });
   
   //Anderson acceleration parameters
-  db.add("afc_nonlinloop_anderson_acc", "yes", 
+  db.add("afc_nonlinloop_anderson_acc", "no", 
          "Whether or not to use Anderson acceleration", {"no", "yes"}
   );
   
@@ -1797,9 +1797,6 @@ ParameterDatabase AlgebraicFluxCorrection::default_afc_database()
          "Starting iterate for Anderson acceleration",  
          (size_t)  0, (size_t)  1000);
   
-  db.add("afc_anderson_damping", "yes", "Anderson Damping from WN11 choice", 
-         {"yes", "no"});
-
   //parameters related to fixed point matrix and Newton method
   db.add("afc_newton_regu_sigma", 1e-8, "Penalty for regularized Newton method"
     "is scaled with fourth power of mesh width", 0.0,1.0);
@@ -1911,6 +1908,7 @@ const int is_not_afc_fixed_point_rhs)
       Compute_Parameter_For_Linearity_Preservation(system_matrix, sol, gamma);
     }
   }
+  
   // add this matrix to A giving \tilde A (Entries)
   // this is the matrix with the properties of an M matrix
   //for fixed_point_rhs and iteration>1 we don't need to add matrix D again.
@@ -2105,12 +2103,12 @@ const int is_not_afc_fixed_point_rhs)
       // this should not be happen
       if (Entries[j] > 0)
       {
-        ErrThrow("positive non-diagonal entry in FEM-TVD ", i, " ", j, " ",
+        ErrThrow("positive non-diagonal entry in AFC ", i, " ", j, " ",
           Entries[j]);
       }
       if ((it_scheme == Iteration_Scheme::FIXEDPOINT_RHS) && (Entries[j] > 0))
       {
-        OutPut("positive entry in FEMTVD "<<i<< " " <<j<<" "<<Entries[j]<<endl);
+        OutPut("positive entry in AFC "<<i<< " " <<j<<" "<<Entries[j]<<endl);
         exit(4711);
       }
 
