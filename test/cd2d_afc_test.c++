@@ -181,7 +181,7 @@ int main(int argc, char* argv[])
   db["afc_limiter"].set<>("kuzmin");
   db["afc_iteration_scheme"].set<>("fixed_point_rhs");
   db["afc_nonlinloop_anderson_acc"].set<>("yes");
-  db["afc_anderson_damping"].set<>("no");
+  db["afc_nonlinloop_anderson_acc"].set<>("no");
   errors = {{0.53300159242554, 2.2679598769077, 0.40567403742442, 1.0000000009584 }};
   check_cd2d(domain, db, errors);
   //=========================================================================
@@ -189,7 +189,7 @@ int main(int argc, char* argv[])
   db["afc_limiter"].set<>("kuzmin");
   db["afc_iteration_scheme"].set<>("newton");
   db["afc_nonlinloop_anderson_acc"].set<>("yes");
-  db["afc_anderson_damping"].set<>("no");
+  db["afc_nonlinloop_anderson_acc"].set<>("no");
   errors = {{0.53300159208051, 2.2679598729401, 0.4056740371515, 1.0000000000071}};
   check_cd2d(domain, db, errors);
   //=========================================================================
@@ -197,7 +197,7 @@ int main(int argc, char* argv[])
   db["afc_limiter"].set<>("kuzmin");
   db["afc_iteration_scheme"].set<>("fixed_point_matrix");
   db["afc_nonlinloop_anderson_acc"].set<>("yes");
-  db["afc_anderson_damping"].set<>("no");
+  db["afc_nonlinloop_anderson_acc"].set<>("no");
   errors = {{0.53300159216948, 2.2679598744846, 0.40567403724517,1.0000000000082}};
   check_cd2d(domain, db, errors);
   //=========================================================================
@@ -205,7 +205,7 @@ int main(int argc, char* argv[])
   db["afc_limiter"].set<>("BJK17");
   db["afc_iteration_scheme"].set<>("fixed_point_rhs");
   db["afc_nonlinloop_anderson_acc"].set<>("yes");
-  db["afc_anderson_damping"].set<>("no");
+  db["afc_nonlinloop_anderson_acc"].set<>("no");
   errors = {{0.54426183509793, 2.5459178359341, 0.4855025334298, 1.0000000000092}};
   check_cd2d(domain, db, errors);
   //=========================================================================  
@@ -213,7 +213,7 @@ int main(int argc, char* argv[])
   db["afc_limiter"].set<>("BJK17");
   db["afc_iteration_scheme"].set<>("newton");
   db["afc_nonlinloop_anderson_acc"].set<>("yes");
-  db["afc_anderson_damping"].set<>("no");
+  db["afc_nonlinloop_anderson_acc"].set<>("no");
   errors = {{  0.54426183521814, 2.5459178361282 ,  0.485502533646, 1.0000000001075}};
   check_cd2d(domain, db, errors);
   //=========================================================================  
@@ -221,7 +221,7 @@ int main(int argc, char* argv[])
   db["afc_limiter"].set<>("BJK17");
   db["afc_iteration_scheme"].set<>("fixed_point_matrix");
   db["afc_nonlinloop_anderson_acc"].set<>("yes");
-  db["afc_anderson_damping"].set<>("no");
+  db["afc_nonlinloop_anderson_acc"].set<>("no");
   errors = {{ 0.54426183519881,  2.5459178359834, 0.48550253342984,  1.0000000002773}};
   check_cd2d(domain, db, errors);
   //=========================================================================
@@ -270,7 +270,7 @@ int main(int argc, char* argv[])
   db["afc_limiter"].set<>("kuzmin");
   db["afc_iteration_scheme"].set<>("fixed_point_rhs");
   db["afc_nonlinloop_anderson_acc"].set<>("yes");
-  db["afc_anderson_damping"].set<>("no");
+  db["afc_nonlinloop_anderson_acc"].set<>("no");
   errors = {{0.52464493309035, 2.2075436770111, 0.38778102708239, 0.99998511033224}};
   check_cd2d(domain_quad, db, errors);
   //=========================================================================
@@ -278,7 +278,7 @@ int main(int argc, char* argv[])
   db["afc_limiter"].set<>("kuzmin");
   db["afc_iteration_scheme"].set<>("newton");
   db["afc_nonlinloop_anderson_acc"].set<>("yes");
-  db["afc_anderson_damping"].set<>("no");
+  db["afc_nonlinloop_anderson_acc"].set<>("no");
   errors = {{0.52464493324716, 2.2075436781711, 0.38778102729767, 0.9999851103142}};
   check_cd2d(domain_quad, db, errors);
   //=========================================================================
@@ -286,7 +286,7 @@ int main(int argc, char* argv[])
   db["afc_limiter"].set<>("kuzmin");
   db["afc_iteration_scheme"].set<>("fixed_point_matrix");
   db["afc_nonlinloop_anderson_acc"].set<>("yes");
-  db["afc_anderson_damping"].set<>("no");
+  db["afc_nonlinloop_anderson_acc"].set<>("no");
   errors = {{0.52464493319966, 2.2075436785091, 0.38778102729507, 0.99998511031822}};
   check_cd2d(domain_quad, db, errors);
   //=========================================================================
