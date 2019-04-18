@@ -573,6 +573,7 @@ TMatrix* TMatrix::multiply_with_transpose_from_right(
 #ifdef _MPI
   const std::vector<const TParFECommunicator3D*>& test_comms
   , const std::vector<const TParFECommunicator3D*>& ansatz_comms
+  , bool additive_storage
 #endif
 ) const{
 
@@ -582,7 +583,7 @@ TMatrix* TMatrix::multiply_with_transpose_from_right(
   // let the other implementations do the work.
   return multiply_with_transpose_from_right(unityScaling
 #ifdef _MPI
-      ,test_comms, ansatz_comms
+      ,test_comms, ansatz_comms, additive_storage
 #endif
   );
 }
@@ -592,6 +593,7 @@ TMatrix* TMatrix::multiply_with_transpose_from_right(
 #ifdef _MPI
   , const std::vector<const TParFECommunicator3D*>& test_comms
   , const std::vector<const TParFECommunicator3D*>& ansatz_comms
+  , bool additive_storage
 #endif
 ) const
 {
@@ -603,7 +605,7 @@ TMatrix* TMatrix::multiply_with_transpose_from_right(
   TMatrix * ret =  multiply_with_transpose_from_right(diagonalScaling, 
                                                       *productStructure
 #ifdef _MPI
-      ,test_comms, ansatz_comms
+      ,test_comms, ansatz_comms, additive_storage
 #endif
   );
 
@@ -616,6 +618,7 @@ TMatrix* TMatrix::multiply_with_transpose_from_right(
 #ifdef _MPI
   , const std::vector<const TParFECommunicator3D*>& test_comms
   , const std::vector<const TParFECommunicator3D*>& ansatz_comms
+  , bool additive_storage
 #endif
 )
 const
@@ -720,7 +723,7 @@ const
           // we found a pair of indices with equal entry in KCol.
 #ifdef _MPI
           int col = row1ColBegin[index1];
-          if(ansatz_masters.at(col) == rank)
+          if(additive_storage && ansatz_masters.at(col) == rank)
           {//the coupling column is master? take this entry!
 #endif
             temp +=  row1EntriesBegin[index1]
