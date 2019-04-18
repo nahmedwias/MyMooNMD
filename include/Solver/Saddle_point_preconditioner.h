@@ -242,8 +242,12 @@ class Saddle_point_preconditioner : public Preconditioner<BlockVector>
 
   // methods
 
-  /** @brief return an approximation to the Poisson solver matrix */
-  std::shared_ptr<BlockFEMatrix> compute_Poisson_solver_matrix() const;
+  /** @brief return an approximation to the Poisson solver matrix 
+   * 
+   * @param additive_storage only used in MPI mode
+   */
+  std::shared_ptr<BlockFEMatrix> compute_Poisson_solver_matrix(
+    bool additive_storage = true) const;
 
   /** @brief fill the member Saddle_point_preconditioner::inverse_diagonal.
    *
@@ -278,8 +282,10 @@ class Saddle_point_preconditioner : public Preconditioner<BlockVector>
    *
    * Call only after Poisson_solver_matrix has been constructed, work with a
    * copy of its structure
+   * 
+   * @param additive_storage only used in MPI mode
    */
-  void computePoissonMatrixBdry();
+  void computePoissonMatrixBdry(bool additive_storage = true);
 
   /**
    * @brief Call the velocity solver to solve for rhs and sol.

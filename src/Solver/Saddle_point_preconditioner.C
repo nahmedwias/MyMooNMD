@@ -152,8 +152,6 @@ Saddle_point_preconditioner::Saddle_point_preconditioner(
     this->gradient_block->scale(&inverse_diagonal[0], true);
   }
 
-  // construct an approximation to the Schur complement matrix
-  this->Poisson_solver_matrix = this->compute_Poisson_solver_matrix();
 
   {
     // pressure solver database
@@ -172,6 +170,19 @@ Saddle_point_preconditioner::Saddle_point_preconditioner(
       ps_db.merge(db.get_nested_database(p_db_name), false);
     }
     
+    // construct an approximation to the Schur complement matrix
+    // The argument to this function is only relevant in MPI mode. There, the
+    // direct solver is mumps which accepts the matrix to be in additive storage
+    // format. However this storage format can produce zeros on the diagonal on
+    // a particular processor which makes some preconditioners (jacobi, sor, ..)
+    // unusable. In this case we produce a matrix which is __inconsistently__
+    // stored but has no nonzero entries on the diagonal. The better solution 
+    // would be a consistency update for the matrix itself, but that is not 
+    // implemented. So note that the given matrix is not correct on any given 
+    // processor.
+    this->Poisson_solver_matrix = this->compute_Poisson_solver_matrix(
+      ps_db["solver_type"].is("direct"));
+    
 #ifndef _MPI
     this->pressure_solver.reset(new Solver<BlockFEMatrix, BlockVector>(ps_db));
     this->pressure_solver->update_matrix(*Poisson_solver_matrix);
@@ -182,7 +193,6 @@ Saddle_point_preconditioner::Saddle_point_preconditioner(
       Output::root_info<3>("Saddle_point_preconditioner",
                            "Setting up a MUMPS pressure solver.");
       Poisson_solver.reset(new MumpsWrapper(*Poisson_solver_matrix));
-      Poisson_solver->write_matrix_distributed("p_mat");
     }
     else
     {
@@ -653,7 +663,8 @@ void Saddle_point_preconditioner::apply(int, int, const BlockVector& z,
 /* ************************************************************************** */
 /* LSC === */
 std::shared_ptr<BlockFEMatrix>
-Saddle_point_preconditioner::compute_Poisson_solver_matrix() const
+Saddle_point_preconditioner::compute_Poisson_solver_matrix(
+  bool additive_storage) const
 {
   std::shared_ptr<TMatrix> ret(nullptr);
 
@@ -682,7 +693,7 @@ Saddle_point_preconditioner::compute_Poisson_solver_matrix() const
             = {u_comm, u_comm, u_comm};
 
         ret.reset(divergence_block->multiply_with_transpose_from_right(
-            inverse_diagonal, test_comms, ansatz_comms));
+            inverse_diagonal, test_comms, ansatz_comms, additive_storage));
       }
 #endif
       break;
@@ -703,7 +714,6 @@ Saddle_point_preconditioner::compute_Poisson_solver_matrix() const
       break;
   }
   // put the shared_ptr into a vector
-  std::vector<std::shared_ptr<TMatrix>> ret_as_vector{ret};
   auto fe_matrix = std::make_shared<FEMatrix>(pressure_space, *ret);
   std::vector<std::shared_ptr<FEMatrix>> vec(1, fe_matrix);
   // create a BlockMatrix and return it
@@ -1282,7 +1292,8 @@ void Saddle_point_preconditioner::computeBdryCorrectionMatrix(
 
 #endif // 3D
 
-void Saddle_point_preconditioner::computePoissonMatrixBdry()
+void Saddle_point_preconditioner::computePoissonMatrixBdry(
+  bool additive_storage)
 {
   if(this->spp_type == Saddle_point_preconditioner::type::bd_lsc)
   {
@@ -1301,7 +1312,7 @@ void Saddle_point_preconditioner::computePoissonMatrixBdry()
         Poisson_solver_matrix->get_block(0, 0, transpose)->GetStructure()
 #ifdef _MPI
             ,
-        test_comms, ansatz_comms
+        test_comms, ansatz_comms, additive_storage
 #endif
     );
 

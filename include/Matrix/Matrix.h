@@ -410,7 +410,8 @@ class TMatrix
     TMatrix* multiply_with_transpose_from_right(
 #ifdef _MPI
   const std::vector<const TParFECommunicator3D*>& test_comms,
-  const std::vector<const TParFECommunicator3D*>& ansatz_comms
+  const std::vector<const TParFECommunicator3D*>& ansatz_comms,
+  bool additive_storage = true
 #endif
     ) const;
 
@@ -428,7 +429,8 @@ class TMatrix
         const std::vector<double>& diagonalScaling
 #ifdef _MPI
         , const std::vector<const TParFECommunicator3D*>& test_comms,
-        const std::vector<const TParFECommunicator3D*>& ansatz_comms
+        const std::vector<const TParFECommunicator3D*>& ansatz_comms,
+        bool additive_storage = true
 #endif
     ) const;
 
@@ -443,12 +445,18 @@ class TMatrix
      * @param[in] diagonalScaling The diagonal scaling matrix D as a vector. 
      * Must have as many entries as B has columns.
      * @return A pointer to the product matrix B*D*B^T.
+     * 
+     * @note in MPI mode: the resulting matrix is by default in additive 
+     * storage. If 'additive_storage' is set to false, the resulting matrix is
+     * not correctly (ie, inconsistently) stored and this is your risk.
+     
      */
     TMatrix* multiply_with_transpose_from_right(
         const std::vector<double>& diagonalScaling, const TStructure& structure
 #ifdef _MPI
         , const std::vector<const TParFECommunicator3D*>& test_comms,
-        const std::vector<const TParFECommunicator3D*>& ansatz_comms
+        const std::vector<const TParFECommunicator3D*>& ansatz_comms,
+        bool additive_storage = true
 #endif
     )
     const;
