@@ -21,4 +21,23 @@
 # will compile your project. The executable will be called parMooN_project_X
 # where 'X' is the build type, e.g. SEQUENTIAL.
 
-set(parmoon_tests ${parmoon_tests} PARENT_SCOPE)
+# set(parmoon_tests ${parmoon_tests} PARENT_SCOPE)
+
+set(vof "${PROJECT_SOURCE_DIR}/user_projects")
+
+include_directories(${vof})
+
+#source files
+list(APPEND PR_ROBST_2D "${vof}/VolumeOfFluid.cpp")
+
+
+add_library(VOF_2D STATIC ${PR_ROBST_2D})
+target_compile_definitions(VOF_2D PUBLIC -D__2D__)
+
+# Standard executable target.
+add_executable(vof2d ${vof}/MPhase2D_ParMooN.cpp)
+set_target_properties(vof2d PROPERTIES OUTPUT_NAME parMooN_vof2d_${PARMOON_PARALLEL_TYPE})
+# Add the correct geometry flag to the target.
+target_compile_definitions(vof2d PUBLIC -D__2D__)
+# Link in the required libraries.
+target_link_libraries(vof2d VOF_2D parmoon_2d_${PARMOON_PARALLEL_TYPE} ${_EXTERN_LIBRARIES})
