@@ -28,7 +28,8 @@ set(vof "${PROJECT_SOURCE_DIR}/user_projects")
 include_directories(${vof})
 
 #source files
-list(APPEND PR_ROBST_2D "${vof}/VolumeOfFluid.cpp")
+list(APPEND PR_ROBST_2D "${vof}/MultiPhase.cpp")
+list(APPEND PR_ROBST_2D "${vof}/Example_TnseTcd2D.cpp")
 
 
 add_library(VOF_2D STATIC ${PR_ROBST_2D})
