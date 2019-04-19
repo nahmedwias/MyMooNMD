@@ -1,4 +1,4 @@
-#include "VolumeOfFluid.h"
+#include "MultiPhase.h"
 
 int main(int argc, char* argv[])
 {
