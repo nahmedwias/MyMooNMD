@@ -20,7 +20,6 @@
 #include <Matrix3D.h>
 #include <AuxParam3D.h>
 #include <DiscreteForm3D.h>
-#include "../../include/AssembleRoutines/TNSE3D_FixPo.h"
 #include <Joint.h>
 #include <BoundFace.h>
 #include <FEDatabase3D.h>

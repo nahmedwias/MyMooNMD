@@ -511,7 +511,7 @@ void NavierStokes<d>::assemble_linear_terms()
     feFunction[d] = &s.p;
 
     // local assembling object    
-    LocalAssembling<d> la(this->db, LocalAssembling_type::NSE3D_Linear, 
+    LocalAssembling<d> la(this->db, LocalAssembling_type::NavierStokesAll, 
                           feFunction.data(), example.get_coeffs());
     
     // assemble now the matrices and right hand side 
@@ -684,7 +684,7 @@ void NavierStokes<d>::assemble_nonlinear_term()
                         || (mdml && !finest_grid))
                         && !is_stokes;
     // local assembling object    
-    LocalAssembling<d> la(this->db, LocalAssembling_type::NSE3D_NonLinear, 
+    LocalAssembling<d> la(this->db, LocalAssembling_type::NavierStokesNL, 
                           feFunction.data(), example.get_coeffs());
     if(!do_upwinding)
     {

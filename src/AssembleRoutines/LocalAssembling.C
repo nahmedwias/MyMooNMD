@@ -19,14 +19,10 @@
 #endif
 #include "NSE_local_assembling_routines.h"
 #include "CD_local_assembling_routines.h"
+#include "Time_NSE_local_assembling_routines.h"
 #include <DarcyMixed.h>
 
 #include <Brinkman3D_Mixed.h>
-#include <TNSE3D_FixPo.h>
-#include <TNSE3D_ParamRout.h>
-#include <TNSE3DSmagorinsky.h>
-#include <TNSE3D_ParamRout.h>
-#include <TNSE2DGalerkin.h>
 #include <Brinkman2D_Mixed.h>
 
 #include <numeric> // std::iota
@@ -52,11 +48,13 @@ std::ostream& operator<<(std::ostream& out, const LocalAssembling_type value)
     PROCESS_VAL(TCDMassOnly);
     PROCESS_VAL(TCDGradGradOnly);
     PROCESS_VAL(TCDRhsOnly);
-    PROCESS_VAL(NSE3D_Linear);
-    PROCESS_VAL(NSE3D_NonLinear);
-    PROCESS_VAL(TNSE3D_LinGAL);
-    PROCESS_VAL(TNSE3D_NLGAL);
-    PROCESS_VAL(TNSE3D_Rhs);
+    PROCESS_VAL(NavierStokesAll);
+    PROCESS_VAL(NavierStokesNL);
+    PROCESS_VAL(NavierStokesLinear);
+    PROCESS_VAL(TimeNavierStokesAll);
+    PROCESS_VAL(TimeNavierStokesNL);
+    PROCESS_VAL(TimeNavierStokesRhs);
+    PROCESS_VAL(TimeNavierStokesMass);
     PROCESS_VAL(Custom);
     default: s = "unknown LocalAssembling_type type"; break;
   }
@@ -442,26 +440,18 @@ LocalAssembling<d>::LocalAssembling(ParameterDatabase param_db,
     }
     ///////////////////////////////////////////////////////////////////////////
     // NSE3D: stationary Navier-Stokes problems
-    case LocalAssembling_type :: NSE3D_Linear:
-    case LocalAssembling_type :: NSE3D_NonLinear:
+    case LocalAssembling_type :: NavierStokesAll:
+    case LocalAssembling_type :: NavierStokesNL:
       this->set_parameters_for_nse(type);
       break;
     ////////////////////////////////////////////////////////////////////////////
     // TNSE3D: nonstationary Navier-Stokes problems
-    case LocalAssembling_type::TNSE3D_LinGAL:
-    case LocalAssembling_type::TNSE3D_NLGAL:
-    case LocalAssembling_type::TNSE3D_Rhs:
-      switch(this->discretization_type)
-      {
-        case GALERKIN:
-          this->set_parameters_for_tnse(type);
-          break;
-        case SMAGORINSKY:
-          this->set_parameters_for_tnse_smagorinsky(type);
-          break;
-        default:
-          ErrThrow("DISCTYPE", this->discretization_type , "is not supported yet!!");
-      }
+    case LocalAssembling_type::TimeNavierStokesAll:
+    case LocalAssembling_type::TimeNavierStokesNL:
+    case LocalAssembling_type::TimeNavierStokesRhs:
+    case LocalAssembling_type::TimeNavierStokesMass:
+    case LocalAssembling_type::NavierStokesLinear:
+      this->set_parameters_for_tnse(type);
       break;
     default:
       ErrThrow("Unknown or unhandled LocalAssembling_type case. ", type);
@@ -1107,7 +1097,7 @@ void LocalAssembling<d>::set_parameters_for_nse( LocalAssembling_type type)
 
   switch(type)
   {
-  case LocalAssembling_type::NSE3D_Linear:
+    case LocalAssembling_type::NavierStokesAll:
     //this->local_assemblings_routines.push_back(NSDivergenceBlocks<d>);
     if(nonsymm_gls)
     {
@@ -1140,7 +1130,7 @@ void LocalAssembling<d>::set_parameters_for_nse( LocalAssembling_type type)
           std::bind(NSnonsymmGLS_RightHandSide<d>, _1, _2, _3, _4, _5, _6, _7,
               _8, gls_stab, characteristic_length));
     break;
-  case LocalAssembling_type::NSE3D_NonLinear:
+  case LocalAssembling_type::NavierStokesNL:
     {
       if(nonlin_form.is("convective"))
       {
@@ -1193,16 +1183,60 @@ void LocalAssembling<d>::set_parameters_for_nse( LocalAssembling_type type)
 template<int d>
 void LocalAssembling<d>::set_parameters_for_tnse( LocalAssembling_type la_type)
 {
-  unsigned int nstype = TDatabase::ParamDB->NSTYPE;
-  unsigned int laplace_type = TDatabase::ParamDB->LAPLACETYPE;
-  if(laplace_type == 1 && (nstype==1 || nstype==2))
+  bool laplace_type_deformation = this->db["laplace_type_deformation"];
+  std::string disc_type = this->db["space_discretization_type"];
+  Parameter nonlin_form(db["nse_nonlinear_form"]);
+  bool galerkin = (disc_type == std::string("galerkin"));
+  bool smagorinsky = (disc_type==std::string("smagorinsky"));  
+  int nstype = TDatabase::ParamDB->NSTYPE;
+  
+  if(TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE==1)
   {
-    ErrThrow("LAPLACETYPE ", laplace_type, " is supported only for "
-               "NSTYPE 3 and 4, not for NSTYPE 1 and 2.");
+    ErrThrow("Newton method is not supported yet");
   }
-  // same for all nstypes; 
-  //NOTE: change according to the discretization schemes used
-  // changing needed for turbulent models and for the newton method
+  if(TDatabase::ParamDB->LAPLACETYPE == 1)
+  {
+    if((nstype==1) || nstype==2)
+    {
+      ErrThrow("LAPLACETYPE is only supported for NSTYPE 3, 4, and 14");
+    }
+  }
+  if(nonlin_form.is("divergence"))
+  {
+    ErrThrow("nse_nonlinear_form '", nonlin_form, "' is not yet implemented");
+  }
+  if(nonlin_form.is("rotational") || nonlin_form.is("emac"))
+  {
+    if((nstype==1) || nstype==2)
+    {
+      ErrThrow("nse_nonlinear_form ", nonlin_form,
+               " is only supported for NSTYPE 3, 4, and 14");
+    }
+  }
+  if(!galerkin && !smagorinsky)
+  {
+    ErrThrow("unsupported space_discretization_type for NSE", d, "D: ",
+             disc_type);
+  }
+  if(nstype == 14)
+  {
+    ErrThrow("NSTYPE", nstype, " is not supported yet");
+  }
+  // common for all NSTYPE, Discrete forms, etc
+  this->N_Rhs = d+1;
+  this->RhsSpace = { 0, 0, 0, 1 };
+  this->N_Terms = d+2;
+  auto foi = indices_up_to_order<d>(1); // first_order_index
+  this->Derivatives = indices_up_to_order<d>(0);
+  this->Derivatives.insert(this->Derivatives.end(), foi.begin(), foi.end());
+  // Derivatives = { D000, D000, D100, D010, D001 } or { D00, D00, D10, D01}
+  this->FESpaceNumber = { 0, 1, 0, 0 }; // 0: velocity, 1: pressure
+  if(d == 3)
+    this->FESpaceNumber.push_back(0);
+  this->Needs2ndDerivatives = new bool[2];
+  this->Needs2ndDerivatives[0] = false;
+  this->Needs2ndDerivatives[1] = false;
+  this->Manipulate = nullptr;
   this->N_Parameters = d;
   this->N_ParamFct = 1;
   this->ParameterFct =  { NSParamsVelocity<d> };
@@ -1211,479 +1245,158 @@ void LocalAssembling<d>::set_parameters_for_tnse( LocalAssembling_type la_type)
   std::iota(this->FEValue_FctIndex.begin(), this->FEValue_FctIndex.end(), 0);
   this->FEValue_MultiIndex = MultiIndex_vector(d, indices_up_to_order<d>(0)[0]);
   this->BeginParameter = { 0 };
-  
-  this->N_Terms = d+2;
-  auto foi = indices_up_to_order<d>(1); // first_order_index
-  this->Derivatives = indices_up_to_order<d>(0);
-  this->Derivatives.insert(this->Derivatives.end(), foi.begin(), foi.end());
-  if(d == 3) // this will be removed soon ...
+  this->N_Matrices = (d+1)*(d+1); // 9, 16
+  if(d==3)
   {
-    //this->Derivatives = {D100, D010, D001, D000, D000};
-    this->Derivatives.erase(this->Derivatives.begin());
-    this->Derivatives.erase(this->Derivatives.begin());
-    this->Derivatives.insert(this->Derivatives.end(), 2,
-                             indices_up_to_order<d>(0)[0]);
-  }
-  this->Needs2ndDerivatives = new bool[2];
-  this->Needs2ndDerivatives[0] = false;
-  this->Needs2ndDerivatives[1] = false;
-  if(d == 3)
-  {
-    this->FESpaceNumber = { 0, 0, 0, 0, 1 }; // 0: velocity, 1: pressure
+    this->RowSpace    = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0};
+    this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1 };
   }
   else
   {
-    this->FESpaceNumber = { 0, 1, 0, 0 }; // 0: velocity, 1: pressure
+    this->RowSpace =    { 0, 0, 0, 0, 1, 1, 1, 0, 0 };
+    this->ColumnSpace = { 0, 0, 0, 0, 1, 0, 0, 1, 1 };
   }
-  this->Manipulate = nullptr;
-  this->N_Rhs = d+1;
-  this->RhsSpace = { 0, 0, 0, 1};
-  switch(la_type)
-  {
-    case LocalAssembling_type::TNSE3D_LinGAL:
-      // case 0: fixed point, case 1: newton iteration
-      switch(TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE) 
-      {
-        case 0: // fixed point iteration
-          switch(nstype)
-          {
-            case 1:
-            {
-              this->N_Matrices = 2 + d;
-              if(d == 3)
-              {
-                this->RowSpace    = { 0, 0, 1, 1, 1 };
-                this->ColumnSpace = { 0, 0, 0, 0, 0 };
-                this->local_assemblings_routines.push_back(TimeNSType1Galerkin3D);
-              }
-              else
-              {
-                this->RowSpace      = { 0, 0, 1, 1 };
-                this->ColumnSpace   = { 0, 0, 0, 0 };
-                this->local_assemblings_routines.push_back(TimeNSType1Galerkin);
-              }
-            }
-              break;
-            case 2:
-            {
-              this->N_Matrices = 2 + 2*d;
-              if(d == 3)
-              {
-                this->RowSpace    = { 0, 0, 1, 1, 1, 0, 0, 0 };
-                this->ColumnSpace = { 0, 0, 0, 0, 0, 1, 1, 1 };
-                this->local_assemblings_routines.push_back(TimeNSType2Galerkin3D);
-              }
-              else
-              {
-                this->RowSpace      = { 0, 0, 1, 1, 0, 0 };
-                this->ColumnSpace   = { 0, 0, 0, 0, 1, 1 };
-                this->local_assemblings_routines.push_back(TimeNSType2Galerkin);
-              }
-            }
-              break;
-            case 3:
-              this->N_Matrices = d + d*d + d; // mass matrix, A, B
-              if(d == 3)
-              {
-                this->RowSpace    = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1 };
-                this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-                if(laplace_type==0)
-                {
-                  this->local_assemblings_routines.push_back(
-                    TimeNSType3Galerkin3D);
-                }
-                else
-                {
-                  this->local_assemblings_routines.push_back(
-                    TimeNSType3GalerkinDD3D);
-                }
-              }
-              else
-              {
-                this->RowSpace      = { 0, 0, 0, 0, 0, 0, 1, 1 };
-                this->ColumnSpace   = { 0, 0, 0, 0, 0, 0, 0, 0 };
-                if(laplace_type == 0)
-                  this->local_assemblings_routines.push_back(TimeNSType3Galerkin);
-                else
-                  this->local_assemblings_routines.push_back(TimeNSType3GalerkinDD);
-              }
-              break;
-            case 4:
-              this->N_Matrices = d + d*d + 2*d; // mass matrix, A, B, BT
-              if(d == 3)
-              {
-                this->RowSpace    = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0 };
-                this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1 };
-                if(laplace_type==0)
-                {
-                  this->local_assemblings_routines.push_back(
-                    TimeNSType4Galerkin3D);
-                }
-                else
-                {
-                  this->local_assemblings_routines.push_back(
-                    TimeNSType4GalerkinDD3D);
-                }
-              }
-              else
-              {
-                this->RowSpace      = { 0, 0, 0, 0, 0, 0, 1, 1, 0, 0 };
-                this->ColumnSpace   = { 0, 0, 0, 0, 0, 0, 0, 0, 1, 1 };
-                if(laplace_type == 0)
-                  this->local_assemblings_routines.push_back(TimeNSType4Galerkin);
-                else
-                  this->local_assemblings_routines.push_back(TimeNSType4GalerkinDD);
-              }
-              break;
-            case 14:
-              // I have to do that 
-              break;
-          }
-          break;
-        case 1: // newton iteration
-          ErrThrow("Newton method is not supported yet");
-          break;
-        default:
-          ErrThrow("SC_NONLIN_ITE_TYPE_SADDLE ",
-                   TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE,
-                   "not supported");
-      }
-      break;
-    // local assembling of nonlinear term
-    case LocalAssembling_type::TNSE3D_NLGAL:
-      if(d == 3) // to be removed
-      {
-        this->N_Terms = 4;
-        this->N_Rhs = 0;
-        this->RhsSpace = { };
-      }
-      // case 0: fixed point, case 1: newton iteration
-      switch(TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE) 
-      {
-        case 0: // fixed point iteration
-          switch(nstype)
-          {
-            case 1:
-            case 2:
-              this->N_Matrices = 1;
-              this->RowSpace    = { 0};
-              this->ColumnSpace = { 0};              
-              if(d == 3)
-                this->local_assemblings_routines.push_back(
-                  TimeNSType1_2NLGalerkin3D);
-              else
-                this->local_assemblings_routines.push_back(
-                  TimeNSType1_2NLGalerkin);
-              break;
-            case 3:
-            case 4:
-              this->N_Matrices = d;
-              this->RowSpace    = std::vector<int>(d, 0);
-              this->ColumnSpace = std::vector<int>(d, 0);
-              if(d == 3)
-              {
-                if(laplace_type==0)
-                {
-                  this->local_assemblings_routines.push_back(
-                    TimeNSType3_4NLGalerkin3D);
-                }
-                else
-                {
-                  this->local_assemblings_routines.push_back(
-                    TimeNSType3_4NLGalerkinDD3D);
-                }
-              }
-              else
-              {
-                if(laplace_type == 0)
-                  this->local_assemblings_routines.push_back(TimeNSType3_4NLGalerkin);
-                else
-                  this->local_assemblings_routines.push_back(TimeNSType3_4NLGalerkinDD);
-              }
-              break;
-            case 14:
-              ErrThrow("NSTYPE 14 is not supported yet");
-              break;
-          }
-          break;
-        case 1: // newton iteration
-          ErrThrow("Newton method is not supported yet");
-          break;
-        default:
-          ErrThrow("SC_NONLIN_ITE_TYPE_SADDLE ",
-                   TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE,
-                   "not supported");
-      }
-      break;
-    // local assembling of right hand side
-    case LocalAssembling_type::TNSE3D_Rhs:
-      // case 0: fixed point iteration, case 1: Newton iteration
-      switch(TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE)
-      {
-        case 0:  // fixed point iteration
-          if(d == 3) // to be removed
-          {
-            this->N_Terms = 1;
-            this->Derivatives = indices_up_to_order<d>(0);
-            this->FESpaceNumber = { 0 }; // 0: velocity, 1: pressure
-          }
-          this->N_Matrices = 0;
-          this->RowSpace = { };
-          this->ColumnSpace = { };
-          if(d == 3)
-            this->local_assemblings_routines.push_back(TimeNSRHS3D);
-          else
-            this->local_assemblings_routines.push_back(TimeNSRHS);
-          break;
-        case 1: // Newton iteration
-          ErrThrow("Newton iteration is not supported yet.");
-          break;
-        default:
-          ErrThrow("SC_NONLIN_ITE_TYPE_SADDLE ", TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE,
-                   " not supported.");
-      }
-      break;
-    default:
-      ErrThrow("Wrong LocalAssembling3D_type for set_parameters_for_tnse.");
-  }
-}
-//========================================================================
-template<>
-void LocalAssembling<2>::set_parameters_for_tnse_smagorinsky(LocalAssembling_type)
-{
-  ErrThrow("smagorinsky is not supported in 2D yet");
-}
-template<>
-void LocalAssembling<3>::set_parameters_for_tnse_smagorinsky( LocalAssembling_type type)
-{
-  //NOTE: change according to the discretization schemes used
-  // changing needed for turbulent models and for the newton method
-  this->N_Parameters = 15;
-  this->N_ParamFct = 1;
-  this->ParameterFct =  { TimeNSParamsVelo_GradVelo3D };
-  this->N_FEValues = 12;
-  this->FEValue_FctIndex = { 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2 };
-  // u1old, u2old, u3old, all derivatives of u1, u2, u3
-  this->FEValue_MultiIndex = { D000, D000, D000, 
-                               D100, D100, D100,
-                               D010, D010, D010,
-                               D001, D001, D001 };
-  this->BeginParameter = { 0 };
   
+  using namespace std::placeholders;
+  if((type != LocalAssembling_type::TimeNavierStokesRhs 
+    && type != LocalAssembling_type::TimeNavierStokesMass) 
+    || type == LocalAssembling_type::NavierStokesLinear)
+  {
+    if(laplace_type_deformation)
+    {
+      this->local_assemblings_routines.push_back(NSLaplaceDeformation<d>);
+    }
+    else
+    {
+      if(nstype == 1 || nstype == 2)
+      {
+        this->local_assemblings_routines.push_back(NSLaplaceGradGradSingle<d>);
+      }
+      else
+      {
+        this->local_assemblings_routines.push_back(NSLaplaceGradGrad<d>);
+      }
+    }
+    
+    double characteristic_length = db["L_0"];
+    // grad-div stabilization
+    double graddiv_stab = db["graddiv_stab"];
+    if(std::abs(graddiv_stab) > 1e-10) 
+    {
+      this->local_assemblings_routines.push_back(
+        std::bind(NSGradDiv<d>, _1, _2, _3, _4, _5, _6, _7, _8, graddiv_stab, characteristic_length));
+      
+      this->local_assemblings_routines.push_back(
+        std::bind(NSGradDiv_RightHandSide<d>, _1, _2, _3, _4, _5, _6, _7, _8,
+                  graddiv_stab, characteristic_length));
+    }
+    // stabilization or turbulent models
+    if(smagorinsky)
+    {
+      if(d==2)
+        ErrThrow("Smagorinsky is not tested for 2D case");
+      
+      this->N_Parameters = 15;
+      this->N_ParamFct = 1;
+      this->ParameterFct =  { NSParamVelGradSmagorinsky<d> };
+      this->N_FEValues = 12;
+      this->FEValue_FctIndex = { 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2 };
+      // u1old, u2old, u3old, all derivatives of u1, u2, u3
+#ifdef __3D__
+      this->FEValue_MultiIndex = { D000, D000, D000, 
+                                   D100, D100, D100,
+                                   D010, D010, D010,
+                                   D001, D001, D001 };
+#endif
+      this->BeginParameter = { 0 };
+      if(laplace_type_deformation)
+      {
+        this->local_assemblings_routines.push_back(NSLaplaceDeformationSmagorinsky<d>);
+      }
+      else
+      {
+        if(nstype == 1 || nstype == 2)
+        {
+          this->local_assemblings_routines.push_back(NSLaplaceGradGradSingleSmagorinsky<d>);
+        }
+        else
+        {
+          this->local_assemblings_routines.push_back(NSLaplaceGradGradSmagorinsky<d>);
+        }
+      }
+    }
+  }//endif LocalAssembling_type::TimeNavierStokesRhs
 
   switch(type)
   {
-    case LocalAssembling_type::TNSE3D_LinGAL:
-      // case 0: fixed point, case 1: newton iteration
-      switch(TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE) 
-      {
-        // fixed point 
-        case 0:
-          switch(TDatabase::ParamDB->NSTYPE)
-          {
-            case 1:
-              this->N_Terms = 5;
-              this->Derivatives = {D100, D010, D001, D000, D000};
-              this->Needs2ndDerivatives = new bool[2];
-              this->Needs2ndDerivatives[0] = false;
-              this->Needs2ndDerivatives[1] = false;
-              this->FESpaceNumber = { 0, 0, 0, 0, 1 }; // 0: velocity, 1: pressure
-              this->N_Matrices = 5;
-              this->RowSpace    = { 0, 0, 1, 1, 1 };
-              this->ColumnSpace = { 0, 0, 0, 0, 0 };
-              this->N_Rhs = 4;
-              this->RhsSpace = { 0, 0, 0, 0 };
-              this->local_assemblings_routines.push_back(
-                TimeNSType1Smagorinsky3D);
-              this->Manipulate = nullptr;              
-              break;
-            case 2:
-              this->N_Terms = 5;
-              this->Derivatives = {D100, D010, D001, D000, D000};
-              this->Needs2ndDerivatives = new bool[2];
-              this->Needs2ndDerivatives[0] = false;
-              this->Needs2ndDerivatives[1] = false;
-              this->FESpaceNumber = { 0, 0, 0, 0, 1 }; // 0: velocity, 1: pressure
-              this->N_Matrices = 8;
-              this->RowSpace    = { 0, 0, 1, 1, 1, 0, 0, 0 };
-              this->ColumnSpace = { 0, 0, 0, 0, 0, 1, 1, 1 };
-              this->N_Rhs = 4;
-              this->RhsSpace = { 0, 0, 0, 0 };
-              this->local_assemblings_routines.push_back(
-                TimeNSType2Smagorinsky3D);
-              this->Manipulate = nullptr;
-              break;
-            case 3:
-              this->N_Terms = 5;
-              this->Derivatives = {D100, D010, D001, D000, D000};
-              this->Needs2ndDerivatives = new bool[2];
-              this->Needs2ndDerivatives[0] = false;
-              this->Needs2ndDerivatives[1] = false;
-              this->FESpaceNumber = { 0, 0, 0, 0, 1 }; // 0: velocity, 1: pressure
-              this->N_Matrices = 15;
-              this->RowSpace    = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1 };
-              this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-              this->N_Rhs = 4;
-              this->RhsSpace = { 0, 0, 0, 0 };
-
-              this->Manipulate = nullptr;
-              if(TDatabase::ParamDB->LAPLACETYPE==0)
-              {
-                this->local_assemblings_routines.push_back(
-                  TimeNSType3Smagorinsky3D);
-              }
-              else
-              {
-                this->local_assemblings_routines.push_back(
-                  TimeNSType3SmagorinskyDD3D);
-              }
-              ErrThrow("not tested and adjusted yet: ");
-              break;
-            case 4:
-              this->N_Terms = 5;
-              this->Derivatives = {D100, D010, D001, D000, D000};
-              this->Needs2ndDerivatives = new bool[2];
-              this->Needs2ndDerivatives[0] = false;
-              this->Needs2ndDerivatives[1] = false;
-              this->FESpaceNumber = { 0, 0, 0, 0, 1 }; // 0: velocity, 1: pressure
-              this->N_Matrices = 18;
-              this->RowSpace    = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0 };
-              this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1 };
-              this->N_Rhs = 4;
-              this->RhsSpace = { 0, 0, 0, 1};
-
-              this->Manipulate = nullptr;
-              if(TDatabase::ParamDB->LAPLACETYPE==0)
-              {
-                this->local_assemblings_routines.push_back(
-                  TimeNSType4Smagorinsky3D);
-              }
-              else
-              {
-                this->local_assemblings_routines.push_back(
-                  TimeNSType4SmagorinskyDD3D);
-              }
-              break;
-          }
-          break;
-          // newton iteration 
-        case 1:
-          switch(TDatabase::ParamDB->NSTYPE)
-          {
-            case 1:
-            case 2:
-              ErrThrow("Newton iteration is only supported for NSTYE 3, and 4");
-              break;
-            case 3:
-              break;
-            case 4:
-              break;
-          }
-          break;
-      }// endswitch SC_NONLIN_ITE_TYPE_SADDLE
-       break;
-    case LocalAssembling_type::TNSE3D_NLGAL:
+    case LocalAssembling_type::TimeNavierStokesAll:
     {
-      switch(TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE) 
+      this->local_assemblings_routines.push_back(
+        std::bind(NSDivergenceBlocks<d>, _1, _2, _3, _4, _5, _6, _7, _8, 1));
+      
+      this->local_assemblings_routines.push_back(std::bind(NSRightHandSide<d>, _1, _2, _3, _4, _5, _6,
+        _7, _8, -1));
+      if(nstype == 2 || nstype == 4 || nstype == 14)
+        this->local_assemblings_routines.push_back(NSGradientBlocks<d>);
+      break;
+    }// NavierStokesAll
+    case LocalAssembling_type::TimeNavierStokesNL:
+    {
+      if(nonlin_form.is("convective"))
       {
-        case 0: // fixed point iteration
-          switch(TDatabase::ParamDB->NSTYPE)
-          {
-            case 1:
-            case 2:
-              this->N_Terms = 4;
-              this->Derivatives = {D100, D010, D001, D000};
-              this->Needs2ndDerivatives = new bool[2];
-              this->Needs2ndDerivatives[0] = false;
-              this->Needs2ndDerivatives[1] = false;
-              this->FESpaceNumber = { 0, 0, 0, 0 }; // 0: velocity, 1: pressure
-              this->N_Matrices = 1;
-              this->RowSpace    = { 0};
-              this->ColumnSpace = { 0};
-              this->N_Rhs = 0;
-              this->RhsSpace = { };
-              this->local_assemblings_routines.push_back(
-                TimeNSType1_2NLSmagorinsky3D);
-              this->Manipulate = nullptr;    
-              break;
-            case 3:
-            case 4:
-              this->N_Terms = 4;
-              this->Derivatives = {D100, D010, D001, D000};
-              this->Needs2ndDerivatives = new bool[2];
-              this->Needs2ndDerivatives[0] = false;
-              this->Needs2ndDerivatives[1] = false;
-              this->FESpaceNumber = { 0, 0, 0, 0 }; // 0: velocity, 1: pressure
-              this->N_Matrices = 3;
-              this->RowSpace    = { 0, 0, 0};
-              this->ColumnSpace = { 0, 0, 0};
-              this->N_Rhs = 0;
-              this->RhsSpace = { };
-              if(TDatabase::ParamDB->LAPLACETYPE==0)
-              {
-                this->local_assemblings_routines.push_back(
-                  TimeNSType3_4NLSmagorinsky3D);
-              }
-              else
-              {
-                this->N_Matrices = 9;
-                this->RowSpace    = { 0, 0, 0, 0, 0, 0, 0, 0, 0};
-                this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 0, 0};
-                this->local_assemblings_routines.push_back(
-                  TimeNSType3_4NLSmagorinskyDD3D);
-              }
-              
-              this->Manipulate = nullptr;    
-              break;
-          }
-        break;
-        case 1:// Newton iteration
-          ErrThrow("Newton method is not yet supported");
-          switch(TDatabase::ParamDB->NSTYPE)
-          {
-            case 1:
-            case 2:
-              break;
-            case 3:
-            case 4:
-              break;
-          }
-        break;
-        default:
-          ErrThrow("SC_NONLIN_ITE_TYPE_SADDLE: ", TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE,
-                   " is not implemented")
+        if(nstype == 1 || nstype == 2)
+        {
+          this->local_assemblings_routines.push_back(
+            NSNonlinearTerm_convective_Single<d>);
+        }
+        else
+        {
+          this->local_assemblings_routines.push_back(
+            NSNonlinearTerm_convective<d>);
+        }
       }
+      else if(nonlin_form.is("skew_symmetric"))
+      {
+        if(nstype == 1 || nstype == 2)
+        {
+          this->local_assemblings_routines.push_back(
+            NSNonlinearTerm_skew_symmetric_Single<d>);
+        }
+        else
+        {
+          this->local_assemblings_routines.push_back(
+            NSNonlinearTerm_skew_symmetric<d>);
+        }
+      }
+      else if(nonlin_form.is("rotational"))
+      {
+        this->local_assemblings_routines.push_back(
+          NSNonlinearTerm_rotational<d>);
+      }
+      else if(nonlin_form.is("emac"))
+      {
+        this->local_assemblings_routines.push_back(
+          NSNonlinearTerm_emac<d>);
+      }
+      else
+      {
+        ErrThrow("unknown type for nse_nonlinear_form ", nonlin_form);
+      }
+      break;
     }
-    break;
-   case LocalAssembling_type::TNSE3D_Rhs:
-     // case 0: fixed point iteration, case 1: Newton iteration
-      switch(TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE)
-      {
-        case 0:  // fixed point iteration
-          this->N_Terms = 1;
-          this->Derivatives = { D000 };
-          this->Needs2ndDerivatives = new bool[2];
-          this->Needs2ndDerivatives[0] = false;
-          this->Needs2ndDerivatives[1] = false;
-          this->FESpaceNumber = { 0 }; // 0: velocity, 1: pressure
-          this->N_Matrices = 0;
-          this->RowSpace = { };
-          this->ColumnSpace = { };
-          this->N_Rhs = 4 ; // TODO The case NSTYPE4 has to be implemented
-          this->RhsSpace = {0, 0, 0, 0};
-          this->local_assemblings_routines.push_back(TimeNSRHS3D);
-          this->Manipulate = nullptr;
-          break;
-        case 1: // Newton iteration
-          ErrThrow("Newton iteration is not supported yet.");
-          break;
-        default:
-          ErrThrow("SC_NONLIN_ITE_TYPE_SADDLE ", TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE,
-                   " not supported.");
-      }
-     break;
-        default:
-          ErrThrow("Unknown LocalAssembling3D_type");
+    case LocalAssembling_type::TimeNavierStokesRhs:
+      this->local_assemblings_routines.push_back(
+        std::bind(NSRightHandSide<d>, _1, _2, _3, _4, _5, _6, _7, _8, -1));
+      break;
+    case LocalAssembling_type::TimeNavierStokesMass:
+      if(nstype == 1 || nstype == 2)
+        this->local_assemblings_routines.push_back(NSMassMatrixSingle<d>);      
+      else
+        this->local_assemblings_routines.push_back(NSMassMatrix<d>);
+      break;
+    default:
+      ErrThrow("unknown LocalAssembling3D_type ", this->type);
+      break;
   }
 }
 
