@@ -213,8 +213,10 @@ if(${PARMOON_PARALLEL_TYPE} STREQUAL SEQUENTIAL OR ${PARMOON_PARALLEL_TYPE} STRE
   target_link_libraries(ParMooN_test_tnse2d parmoon_2d_${PARMOON_PARALLEL_TYPE} ${PARMOON_EXTERNAL_LIBRARIES})  
   #umfpack
   add_test(NAME tnse2d_umfpack COMMAND ParMooN_test_tnse2d umfpack)
+  add_test(NAME tnse2d_seq_umfpack_all COMMAND ParMooN_test_tnse2d umfpack testall)
   #lsc 
   add_test(NAME tnse2d_lsc COMMAND ParMooN_test_tnse2d lsc)
+  add_test(NAME tnse2d_mg COMMAND ParMooN_test_tnse2d multigrid)
   list(APPEND parmoon_tests ParMooN_test_tnse2d)
 	
   # test for hdiv elements

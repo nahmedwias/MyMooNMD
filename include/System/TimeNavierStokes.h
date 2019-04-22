@@ -67,7 +67,7 @@ class TimeNavierStokes
      * object of class TimeDiscretization and modify the matrices if needed.
      */
     void assemble_matrices_rhs(unsigned int it_counter);
-
+    
     /** @brief solve the system */
     void solve();
 
@@ -343,7 +343,7 @@ class TimeNavierStokes
     
     /// @brief this routines wraps up the call to Assemble2D
     void call_assembling_routine(TimeNavierStokes<d>::System_per_grid& s,
-                                 LocalAssembling_type type);
+                                 LocalAssembling_type type, bool do_upwinding = false);
     
     using SquareMatrixD = typename Template_names<d>::SquareMatrixD;
     using MatrixD = typename Template_names<d>::MatrixD; 

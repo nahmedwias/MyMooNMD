@@ -380,14 +380,7 @@ void TimeNavierStokes<d>::check_and_set_parameters()
   {
     space_disc_global = 4;
     time_stepping_scheme.n_scale_block = 6;
-    time_stepping_scheme.b_bt_linear_nl = "linear";
-    // This is a hot fix: only the Smagorinsky routines with Laplace Type=1
-    // (D(u):D(v) formulation) can be used properly. In the other case, the
-    // block matrices passed to the routine are not correct, throwing a segfault.
-    if(TDatabase::ParamDB->LAPLACETYPE==0)
-    {
-      ErrThrow("Smagorinsky works only with LAPLACETYPE = 1 so far.");
-    }
+    time_stepping_scheme.b_bt_linear_nl = "linear";    
   }
 
   if(db["space_discretization_type"].is("local_projection"))
@@ -505,8 +498,10 @@ void TimeNavierStokes<d>::assemble_initial_time()
     this->restrict_function();
   }
   for(auto &s : this->systems)
+    call_assembling_routine(s, LocalAssembling_type::TimeNavierStokesMass);
+  for(auto &s : this->systems)
   {
-    call_assembling_routine(s, LocalAssembling_type::TNSE3D_LinGAL);
+    call_assembling_routine(s, LocalAssembling_type::TimeNavierStokesAll);
     //update matrices for local projection stabilization
     if(db["space_discretization_type"].is("local_projection"))
       update_matrices_lps(s);
@@ -561,7 +556,7 @@ void TimeNavierStokes<d>::assemble_matrices_rhs(unsigned int it_counter)
     rhs_from_time_disc = s.rhs;
     rhs_from_time_disc.reset();
     // only assemble the right-hand side
-    call_assembling_routine(s, LocalAssembling_type::TNSE3D_Rhs);
+    call_assembling_routine(s, LocalAssembling_type::TimeNavierStokesRhs);
     // copy the non active to the solution vector
     // since the rhs vector will be passed to the solver
     // and is modified with matrix vector multiplication
@@ -624,9 +619,30 @@ void TimeNavierStokes<d>::assemble_matrices_rhs(unsigned int it_counter)
   // assemble the nonlinear matrices
   if(systems.size() > 1)
     this->restrict_function();
+  
+  bool do_upwinding = false;  
   for(System_per_grid & s : systems)
   {
-    call_assembling_routine(s, LocalAssembling_type::TNSE3D_NLGAL);
+    bool mdml = this->solver.is_using_multigrid()
+              && this->solver.get_multigrid()->is_using_mdml();
+    bool on_finest_grid = &systems.front() == &s;
+    do_upwinding = (db["space_discretization_type"].is("upwind")
+                    || (mdml && !on_finest_grid));
+    if(do_upwinding)
+    {
+      /**
+     * This will assemble the linear blocks of velocity-velocity 
+     * coupling used only in the mdml case. One can extend this 
+     * also for the assembling of B-blocks. This is done separately 
+     * here because in the LocalAssembling_type::TimeNavierStokesAll
+     * we assemble the B-blocks as well which were scaled with the 
+     * corresponding factor from the time stepping schemes and therefore
+     * needs not to be re-assemble here once more. 
+     */
+      call_assembling_routine(s, LocalAssembling_type::NavierStokesLinear);
+    }
+    else
+      call_assembling_routine(s, LocalAssembling_type::TimeNavierStokesNL);
     // update matrices with local projection term
     if(db["space_discretization_type"].is("local_projection"))
       update_matrices_lps(s);
@@ -713,7 +729,7 @@ void TimeNavierStokes<d>::assemble_rhs_nonlinear()
 /* ************************************************************************** */
 template <int d>
 void TimeNavierStokes<d>::call_assembling_routine(
-  TimeNavierStokes<d>::System_per_grid& s, LocalAssembling_type type)
+  TimeNavierStokes<d>::System_per_grid& s, LocalAssembling_type type, bool do_upwinding)
 {
   using SquareMatrixD = typename Template_names<d>::SquareMatrixD;
   using MatrixD = typename Template_names<d>::MatrixD;
@@ -746,25 +762,6 @@ void TimeNavierStokes<d>::call_assembling_routine(
   // local assembling settings
   LocalAssembling<d> la(this->db, type, fefunctions.data(),
                        this->example.get_coeffs(), space_disc_global);
-
-  // default value
-  assemble_nse = Hotfixglobal_AssembleNSE::WITH_CONVECTION;
-  // find out if we have to do upwinding
-  bool do_upwinding = false;
-  if(type != LocalAssembling_type::TNSE3D_Rhs)
-  {
-    bool mdml = this->solver.is_using_multigrid()
-                && this->solver.get_multigrid()->is_using_mdml();
-    bool on_finest_grid = &systems.front() == &s;
-    do_upwinding = (db["space_discretization_type"].is("upwind")
-                    || (mdml && !on_finest_grid));
-    /// @todo does upwinding work in tnse?
-    if(do_upwinding)  // HOTFIX: Check the documentation!
-      assemble_nse = Hotfixglobal_AssembleNSE::WITHOUT_CONVECTION;
-    else
-      assemble_nse = Hotfixglobal_AssembleNSE::WITH_CONVECTION;
-  }
-
 #ifdef __3D__
     Assemble3D(
 #else
@@ -966,214 +963,132 @@ void TimeNavierStokes<d>::set_matrices_rhs(
   std::vector<SquareMatrixD*>& sqMat, std::vector<MatrixD*>& reMat,
   std::vector<double*>& rhs_array)
 {
-  sqMat.resize(0);
-  reMat.resize(0);
+  sqMat.resize(d*d+1, nullptr); // maximum number of square matrices (type 14)
+  reMat.resize(2*d, nullptr);
   // right hand side: for NSTYPE: 1,2 and 3, size is 2
   rhs_array.resize(d+1, nullptr);
   
-
   auto blocks = s.matrix.get_blocks_uniquely();
   auto mass_blocks = s.mass_matrix.get_blocks_uniquely(true);
+  int nstype = TDatabase::ParamDB->NSTYPE;
+    
   switch(type)
   {
-    case LocalAssembling_type::TNSE3D_LinGAL:
-    {
-      // right hand sides are assembled for the initial time step
-      // for the remaining time steps, they are assembled in
-      // another function. so reset to zero here
-      s.rhs.reset();
-      for(int i = 0; i < d+1; ++i)
-        rhs_array[i] = s.rhs.block(i);
-      
-      switch(TDatabase::ParamDB->NSTYPE)
+    case LocalAssembling_type::TimeNavierStokesMass:
+      if(nstype == 1 || nstype ==2)
       {
-        case 1:
-          if(blocks.size() != d+1)
-          {
-            ErrThrow("Wrong blocks.size() ", blocks.size());
-          }
-          sqMat.resize(2);
-          sqMat[0] = reinterpret_cast<SquareMatrixD*>(blocks.at(0).get());
-          sqMat[1] = reinterpret_cast<SquareMatrixD*>(mass_blocks.at(0).get());
-          // rectangular matrices
-          reMat.resize(d);
-          for(int i = 0; i < d; ++i)
-            reMat[i] = reinterpret_cast<MatrixD*>(blocks.at(i+1).get());
-          break;
-        case 2:
-          if(blocks.size() != 1+2*d)
-          {
-            ErrThrow("Wrong blocks.size() ", blocks.size());
-          }
-          sqMat.resize(2);
-          sqMat[0] = reinterpret_cast<SquareMatrixD*>(blocks.at(0).get());
-          sqMat[1] = reinterpret_cast<SquareMatrixD*>(mass_blocks.at(0).get());
-          // rectangular matrices
-          reMat.resize(2*d);
-          for(int i = 0; i < d; ++i) // first the lying B blocks
-            reMat[i] = reinterpret_cast<MatrixD*>(blocks.at(d+1+i).get());
-          for(int i = 0; i < d; ++i) // than the standing B blocks
-            reMat[d+i] = reinterpret_cast<MatrixD*>(blocks.at(i+1).get());
-          break;
-        case 3:
-          if(blocks.size() != d*d+d)
-          {
-            ErrThrow("Wrong blocks.size() ", blocks.size());
-          }
-          sqMat.resize(d*d+d);
-          for(int i = 0, j = 0; i < d*d; ++i, ++j)
-          {
-            if(i%d == 0 && i > 0)
-              j++;
-            sqMat[i] = reinterpret_cast<SquareMatrixD*>(blocks[j].get());
-          }
-          // mass matrix
-          for(int i = 0; i < d; ++i)
-            sqMat[d*d+i]
-              = reinterpret_cast<SquareMatrixD*>(mass_blocks.at(i*(d+2)).get());
-          // rectangular matrices
-          reMat.resize(d);
-          for(int i = 0; i < d; ++i)
-            reMat[i] = reinterpret_cast<MatrixD*>(blocks.at(i*(d+1)+d).get());
-          break;
-        case 4:
-        case 14:
-          if( (TDatabase::ParamDB->NSTYPE == 14 && blocks.size() != (d+1)*(d+1))
-           || (TDatabase::ParamDB->NSTYPE == 4  && blocks.size() != d*d+2*d))
-          {
-            ErrThrow("Wrong blocks.size() ", blocks.size());
-          }
-          sqMat.resize(d*d+d);
-          for(int i = 0, j = 0; i < d*d; ++i, ++j)
-          {
-            if(i%d == 0 && i > 0)
-              j++;
-            sqMat[i] = reinterpret_cast<SquareMatrixD*>(blocks[j].get());
-          }
-          // mass matrix
-          for(int i = 0; i < d; ++i)
-            sqMat[d*d+i]
-              = reinterpret_cast<SquareMatrixD*>(mass_blocks.at(i*(d+2)).get());
-          if(TDatabase::ParamDB->NSTYPE == 14)
-          {
-            // C block
-            sqMat.resize(d*d+d+1);
-            sqMat[d*d+d] = reinterpret_cast<SquareMatrixD*>(blocks.at(d*d+2*d).get());
-          }
-          
-          // rectangular matrices
-          reMat.resize(2*d);
-          for(int i = 0; i < d; ++i) // first the lying B blocks
-            reMat[i] = reinterpret_cast<MatrixD*>(blocks.at(d*d+d+i).get());
-          for(int i = 0; i < d; ++i) // than the standing B blocks
-            reMat[d+i] = reinterpret_cast<MatrixD*>(blocks.at(i*(d+1)+d).get());
-          break;
+        sqMat[0] = reinterpret_cast<SquareMatrixD*>(mass_blocks.at(0).get());
+      }
+      else
+      {
+        for(int i = 0; i < d; ++i)
+            sqMat[i] = reinterpret_cast<SquareMatrixD*>(mass_blocks.at(i*(d+2)).get());
+      }
+      break; //TimeNavierStokesMass
+    case LocalAssembling_type::NavierStokesLinear:
+      if(nstype==1 || nstype==2)
+        sqMat[0] = reinterpret_cast<SquareMatrixD*>(blocks[0].get());
+      else
+      {
+        for(int i = 0, j = 0; i < d*d; ++i, ++j)
+        {
+          if(i%d == 0 && i > 0)
+            j++;
+          sqMat[i] = reinterpret_cast<SquareMatrixD*>(blocks[j].get());
+        }
       }
       break;
-    }
-    case LocalAssembling_type::TNSE3D_NLGAL:
-    {
-      // no right-hand side needs to be assembled here (with a few exceptions)
-      switch(TDatabase::ParamDB->NSTYPE)
+    case LocalAssembling_type::TimeNavierStokesAll:
+      for(int i = 0; i <= d; ++i)
+        rhs_array[i] = s.rhs.block(i);
+      switch(nstype)
       {
         case 1:
+          sqMat[0] = reinterpret_cast<SquareMatrixD*>(blocks[0].get());
+          for(int i = 0; i < d; ++i)
+          reMat[i] = reinterpret_cast<MatrixD*>(blocks[1+i].get());
+          break;
         case 2:
-          sqMat.resize(1);
-          sqMat[0] = reinterpret_cast<SquareMatrixD*>(blocks.at(0).get());
-          reMat.resize(0);
+          sqMat[0] = reinterpret_cast<SquareMatrixD*>(blocks[0].get());
+          for(int i = 0; i < d; ++i)
+            reMat[i] = reinterpret_cast<MatrixD*>(blocks[d+1+i].get());
+          for(int i = 0; i < d; ++i)
+            reMat[i+d] = reinterpret_cast<MatrixD*>(blocks[1+i].get());
           break;
         case 3:
-        case 4:
-          sqMat.resize(d);
-          for(int i = 0; i < d; ++i)
-            sqMat[i] = reinterpret_cast<SquareMatrixD*>(blocks.at(i*(d+2)).get());
-
-          reMat.resize(0);
-          if(db["space_discretization_type"].is("smagorinsky"))
-          {
-            sqMat.resize(d*d);
-            rhs_array.resize(0);
-            for(int i = 0, j = 0; i < d*d; ++i, ++j)
-            {
-              if(i%d == 0 && i > 0)
-                j++;
-              sqMat[i] = reinterpret_cast<SquareMatrixD*>(blocks[j].get());
-            }
-          }  
-          // In the case of SUPG: together with the other contributions to 
-          // the viscous and nonlinear terms, additional Mass matrix, BT-block, 
-          // and right-had-side needs to be assembled during the nonlinear 
-          // iteration due to the weighted test function.
-          if(db["space_discretization_type"].is("supg"))
-          {
-            sqMat.resize(d+1);
-            sqMat[d] = reinterpret_cast<SquareMatrixD*>(mass_blocks[0].get());
-            reMat.resize(d);
-            for(int i = 0; i < d; ++i)
-              reMat[i] = reinterpret_cast<MatrixD*>(blocks.at(i*(d+1)+d).get());
-            for(int i = 0; i < d; ++i)
-              rhs_array[i] = s.rhs.block(i);
-            s.rhs.reset(); // reset to zero
-          }
-          break;
-        case 14:
-          if(!db["space_discretization_type"].is("supg")
-            || !db["space_discretization_type"].is("local_projection"))
-          {
-            ErrThrow("NSTYPE 14 only supports SUPG and Local Projection ");
-          }
-          // we need to re-assemble all the matrices due to the solution
-          // dependency of the stabilization parameters
-          sqMat.resize(d*d);
           for(int i = 0, j = 0; i < d*d; ++i, ++j)
           {
             if(i%d == 0 && i > 0)
               j++;
             sqMat[i] = reinterpret_cast<SquareMatrixD*>(blocks[j].get());
           }
-          
-          if(db["space_discretization_type"].is("supg") )
-          {
-            sqMat.resize(d*d+2);
-            sqMat[d*d] = reinterpret_cast<SquareMatrixD*>(mass_blocks.at(0).get());
-            // pressure-pressure block
-            sqMat[d*d+1] = reinterpret_cast<SquareMatrixD*>(blocks.at(d*d+2*d).get());
-          }
-          
-          reMat.resize(2*d);
-          for(int i = 0; i < d; ++i) // first the lying B blocks
-            reMat[i] = reinterpret_cast<MatrixD*>(blocks.at(d*d+d+i).get());
-          for(int i = 0; i < d; ++i) // than the standing B blocks
-            reMat[d+i] = reinterpret_cast<MatrixD*>(blocks.at(i*(d+1)+d).get());
-          
           for(int i = 0; i < d; ++i)
-            rhs_array[i] = s.rhs.block(i);
-          s.rhs.reset();
+            reMat[i] = reinterpret_cast<MatrixD*>(blocks[d+(d+1)*i].get());
           break;
-      }// endswitch NSTYPE
-      break;
-    }// endswitch TNSE2D_NL
-    break;
-//---------------------------    
-    case LocalAssembling_type::TNSE3D_Rhs:
+        case 4:
+          for(int i = 0, j = 0; i < d*d; ++i, ++j)
+          {
+            if(i%d == 0 && i > 0)
+              j++;
+            sqMat[i] = reinterpret_cast<SquareMatrixD*>(blocks[j].get());
+          }
+          for(int i = 0; i < d; ++i)
+            reMat[i] = reinterpret_cast<MatrixD*>(blocks[d*(d+1)+i].get());
+          for(int i = 0; i < d; ++i)
+            reMat[d+i] = reinterpret_cast<MatrixD*>(blocks[d+(d+1)*i].get());
+          break;
+        case 14:
+          for(int i = 0, j = 0; i < d*d; ++i, ++j)
+          {
+            if(i%d == 0 && i > 0)
+              j++;
+            sqMat[i] = reinterpret_cast<SquareMatrixD*>(blocks[j].get());
+          }
+          sqMat[d*d] = reinterpret_cast<SquareMatrixD*>(blocks[(d+1)*(d+1)-1].get());
+          for(int i = 0; i < d; ++i)
+            reMat[i] = reinterpret_cast<MatrixD*>(blocks[d*(d+1)+i].get());
+          for(int i = 0; i < d; ++i)
+            reMat[d+i] = reinterpret_cast<MatrixD*>(blocks[d+(d+1)*i].get());
+          break;
+      }
+      break;//TimeNavierStokesAll
+    case LocalAssembling_type::TimeNavierStokesNL:
     {
+      std::vector<std::vector<size_t>> cells;
+      for(size_t i = 0; i < d; ++i)
+      {
+        for(size_t j = 0; j < d; ++j)
+          cells.push_back({{i, j}});
+      }
+      auto blocks = s.matrix.get_blocks_uniquely(cells);
+      if(nstype == 1 || nstype ==2)
+      {
+        sqMat[0] = reinterpret_cast<SquareMatrixD*>(blocks[0].get());
+      }
+      else
+      {
+        for(int i = 0; i < d*d; ++i)
+          sqMat[i] = reinterpret_cast<SquareMatrixD*>(blocks[i].get());
+      }
+      break;//TimeNavierStokesNL
+    }
+    case LocalAssembling_type::TimeNavierStokesRhs:
       // no matrices to be assembled
-      sqMat.resize(0);
-      reMat.resize(0);
       for(int i = 0; i < d+1; ++i)
         rhs_array[i] = s.rhs.block(i);
       s.rhs.reset();
-      break;
-    }
-    default:
-      ErrThrow("The assembling type ", type, 
-               " is unknown to TimeNavierStokes.");
+      break;//TimeNavierStokesRhs
   }
-  // reset matrices
-  for(auto sm : sqMat)
-    sm->reset();
+  for(auto* sm : sqMat)
+  {
+    if(sm != nullptr)
+      sm->reset();
+  }  
   for(auto rm : reMat)
-    rm->reset();
+  {
+    if(rm != nullptr)
+      rm->reset();
+  }
 }
 
 /* ************************************************************************** */
@@ -1604,6 +1519,7 @@ void TimeNavierStokes<d>::output()
       }
     }
   }
+  
 }
 
 /* ************************************************************************** */

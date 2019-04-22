@@ -49,14 +49,16 @@ enum class LocalAssembling_type
     Darcy, // stationary Darcy problem (mixed form)
     TCDStiffMassRhs,
     TCDMassOnly,
-      TCDGradGradOnly,
-      TCDRhsOnly,
+    TCDGradGradOnly,
+    TCDRhsOnly,
     TCDStiffRhs,
-    NSE3D_Linear,    /// Linear part of stationary Navier--Stokes in 3D
-    NSE3D_NonLinear, /// Non-linear part of stationary Navier--Stokes in 3D
-    TNSE3D_LinGAL,   /// Linear part of time-dependent NS in 3D
-    TNSE3D_NLGAL,    /// Non-linear part of time-dependant NS in 3D
-    TNSE3D_Rhs,      /// Rhs part of time-dependent NS in 3D
+    NavierStokesAll,    /// Linear part of stationary Navier--Stokes 
+    NavierStokesNL, /// Non-linear part of stationary Navier--Stokes 
+    NavierStokesLinear,
+    TimeNavierStokesAll,   /// Linear part of time-dependent NS 
+    TimeNavierStokesNL,    /// Non-linear part of time-dependant NS 
+    TimeNavierStokesRhs,      /// Rhs part of time-dependent NS 
+    TimeNavierStokesMass, // only the mass matrix in time dependant NS
     Custom /// Assembling object created with a custom constructor, probably for a non-standard proble
 };
 // this function allows you to write these (strongly typed) enums to stdout
@@ -182,7 +184,7 @@ class LocalAssembling
      * in order to keep the function definition smaller.
      */
     /// standard case
-    void set_parameters_for_tnse( LocalAssembling_type type);
+    void set_parameters_for_tnse( LocalAssembling_type type);    
     /// SMAGORINSKY model
     void set_parameters_for_tnse_smagorinsky( LocalAssembling_type type);
   public:

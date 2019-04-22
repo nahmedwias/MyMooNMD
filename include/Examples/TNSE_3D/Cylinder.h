@@ -1,9 +1,6 @@
 // Navier-Stokes problem
 // channel flow in 3D
 //
-
-
-#include <TNSE3D_Routines.h>
 #include <MooNMD_Io.h>
 
 
