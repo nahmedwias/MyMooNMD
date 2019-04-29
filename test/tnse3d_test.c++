@@ -892,6 +892,14 @@ int main(int argc, char* argv[])
       check(db, domain_hex, 4, -4711, 4, laplacetype, nonlineartype,
             timediscretizationtype, errors, tol);
     }
+    db["imex_scheme_"] = true;
+    laplacetype = 0; 
+    db.add("extrapolation_type", "linear_extrapolate", "");
+    check(db, domain_hex, 12, -4711, 4, laplacetype, nonlineartype,
+            timediscretizationtype, errors, tol);
+    db["laplace_type_deformation"] = true; laplacetype = 1; 
+    check(db, domain_hex, 12, -4711, 4, laplacetype, nonlineartype,
+            timediscretizationtype, errors, tol);
 #else
       // Q4/Q3 not implemented yet in MPI
 #endif    

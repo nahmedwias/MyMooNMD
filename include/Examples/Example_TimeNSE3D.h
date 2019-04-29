@@ -47,7 +47,7 @@ public:
   };
   
   /// Apply the function stored as post processing routine.
-  void do_post_processing(TimeNavierStokes<3>& tnse3d) const;
+  void do_post_processing(TimeNavierStokes<3>& tnse3d, double& val) const;
   
   /// Return kinematic viscosity, if set.
   double get_nu() const;

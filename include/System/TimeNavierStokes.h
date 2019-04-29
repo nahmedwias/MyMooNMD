@@ -390,6 +390,15 @@ class TimeNavierStokes
 
     /** @brief calculate the time averaging of the solution in time_avg_sol */
     void time_averaging();
+    
+    /** @brief modify computed pressure due to the used nonlinear form
+     * 
+     *  Using the rotational or emac form of the nonlinear term leads to a 
+     * pressure which includes an additional term 0.5*|u|^2. This modification 
+     * is substracted, so that the resulting pressure is comparable to the ones
+     * from other nonlinear forms.
+     */
+    void adjust_pressure();
 };
 
 

@@ -93,7 +93,7 @@ int main(int, char* argv[])
       tnse2d.solve();
 
       if(tnse2d.imex_scheme())
-        continue;
+        break;
 
       tnse2d.assemble_matrices_rhs(i+1);
     }

@@ -1,6 +1,7 @@
 #include <Example_TimeNSE2D.h>
 #include <Database.h>
 #include <MainUtilities.h>
+#include <BoundEdge.h>
 #include <FEDatabase2D.h>
 #include "TimeNavierStokes.h"
 #include "AuxParam2D.h" // used in MixingLayerSlipSmallSquares.h
@@ -40,6 +41,11 @@ namespace driven_cavity_time         // case 5
 namespace mixing_layer_us       // case 6
 {
 #include "TNSE_2D/MixingLayerSlipSmallSquares.h"
+}
+
+namespace flow_around_cylinder_transient_inflow
+{
+#include "TNSE_2D/flow_around_cylinder_transient_inflow.h"
 }
 
 Example_TimeNSE2D::Example_TimeNSE2D(
@@ -232,6 +238,36 @@ Example_TimeNSE2D::Example_TimeNSE2D(
       
       /**post processing - drag and lift calculation and output */
       post_processing_stat = mixing_layer_us::EvaluateSolution;
+      break;
+    case 7:
+      /** exact_solution */
+      exact_solution.push_back( flow_around_cylinder_transient_inflow::ExactU1 );
+      exact_solution.push_back( flow_around_cylinder_transient_inflow::ExactU2 );
+      exact_solution.push_back( flow_around_cylinder_transient_inflow::ExactP );
+      
+      /** boundary condition */
+      boundary_conditions.push_back( flow_around_cylinder_transient_inflow::BoundCondition );
+      boundary_conditions.push_back( flow_around_cylinder_transient_inflow::BoundCondition );
+      boundary_conditions.push_back( BoundConditionNoBoundCondition );
+      
+      /** boundary values */
+      boundary_data.push_back( flow_around_cylinder_transient_inflow::U1BoundValue );
+      boundary_data.push_back( flow_around_cylinder_transient_inflow::U2BoundValue );
+      boundary_data.push_back( BoundaryValueHomogenous );
+      
+      /** coefficients */
+      problem_coefficients = flow_around_cylinder_transient_inflow::LinCoeffs;
+      
+      initialCondition.push_back(flow_around_cylinder_transient_inflow::InitialU1);
+      initialCondition.push_back(flow_around_cylinder_transient_inflow::InitialU2);
+      
+      // Set dimensionless viscosity
+      flow_around_cylinder_transient_inflow::DIMENSIONLESS_VISCOSITY = get_nu();
+
+      /**post processing - drag and lift calculation and output */
+      post_processing_stat = flow_around_cylinder_transient_inflow::compute_drag_lift_pdiff;
+
+      flow_around_cylinder_transient_inflow::ExampleFile();
       break;
     default:
       ErrThrow("Unknown time-dependent Example_TimeNSE2D example!");

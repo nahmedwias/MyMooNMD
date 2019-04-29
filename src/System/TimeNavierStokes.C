@@ -184,7 +184,7 @@ TimeNavierStokes<d>::TimeNavierStokes(const TDomain& domain,
   // create finite element space, functions, matrices, rhs and solution
   // at the finest grid
   this->systems.emplace_back(example, *coll, velo_pres_order);
-
+  
   if(usingMultigrid)
   {
     // Construct multigrid object
@@ -1198,6 +1198,7 @@ bool TimeNavierStokes<d>::stop_it(unsigned int it_counter)
       // descale if it's rescaled at the next time step for bdf schemes
       time_stepping_scheme.scale_descale_all_b_blocks(s.matrix, "descale");
     }
+    adjust_pressure();
     return true;
   }
   else
@@ -1313,6 +1314,15 @@ void TimeNavierStokes<d>::solve()
   
   if(s.matrix.pressure_projection_enabled())
        s.p.project_into_L20();
+  if(imex_scheme())
+  {
+    db["residual_tolerance"] = 1.e-06;
+    for(System_per_grid& ispg: this->systems)
+    { 
+      ispg.solution_m2 = ispg.solution_m1;
+      ispg.solution_m1 = ispg.solution;
+    }
+  }
 }
 
 /* ************************************************************************** */
@@ -1475,8 +1485,8 @@ void TimeNavierStokes<d>::output()
         delete fe_functions[d+1+i];
     }
   }
-
-  example.do_post_processing(*this);
+  double val;
+  example.do_post_processing(*this, val);
 
   for(int i = 0; i < d; ++i)
     delete velocity_components[i];
@@ -1854,7 +1864,51 @@ void TimeNavierStokes<d>::time_averaging()
   }
 }
 
-
+/* ************************************************************************** */
+template<int d> 
+void TimeNavierStokes<d>::adjust_pressure()
+{
+  System_per_grid& s = this->systems.front();
+  if(db["problem_type"].is(6)) // Navier--Stokes
+  {
+    int sign = 0;
+    if(db["nse_nonlinear_form"].is("rotational"))
+      sign = -1;
+    if(db["nse_nonlinear_form"].is("emac"))
+      sign = 1;
+    if(sign)
+    {
+      std::array<FEFunction*, d> velocity_components;
+      for(int i = 0; i < d; ++i)
+        velocity_components[i] = s.u.GetComponent(i);
+      typename FEFunction::AnalyticFunction 
+      f = [&velocity_components, sign](const TBaseCell* cell, int i, 
+                                       std::array<double, d> xyz)
+          {
+            double val = 0;
+            for(int c = 0; c < d; ++c)
+            {
+              double val_ui;
+#ifdef __3D__
+              velocity_components[c]->FindValueLocal(cell, i, xyz[0], xyz[1],
+                                                     xyz[2], &val_ui);
+#else
+              velocity_components[c]->FindValueLocal(cell, i, xyz[0], xyz[1],
+                                                     &val_ui);
+#endif
+              val += val_ui*val_ui;
+            }
+            return sign * 0.5 * val;
+          };
+      s.p.add(f);
+      for(int i = 0; i < d; ++i)
+        delete velocity_components[i];
+      // project pressure if necessary
+      if(s.matrix.pressure_projection_enabled())
+        s.p.project_into_L20();
+    }
+  }
+}
 #ifdef __3D__
 template class TimeNavierStokes<3>;
 #else

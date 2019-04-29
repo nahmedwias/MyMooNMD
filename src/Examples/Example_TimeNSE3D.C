@@ -336,7 +336,7 @@ Example_TimeNSE3D::Example_TimeNSE3D(
   }
 }
 
-void Example_TimeNSE3D::do_post_processing(TimeNavierStokes<3>& tnse3d) const
+void Example_TimeNSE3D::do_post_processing(TimeNavierStokes<3>& tnse3d, double&) const
 {
   if(post_processing_stat)
   {

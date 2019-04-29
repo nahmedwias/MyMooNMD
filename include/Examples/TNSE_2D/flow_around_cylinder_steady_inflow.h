@@ -421,11 +421,12 @@ void compute_drag_lift_pdiff(TimeNavierStokes<2>& time_nse2d, double&)
   p.FindGradient(0.25, 0.2, dP2);
 
   double pdiff = dP1[0]-dP2[0];
+  double t = time_nse2d.get_time_stepping_scheme().current_time_;
 
   // print them reference values - f.y.i. some reference values are:
   Output::print(">>>>> Flow Around Cylinder (steady inflow) 2D: Postprocessing Output <<<<<");
-  Output::print( " Drag = ",setprecision(16), drag);
-  Output::print( " Lift = ", setprecision(16), lift);
-  Output::print( " deltaP = ", setprecision(16), pdiff);
+  Output::print("time: ", t, " Drag = ",setprecision(16), drag);
+  Output::print("time: ", t, " Lift = ", setprecision(16), lift);
+  Output::print("time: ", t, " deltaP = ", setprecision(16), pdiff);
 }
 
