@@ -401,6 +401,13 @@ int main(int, char* argv[])
       check(domain_quads, db, 4, 3, 3, lapacetype, nonlineartype, time_disc, errors, tol);
       check(domain_quads, db, 4, 3, 4, lapacetype, nonlineartype, time_disc, errors, tol);
     }
+    // imex scheme 
+    db["imex_scheme_"] = true;
+    lapacetype = 0; 
+    db.add("extrapolation_type", "linear_extrapolate", "");
+    check(domain_quads, db, 2, 1, 4, lapacetype, nonlineartype, time_disc, errors, tol);
+    db["laplace_type_deformation"] = true; lapacetype = 1; 
+    check(domain_quads, db, 2, 1, 4, lapacetype, nonlineartype, time_disc, errors, tol);
   }
   //=======================================================================
   //============= Test 1 : TwoTriangles====================================
@@ -541,6 +548,10 @@ int main(int, char* argv[])
       check(domain_tri, db, 4, 3, 3, lapacetype, nonlineartype, time_disc, errors, tol);
       check(domain_tri, db, 4, 3, 4, lapacetype, nonlineartype, time_disc, errors, tol);
     }
+    // just one test with IMEX shceme
+    db["imex_scheme_"] = true;lapacetype = 0; 
+    db.add("extrapolation_type", "linear_extrapolate", "");
+    check(domain_tri, db, 2, 1, 4, lapacetype, nonlineartype, time_disc, errors, tol);
   }
   //=======================================================================
   //============= Old Test : Quads ==========================================

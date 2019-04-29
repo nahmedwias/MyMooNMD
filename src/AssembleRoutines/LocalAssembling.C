@@ -1394,6 +1394,9 @@ void LocalAssembling<d>::set_parameters_for_tnse( LocalAssembling_type la_type)
       else
         this->local_assemblings_routines.push_back(NSMassMatrix<d>);
       break;
+    case LocalAssembling_type::NavierStokesLinear:
+      Output::print<5>("Nothing to do here!!!");
+      break;
     default:
       ErrThrow("unknown LocalAssembling3D_type ", this->type);
       break;
