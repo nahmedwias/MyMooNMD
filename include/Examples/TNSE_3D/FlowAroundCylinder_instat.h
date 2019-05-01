@@ -456,7 +456,7 @@ double get_p_diff(const std::array<double,3>& point_A,
 }
 
 // this is the actual interface
-void compute_drag_lift_pdiff(TimeNavierStokes<3>& tnse3d)
+void compute_drag_lift_pdiff(TimeNavierStokes<3>& tnse3d, double&)
 {
 #ifdef _MPI
   MPI_Comm comm = MPI_COMM_WORLD;
