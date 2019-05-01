@@ -100,7 +100,7 @@ include(cmake/sources_rom.cmake)
 include(cmake/sources_solver.cmake)
 include(cmake/sources_system.cmake)
 include(cmake/sources_timediscroutines.cmake)
-# include(cmake/sources_pbe.cmake)
+include(cmake/sources_prePostprocessing.cmake)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)

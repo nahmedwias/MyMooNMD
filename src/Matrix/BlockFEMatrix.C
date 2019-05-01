@@ -1921,6 +1921,21 @@ bool determine_need_for_pressure_row_correction(
 
   bool needs_prc = is_saddle_point_problem && is_enclosed_flow;
 
+  if(TDatabase::ParamDB->RE_NR == 180 || TDatabase::ParamDB->RE_NR == 395. || TDatabase::ParamDB->RE_NR == 590)
+  {
+    needs_prc = false;
+  }
+
+  if(needs_prc && my_rank == 0)
+      Output::info("Pressure Projection","BlockFEMatrix identified as enclosed-flow saddle point matrix. "
+                   "Pressure projection enabled.");
+
+  //TODO: Fix me please
+  if(TDatabase::ParamDB->RE_NR == 180. || TDatabase::ParamDB->RE_NR == 395.)
+    return false;
+  else
+    return needs_prc;
+
   if(needs_prc && my_rank == 0)
       Output::info("Pressure Projection","BlockFEMatrix identified as enclosed-flow saddle point matrix. "
                    "Pressure projection enabled.");
