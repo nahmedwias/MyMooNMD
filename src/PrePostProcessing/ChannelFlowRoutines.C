@@ -114,7 +114,7 @@ void ChannelTau180::computeAverageVelocity(
 void ChannelTau180::setParameters(ParameterDatabase &db)
 {
   // example Channel Flow with Reynolds Number 180 and 395
-  if(db["example"].is(7))
+  if(db["example"].is(8))
   {
     TDatabase::ParamDB->INTERNAL_PROBLEM_IDENTITY=180;
     TDatabase::ParamDB->INTERNAL_MEAN_COMPUTATION=0;
