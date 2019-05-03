@@ -1338,7 +1338,12 @@ void LocalAssembling<d>::set_parameters_for_tnse( LocalAssembling_type la_type)
         _7, _8, -1));
       if(nstype == 2 || nstype == 4 || nstype == 14)
         this->local_assemblings_routines.push_back(NSGradientBlocks<d>);
-      break;
+      // the break statement is commented intentionally: The other option is to copy the 
+      // the complete lines of code for the "TimeNavierStokesNL". This is because 
+      // we need the linear and nonlinear matrices to assemble the system right hand side:
+      // e.g., in the crank_nicolson time stepping scheme
+      // THIS MEANS: we assemble all matrices at initial time
+      // break;
     }// NavierStokesAll
     case LocalAssembling_type::TimeNavierStokesNL:
     {
