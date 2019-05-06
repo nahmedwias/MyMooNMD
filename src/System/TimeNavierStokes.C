@@ -184,7 +184,7 @@ TimeNavierStokes<d>::TimeNavierStokes(const TDomain& domain,
   // create finite element space, functions, matrices, rhs and solution
   // at the finest grid
   this->systems.emplace_back(example, *coll, velo_pres_order);
-  
+
   if(usingMultigrid)
   {
     // Construct multigrid object
@@ -502,6 +502,9 @@ void TimeNavierStokes<d>::assemble_initial_time()
   for(auto &s : this->systems)
   {
     call_assembling_routine(s, LocalAssembling_type::TimeNavierStokesAll);
+    // In TimeNavierStokesAll: only the linear part is assembled
+    // nonlinear needs to be assemble as well
+    call_assembling_routine(s, LocalAssembling_type::TimeNavierStokesNL);
     //update matrices for local projection stabilization
     if(db["space_discretization_type"].is("local_projection"))
       update_matrices_lps(s);
@@ -1133,7 +1136,7 @@ bool TimeNavierStokes<d>::stop_it(unsigned int it_counter)
     initial_residual = norm_of_residual;
     if(i_am_root)
     {
-      Output::print<2>("nonlinear step  : " , setw(3), it_counter, setw(12),
+      Output::print<1>("nonlinear step  : " , setw(3), it_counter, setw(12),
                        impulse_residual, setw(12), mass_residual, setw(12),
                        norm_of_residual);
     }
@@ -1142,7 +1145,7 @@ bool TimeNavierStokes<d>::stop_it(unsigned int it_counter)
   {
     if(i_am_root)
     {
-      Output::print<2>("nonlinear step  : " , setw(3), it_counter, setw(12),
+      Output::print<1>("nonlinear step  : " , setw(3), it_counter, setw(12),
                        impulse_residual, setw(12), mass_residual, setw(12),
                        norm_of_residual, setw(12),
                        norm_of_residual/old_norm_of_residual);  
@@ -1314,6 +1317,7 @@ void TimeNavierStokes<d>::solve()
   
   if(s.matrix.pressure_projection_enabled())
        s.p.project_into_L20();
+  
   if(imex_scheme())
   {
     db["residual_tolerance"] = 1.e-06;
@@ -1485,6 +1489,7 @@ void TimeNavierStokes<d>::output()
         delete fe_functions[d+1+i];
     }
   }
+
   double val;
   example.do_post_processing(*this, val);
 
@@ -1909,6 +1914,7 @@ void TimeNavierStokes<d>::adjust_pressure()
     }
   }
 }
+
 #ifdef __3D__
 template class TimeNavierStokes<3>;
 #else

@@ -45,6 +45,7 @@
   #include <BDEdge3D.h>
   #include <InnerEdge.h>
   #include <IsoEdge3D.h>
+  #include <ChannelFlowRoutines.h>
 #endif
 #include "RefinementStrategy.h"
 
@@ -107,6 +108,9 @@ ParameterDatabase TDomain::default_domain_parameters()
 
    db.add("sandwich_grid", false, "If 'true', then this domain should"
        "be constructed as a sandwich grid from a 2d geometry and mesh.");
+   
+   db.add("manuel_partitioning", false, "this is only true for the "
+       "channel with periodic boundaries");
 
   return db;
 }
@@ -192,6 +196,15 @@ TDomain::TDomain(const ParameterDatabase& param_db)
     Output::info("Domain", "Initializing Domain using GEO file ", geoname,
           " and .PRM file ", boundname);
     Init(boundname, geoname);
+#ifdef __3D__
+    if(param_db["problem_type"].is(6) && param_db["example"].is(8))
+    {
+      ChannelTau180::setZCoordinates(this->GetCollection(It_Finest,0), 0);
+      this->MakeBdParamsConsistent(this->GetCollection(It_Finest,0));
+      ChannelTau180::checkZCoordinates(this->GetCollection(It_Finest,0), 0);
+    }
+#endif
+
   }
   else if( ends_with(geoname, ".mesh") && ends_with(boundname, ".PRM") )
   {//.mesh file (medit format) and PRM file given
@@ -602,9 +615,24 @@ void TDomain::ReadSandwichGeo(const std::string& file_name,
 
     //fill a lambda with equally spaced numbers
     lambda.resize(n_node_layers);
-    for(int i=0 ; i<n_node_layers ; i++)
-      lambda[i] = i * (1.0/n_layers);
-
+    if(TDatabase::ParamDB->INTERNAL_PROBLEM_IDENTITY == 180)
+    {
+      int grid_type = TDatabase::ParamDB->GRID_TYPE;
+      for(int i=0; i<n_node_layers; i++)
+      {
+        if(grid_type==0)
+          lambda[i] = 1 + tanh(2.75*(2.0*i/(n_node_layers-1) -1))/tanh(2.75);
+        else
+          lambda[i] = 1-cos(i*Pi/(n_node_layers-1));
+        Output::print("z coordinate ", lambda[i]);
+        lambda[i] /=2.;
+      }
+      lambda[0] = 0.;
+      lambda[n_node_layers-1]=1.0;
+    }
+    else
+      for(int i=0 ; i<n_node_layers ; i++)
+        lambda[i] = i * (1.0/n_layers);
   }
   else
   {//control by lambda
@@ -3067,6 +3095,17 @@ std::list<TCollection*> TDomain::refine_and_get_hierarchy_of_collections(
       this->barycentric_refinement();
     else
       this->RegRefineAll();
+#ifdef __3D__
+    if(parmoon_db["problem_type"].is(6)
+      && parmoon_db["example"].is(8))
+    {
+      ChannelTau180::setZCoordinates(this->GetCollection(It_Finest,0),
+                                     i+1);
+      this->MakeBdParamsConsistent(this->GetCollection(It_Finest,0));
+      ChannelTau180::checkZCoordinates(this->GetCollection(It_Finest,0),
+                                       i+1);
+    }
+#endif
     gridCollections.push_front(this->GetCollection(It_Finest, 0));
   }
 
@@ -3106,6 +3145,18 @@ std::list<TCollection*> TDomain::refine_and_get_hierarchy_of_collections(
       this->barycentric_refinement();
     else
       this->RegRefineAll();
+#ifdef __3D__
+    if(parmoon_db["problem_type"].is(6)
+      && parmoon_db["example"].is(8))
+    {
+      ChannelTau180::setZCoordinates(this->GetCollection(It_Finest,0),
+                                     level+ n_ref_before+1);
+      this->MakeBdParamsConsistent(this->GetCollection(It_Finest,0));
+      ChannelTau180::checkZCoordinates(this->GetCollection(It_Finest,0),
+                                       level+ n_ref_before+1);
+    }
+#endif
+    
 #ifdef _MPI
     this->GenerateEdgeInfo();  // has to be called anew after every refinement step
     Domain_Crop(MPI_COMM_WORLD, this); // remove unwanted cells in the halo after refinement
