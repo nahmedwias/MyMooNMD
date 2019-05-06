@@ -12,7 +12,7 @@
 #include <Chrono.h>
 #include <LoopInfo.h>
 #include <TimeDiscretizations.h>
-
+#include <ChannelFlowRoutines.h>
 #include <sys/stat.h>
 
 #include <TimeDiscRout.h>
@@ -75,6 +75,15 @@ int main(int argc, char* argv[])
   // Choose and construct example.
   Example_TimeNSE3D example(parmoon_db);
 
+  if(parmoon_db["example"].is(8))
+  {
+    ChannelTau180::setParameters(parmoon_db);
+  }
+  //if(parmoon_db["example"].is(8))
+  //{
+  //  Cylinder_Square::setParameters(parmoon_db);
+  //}
+  
   // Do the parameter check of the Database.
   check_parameters_consistency_NSE(parmoon_db);
   // =====================================================================
@@ -93,7 +102,17 @@ int main(int argc, char* argv[])
     Database.WriteTimeDB();
   }
   // Initial refinement
-  domain.refine_and_get_hierarchy_of_collections(parmoon_db);
+  std::list<TCollection* > gridCollections=
+     domain.refine_and_get_hierarchy_of_collections(parmoon_db);
+  
+     if(parmoon_db["example"].is(8))
+  {
+    for(auto coll : gridCollections)
+    {
+      ChannelTau180::setRefineDesc(coll);
+      ChannelTau180::setPeriodicFaceJoints(coll);
+    }
+  }
 
   //print information on the mesh partition on the finest grid
   domain.print_info("TNSE3D domain");
@@ -102,12 +121,22 @@ int main(int argc, char* argv[])
   // Construct an object of the TimeNavierStokes<3>-problem type.
   TimeNavierStokes<3> tnse3d(domain, parmoon_db, example);
   
+  if(parmoon_db["example"].is(8))
+    ChannelTau180::GetCoordinatesOfDof(tnse3d);
+  
   TimeDiscretization& tss = tnse3d.get_time_stepping_scheme();
   tss.current_step_ = 0;
   tss.set_time_disc_parameters();
   
   tnse3d.assemble_initial_time();
   tnse3d.output();
+  
+  if(parmoon_db["example"].is(8))
+  {
+    ChannelTau180::set_up_memory();
+    TDatabase::ParamDB->INTERNAL_MEAN_COMPUTATION = 1;
+    ChannelTau180::computeMeanVelocity(tnse3d);
+  }
 
   int n_substeps = GetN_SubSteps();
 
@@ -154,10 +183,10 @@ int main(int argc, char* argv[])
       timer_timeit.restart_and_print("preparation of nonlinear iteration");
 
       // nonlinear iteration
-     LoopInfo loop_info("nonlinear");
-     loop_info.print_time_every_step = true;
-     loop_info.verbosity_threshold = 1; // full verbosity
-     for(unsigned int k=0; ; k++)
+      LoopInfo loop_info("nonlinear");
+      loop_info.print_time_every_step = true;
+      loop_info.verbosity_threshold = 1; // full verbosity
+      for(unsigned int k=0; ; k++)
       {
         if(my_rank==0) // some output
         {
@@ -171,15 +200,15 @@ int main(int argc, char* argv[])
           /// @todo provide all parts of the residual
           /// @todo loop_info restricted to the solver only
           loop_info_time.print(linear_iterations, tnse3d.get_full_residual());
-	   break;
-         }
-         else
-           loop_info.print(k, tnse3d.get_full_residual());
- 
+          break;
+        }
+        else
+          loop_info.print(k, tnse3d.get_full_residual());
+
         tnse3d.solve();
 
         if(tnse3d.imex_scheme())
-          continue;
+          break;
 
         tnse3d.assemble_matrices_rhs(k+1);
 
@@ -193,6 +222,18 @@ int main(int argc, char* argv[])
         std::to_string(TDatabase::TimeDB->CURRENTTIME));
 
       tnse3d.output();
+      if(parmoon_db["example"].is(8))
+      {
+        if (TDatabase::TimeDB->CURRENTTIME>=TDatabase::TimeDB->T0)
+        {
+          if (TDatabase::ParamDB->INTERNAL_MEAN_COMPUTATION == 0)
+          {
+            TDatabase::ParamDB->INTERNAL_MEAN_COMPUTATION = 1;
+            TDatabase::TimeDB->T0 = TDatabase::TimeDB->CURRENTTIME;
+          }
+        }
+        ChannelTau180::computeMeanVelocity(tnse3d);
+      }
       timer_timeit.print_total_time(
         "time step " + std::to_string(TDatabase::TimeDB->CURRENTTIME));
     } // end of subtime loop

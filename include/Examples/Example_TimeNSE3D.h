@@ -73,7 +73,7 @@ private:
   /// Function doing the post processing for a stationary example.
   /// TODO @ULRICH: 
   // put NSE3D argument const as soon as FEFunctions can be copied properly!
-  std::function<void(TimeNavierStokes<3> &)> post_processing_stat;
+  std::function<void(TimeNavierStokes<3> &, double& val)> post_processing_stat;
   /// TODO @ULRICH Function doing the post processing for a time dependent example.
   
 };

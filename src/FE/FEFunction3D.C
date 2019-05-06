@@ -1515,9 +1515,89 @@ void TFEFunction3D::Interpolate(int N_Coord, double *Coords, int N_AuxFeFcts,  T
   }
 }
 
-void TFEFunction3D::add(AnalyticFunction)
+void TFEFunction3D::add(AnalyticFunction f)
 {
-  ErrThrow("TFEFunction3D::add is not yet implemented");
+  int N_Points;
+  const double *xi, *eta, *zeta;
+  // begin code
+ 
+  auto Coll = FESpace3D->GetCollection();
+  int N_Cells = Coll->GetN_Cells();
+  int N_DOFs = FESpace3D->GetN_DegreesOfFreedom();
+  std::vector<int> IntIndex(N_DOFs, 0);
+ 
+  for(int i = 0; i < N_Cells; i++)
+  {
+    TBaseCell * cell = Coll->GetCell(i);
+    const TFE3D& Element = FESpace3D->get_fe(i);
+    auto nf = Element.GetNodalFunctional3D();
+    nf->GetPointsForAll(N_Points, xi, eta, zeta);
+    int N_LocalDOFs = Element.GetN_DOF();
+ 
+    if(Element.GetBaseFunct3D()->GetBaseVectDim() != 1)
+      ErrThrow("TFEFunction3D::add not implemented for vector-valued basis "
+               "functions");
+ 
+    BF3DRefElements RefElement = Element.GetBaseFunct3D()->GetRefElement();
+    
+    int N_Faces = (RefElement == BFUnitHexahedron) ? 6 : 4; // else BFUnitTetrahedron
+    RefTrans3D RefTrans = Element.GetRefTransID();
+    bool IsIsoparametric = false;
+    if (TDatabase::ParamDB->USE_ISOPARAMETRIC)
+    {
+      for(int j=0;j<N_Faces;j++)
+      {
+        const TJoint *joint = cell->GetJoint(j);
+        JointType jointtype = joint->GetType();
+        if(jointtype == BoundaryFace)
+        {
+          BoundTypes bdtype = ((TBoundFace *)(joint))->GetBoundComp()->GetType();
+          if(bdtype != Plane)
+            IsIsoparametric = true;
+        }
+        if(jointtype == IsoBoundFace)
+          IsIsoparametric = true;
+      }
+    }
+    
+    if(IsIsoparametric)
+    {
+      RefTrans = (RefElement==BFUnitHexahedron) ? HexaIsoparametric 
+                                                  : TetraIsoparametric;
+    }
+    TFEDatabase3D::SetCellForRefTrans(cell, RefTrans);
+    std::vector<double> X(N_Points, 0.);
+    std::vector<double> Y(N_Points, 0.);
+    std::vector<double> Z(N_Points, 0.);
+    std::vector<double> AbsDetjk(N_Points, 0.);
+    TFEDatabase3D::GetOrigFromRef(RefTrans, N_Points, xi, eta, zeta,
+                                  X.data(), Y.data(), Z.data(), AbsDetjk.data());
+    std::vector<double> PointValues(N_Points, 0.);
+ 
+    for(int j = 0; j < N_Points; j++)
+    {
+      PointValues[j] = f(cell, i, {{X[j], Y[j], Z[j]}});
+    }
+    std::vector<double> FunctionalValues(N_LocalDOFs, 0.);
+    nf->GetAllFunctionals(Coll, (TGridCell *)cell, PointValues.data(),
+        FunctionalValues.data());
+ 
+    int * DOF = FESpace3D->GetGlobalDOF(i);
+ 
+    for(int j = 0; j < N_LocalDOFs; j++)
+    {
+      if(IntIndex[DOF[j]] == 0)
+        Values[DOF[j]] += FunctionalValues[j];
+      IntIndex[DOF[j]] ++;
+    }
+  }
+  for(int i = 0; i < N_DOFs; i++)
+  {
+    if(IntIndex[i] == 0)
+    {
+      ErrThrow("TFEFunction3D::add: unable to set dof ", i);
+    }
+  }
 }
 
 

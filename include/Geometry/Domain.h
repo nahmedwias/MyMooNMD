@@ -553,6 +553,19 @@ class TDomain
 
   /// Get a const reference to the database of this domain object.
   const ParameterDatabase& get_database() const {return this->db;};
+  
+  /// @brief Special for the turbulent flow example
+  /// this boolean is used in the mesh partitioning for 
+  /// channel flow example only
+  bool is_turbulent_channel_example()
+  {
+    if(!db["problem_type"].is(6))
+      return false;
+    if(db["manuel_partitioning"])
+      return true;
+    else
+      return false;
+  }
 
   //TODO reorganize methods, put everything private here!
   private:
