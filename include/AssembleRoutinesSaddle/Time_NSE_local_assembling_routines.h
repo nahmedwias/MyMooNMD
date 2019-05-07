@@ -30,8 +30,28 @@ template<int d>
 void NSLaplaceDeformationSmagorinsky(double Mult, double *coeff, double *param, double hK,
   double**OrigValues, int *N_BaseFuncts, double ***LocMatrices, double **);
 
+template<int d> 
+void NSLaplaceDeformationVariationalMS(double Mult, double *, double *param, double hK,
+  double**OrigValues, int *N_BaseFuncts, double ***LocMatrices, double **);
+
+template<int d>
+void NSLumpMassMatrix(double Mult, double *, double *, double ,
+  double**OrigValues, int *N_BaseFuncts, double ***LocMatrices, double **);
+
+template<int d>
+void NSVariationlMS_GMatrices(double Mult, double *, double *, double ,
+  double**OrigValues, int *N_BaseFuncts, double ***LocMatrices, double **);
+
+template<int d>
+void NSVariationlMS_GTildeMatrices(double Mult, double *, double *param, double hK,
+  double**OrigValues, int *N_BaseFuncts, double ***LocMatrices, double **);
+
 template<int d>
 void NSParamVelGradSmagorinsky(const double *in, double *out);
+
+template<int d>
+void NSParamsVariationalMSLargeScale(const double *in, double *out);
+
 
 
 //===============================================================================

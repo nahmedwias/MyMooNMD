@@ -5,6 +5,7 @@
 #include "Hotfixglobal_AssembleNSE.h"
 #include "GridTransfer.h"
 #include "Multigrid.h"
+#include "Variational_multiscale.h"
 #ifdef __2D__
 #include "Upwind.h"
 #include "Matrix2D.h"
@@ -184,7 +185,11 @@ TimeNavierStokes<d>::TimeNavierStokes(const TDomain& domain,
   // create finite element space, functions, matrices, rhs and solution
   // at the finest grid
   this->systems.emplace_back(example, *coll, velo_pres_order);
-
+#ifdef __3D__
+  // prepare the spaces and matrices for vms method
+  if(db["space_discretization_type"].is("vms_projection"))
+    this->prepare_vms(domain);
+#endif
   if(usingMultigrid)
   {
     // Construct multigrid object
@@ -504,13 +509,24 @@ void TimeNavierStokes<d>::assemble_initial_time()
     call_assembling_routine(s, LocalAssembling_type::TimeNavierStokesAll);
     // In TimeNavierStokesAll: only the linear part is assembled
     // nonlinear needs to be assemble as well
-    call_assembling_routine(s, LocalAssembling_type::TimeNavierStokesNL);
     //update matrices for local projection stabilization
     if(db["space_discretization_type"].is("local_projection"))
       update_matrices_lps(s);
     // copy nonactives
     s.solution.copy_nonactive(s.rhs);
-
+    if(db["space_discretization_type"].is("vms_projection"))
+    {
+      std::vector<std::shared_ptr<FEMatrix>> blocks
+                      = s.matrix.get_blocks_uniquely();
+      // update mass matrix of projection
+      LumpMassMatrixToDiagonalMatrix<d>(matrices_for_turb_mod.at(6));
+      // update stiffness matrix
+      VMS_ProjectionUpdateMatrices<d>(blocks, matrices_for_turb_mod);
+      // reset flag for projection-based VMS method such that Smagorinsky LES method
+      // is used on coarser grids
+      space_disc_global = -4;      
+      db["space_discretization_type"] = "smagorinsky_coarse";
+    }
   /** After copy_nonactive, the solution vectors needs to be Comm-updated in 
    * MPI-case in order to be consistently saved. It is necessary that the vector
    * is consistently saved because it is the only way to ensure that its
@@ -536,7 +552,12 @@ void TimeNavierStokes<d>::assemble_initial_time()
     s.solution_m1 = s.solution;
     s.solution_m2 = s.solution;
   }
-  
+  // reset   DISCTYPE to VMS_PROJECTION to be correct in the next assembling
+  if(space_disc_global == -4)
+  {
+    space_disc_global = 9;
+    db["space_discretization_type"] = "vms_projection";
+  }
   // the call to assembleslip is necessary here, in order to get
   // the correct old_rhs, i.e., zeros on the slip dofs
   if(TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION >=1)
@@ -631,7 +652,7 @@ void TimeNavierStokes<d>::assemble_matrices_rhs(unsigned int it_counter)
     bool on_finest_grid = &systems.front() == &s;
     do_upwinding = (db["space_discretization_type"].is("upwind")
                     || (mdml && !on_finest_grid));
-    if(do_upwinding)
+    if(do_upwinding && db["space_discretization_type"].is("galerkin"))
     {
       /**
      * This will assemble the linear blocks of velocity-velocity 
@@ -649,7 +670,29 @@ void TimeNavierStokes<d>::assemble_matrices_rhs(unsigned int it_counter)
     // update matrices with local projection term
     if(db["space_discretization_type"].is("local_projection"))
       update_matrices_lps(s);
+
+    if(db["space_discretization_type"].is("vms_projection"))
+    {
+      std::vector<std::shared_ptr<FEMatrix>> blocks
+         = s.matrix.get_blocks_uniquely();
+      // update mass matrix of projection
+      LumpMassMatrixToDiagonalMatrix<d>(matrices_for_turb_mod.at(6));
+      // update stiffness matrix
+      VMS_ProjectionUpdateMatrices<d>(blocks, matrices_for_turb_mod);
+      // reset flag for projection-based VMS method such that Smagorinsky LES method
+      // is used on coarser grids 
+      space_disc_global = -4;
+      db["space_discretization_type"].set("smagorinsky_coarse");
+    }
+
   }
+  // reset   DISCTYPE to VMS_PROJECTION to be correct in the next assembling
+  if(db["space_discretization_type"].is("smagorinsky_coarse"))
+  {
+    space_disc_global = 9;
+    db["space_discretization_type"].set("vms_projection");
+  }
+
 
   // slip boundary modification of matrices
   if(TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION >=1 )
@@ -852,11 +895,22 @@ void TimeNavierStokes<d>::set_arrays(TimeNavierStokes<d>::System_per_grid& s,
     functions[i] = s.u.GetComponent(i);
   functions[d] = &s.p;
   
+  if(db["space_discretization_type"].is("vms_projection"))
+  {
+    spaces.resize(4);
+    // projection space
+    spaces[2]=projection_space_.get();
+    // label space that indicates local projection space
+    spaces[3]=label_for_local_projection_space_.get();
+      // append function for the labels of the local projection
+    functions.resize(d+2);
+    functions[4] = label_for_local_projection_fefct.get();
+  }
+  
   bool is_imex = imex_scheme();
   if(is_imex && db["extrapolate_velocity"])
   {
-    if(db["space_discretization_type"].is("galerkin")
-      || db["space_discretization_type"].is("local_projection"))
+    if(!db["space_discretization_type"].is("supg"))
     {
       if(db["extrapolation_type"].is("constant_extrapolate"))
       {
@@ -888,12 +942,6 @@ void TimeNavierStokes<d>::set_arrays(TimeNavierStokes<d>::System_per_grid& s,
                  db["extrapolation_type"]);
       }
     }
-    // supg: NOTE: only tested with BDF2 so far
-    if(db["space_discretization_type"].is("supg")
-      && !db["time_discretization"].is("bdf_two"))
-    {
-      ErrThrow("supg method is only implemented for BDF2 time stepping scheme");
-    }
     
     if(db["space_discretization_type"].is("supg"))
     {
@@ -901,8 +949,7 @@ void TimeNavierStokes<d>::set_arrays(TimeNavierStokes<d>::System_per_grid& s,
       {
         ErrThrow("SUPG is implemented for equal-order only so far !!!");        
       }
-      functions.resize(2*d);
-      
+      functions.resize(2*d);      
       s.extrapolate_sol.reset();
       s.extrapolate_sol = s.solution_m1;
       s.extrapolate_sol.scale(2.);
@@ -924,36 +971,6 @@ void TimeNavierStokes<d>::set_arrays(TimeNavierStokes<d>::System_per_grid& s,
       for(int i = 0; i < d; ++i)
       {
         functions[i+d] = s.comb_old_u.GetComponent(i);
-      }
-    }
-  }
-  else 
-  {
-    // For the standard methods or symmetric stabilization schemes
-    // there is no time derivative involved in combination with the 
-    // pressure or velocity as in the supg case. So nothing to do 
-    // for those schemes.
-    
-    // 
-    if(db["space_discretization_type"].is("supg"))
-    {
-      functions.resize(2*d);
-      if(time_stepping_scheme.pre_stage_bdf)
-      {
-        for(int i = 0; i < d; ++i)
-          functions[i+d] = s.u_m1.GetComponent(i);
-      }
-      else
-      {
-        s.combined_old_sols.reset();
-        // copy and scale the solution at previous time step with factor 2
-        s.combined_old_sols = s.solution_m1;
-        s.combined_old_sols.scale(2.);
-        // subtract with right factor the solution at pre-previous solution
-        s.combined_old_sols.add_scaled(s.solution_m2, -1./2.);
-        
-        for(int i = 0; i < d; ++i)
-          functions[i+d] = s.comb_old_u.GetComponent(i);
       }
     }
   }
@@ -985,8 +1002,10 @@ void TimeNavierStokes<d>::set_matrices_rhs(
       else
       {
         for(int i = 0; i < d; ++i)
-            sqMat[i] = reinterpret_cast<SquareMatrixD*>(mass_blocks.at(i*(d+2)).get());
+          sqMat[i] = reinterpret_cast<SquareMatrixD*>(mass_blocks.at(i*(d+2)).get());
       }
+      if(db["space_discretization_type"].is("vms_projection"))
+        sqMat[d] = reinterpret_cast<SquareMatrixD*>(matrices_for_turb_mod.at(6).get());;
       break; //TimeNavierStokesMass
     case LocalAssembling_type::NavierStokesLinear:
       if(nstype==1 || nstype==2)
@@ -998,7 +1017,7 @@ void TimeNavierStokes<d>::set_matrices_rhs(
           if(i%d == 0 && i > 0)
             j++;
           sqMat[i] = reinterpret_cast<SquareMatrixD*>(blocks[j].get());
-        }
+        }        
       }
       break;
     case LocalAssembling_type::TimeNavierStokesAll:
@@ -1039,6 +1058,12 @@ void TimeNavierStokes<d>::set_matrices_rhs(
             reMat[i] = reinterpret_cast<MatrixD*>(blocks[d*(d+1)+i].get());
           for(int i = 0; i < d; ++i)
             reMat[d+i] = reinterpret_cast<MatrixD*>(blocks[d+(d+1)*i].get());
+          if(db["space_discretization_type"].is("vms_projection"))
+          {
+            reMat.resize(2*d*2);
+            for(int i=0; i<2*d; i++)
+              reMat[2*d+i] = reinterpret_cast<MatrixD*>(matrices_for_turb_mod.at(i).get());
+          }
           break;
         case 14:
           for(int i = 0, j = 0; i < d*d; ++i, ++j)
@@ -1072,6 +1097,11 @@ void TimeNavierStokes<d>::set_matrices_rhs(
       {
         for(int i = 0; i < d*d; ++i)
           sqMat[i] = reinterpret_cast<SquareMatrixD*>(blocks[i].get());
+      }
+      if(db["space_discretization_type"].is("vms_projection"))
+      {
+        for(int i=0; i<d; ++i)
+          reMat[i] = reinterpret_cast<MatrixD*>(matrices_for_turb_mod.at(i).get());
       }
       break;//TimeNavierStokesNL
     }
@@ -1136,7 +1166,7 @@ bool TimeNavierStokes<d>::stop_it(unsigned int it_counter)
     initial_residual = norm_of_residual;
     if(i_am_root)
     {
-      Output::print<1>("nonlinear step  : " , setw(3), it_counter, setw(12),
+      Output::print<2>("nonlinear step  : " , setw(3), it_counter, setw(12),
                        impulse_residual, setw(12), mass_residual, setw(12),
                        norm_of_residual);
     }
@@ -1145,7 +1175,7 @@ bool TimeNavierStokes<d>::stop_it(unsigned int it_counter)
   {
     if(i_am_root)
     {
-      Output::print<1>("nonlinear step  : " , setw(3), it_counter, setw(12),
+      Output::print<2>("nonlinear step  : " , setw(3), it_counter, setw(12),
                        impulse_residual, setw(12), mass_residual, setw(12),
                        norm_of_residual, setw(12),
                        norm_of_residual/old_norm_of_residual);  
@@ -1914,6 +1944,77 @@ void TimeNavierStokes<d>::adjust_pressure()
     }
   }
 }
+
+template<int d> 
+void TimeNavierStokes<d>::prepare_vms(const TDomain& domain)
+{
+  auto collections = domain.get_grid_collections();
+  // projection-based VMS, only on the finest level 
+  // VMS projection order 
+  int projection_order = db["vms_projection_space_order"];
+  if(projection_order < 0)
+    projection_order = 0;
+  
+  // projection space
+  projection_space_ = 
+     std::make_shared<FESpace>(collections.front(), (char*)"L",  
+                         (char*)"vms projection space", example.get_bc(2), 
+                         DiscP_PSpace, projection_order);
+  int ndofP = projection_space_->GetN_DegreesOfFreedom();
+  
+  // create vector for vms projection, used if small resolved scales are needed
+  this->vms_small_resolved_scales.resize(6*ndofP);
+  // finite element vector function for vms projection
+  this->vms_small_resolved_scales_fefct = 
+     std::make_shared<FEVectFunct>(projection_space_, (char*)"v", (char*)"v", 
+                                      &vms_small_resolved_scales[0], ndofP, 6);
+
+ 
+  // create the label space, used in the adaptive method   
+  int n_cells = collections.front()->GetN_Cells();
+  // initialize the piecewise constant vector
+  if(projection_order == 0)
+    this->label_for_local_projection.resize(n_cells, 0);
+  else if(projection_order == 1)
+    this->label_for_local_projection.resize(n_cells, 1);
+  else
+    ErrThrow("local projection space is not defined");
+  // create fefunction for the labels such that they can be passed to the assembling routines
+  label_for_local_projection_space_ = 
+    std::make_shared<FESpace>(collections.front(), (char*)"label_for_local_projection", 
+                                 (char*)"label_for_local_projection", example.get_bc(2), DiscP_PSpace, 0);
+  // finite element function for local projection space
+  this->label_for_local_projection_fefct = 
+    std::make_shared<FEFunction>(label_for_local_projection_space_, (char*)"vms_local_projection_space_fefct", 
+                                    (char*)"vms_local_projection_space_fefct", &label_for_local_projection[0], 
+                                    n_cells);
+  
+  // matrices for the vms method needs to assemble only on the 
+  // finest grid. On the coarsest grids, the SMAGORINSKY model 
+  // is used and for that matrices are available on all grids:
+
+  switch(TDatabase::ParamDB->NSTYPE)
+  {
+    case 1: case 2:
+      ErrThrow("VMS projection cannot be supported for NSTYPE  ", 
+               TDatabase::ParamDB->NSTYPE);
+      break;
+    case 3: case 4: case 14:
+      auto velocity_space = this->get_velocity_space();
+      // matrices G_tilde
+      matrices_for_turb_mod.push_back( std::make_shared<FEMatrix>(velocity_space, projection_space_));
+      matrices_for_turb_mod.push_back( std::make_shared<FEMatrix>(velocity_space, projection_space_));
+      matrices_for_turb_mod.push_back( std::make_shared<FEMatrix>(velocity_space, projection_space_));
+      // matrices G
+      matrices_for_turb_mod.push_back(std::make_shared<FEMatrix>(projection_space_, velocity_space));
+      matrices_for_turb_mod.push_back(std::make_shared<FEMatrix>(projection_space_, velocity_space));
+      matrices_for_turb_mod.push_back(std::make_shared<FEMatrix>(projection_space_, velocity_space));
+      // mass matrix 
+      matrices_for_turb_mod.push_back(std::make_shared<FEMatrix>(projection_space_, projection_space_));
+      break;
+  }
+}
+
 
 #ifdef __3D__
 template class TimeNavierStokes<3>;

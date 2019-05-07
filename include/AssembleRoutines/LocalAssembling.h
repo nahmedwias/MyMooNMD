@@ -186,7 +186,7 @@ class LocalAssembling
     /// standard case
     void set_parameters_for_tnse( LocalAssembling_type type);    
     /// SMAGORINSKY model
-    void set_parameters_for_tnse_smagorinsky( LocalAssembling_type type);
+    void set_parameters_for_tnse_vms( LocalAssembling_type type);
   public:
     /** Constructs a Local Assembling object of a certain type from an array
      *  of fe functions and coefficient functions.

@@ -451,7 +451,10 @@ LocalAssembling<d>::LocalAssembling(ParameterDatabase param_db,
     case LocalAssembling_type::TimeNavierStokesRhs:
     case LocalAssembling_type::TimeNavierStokesMass:
     case LocalAssembling_type::NavierStokesLinear:
-      this->set_parameters_for_tnse(type);
+      if(disc_type.is("vms_projection"))
+        this->set_parameters_for_tnse_vms(type);
+      else
+        this->set_parameters_for_tnse(type);
       break;
     default:
       ErrThrow("Unknown or unhandled LocalAssembling_type case. ", type);
@@ -599,9 +602,9 @@ ParameterDatabase LocalAssembling<d>::default_local_assembling_database()
          "The type of discretization. Note that not all types are possible for "
          "all problem classes.",
          {"galerkin", "supg", "upwind", "smagorinsky", "cip", "dg", "symm_gls",
-          "nonsymm_gls", "pspg", "brezzi_pitkaeranta", "vms_projection",
-          "vms_projection_expl", "local_projection", "local_projection_2_level",
-          "residual_based_vms"}); 
+          "nonsymm_gls", "pspg", "brezzi_pitkaeranta", "vms_projection", 
+          "smagorinsky_coarse" "vms_projection_expl", "local_projection", 
+          "local_projection_2_level", "residual_based_vms"}); 
   
   db.add("pspg_delta0", 0.1, 
          "the stabilization parameter for pspg (Pressure Stabilization Petrov "
@@ -1187,7 +1190,8 @@ void LocalAssembling<d>::set_parameters_for_tnse( LocalAssembling_type la_type)
   std::string disc_type = this->db["space_discretization_type"];
   Parameter nonlin_form(db["nse_nonlinear_form"]);
   bool galerkin = (disc_type == std::string("galerkin"));
-  bool smagorinsky = (disc_type==std::string("smagorinsky"));  
+  bool smagorinsky = (disc_type==std::string("smagorinsky"));
+  bool smagorinsky_coarse = (disc_type==std::string("smagorinsky_coarse"));  
   int nstype = TDatabase::ParamDB->NSTYPE;
   
   if(TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE==1)
@@ -1213,7 +1217,7 @@ void LocalAssembling<d>::set_parameters_for_tnse( LocalAssembling_type la_type)
                " is only supported for NSTYPE 3, 4, and 14");
     }
   }
-  if(!galerkin && !smagorinsky)
+  if(!galerkin && !smagorinsky && !smagorinsky_coarse)
   {
     ErrThrow("unsupported space_discretization_type for NSE", d, "D: ",
              disc_type);
@@ -1291,7 +1295,7 @@ void LocalAssembling<d>::set_parameters_for_tnse( LocalAssembling_type la_type)
                   graddiv_stab, characteristic_length));
     }
     // stabilization or turbulent models
-    if(smagorinsky)
+    if(smagorinsky || smagorinsky_coarse)
     {
       if(d==2)
         ErrThrow("Smagorinsky is not tested for 2D case");
@@ -1408,6 +1412,148 @@ void LocalAssembling<d>::set_parameters_for_tnse( LocalAssembling_type la_type)
   }
 }
 
+//========================================================================
+template<int d>
+void LocalAssembling<d>::set_parameters_for_tnse_vms( LocalAssembling_type la_type)
+{
+  bool laplace_type_deformation = this->db["laplace_type_deformation"];
+  std::string disc_type = this->db["space_discretization_type"];
+  bool vms_projection = (disc_type == std::string("vms_projection"));
+  Parameter nonlin_form(db["nse_nonlinear_form"]);  
+  int nstype = TDatabase::ParamDB->NSTYPE;
+  
+  if(TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE==1)
+  {
+    ErrThrow("Newton method is not supported yet");
+  }
+  if(!laplace_type_deformation && nstype != 4)
+  {
+    ErrThrow("vms_projection is only supported for NSTYPE 4 !!!");
+  }
+  
+  if(nonlin_form.is("rotational") || nonlin_form.is("emac"))
+  {
+    if((nstype==1) || nstype==2)
+    {
+      ErrThrow("nse_nonlinear_form ", nonlin_form,
+               " is only supported for NSTYPE 3, 4, and 14");
+    }
+  }
+  if(!vms_projection)
+  {
+    ErrThrow("unsupported space_discretization_type for NSE", 3, "D: ",
+             disc_type);
+  }
+  if(nstype == 14)
+  {
+    ErrThrow("NSTYPE", nstype, " is not supported yet");
+  }
+  // common for all NSTYPE, Discrete forms, etc
+  
+  this->N_Parameters = 16;
+  this->N_ParamFct = 1;
+  this->ParameterFct =  { NSParamsVariationalMSLargeScale<d> };
+  this->N_FEValues = 13;
+  this->FEValue_FctIndex = { 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 3};
+#ifdef __3D__
+  this->FEValue_MultiIndex = { D000, D000, D000, // u1old, u2old, u3old
+                               D100, D100, D100, // u1old_x, u2old_x, u3old_x
+                               D010, D010, D010, // u1old_y, u2old_y, u3old_y
+                               D001, D001, D001, // u1old_z, u2old_z, u3old_z
+                               D000 // pold
+  };
+  this->Derivatives = {D000, D000, D100, D010, D001, D000};
+#endif  
+  this->N_Terms = 6;
+  this->Needs2ndDerivatives = new bool[3];
+  this->Needs2ndDerivatives[0] = false;
+  this->Needs2ndDerivatives[1] = false;
+  this->Needs2ndDerivatives[2] = false;
+  this->FESpaceNumber = { 0, 1, 0, 0, 0, 2 }; // 0: velocity, 1: pressure, 2: projection
+  this->N_Matrices = 22;
+  //                   ------------A------------, L, .......Bs....... , .GTilde,.,.G... 
+  this->RowSpace    = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 1, 1, 1, 0, 0, 0, 0, 0, 0, 2, 2, 2 }; 
+  this->ColumnSpace = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 1, 1, 1, 2, 2, 2, 0, 0, 0}; 
+  this->N_Rhs = 4;
+  this->RhsSpace = { 0, 0, 0, 1};
+  this->Manipulate = NULL;  
+  this->BeginParameter = { 0 };
+  
+  using namespace std::placeholders;
+  if((la_type != LocalAssembling_type::TimeNavierStokesRhs 
+    && la_type != LocalAssembling_type::TimeNavierStokesMass) 
+    || la_type == LocalAssembling_type::NavierStokesLinear)
+  {
+    this->local_assemblings_routines.push_back(NSLaplaceDeformation<d>);
+    // additional part from the turbulence model
+    this->local_assemblings_routines.push_back(NSLaplaceDeformationVariationalMS<d>);
+  }
+  switch(la_type)
+  {
+    case LocalAssembling_type::TimeNavierStokesAll:
+    {
+      this->local_assemblings_routines.push_back(
+        std::bind(NSDivergenceBlocks<d>, _1, _2, _3, _4, _5, _6, _7, _8, 1));
+      
+      this->local_assemblings_routines.push_back(std::bind(NSRightHandSide<d>, _1, _2, _3, _4, _5, _6,
+        _7, _8, -1));
+      
+      this->local_assemblings_routines.push_back(NSGradientBlocks<d>);
+      
+      this->local_assemblings_routines.push_back(NSVariationlMS_GMatrices<d>);
+      // the break statement is commented intentionally: The other option is to copy the 
+      // the complete lines of code for the "TimeNavierStokesNL". This is because 
+      // we need the linear and nonlinear matrices to assemble the system right hand side:
+      // e.g., in the crank_nicolson time stepping scheme
+      // THIS MEANS: we assemble all matrices at initial time
+      // break;
+    }// NavierStokesAll
+    case LocalAssembling_type::TimeNavierStokesNL:
+    {
+      if(nonlin_form.is("convective"))
+      {
+        this->local_assemblings_routines.push_back(
+               NSNonlinearTerm_convective<d>);
+      }
+      else if(nonlin_form.is("skew_symmetric"))
+      {
+        this->local_assemblings_routines.push_back(
+            NSNonlinearTerm_skew_symmetric<d>);
+      }
+      else if(nonlin_form.is("rotational"))
+      {
+        this->local_assemblings_routines.push_back(
+          NSNonlinearTerm_rotational<d>);
+      }
+      else if(nonlin_form.is("emac"))
+      {
+        this->local_assemblings_routines.push_back(
+          NSNonlinearTerm_emac<d>);
+      }
+      else
+      {
+        ErrThrow("unknown type for nse_nonlinear_form ", nonlin_form);
+      }
+      // nonlinear matrices Gtilde
+      this->local_assemblings_routines.push_back(NSVariationlMS_GTildeMatrices<d>);
+      break;
+    }
+    case LocalAssembling_type::TimeNavierStokesRhs:
+      this->local_assemblings_routines.push_back(
+        std::bind(NSRightHandSide<d>, _1, _2, _3, _4, _5, _6, _7, _8, -1));
+      break;
+    case LocalAssembling_type::TimeNavierStokesMass:
+        this->local_assemblings_routines.push_back(NSMassMatrix<d>);
+        this->local_assemblings_routines.push_back(NSLumpMassMatrix<d>);
+      break;
+    case LocalAssembling_type::NavierStokesLinear:
+      Output::print<5>("Nothing to do here!!!");
+      break;
+    default:
+      ErrThrow("unknown LocalAssembling3D_type ", this->type);
+      break;
+  }
+}
 #ifdef __3D__
 template class LocalAssembling<3>;
 #endif

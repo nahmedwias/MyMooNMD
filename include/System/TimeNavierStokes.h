@@ -399,6 +399,28 @@ class TimeNavierStokes
      * from other nonlinear forms.
      */
     void adjust_pressure();
+
+   /** @brief projection space used for VMS method*/
+    std::shared_ptr<FESpace> projection_space_;
+    
+    /** @brief finite element function for vms projection*/
+    // can we rename it to large scales?? also check BlockVector!! currently just vector
+    std::vector<double> vms_small_resolved_scales; 
+    std::shared_ptr<FEVectFunct> vms_small_resolved_scales_fefct;
+    /** matrices for turbulence model*/
+    std::vector<std::shared_ptr<FEMatrix>> matrices_for_turb_mod;
+    
+    // piecewise constant space containing the labels of the local projection space
+    std::shared_ptr<FESpace> label_for_local_projection_space_;
+    // vector used for indicating local projection space 
+    std::vector<double> label_for_local_projection;
+    // finite element function for local projection space
+    std::shared_ptr<FEFunction> label_for_local_projection_fefct;
+    /** @brief method that will prepare the needed spaces and matrices 
+     * used for the Variational method
+     */
+    void prepare_vms(const TDomain& domain);
+    
 };
 
 
