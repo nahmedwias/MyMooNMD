@@ -15,10 +15,12 @@ list(APPEND ASSEMBLESADDLE_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/AssembleRoutine
 list(APPEND ASSEMBLESADDLE_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/AssembleRoutinesSaddle/NSE_local_assembling_routines.C")
 list(APPEND ASSEMBLESADDLE_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/AssembleRoutinesSaddle/LPS_scott_zhang.C")
 list(APPEND ASSEMBLESADDLE_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/AssembleRoutinesSaddle/Time_NSE_local_assembling_routines.C")
+list(APPEND ASSEMBLESADDLE_SOURCES_2D "${PROJECT_SOURCE_DIR}/src/AssembleRoutinesSaddle/Variational_multiscale.C")
 
 list(APPEND ASSEMBLESADDLE_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/AssembleRoutinesSaddle/CommonRoutineTNSE3D.C")
 list(APPEND ASSEMBLESADDLE_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/AssembleRoutinesSaddle/NSE_local_assembling_routines.C")
 list(APPEND ASSEMBLESADDLE_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/AssembleRoutinesSaddle/Time_NSE_local_assembling_routines.C")
+list(APPEND ASSEMBLESADDLE_SOURCES_3D "${PROJECT_SOURCE_DIR}/src/AssembleRoutinesSaddle/Variational_multiscale.C")
 
 list(APPEND PARMOON_SOURCES_2D ${ASSEMBLESADDLE_SOURCES_2D})
 list(APPEND PARMOON_SOURCES_3D ${ASSEMBLESADDLE_SOURCES_3D})
