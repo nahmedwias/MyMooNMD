@@ -209,8 +209,9 @@ void NSLaplaceDeformationVariationalMS(double Mult, double *, double *param, dou
   double *uConv = &param[0];
   double *projection_space_label = &param[15];
   //VMS0: at the moment this is same as the smagorinsky model
-  double nu = turbulentViscosity3D(hK, u, gradu, uConv, x, y, z, projection_space_label[0])/2.;
-  
+  double nu_t = turbulentViscosity3D(hK, u, gradu, uConv, x, y, z, projection_space_label[0]);
+  nu_t = nu_t/2.;
+ 
   for(int i = 0; i < N_U; i++)
   {
     double test_x = u_x[i];
@@ -221,20 +222,20 @@ void NSLaplaceDeformationVariationalMS(double Mult, double *, double *param, dou
       double ansatz_x = u_x[j];
       double ansatz_y = u_y[j];
       double ansatz_z = d == 2 ? 0. : u_z[j];
-      MatrixA11[i][j] += Mult * 2*nu*(test_x*ansatz_x + 0.5*test_y*ansatz_y 
+      MatrixA11[i][j] += Mult * 2*nu_t*(test_x*ansatz_x + 0.5*test_y*ansatz_y 
                                      +0.5*test_z*ansatz_z);
-      MatrixA12[i][j] += Mult * nu*(test_y*ansatz_x);
+      MatrixA12[i][j] += Mult * nu_t*(test_y*ansatz_x);
       if(d == 3)
-        MatrixA13[i][j] += Mult * nu*(test_z*ansatz_x);
-      MatrixA21[i][j] += Mult * nu*(test_x*ansatz_y);
-      MatrixA22[i][j] += Mult * 2*nu*(0.5*test_x*ansatz_x+test_y*ansatz_y
+        MatrixA13[i][j] += Mult * nu_t*(test_z*ansatz_x);
+      MatrixA21[i][j] += Mult * nu_t*(test_x*ansatz_y);
+      MatrixA22[i][j] += Mult * 2*nu_t*(0.5*test_x*ansatz_x+test_y*ansatz_y
                                      +0.5*test_z*ansatz_z);
       if(d == 3)
       {
-        MatrixA23[i][j] += Mult * nu*(test_z*ansatz_y);
-        MatrixA31[i][j] += Mult * nu*(test_x*ansatz_z);
-        MatrixA32[i][j] += Mult * nu*(test_y*ansatz_z);
-        MatrixA33[i][j] += Mult * 2*nu*(0.5*test_x*ansatz_x+0.5*test_y*ansatz_y
+        MatrixA23[i][j] += Mult * nu_t*(test_z*ansatz_y);
+        MatrixA31[i][j] += Mult * nu_t*(test_x*ansatz_z);
+        MatrixA32[i][j] += Mult * nu_t*(test_y*ansatz_z);
+        MatrixA33[i][j] += Mult * 2*nu_t*(0.5*test_x*ansatz_x+0.5*test_y*ansatz_y
                                        +test_z*ansatz_z);
       }
     }
