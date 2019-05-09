@@ -603,7 +603,7 @@ ParameterDatabase LocalAssembling<d>::default_local_assembling_database()
          "all problem classes.",
          {"galerkin", "supg", "upwind", "smagorinsky", "cip", "dg", "symm_gls",
           "nonsymm_gls", "pspg", "brezzi_pitkaeranta", "vms_projection", 
-          "smagorinsky_coarse" "vms_projection_expl", "local_projection", 
+          "vms_projection_expl", "local_projection", 
           "local_projection_2_level", "residual_based_vms"}); 
   
   db.add("pspg_delta0", 0.1, 
@@ -1190,8 +1190,7 @@ void LocalAssembling<d>::set_parameters_for_tnse(LocalAssembling_type type)
   std::string disc_type = this->db["space_discretization_type"];
   Parameter nonlin_form(db["nse_nonlinear_form"]);
   bool galerkin = (disc_type == std::string("galerkin"));
-  bool smagorinsky = (disc_type==std::string("smagorinsky"));
-  bool smagorinsky_coarse = (disc_type==std::string("smagorinsky_coarse"));  
+  bool smagorinsky = (disc_type==std::string("smagorinsky"));  
   int nstype = TDatabase::ParamDB->NSTYPE;
   
   if(TDatabase::ParamDB->SC_NONLIN_ITE_TYPE_SADDLE==1)
@@ -1217,7 +1216,7 @@ void LocalAssembling<d>::set_parameters_for_tnse(LocalAssembling_type type)
                " is only supported for NSTYPE 3, 4, and 14");
     }
   }
-  if(!galerkin && !smagorinsky && !smagorinsky_coarse)
+  if(!galerkin && !smagorinsky)
   {
     ErrThrow("unsupported space_discretization_type for NSE", d, "D: ",
              disc_type);
@@ -1295,7 +1294,7 @@ void LocalAssembling<d>::set_parameters_for_tnse(LocalAssembling_type type)
                   graddiv_stab, characteristic_length));
     }
     // stabilization or turbulent models
-    if(smagorinsky || smagorinsky_coarse)
+    if(smagorinsky)
     {
       if(d==2)
         ErrThrow("Smagorinsky is not tested for 2D case");
