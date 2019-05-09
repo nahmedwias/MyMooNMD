@@ -133,49 +133,51 @@ void VMS_ProjectionUpdateMatrices(std::vector< std::shared_ptr< FEMatrix > >& bl
   A.at(1) = blocks.at(5); // A22 
   A.at(2) = blocks.at(10);// A33
   
-  // std::shared_ptr<FEMatrix> M    = matrices_vms.at(6);
-  auto M = std::next(matrices_vms.begin(), 6); 
-  //GT = matrices_vms.at(0);
-  auto GT = std::next(matrices_vms.begin(), 0); 
-  // std::shared_ptr<FEMatrix> G    = matrices_vms.at(3);  
-  auto G = std::next(matrices_vms.begin(), 3); 
+  std::shared_ptr<FEMatrix> M    = matrices_vms.at(6);
+  
+  std::shared_ptr<FEMatrix> GT = matrices_vms.at(0);
+  std::shared_ptr<FEMatrix> G    = matrices_vms.at(3);  
   // diagonal A tilde matrices 
   // (tilde_A11, tilde_A22, tilde_A33)
-  matrices_a_tilde(A, *G, *GT, *M, "a11_tilde");
-  matrices_a_tilde(A, *G, *GT, *M, "a22_tilde");
-  matrices_a_tilde(A, *G, *GT, *M, "a33_tilde");
+  matrices_a_tilde(A, G, GT, M, "a11_tilde");
+  GT = matrices_vms.at(1);
+  G    = matrices_vms.at(4);
+  matrices_a_tilde(A, G, GT, M, "a22_tilde");
+  GT = matrices_vms.at(1);
+  G    = matrices_vms.at(4);
+  matrices_a_tilde(A, G, GT, M, "a33_tilde");
   
-// off diagonal A tilde matrices
+  // off diagonal A tilde matrices
   // tilde_A12
   A.resize(1); A.at(0) = blocks.at(1); // A12 
-  GT = std::next(matrices_vms.begin(), 1); 
-  G = std::next(matrices_vms.begin(), 3); 
-  matrices_a_tilde(A, *G, *GT, *M, "a12_tilde");
+  GT = matrices_vms.at(1); // GT22 
+  G = matrices_vms.at(3); // G11 
+  matrices_a_tilde(A, G, GT, M, "a12_tilde");
   // tilde_A1213
   A.resize(1); A.at(0)=blocks.at(2);
-  GT = std::next(matrices_vms.begin(), 2); 
-  G = std::next(matrices_vms.begin(), 3); 
-  matrices_a_tilde(A, *G, *GT, *M, "a13_tilde");
+  GT=matrices_vms.at(2); // GT33
+  G=matrices_vms.at(3);  // G11
+  matrices_a_tilde(A, G, GT, M, "a13_tilde");
   //tilde_A21
   A.resize(1); A.at(0)=blocks.at(4);
-  GT = std::next(matrices_vms.begin(), 0); 
-  G = std::next(matrices_vms.begin(), 4); 
-  matrices_a_tilde(A, *G, *GT, *M, "a21_tilde");
+  GT=matrices_vms.at(0);// GT11
+  G=matrices_vms.at(4); // G22
+  matrices_a_tilde(A, G, GT, M, "a21_tilde");
   //tilde_A23
   A.resize(1); A.at(0)=blocks.at(6);
-  GT = std::next(matrices_vms.begin(), 2); 
-  G = std::next(matrices_vms.begin(), 4); 
-  matrices_a_tilde(A, *G, *GT, *M, "a23_tilde");
+  GT=matrices_vms.at(2); // GT33
+  G=matrices_vms.at(4);  // G22
+  matrices_a_tilde(A, G, GT, M, "a23_tilde");
   // tilde_A31
   A.resize(1); A.at(0)=blocks.at(8);
-  GT = std::next(matrices_vms.begin(), 0); 
-  G = std::next(matrices_vms.begin(), 5); 
-  matrices_a_tilde(A, *G, *GT, *M, "a31_tilde");
+  GT=matrices_vms.at(0); // GT11
+  G=matrices_vms.at(5);  // G22
+  matrices_a_tilde(A, G, GT, M, "a31_tilde");
   // tilde_A32
   A.resize(1); A.at(0)=blocks.at(9);
-  GT = std::next(matrices_vms.begin(), 1); 
-  G = std::next(matrices_vms.begin(), 5); 
-  matrices_a_tilde(A, *G, *GT, *M, "a32_tilde"); 
+  GT=matrices_vms.at(1); // GT22
+  G=matrices_vms.at(5);  // G33
+  matrices_a_tilde(A, G, GT, M, "a32_tilde"); 
 }
 
 #ifdef __2D__

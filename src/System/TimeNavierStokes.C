@@ -525,7 +525,7 @@ void TimeNavierStokes<d>::assemble_initial_time()
       // reset flag for projection-based VMS method such that Smagorinsky LES method
       // is used on coarser grids
       space_disc_global = -4;      
-      db["space_discretization_type"] = "smagorinsky_coarse";
+      db["space_discretization_type"] = "smagorinsky";
     }
   /** After copy_nonactive, the solution vectors needs to be Comm-updated in 
    * MPI-case in order to be consistently saved. It is necessary that the vector
@@ -562,7 +562,7 @@ void TimeNavierStokes<d>::assemble_initial_time()
   // the correct old_rhs, i.e., zeros on the slip dofs
   if(TDatabase::ParamDB->INTERNAL_SLIP_WITH_FRICTION >=1)
    this->modify_slip_bc(true, true);
-  
+ 
   auto s = this->systems.front();
  
   // copy the current right hand side vector to the old_rhs
@@ -682,12 +682,12 @@ void TimeNavierStokes<d>::assemble_matrices_rhs(unsigned int it_counter)
       // reset flag for projection-based VMS method such that Smagorinsky LES method
       // is used on coarser grids 
       space_disc_global = -4;
-      db["space_discretization_type"].set("smagorinsky_coarse");
+      db["space_discretization_type"].set("smagorinsky");
     }
 
   }
   // reset   DISCTYPE to VMS_PROJECTION to be correct in the next assembling
-  if(db["space_discretization_type"].is("smagorinsky_coarse"))
+  if(db["space_discretization_type"].is("smagorinsky"))
   {
     space_disc_global = 9;
     db["space_discretization_type"].set("vms_projection");
@@ -1005,7 +1005,7 @@ void TimeNavierStokes<d>::set_matrices_rhs(
           sqMat[i] = reinterpret_cast<SquareMatrixD*>(mass_blocks.at(i*(d+2)).get());
       }
       if(db["space_discretization_type"].is("vms_projection"))
-        sqMat[d] = reinterpret_cast<SquareMatrixD*>(matrices_for_turb_mod.at(6).get());;
+        sqMat[d*d] = reinterpret_cast<SquareMatrixD*>(matrices_for_turb_mod.at(6).get());
       break; //TimeNavierStokesMass
     case LocalAssembling_type::NavierStokesLinear:
       if(nstype==1 || nstype==2)
@@ -1100,8 +1100,9 @@ void TimeNavierStokes<d>::set_matrices_rhs(
       }
       if(db["space_discretization_type"].is("vms_projection"))
       {
-        for(int i=0; i<d; ++i)
-          reMat[i] = reinterpret_cast<MatrixD*>(matrices_for_turb_mod.at(i).get());
+        reMat.resize(2*d*2);
+        for(int i=0; i<2*d; i++)
+          reMat[2*d+i] = reinterpret_cast<MatrixD*>(matrices_for_turb_mod.at(i).get());
       }
       break;//TimeNavierStokesNL
     }

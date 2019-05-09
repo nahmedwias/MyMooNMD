@@ -1184,7 +1184,7 @@ void LocalAssembling<d>::set_parameters_for_nse( LocalAssembling_type type)
 }
 //========================================================================
 template<int d>
-void LocalAssembling<d>::set_parameters_for_tnse( LocalAssembling_type la_type)
+void LocalAssembling<d>::set_parameters_for_tnse(LocalAssembling_type type)
 {
   bool laplace_type_deformation = this->db["laplace_type_deformation"];
   std::string disc_type = this->db["space_discretization_type"];
@@ -1544,6 +1544,7 @@ void LocalAssembling<d>::set_parameters_for_tnse_vms( LocalAssembling_type la_ty
       break;
     case LocalAssembling_type::TimeNavierStokesMass:
         this->local_assemblings_routines.push_back(NSMassMatrix<d>);
+        // lumped mass matrix
         this->local_assemblings_routines.push_back(NSLumpMassMatrix<d>);
       break;
     case LocalAssembling_type::NavierStokesLinear:
