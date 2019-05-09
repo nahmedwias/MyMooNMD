@@ -383,7 +383,6 @@ void TimeNavierStokes<d>::check_and_set_parameters()
   // Smagorinsky
   if(db["space_discretization_type"].is("smagorinsky"))
   {
-    space_disc_global = 4;
     time_stepping_scheme.n_scale_block = 6;
     time_stepping_scheme.b_bt_linear_nl = "linear";    
   }
@@ -524,7 +523,7 @@ void TimeNavierStokes<d>::assemble_initial_time()
       VMS_ProjectionUpdateMatrices<d>(blocks, matrices_for_turb_mod);
       // reset flag for projection-based VMS method such that Smagorinsky LES method
       // is used on coarser grids
-      space_disc_global = -4;      
+      space_disc_global = 4;      
       db["space_discretization_type"] = "smagorinsky";
     }
   /** After copy_nonactive, the solution vectors needs to be Comm-updated in 
@@ -553,7 +552,7 @@ void TimeNavierStokes<d>::assemble_initial_time()
     s.solution_m2 = s.solution;
   }
   // reset   DISCTYPE to VMS_PROJECTION to be correct in the next assembling
-  if(space_disc_global == -4)
+  if(space_disc_global == 4)
   {
     space_disc_global = 9;
     db["space_discretization_type"] = "vms_projection";
@@ -681,13 +680,13 @@ void TimeNavierStokes<d>::assemble_matrices_rhs(unsigned int it_counter)
       VMS_ProjectionUpdateMatrices<d>(blocks, matrices_for_turb_mod);
       // reset flag for projection-based VMS method such that Smagorinsky LES method
       // is used on coarser grids 
-      space_disc_global = -4;
+      space_disc_global = 4;
       db["space_discretization_type"].set("smagorinsky");
     }
 
   }
   // reset   DISCTYPE to VMS_PROJECTION to be correct in the next assembling
-  if(db["space_discretization_type"].is("smagorinsky"))
+  if(space_disc_global == 4)
   {
     space_disc_global = 9;
     db["space_discretization_type"].set("vms_projection");
