@@ -1100,7 +1100,7 @@ void TimeNavierStokes<d>::set_matrices_rhs(
       if(db["space_discretization_type"].is("vms_projection"))
       {
         reMat.resize(2*d*2);
-        for(int i=0; i<2*d; i++)
+        for(int i=0; i<d; i++)
           reMat[2*d+i] = reinterpret_cast<MatrixD*>(matrices_for_turb_mod.at(i).get());
       }
       break;//TimeNavierStokesNL
